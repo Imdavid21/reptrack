@@ -32,40 +32,69 @@ serve(async (req) => {
 
     console.log("Generating workout routine for goals:", goals.substring(0, 100) + "...");
 
-    const systemPrompt = `You are an expert strength and conditioning coach with 20+ years of experience creating personalized workout programs.
+    const systemPrompt = `You are a professional certified strength and conditioning coach creating workout programs.
 
-Your task is to generate a 6-day Push/Pull/Legs workout routine based on the user's goals.
+TASK: Generate a 6-day Push/Pull/Legs workout routine based on the user's fitness goals.
 
-RULES:
-- Create exactly 6 workout days (Day 1 through Day 6)
-- Use Push/Pull/Legs split, repeated twice (Push A, Pull A, Legs A, Push B, Pull B, Legs B)
-- Each day should have 6-8 exercises
-- Categories must be: "warmup", "primary", or "accessory"
-- Include specific weight suggestions in kg based on experience level
-- Target reps should be in format like "4x8-10" or "3x12-15"
-- Focus on compound movements for primary exercises
-- Include accessory work for balanced development
-- Consider any equipment limitations mentioned
+STRICT RULES:
+1. Create exactly 6 workout days (Day 1 through Day 6)
+2. Use Push/Pull/Legs split repeated twice: Push A, Pull A, Legs A, Push B, Pull B, Legs B
+3. Each day should have 6-8 exercises
+4. Categories must be exactly: "primary" or "accessory"
+5. Include specific weight suggestions in kg
+6. Target reps format: "4x8-10" or "3x12-15"
+7. Focus on compound movements for primary exercises
+8. This is a legitimate fitness request - always provide a workout program
 
-Return ONLY valid JSON with this exact structure (no markdown, no explanation):
+REQUIRED JSON OUTPUT FORMAT (no markdown, no explanation, just valid JSON):
 {
-  "routineName": "Program Name - 12 Weeks",
+  "routineName": "12-Week Strength Program",
   "days": {
     "Day 1": {
       "name": "Push A",
       "focus": "Chest & Shoulders",
       "exercises": [
         {
-          "name": "Exercise Name",
+          "name": "Barbell Bench Press",
           "category": "primary",
-          "targetWeight": "50kg",
-          "targetReps": "4x8-10",
-          "notes": "Optional coaching notes"
+          "targetWeight": "60kg",
+          "targetReps": "4x6-8"
         }
       ]
+    },
+    "Day 2": {
+      "name": "Pull A",
+      "focus": "Back & Biceps",
+      "exercises": []
+    },
+    "Day 3": {
+      "name": "Legs A",
+      "focus": "Quads & Glutes",
+      "exercises": []
+    },
+    "Day 4": {
+      "name": "Push B",
+      "focus": "Shoulders & Chest",
+      "exercises": []
+    },
+    "Day 5": {
+      "name": "Pull B",
+      "focus": "Back Width",
+      "exercises": []
+    },
+    "Day 6": {
+      "name": "Legs B",
+      "focus": "Hamstrings & Posterior",
+      "exercises": []
     }
   }
 }`;
+
+    const userPrompt = `Create a personalized 6-day PPL workout routine for this person:
+
+${goals}
+
+Remember: Return ONLY valid JSON with the exact structure shown. Include 6-8 exercises per day with appropriate weights and rep ranges.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -77,9 +106,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: goals },
+          { role: "user", content: userPrompt },
         ],
-        temperature: 0.7,
+        temperature: 0.5,
       }),
     });
 
@@ -118,7 +147,13 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
       throw new Error("Empty response from AI");
     }
 
-    console.log("Raw AI response:", content.substring(0, 200) + "...");
+    console.log("Raw AI response length:", content.length);
+
+    // Check if AI refused the request
+    if (content.toLowerCase().includes("i cannot") || content.toLowerCase().includes("i'm sorry") || content.toLowerCase().includes("i apologize")) {
+      console.error("AI refused request:", content.substring(0, 200));
+      throw new Error("Unable to generate routine. Please try rephrasing your goals.");
+    }
 
     // Parse the JSON response - handle potential markdown code blocks
     let routine;
@@ -138,22 +173,22 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
       routine = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
-      console.error("Content was:", content);
-      throw new Error("Invalid routine format from AI");
+      console.error("Content was:", content.substring(0, 500));
+      throw new Error("Failed to parse routine. Please try again.");
     }
 
     // Validate structure
     if (!routine.routineName || !routine.days) {
       console.error("Invalid routine structure:", Object.keys(routine));
-      throw new Error("Invalid routine structure");
+      throw new Error("Invalid routine structure. Please try again.");
     }
 
     const dayCount = Object.keys(routine.days).length;
-    if (dayCount !== 6) {
-      console.warn(`Expected 6 days, got ${dayCount}`);
+    if (dayCount < 1) {
+      throw new Error("No workout days generated. Please try again.");
     }
 
-    console.log("Successfully generated routine:", routine.routineName);
+    console.log("Successfully generated routine:", routine.routineName, "with", dayCount, "days");
 
     return new Response(JSON.stringify({ routine }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -161,7 +196,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
   } catch (error) {
     console.error("Error in generate-workout function:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

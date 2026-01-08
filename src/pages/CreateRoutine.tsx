@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Edit3, Loader2, Check, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Sparkles, Edit3, Loader2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
+import { exerciseLibrary, dayTemplates, ExerciseOption } from '@/lib/exerciseLibrary';
 
 type Tab = 'ai' | 'manual';
 
@@ -25,6 +27,10 @@ interface GeneratedRoutine {
   }>;
 }
 
+interface SelectedExercise extends ExerciseOption {
+  selected: boolean;
+}
+
 export default function CreateRoutine() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -33,6 +39,18 @@ export default function CreateRoutine() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedRoutine, setGeneratedRoutine] = useState<GeneratedRoutine | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Manual selection state
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [expandedDay, setExpandedDay] = useState<number | null>(0);
+  const [manualExercises, setManualExercises] = useState<Record<string, SelectedExercise[]>>(() => {
+    const initial: Record<string, SelectedExercise[]> = {};
+    dayTemplates.forEach(day => {
+      initial[day.key] = exerciseLibrary[day.type].map(ex => ({ ...ex, selected: false }));
+    });
+    return initial;
+  });
+  const [routineName, setRoutineName] = useState('My Custom Routine');
 
   const handleGenerate = async () => {
     if (!goals.trim()) {
@@ -68,23 +86,21 @@ export default function CreateRoutine() {
     }
   };
 
-  const handleSaveRoutine = async () => {
-    if (!generatedRoutine || !user) return;
+  const handleSaveRoutine = async (routine: GeneratedRoutine) => {
+    if (!routine || !user) return;
 
     setIsSaving(true);
 
     try {
-      // First, deactivate any existing active routines
       await supabase
         .from('custom_routines')
         .update({ is_active: false })
         .eq('user_id', user.id);
 
-      // Save the new routine
       const { error } = await supabase.from('custom_routines').insert({
         user_id: user.id,
-        routine_name: generatedRoutine.routineName,
-        routine_data: generatedRoutine as unknown as Record<string, unknown>,
+        routine_name: routine.routineName,
+        routine_data: routine as unknown as Record<string, unknown>,
         is_active: true,
       } as any);
 
@@ -100,6 +116,54 @@ export default function CreateRoutine() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const toggleExercise = (dayKey: string, exerciseName: string) => {
+    setManualExercises(prev => ({
+      ...prev,
+      [dayKey]: prev[dayKey].map(ex => 
+        ex.name === exerciseName ? { ...ex, selected: !ex.selected } : ex
+      ),
+    }));
+  };
+
+  const getSelectedCount = (dayKey: string) => {
+    return manualExercises[dayKey]?.filter(ex => ex.selected).length || 0;
+  };
+
+  const handleSaveManualRoutine = async () => {
+    if (!user) return;
+
+    // Build routine from selections
+    const hasAnyExercises = Object.values(manualExercises).some(
+      exercises => exercises.some(ex => ex.selected)
+    );
+
+    if (!hasAnyExercises) {
+      toast.error('Select at least one exercise');
+      return;
+    }
+
+    const routine: GeneratedRoutine = {
+      routineName: routineName || 'My Custom Routine',
+      days: {},
+    };
+
+    dayTemplates.forEach(day => {
+      const selectedExercises = manualExercises[day.key].filter(ex => ex.selected);
+      routine.days[day.key] = {
+        name: day.name,
+        focus: day.focus,
+        exercises: selectedExercises.map(ex => ({
+          name: ex.name,
+          category: ex.category,
+          targetWeight: ex.defaultWeight,
+          targetReps: ex.defaultReps,
+        })),
+      };
+    });
+
+    await handleSaveRoutine(routine);
   };
 
   return (
@@ -230,7 +294,7 @@ Weak points: Overhead pressing, pull-up strength`}
                     DISCARD
                   </button>
                   <button
-                    onClick={handleSaveRoutine}
+                    onClick={() => handleSaveRoutine(generatedRoutine)}
                     disabled={isSaving}
                     className="btn-brutalist btn-primary flex items-center justify-center gap-2"
                   >
@@ -251,16 +315,110 @@ Weak points: Overhead pressing, pull-up strength`}
         {activeTab === 'manual' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Manual routine creation coming soon. For now, use the pre-loaded
-              Push/Pull/Legs program or generate one with AI.
+              Select exercises for each day from the library below.
             </p>
 
-            <div className="card-brutalist text-center py-8">
-              <Edit3 className="h-8 w-8 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                Manual routine builder coming soon
-              </p>
+            {/* Routine Name */}
+            <div>
+              <label className="text-xs text-muted-foreground">ROUTINE NAME</label>
+              <input
+                type="text"
+                value={routineName}
+                onChange={(e) => setRoutineName(e.target.value)}
+                className="input-terminal w-full mt-1"
+                placeholder="My Custom Routine"
+              />
             </div>
+
+            {/* Day Accordions */}
+            <div className="space-y-2">
+              {dayTemplates.map((day, idx) => (
+                <div key={day.key} className="border border-border">
+                  <button
+                    onClick={() => setExpandedDay(expandedDay === idx ? null : idx)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="text-left">
+                      <div className="text-xs text-muted-foreground">{day.key}</div>
+                      <div className="font-bold">{day.name}</div>
+                      <div className="text-xs text-muted-foreground">{day.focus}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="badge-brutalist">
+                        {getSelectedCount(day.key)} selected
+                      </span>
+                      {expandedDay === idx ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {expandedDay === idx && (
+                    <div className="border-t border-border p-4 space-y-2 animate-fade-in">
+                      <div className="text-xs text-muted-foreground mb-3">
+                        Select exercises for this day:
+                      </div>
+                      
+                      {/* Group by category */}
+                      {['primary', 'accessory'].map(category => {
+                        const categoryExercises = manualExercises[day.key]?.filter(
+                          ex => ex.category === category
+                        ) || [];
+                        
+                        if (categoryExercises.length === 0) return null;
+                        
+                        return (
+                          <div key={category}>
+                            <div className="text-xs font-bold text-muted-foreground uppercase mb-2">
+                              {category}
+                            </div>
+                            <div className="space-y-1">
+                              {categoryExercises.map(ex => (
+                                <div
+                                  key={ex.name}
+                                  className={cn(
+                                    'flex items-center gap-3 p-2 border border-border cursor-pointer transition-colors',
+                                    ex.selected && 'bg-muted/50'
+                                  )}
+                                  onClick={() => toggleExercise(day.key, ex.name)}
+                                >
+                                  <Checkbox
+                                    checked={ex.selected}
+                                    className="checkbox-brutalist"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium">{ex.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {ex.muscleGroup} • {ex.defaultWeight} × {ex.defaultReps}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={handleSaveManualRoutine}
+              disabled={isSaving}
+              className="btn-brutalist btn-primary w-full py-4 flex items-center justify-center gap-2"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              SAVE ROUTINE
+            </button>
           </div>
         )}
       </div>
