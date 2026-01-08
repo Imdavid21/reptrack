@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { format, subDays, startOfWeek, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Calendar } from 'lucide-react';
 
 export function Heatmap() {
   const { workouts } = useWorkouts();
@@ -47,22 +48,30 @@ export function Heatmap() {
   };
 
   return (
-    <div className="card-brutalist">
-      <h3 className="section-header">90-DAY ACTIVITY</h3>
+    <div className="card-premium">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Calendar className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-semibold">Activity</h3>
+          <p className="text-xs text-muted-foreground">Last 90 days</p>
+        </div>
+      </div>
       
       {/* Full-width responsive heatmap grid */}
-      <div className="w-full overflow-x-auto scrollbar-hide">
-        <div className="flex justify-between gap-[2px] min-w-0">
+      <div className="w-full overflow-x-auto scrollbar-hide pb-2">
+        <div className="flex justify-between gap-[3px] min-w-0">
           {weeks.map((week, weekIdx) => (
-            <div key={weekIdx} className="flex flex-col gap-[2px] flex-1">
+            <div key={weekIdx} className="flex flex-col gap-[3px] flex-1">
               {week.map((day) => (
                 <div
                   key={day.date}
                   className={cn(
-                    'aspect-square w-full min-w-[8px] max-w-[20px] border border-border',
+                    'aspect-square w-full min-w-[8px] max-w-[18px] rounded-[3px] transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-primary/30',
                     getIntensityClass(day.intensity)
                   )}
-                  title={`${day.date}${day.intensity > 0 ? ' - Workout logged' : ''}`}
+                  title={`${format(new Date(day.date), 'MMM d, yyyy')}${day.intensity > 0 ? ' • Workout logged' : ''}`}
                 />
               ))}
             </div>
@@ -72,11 +81,13 @@ export function Heatmap() {
 
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <span>Less</span>
-        <div className="w-3 h-3 border border-border bg-heat-0" />
-        <div className="w-3 h-3 border border-border bg-heat-1" />
-        <div className="w-3 h-3 border border-border bg-heat-2" />
-        <div className="w-3 h-3 border border-border bg-heat-3" />
-        <div className="w-3 h-3 border border-border bg-heat-4" />
+        <div className="flex gap-1">
+          <div className="w-3 h-3 rounded-sm bg-heat-0" />
+          <div className="w-3 h-3 rounded-sm bg-heat-1" />
+          <div className="w-3 h-3 rounded-sm bg-heat-2" />
+          <div className="w-3 h-3 rounded-sm bg-heat-3" />
+          <div className="w-3 h-3 rounded-sm bg-heat-4" />
+        </div>
         <span>More</span>
       </div>
     </div>
