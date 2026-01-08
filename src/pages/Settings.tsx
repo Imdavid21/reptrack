@@ -3,7 +3,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useWaterReminderConfig } from '@/hooks/useWaterReminderConfig';
-import { LogOut, Send, Smartphone, Moon, Sun, Loader2, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -18,6 +19,7 @@ export default function Settings() {
   const [reminderInterval, setReminderInterval] = useState('60');
   const [startHour, setStartHour] = useState('08:00');
   const [endHour, setEndHour] = useState('22:00');
+  const [isTesting, setIsTesting] = useState(false);
 
   // Load config when available
   useEffect(() => {
@@ -60,6 +62,41 @@ export default function Settings() {
       toast.success('Water reminders deactivated');
     } catch (error) {
       toast.error('Failed to deactivate');
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('telegram-water-reminder', {
+        body: {},
+        headers: {},
+      });
+      
+      // Need to call with query param, use fetch directly
+      const { data: session } = await supabase.auth.getSession();
+      const response = await fetch(
+        `https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/telegram-water-reminder?action=test`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session?.access_token}`,
+          },
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Test message sent! Check your Telegram.');
+      } else {
+        toast.error(result.error || 'Failed to send test message');
+      }
+    } catch (error) {
+      toast.error('Failed to send test message');
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -195,14 +232,24 @@ export default function Settings() {
               )}
 
               {isActive ? (
-                <button
-                  onClick={handleDeactivateAutomation}
-                  disabled={isToggling}
-                  className="btn-brutalist w-full flex items-center justify-center gap-2 border-destructive text-destructive"
-                >
-                  {isToggling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  DEACTIVATE REMINDERS
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={handleTestConnection}
+                    disabled={isTesting || !config?.telegram_chat_id}
+                    className="btn-brutalist w-full flex items-center justify-center gap-2"
+                  >
+                    {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                    SEND TEST MESSAGE
+                  </button>
+                  <button
+                    onClick={handleDeactivateAutomation}
+                    disabled={isToggling}
+                    className="btn-brutalist w-full flex items-center justify-center gap-2 border-destructive text-destructive"
+                  >
+                    {isToggling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    DEACTIVATE REMINDERS
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={handleActivateAutomation}
