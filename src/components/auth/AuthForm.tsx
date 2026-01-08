@@ -19,44 +19,45 @@ export function AuthForm() {
       if (isSignUp) {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        toast.success('Account created');
+        toast.success('Account created! You can now sign in.');
         setIsSignUp(false);
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
+        toast.success('Welcome back!');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed');
+      toast.error(error.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-xs space-y-8">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <h1 className="text-xl font-semibold tracking-tight">FitTrack</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            12 week transformation
+          <h1 className="text-2xl font-bold tracking-widest">FITTRACK</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            12-WEEK TRANSFORMATION
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label className="text-xs text-muted-foreground">Email</Label>
+            <Label className="text-xs text-muted-foreground">EMAIL</Label>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="mt-1.5 bg-background"
+              className="input-terminal mt-1"
             />
           </div>
 
           <div>
-            <Label className="text-xs text-muted-foreground">Password</Label>
+            <Label className="text-xs text-muted-foreground">PASSWORD</Label>
             <Input
               type="password"
               value={password}
@@ -64,24 +65,26 @@ export function AuthForm() {
               placeholder="••••••••"
               required
               minLength={6}
-              className="mt-1.5 bg-background"
+              className="input-terminal mt-1"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full p-3 bg-foreground text-background rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-50"
+            className="btn-brutalist btn-primary w-full py-4"
           >
-            {loading ? '...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? 'LOADING...' : isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
           </button>
         </form>
 
         <button
           onClick={() => setIsSignUp(!isSignUp)}
-          className="w-full text-center text-sm text-muted-foreground"
+          className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          {isSignUp ? 'Sign in instead' : 'Create account'}
+          {isSignUp
+            ? 'Already have an account? Sign in'
+            : "Don't have an account? Sign up"}
         </button>
       </div>
     </div>
