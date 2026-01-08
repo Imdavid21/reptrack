@@ -177,6 +177,75 @@ export type Database = {
         }
         Relationships: []
       }
+      water_reminder_configs: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          frequency_minutes: number
+          id: string
+          is_active: boolean | null
+          start_time: string
+          telegram_chat_id: string | null
+          telegram_username: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string
+          frequency_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          start_time?: string
+          telegram_chat_id?: string | null
+          telegram_username: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          frequency_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          start_time?: string
+          telegram_chat_id?: string | null
+          telegram_username?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      water_reminder_logs: {
+        Row: {
+          attempt_number: number
+          confirmed_at: string | null
+          created_at: string | null
+          id: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attempt_number?: number
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workouts: {
         Row: {
           created_at: string | null
