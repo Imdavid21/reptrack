@@ -354,6 +354,49 @@ serve(async (req) => {
       });
     }
 
+    // Action: Test the bot connection
+    if (action === "test") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: config } = await supabase
+        .from("water_reminder_configs")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!config || !config.telegram_chat_id) {
+        return new Response(
+          JSON.stringify({ error: "No chat ID found. Please message @FitTrackWaterBot first." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const success = await sendTelegramMessage(
+        config.telegram_chat_id,
+        "🔔 <b>Test message from FitTrack!</b>\n\nYour Telegram connection is working correctly. 🎉"
+      );
+
+      return new Response(JSON.stringify({ success }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
