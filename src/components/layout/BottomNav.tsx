@@ -14,43 +14,17 @@ const navItems = [
 export function BottomNav() {
   return (
     <nav className="tab-bar z-50">
-      <div className="flex items-center justify-around py-1">
+      <div className="flex items-center justify-around py-2">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              cn(
-                'tab-item min-w-[52px] rounded-xl press-effect',
-                isActive && 'tab-item-active'
-              )
+              cn('tab-item', isActive && 'tab-item-active')
             }
           >
-            {({ isActive }) => (
-              <>
-                <div
-                  className={cn(
-                    'p-2 rounded-xl transition-all duration-200',
-                    isActive && 'bg-primary/10'
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      'h-5 w-5 transition-all duration-200',
-                      isActive && 'text-primary'
-                    )}
-                  />
-                </div>
-                <span
-                  className={cn(
-                    'text-2xs mt-0.5 font-medium transition-colors duration-200',
-                    isActive && 'text-primary'
-                  )}
-                >
-                  {label}
-                </span>
-              </>
-            )}
+            <Icon className="h-5 w-5" strokeWidth={1.5} />
+            <span className="text-2xs mt-1">{label}</span>
           </NavLink>
         ))}
       </div>
