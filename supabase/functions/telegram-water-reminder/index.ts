@@ -81,24 +81,26 @@ serve(async (req) => {
         const username = update.message.from?.username;
         const text = update.message.text?.toLowerCase().trim();
 
-        // User is starting the bot - save their chat_id
-        if (text === "/start") {
+        // User is starting the bot - save their chat_id (handle /start or /start <param>)
+        if (text === "/start" || text?.startsWith("/start ")) {
           if (username) {
             // Update the user's config with their chat_id
-            await supabase
+            const { error: err1 } = await supabase
               .from("water_reminder_configs")
               .update({ telegram_chat_id: chatId.toString() })
               .eq("telegram_username", `@${username}`);
 
-            await supabase
+            const { error: err2 } = await supabase
               .from("water_reminder_configs")
               .update({ telegram_chat_id: chatId.toString() })
               .eq("telegram_username", username);
+            
+            console.log("Updated chat_id for username:", username, "errors:", err1, err2);
           }
 
           await sendTelegramMessage(
             chatId,
-            "💧 <b>Welcome to FitTrack Water Reminder!</b>\n\n" +
+            "💧 <b>Welcome to Water Reminder Bot!</b>\n\n" +
             "I'll remind you to drink water throughout the day.\n\n" +
             "When you receive a reminder, reply with:\n" +
             "• <b>done</b> or <b>✓</b> - to confirm you drank water\n" +
