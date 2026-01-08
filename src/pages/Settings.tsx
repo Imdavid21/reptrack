@@ -293,35 +293,57 @@ export default function Settings() {
         <div className="card-brutalist">
           <h3 className="section-header">IOS SHORTCUTS</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Use iOS Shortcuts to quickly log workouts and water intake.
+            One-tap to add shortcuts to your iPhone. Works with Siri!
           </p>
 
           <div className="space-y-4">
             <div className="border border-border p-4">
-              <div className="font-bold mb-2">Quick Log Workout</div>
+              <div className="font-bold mb-2">🏋️ Log Workout</div>
               <p className="text-xs text-muted-foreground mb-3">
-                Opens the app and pre-selects today's workout
+                Say "Hey Siri, log workout" to open today's session
               </p>
-              <code className="text-xs bg-muted px-2 py-1 block break-all">
-                fitnesstrack://log-workout?day=1
-              </code>
+              <a
+                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Workout&input=text&text=fitnesstrack://log-workout?day=1"
+                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
+              >
+                <ExternalLink className="h-4 w-4" />
+                ADD TO SHORTCUTS
+              </a>
             </div>
 
             <div className="border border-border p-4">
-              <div className="font-bold mb-2">Quick Log Water</div>
+              <div className="font-bold mb-2">💧 Log Water (250ml)</div>
               <p className="text-xs text-muted-foreground mb-3">
-                Instantly log 250ml of water
+                Say "Hey Siri, log water" to instantly add 250ml
               </p>
-              <code className="text-xs bg-muted px-2 py-1 block break-all">
-                fitnesstrack://log-water?amount=0.25
-              </code>
+              <a
+                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Water&input=text&text=fitnesstrack://log-water?amount=0.25"
+                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
+              >
+                <ExternalLink className="h-4 w-4" />
+                ADD TO SHORTCUTS
+              </a>
+            </div>
+
+            <div className="border border-border p-4">
+              <div className="font-bold mb-2">💧 Log Water (500ml)</div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Quick-log a full bottle of water
+              </p>
+              <a
+                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Water%20Large&input=text&text=fitnesstrack://log-water?amount=0.5"
+                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
+              >
+                <ExternalLink className="h-4 w-4" />
+                ADD TO SHORTCUTS
+              </a>
             </div>
           </div>
 
-          <div className="mt-4 text-center">
-            <Smartphone className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+          <div className="mt-4 text-center border border-dashed border-border p-3">
+            <Smartphone className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-xs text-muted-foreground">
-              Copy URLs and add to iOS Shortcuts app
+              Tap buttons above on your iPhone to add shortcuts directly
             </p>
           </div>
         </div>
