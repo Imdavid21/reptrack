@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 export function Heatmap() {
   const { workouts } = useWorkouts();
 
-  const { cells, weeks } = useMemo(() => {
+  const { weeks } = useMemo(() => {
     const today = new Date();
     const startDate = startOfWeek(subDays(today, 90), { weekStartsOn: 1 });
     const cells: { date: string; intensity: number }[] = [];
@@ -50,27 +50,33 @@ export function Heatmap() {
     <div className="card-brutalist">
       <h3 className="section-header">90-DAY ACTIVITY</h3>
       
-      <div className="flex gap-1">
-        {weeks.map((week, weekIdx) => (
-          <div key={weekIdx} className="flex flex-col gap-1">
-            {week.map((day) => (
-              <div
-                key={day.date}
-                className={cn('heat-cell', getIntensityClass(day.intensity))}
-                title={`${day.date}${day.intensity > 0 ? ' - Workout logged' : ''}`}
-              />
-            ))}
-          </div>
-        ))}
+      {/* Full-width responsive heatmap grid */}
+      <div className="w-full overflow-x-auto scrollbar-hide">
+        <div className="flex justify-between gap-[2px] min-w-0">
+          {weeks.map((week, weekIdx) => (
+            <div key={weekIdx} className="flex flex-col gap-[2px] flex-1">
+              {week.map((day) => (
+                <div
+                  key={day.date}
+                  className={cn(
+                    'aspect-square w-full min-w-[8px] max-w-[20px] border border-border',
+                    getIntensityClass(day.intensity)
+                  )}
+                  title={`${day.date}${day.intensity > 0 ? ' - Workout logged' : ''}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
         <span>Less</span>
-        <div className="heat-cell bg-heat-0" />
-        <div className="heat-cell bg-heat-1" />
-        <div className="heat-cell bg-heat-2" />
-        <div className="heat-cell bg-heat-3" />
-        <div className="heat-cell bg-heat-4" />
+        <div className="w-3 h-3 border border-border bg-heat-0" />
+        <div className="w-3 h-3 border border-border bg-heat-1" />
+        <div className="w-3 h-3 border border-border bg-heat-2" />
+        <div className="w-3 h-3 border border-border bg-heat-3" />
+        <div className="w-3 h-3 border border-border bg-heat-4" />
         <span>More</span>
       </div>
     </div>
