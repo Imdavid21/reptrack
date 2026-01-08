@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { LogOut, Send, Smartphone, Moon, Sun } from 'lucide-react';
+import { useWaterReminderConfig } from '@/hooks/useWaterReminderConfig';
+import { LogOut, Send, Smartphone, Moon, Sun, Loader2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -10,32 +11,59 @@ import { toast } from 'sonner';
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { config, isLoading, saveConfig, isSaving, toggleActive, isToggling } = useWaterReminderConfig();
   
   // Telegram automation state
   const [telegramUsername, setTelegramUsername] = useState('');
   const [reminderInterval, setReminderInterval] = useState('60');
   const [startHour, setStartHour] = useState('08:00');
   const [endHour, setEndHour] = useState('22:00');
-  const [isAutomationActive, setIsAutomationActive] = useState(false);
+
+  // Load config when available
+  useEffect(() => {
+    if (config) {
+      setTelegramUsername(config.telegram_username || '');
+      setReminderInterval(config.frequency_minutes?.toString() || '60');
+      setStartHour(config.start_time || '08:00');
+      setEndHour(config.end_time || '22:00');
+    }
+  }, [config]);
 
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out');
   };
 
-  const handleActivateAutomation = () => {
+  const handleActivateAutomation = async () => {
     if (!telegramUsername.trim()) {
       toast.error('Please enter your Telegram username');
       return;
     }
-    setIsAutomationActive(true);
-    toast.success('Water reminders activated! You will receive Telegram messages.');
+
+    try {
+      await saveConfig({
+        telegram_username: telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`,
+        frequency_minutes: parseInt(reminderInterval),
+        start_time: startHour,
+        end_time: endHour,
+        is_active: true,
+      });
+      toast.success('Water reminders activated! Message @FitTrackWaterBot on Telegram to start.');
+    } catch (error) {
+      toast.error('Failed to save settings');
+    }
   };
 
-  const handleDeactivateAutomation = () => {
-    setIsAutomationActive(false);
-    toast.success('Water reminders deactivated');
+  const handleDeactivateAutomation = async () => {
+    try {
+      await toggleActive(false);
+      toast.success('Water reminders deactivated');
+    } catch (error) {
+      toast.error('Failed to deactivate');
+    }
   };
+
+  const isActive = config?.is_active || false;
 
   return (
     <MainLayout title="SETTINGS">
@@ -87,83 +115,106 @@ export default function Settings() {
             If you don't respond, we'll send up to 2 follow-up reminders.
           </p>
           
-          <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">TELEGRAM USERNAME</Label>
-              <Input
-                type="text"
-                placeholder="@yourusername"
-                value={telegramUsername}
-                onChange={(e) => setTelegramUsername(e.target.value)}
-                className="input-terminal mt-1"
-                disabled={isAutomationActive}
-              />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-
-            <div>
-              <Label className="text-xs text-muted-foreground">REMINDER INTERVAL</Label>
-              <select
-                value={reminderInterval}
-                onChange={(e) => setReminderInterval(e.target.value)}
-                className="input-terminal mt-1 w-full bg-background"
-                disabled={isAutomationActive}
-              >
-                <option value="60">Every hour</option>
-                <option value="90">Every 1.5 hours</option>
-                <option value="120">Every 2 hours</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          ) : (
+            <div className="space-y-4">
               <div>
-                <Label className="text-xs text-muted-foreground">START TIME</Label>
+                <Label className="text-xs text-muted-foreground">TELEGRAM USERNAME</Label>
                 <Input
-                  type="time"
-                  value={startHour}
-                  onChange={(e) => setStartHour(e.target.value)}
+                  type="text"
+                  placeholder="@yourusername"
+                  value={telegramUsername}
+                  onChange={(e) => setTelegramUsername(e.target.value)}
                   className="input-terminal mt-1"
-                  disabled={isAutomationActive}
+                  disabled={isActive}
                 />
               </div>
+
               <div>
-                <Label className="text-xs text-muted-foreground">END TIME</Label>
-                <Input
-                  type="time"
-                  value={endHour}
-                  onChange={(e) => setEndHour(e.target.value)}
-                  className="input-terminal mt-1"
-                  disabled={isAutomationActive}
-                />
+                <Label className="text-xs text-muted-foreground">REMINDER INTERVAL</Label>
+                <select
+                  value={reminderInterval}
+                  onChange={(e) => setReminderInterval(e.target.value)}
+                  className="input-terminal mt-1 w-full bg-background"
+                  disabled={isActive}
+                >
+                  <option value="60">Every hour</option>
+                  <option value="90">Every 1.5 hours</option>
+                  <option value="120">Every 2 hours</option>
+                </select>
               </div>
-            </div>
 
-            <div className="text-xs text-muted-foreground border border-border p-3">
-              <strong>How it works:</strong>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>You'll receive a Telegram message asking you to drink water</li>
-                <li>Reply "done" or "✓" to confirm you drank</li>
-                <li>If no response in 5 min, we'll send a 2nd reminder</li>
-                <li>If still no response, a final 3rd reminder after 5 more min</li>
-              </ul>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">START TIME</Label>
+                  <Input
+                    type="time"
+                    value={startHour}
+                    onChange={(e) => setStartHour(e.target.value)}
+                    className="input-terminal mt-1"
+                    disabled={isActive}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">END TIME</Label>
+                  <Input
+                    type="time"
+                    value={endHour}
+                    onChange={(e) => setEndHour(e.target.value)}
+                    className="input-terminal mt-1"
+                    disabled={isActive}
+                  />
+                </div>
+              </div>
 
-            {isAutomationActive ? (
-              <button
-                onClick={handleDeactivateAutomation}
-                className="btn-brutalist w-full flex items-center justify-center gap-2 border-destructive text-destructive"
-              >
-                DEACTIVATE REMINDERS
-              </button>
-            ) : (
-              <button
-                onClick={handleActivateAutomation}
-                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
-              >
-                <Send className="h-4 w-4" />
-                ACTIVATE REMINDERS
-              </button>
-            )}
-          </div>
+              <div className="text-xs text-muted-foreground border border-border p-3">
+                <strong>How it works:</strong>
+                <ol className="mt-2 space-y-1 list-decimal list-inside">
+                  <li>Message <strong>@FitTrackWaterBot</strong> on Telegram and send <code>/start</code></li>
+                  <li>You'll receive reminders during your active hours</li>
+                  <li>Reply <strong>done</strong> or <strong>✓</strong> to confirm you drank</li>
+                  <li>If no response in 5 min, 2 more follow-up reminders</li>
+                </ol>
+              </div>
+
+              {isActive && (
+                <div className="border border-success/50 bg-success/10 p-3 text-sm">
+                  <div className="flex items-center gap-2 text-success">
+                    <Send className="h-4 w-4" />
+                    <strong>Active</strong>
+                  </div>
+                  <p className="mt-1 text-muted-foreground">
+                    {config?.telegram_chat_id 
+                      ? 'Connected and sending reminders!'
+                      : 'Message @FitTrackWaterBot on Telegram to connect.'}
+                  </p>
+                </div>
+              )}
+
+              {isActive ? (
+                <button
+                  onClick={handleDeactivateAutomation}
+                  disabled={isToggling}
+                  className="btn-brutalist w-full flex items-center justify-center gap-2 border-destructive text-destructive"
+                >
+                  {isToggling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  DEACTIVATE REMINDERS
+                </button>
+              ) : (
+                <button
+                  onClick={handleActivateAutomation}
+                  disabled={isSaving}
+                  className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  ACTIVATE REMINDERS
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* iOS Shortcuts */}
