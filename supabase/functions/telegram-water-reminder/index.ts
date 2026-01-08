@@ -397,6 +397,50 @@ serve(async (req) => {
       });
     }
 
+    // Action: Setup webhook automatically
+    if (action === "setup-webhook") {
+      if (!TELEGRAM_BOT_TOKEN) {
+        return new Response(
+          JSON.stringify({ error: "TELEGRAM_BOT_TOKEN not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-water-reminder`;
+      
+      try {
+        const response = await fetch(
+          `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: webhookUrl }),
+          }
+        );
+
+        const data = await response.json();
+        console.log("Webhook setup response:", data);
+
+        if (data.ok) {
+          return new Response(
+            JSON.stringify({ success: true, message: "Webhook configured successfully!", webhook_url: webhookUrl }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          return new Response(
+            JSON.stringify({ error: data.description || "Failed to set webhook" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (error) {
+        console.error("Webhook setup error:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to configure webhook" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

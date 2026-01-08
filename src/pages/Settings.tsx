@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useWaterReminderConfig } from '@/hooks/useWaterReminderConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube } from 'lucide-react';
+import { LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube, Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -20,6 +20,8 @@ export default function Settings() {
   const [startHour, setStartHour] = useState('08:00');
   const [endHour, setEndHour] = useState('22:00');
   const [isTesting, setIsTesting] = useState(false);
+  const [isSettingUpWebhook, setIsSettingUpWebhook] = useState(false);
+  const [webhookConfigured, setWebhookConfigured] = useState(false);
 
   // Load config when available
   useEffect(() => {
@@ -97,6 +99,34 @@ export default function Settings() {
       toast.error('Failed to send test message');
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleSetupWebhook = async () => {
+    setIsSettingUpWebhook(true);
+    try {
+      const response = await fetch(
+        `https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/telegram-water-reminder?action=setup-webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setWebhookConfigured(true);
+        toast.success('Telegram webhook configured successfully!');
+      } else {
+        toast.error(result.error || 'Failed to setup webhook');
+      }
+    } catch (error) {
+      toast.error('Failed to setup webhook');
+    } finally {
+      setIsSettingUpWebhook(false);
     }
   };
 
@@ -207,9 +237,28 @@ export default function Settings() {
                 </div>
               </div>
 
+              {/* Webhook Setup Button */}
+              {!webhookConfigured && (
+                <button
+                  onClick={handleSetupWebhook}
+                  disabled={isSettingUpWebhook}
+                  className="btn-brutalist w-full flex items-center justify-center gap-2 border-accent text-accent"
+                >
+                  {isSettingUpWebhook ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
+                  SETUP TELEGRAM WEBHOOK
+                </button>
+              )}
+
+              {webhookConfigured && (
+                <div className="border border-success/50 bg-success/10 p-2 text-xs text-success text-center">
+                  ✓ Webhook configured
+                </div>
+              )}
+
               <div className="text-xs text-muted-foreground border border-border p-3">
                 <strong>How it works:</strong>
                 <ol className="mt-2 space-y-1 list-decimal list-inside">
+                  <li>Click "Setup Telegram Webhook" above (one-time setup)</li>
                   <li>Message <strong>@FitTrackWaterBot</strong> on Telegram and send <code>/start</code></li>
                   <li>You'll receive reminders during your active hours</li>
                   <li>Reply <strong>done</strong> or <strong>✓</strong> to confirm you drank</li>
