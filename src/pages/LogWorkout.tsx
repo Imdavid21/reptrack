@@ -4,7 +4,7 @@ import { DaySelector } from '@/components/workout/DaySelector';
 import { ExerciseList } from '@/components/workout/ExerciseList';
 import { HabitsForm } from '@/components/workout/HabitsForm';
 import { defaultRoutine } from '@/lib/workoutPresets';
-import { useWorkouts, WorkoutExercise, Habits } from '@/hooks/useWorkouts';
+import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
@@ -29,6 +29,15 @@ const defaultHabits: Habits = {
   },
 };
 
+// Parse target reps like "4x8-10" into number of sets and rep range
+function parseTargetReps(targetReps: string): { sets: number; reps: string } {
+  const match = targetReps.match(/^(\d+)x(.+)$/);
+  if (match) {
+    return { sets: parseInt(match[1], 10), reps: match[2] };
+  }
+  return { sets: 3, reps: targetReps }; // Default to 3 sets
+}
+
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { createWorkout, isCreating, workouts } = useWorkouts();
@@ -43,20 +52,29 @@ export default function LogWorkout() {
   const handleDaySelect = (day: string) => {
     setSelectedDay(day);
     
-    // Load exercises from routine
+    // Load exercises from routine with individual sets
     const dayData = defaultRoutine.days[day];
     if (dayData) {
       setExercises(
-        dayData.exercises.map((ex, idx) => ({
-          name: ex.name,
-          category: ex.category,
-          target_weight: ex.targetWeight,
-          target_reps: ex.targetReps,
-          actual_weight: '',
-          actual_reps: '',
-          completed: false,
-          sort_order: idx,
-        }))
+        dayData.exercises.map((ex, idx) => {
+          const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
+          
+          const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
+            setNumber: i + 1,
+            targetWeight: ex.targetWeight,
+            targetReps: reps,
+            actualWeight: '',
+            actualReps: '',
+            completed: false,
+          }));
+
+          return {
+            name: ex.name,
+            category: ex.category,
+            sets: setsArray,
+            sort_order: idx,
+          };
+        })
       );
     }
     
@@ -64,18 +82,24 @@ export default function LogWorkout() {
   };
 
   const handleExercisesDone = () => {
-    const completedCount = exercises.filter(ex => ex.completed).length;
+    const completedCount = exercises.reduce(
+      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
+      0
+    );
     if (completedCount === 0) {
-      toast.error('Complete at least one exercise');
+      toast.error('Complete at least one set');
       return;
     }
     setStep('habits');
   };
 
   const handleSubmit = async () => {
-    const completedCount = exercises.filter(ex => ex.completed).length;
+    const completedCount = exercises.reduce(
+      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
+      0
+    );
     if (completedCount === 0) {
-      toast.error('Complete at least one exercise');
+      toast.error('Complete at least one set');
       return;
     }
 
@@ -103,10 +127,14 @@ export default function LogWorkout() {
     }
   };
 
-  const completedCount = useMemo(
-    () => exercises.filter((ex) => ex.completed).length,
-    [exercises]
-  );
+  const { completedSets, totalSets } = useMemo(() => {
+    const total = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+    const completed = exercises.reduce(
+      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
+      0
+    );
+    return { completedSets: completed, totalSets: total };
+  }, [exercises]);
 
   return (
     <MainLayout title="LOG WORKOUT">
@@ -152,9 +180,9 @@ export default function LogWorkout() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold tabular-nums">
-                  {completedCount}/{exercises.length}
+                  {completedSets}/{totalSets}
                 </div>
-                <div className="text-xs text-muted-foreground">COMPLETED</div>
+                <div className="text-xs text-muted-foreground">SETS DONE</div>
               </div>
             </div>
 
@@ -162,7 +190,7 @@ export default function LogWorkout() {
 
             <button
               onClick={handleExercisesDone}
-              disabled={completedCount === 0}
+              disabled={completedSets === 0}
               className="btn-brutalist btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CONTINUE TO HABITS

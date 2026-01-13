@@ -2,15 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+export interface ExerciseSet {
+  setNumber: number;
+  targetWeight: string;
+  targetReps: string;
+  actualWeight: string;
+  actualReps: string;
+  completed: boolean;
+}
+
 export interface WorkoutExercise {
   id?: string;
   name: string;
   category: string;
-  target_weight: string;
-  target_reps: string;
-  actual_weight?: string;
-  actual_reps?: string;
-  completed: boolean;
+  sets: ExerciseSet[];
   sort_order: number;
 }
 
@@ -89,20 +94,23 @@ export function useWorkouts() {
 
       if (workoutError) throw workoutError;
 
-      // Create exercises
-      const exercisesToInsert = workout.exercises
-        .filter(ex => ex.completed)
-        .map((ex, idx) => ({
+      // Create exercises - flatten sets into individual exercise records
+      const exercisesToInsert = workout.exercises.flatMap((ex, exIdx) => {
+        const completedSets = ex.sets.filter(set => set.completed);
+        if (completedSets.length === 0) return [];
+        
+        return completedSets.map((set, setIdx) => ({
           workout_id: workoutData.id,
-          name: ex.name,
+          name: `${ex.name} (Set ${set.setNumber})`,
           category: ex.category,
-          target_weight: ex.target_weight,
-          target_reps: ex.target_reps,
-          actual_weight: ex.actual_weight,
-          actual_reps: ex.actual_reps,
-          completed: ex.completed,
-          sort_order: idx,
+          target_weight: set.targetWeight,
+          target_reps: set.targetReps,
+          actual_weight: set.actualWeight,
+          actual_reps: set.actualReps,
+          completed: set.completed,
+          sort_order: exIdx * 100 + setIdx,
         }));
+      });
 
       if (exercisesToInsert.length > 0) {
         const { error: exercisesError } = await supabase
