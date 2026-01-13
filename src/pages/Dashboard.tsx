@@ -5,8 +5,6 @@ import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { format } from 'date-fns';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { workouts, isLoading } = useWorkouts();
@@ -26,30 +24,25 @@ export default function Dashboard() {
 
         {/* Last Workout */}
         {lastWorkout && (
-          <Link to="/history" className="card-premium flex items-center justify-between hover-lift press-effect block">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-success" />
-              </div>
+          <div className="card-brutalist">
+            <h3 className="section-header">LAST SESSION</h3>
+            <div className="flex items-center justify-between">
               <div>
-                <span className="font-semibold">{lastWorkout.day_name}</span>
-                <p className="text-sm text-muted-foreground">
+                <div className="font-bold">{lastWorkout.day_name}</div>
+                <div className="text-sm text-muted-foreground">
                   {format(new Date(lastWorkout.date), 'EEEE, MMM d')}
-                </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-lg font-bold tabular-nums text-gradient">
+                <div className="text-2xl font-bold tabular-nums">
                   W{lastWorkout.week_number}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {lastWorkout.day}
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </Link>
+          </div>
         )}
 
         {/* Activity Heatmap */}
@@ -57,13 +50,12 @@ export default function Dashboard() {
 
         {/* Empty state */}
         {!isLoading && workouts.length === 0 && (
-          <div className="card-premium text-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🏋️</span>
-            </div>
-            <h3 className="font-semibold text-lg mb-2">Start Your Journey</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-              Log your first workout to begin your 12-week transformation.
+          <div className="card-brutalist text-center py-8">
+            <p className="text-muted-foreground">
+              No workouts logged yet.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Start your 12-week transformation today!
             </p>
           </div>
         )}
