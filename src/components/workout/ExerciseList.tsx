@@ -140,54 +140,24 @@ export function ExerciseList({ exercises, onChange }: ExerciseListProps) {
                               />
                               <span className="text-sm font-medium w-12">Set {set.setNumber}</span>
                               
-                              {/* Target inputs */}
+                              {/* Weight and Reps inputs with target as placeholder */}
                               <div className="flex-1 grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="text-[10px] text-muted-foreground uppercase">Target</label>
-                                  <div className="flex gap-1">
-                                    <Input
-                                      placeholder="kg"
-                                      value={set.targetWeight}
-                                      onChange={(e) =>
-                                        handleSetChange(exerciseIndex, setIndex, 'targetWeight', e.target.value)
-                                      }
-                                      className="input-terminal h-8 text-xs"
-                                    />
-                                    <Input
-                                      placeholder="reps"
-                                      value={set.targetReps}
-                                      onChange={(e) =>
-                                        handleSetChange(exerciseIndex, setIndex, 'targetReps', e.target.value)
-                                      }
-                                      className="input-terminal h-8 text-xs"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Actual inputs - only show when completed */}
-                                {set.completed && (
-                                  <div className="animate-fade-in">
-                                    <label className="text-[10px] text-muted-foreground uppercase">Actual</label>
-                                    <div className="flex gap-1">
-                                      <Input
-                                        placeholder="kg"
-                                        value={set.actualWeight}
-                                        onChange={(e) =>
-                                          handleSetChange(exerciseIndex, setIndex, 'actualWeight', e.target.value)
-                                        }
-                                        className="input-terminal h-8 text-xs"
-                                      />
-                                      <Input
-                                        placeholder="reps"
-                                        value={set.actualReps}
-                                        onChange={(e) =>
-                                          handleSetChange(exerciseIndex, setIndex, 'actualReps', e.target.value)
-                                        }
-                                        className="input-terminal h-8 text-xs"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
+                                <Input
+                                  placeholder={set.targetWeight}
+                                  value={set.actualWeight}
+                                  onChange={(e) =>
+                                    handleSetChange(exerciseIndex, setIndex, 'actualWeight', e.target.value)
+                                  }
+                                  className="input-terminal h-8 text-sm"
+                                />
+                                <Input
+                                  placeholder={set.targetReps}
+                                  value={set.actualReps}
+                                  onChange={(e) =>
+                                    handleSetChange(exerciseIndex, setIndex, 'actualReps', e.target.value)
+                                  }
+                                  className="input-terminal h-8 text-sm"
+                                />
                               </div>
 
                               {/* Remove set button */}
