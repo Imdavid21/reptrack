@@ -289,61 +289,55 @@ export default function Settings() {
           )}
         </div>
 
-        {/* iOS Shortcuts */}
+        {/* Add to Home Screen */}
         <div className="card-brutalist">
-          <h3 className="section-header">IOS SHORTCUTS</h3>
+          <h3 className="section-header">ADD TO HOME SCREEN</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            One-tap to add shortcuts to your iPhone. Works with Siri!
+            Install FitTrack as an app on your iPhone for instant access.
           </p>
 
-          <div className="space-y-4">
-            <div className="border border-border p-4">
-              <div className="font-bold mb-2">🏋️ Log Workout</div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Say "Hey Siri, log workout" to open today's session
-              </p>
-              <a
-                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Workout&input=text&text=fitnesstrack://log-workout?day=1"
-                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
-              >
-                <ExternalLink className="h-4 w-4" />
-                ADD TO SHORTCUTS
-              </a>
+          <div className="border border-primary/30 bg-primary/5 p-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
+                1
+              </div>
+              <div>
+                <div className="font-medium">Tap the Share button</div>
+                <p className="text-xs text-muted-foreground">
+                  In Safari, tap the share icon (square with arrow) at the bottom of the screen
+                </p>
+              </div>
             </div>
 
-            <div className="border border-border p-4">
-              <div className="font-bold mb-2">💧 Log Water (250ml)</div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Say "Hey Siri, log water" to instantly add 250ml
-              </p>
-              <a
-                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Water&input=text&text=fitnesstrack://log-water?amount=0.25"
-                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
-              >
-                <ExternalLink className="h-4 w-4" />
-                ADD TO SHORTCUTS
-              </a>
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
+                2
+              </div>
+              <div>
+                <div className="font-medium">Select "Add to Home Screen"</div>
+                <p className="text-xs text-muted-foreground">
+                  Scroll down in the share sheet and tap "Add to Home Screen"
+                </p>
+              </div>
             </div>
 
-            <div className="border border-border p-4">
-              <div className="font-bold mb-2">💧 Log Water (500ml)</div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Quick-log a full bottle of water
-              </p>
-              <a
-                href="shortcuts://x-callback-url/run-shortcut?name=Log%20Water%20Large&input=text&text=fitnesstrack://log-water?amount=0.5"
-                className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2 text-center"
-              >
-                <ExternalLink className="h-4 w-4" />
-                ADD TO SHORTCUTS
-              </a>
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shrink-0">
+                3
+              </div>
+              <div>
+                <div className="font-medium">Tap "Add"</div>
+                <p className="text-xs text-muted-foreground">
+                  Confirm the name and tap Add in the top right corner
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="mt-4 text-center border border-dashed border-border p-3">
             <Smartphone className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-xs text-muted-foreground">
-              Tap buttons above on your iPhone to add shortcuts directly
+              Once installed, open FitTrack from your home screen for a full-screen app experience
             </p>
           </div>
         </div>

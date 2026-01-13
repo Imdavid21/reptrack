@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { startOfDay, endOfDay } from 'date-fns';
+import { useEffect } from 'react';
 
 export interface WaterLog {
   id: string;
@@ -36,6 +37,40 @@ export function useWaterLogs() {
     },
     enabled: !!user,
   });
+
+  // Subscribe to realtime updates for water_logs
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('water-logs-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'water_logs',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Check if this log is from today
+          const logTimestamp = new Date(payload.new.timestamp);
+          const today = new Date();
+          if (
+            logTimestamp >= startOfDay(today) &&
+            logTimestamp <= endOfDay(today)
+          ) {
+            // Invalidate query to refresh data
+            queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   const addWaterLogMutation = useMutation({
     mutationFn: async (amount: number = 0.25) => {
