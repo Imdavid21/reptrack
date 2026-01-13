@@ -1,65 +1,40 @@
+import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
+import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
-import { QuickActions } from '@/components/dashboard/QuickActions';
-import { useWorkouts } from '@/hooks/useWorkouts';
-import { format } from 'date-fns';
+import { Dumbbell, Plus } from 'lucide-react';
 
 export default function Dashboard() {
-  const { workouts, isLoading } = useWorkouts();
-  const lastWorkout = workouts[0];
-
   return (
     <MainLayout>
-      <div className="space-y-6 animate-fade-in">
-        {/* Hero Stats */}
-        <StatsGrid />
+      <div className="space-y-4 animate-fade-in pb-20">
+        {/* Main Progress */}
+        <ProgressHeader />
 
-        {/* Quick Actions */}
-        <QuickActions />
+        {/* Weekly Overview */}
+        <WeeklyProgress />
 
         {/* Water Tracking */}
         <WaterTracker />
 
-        {/* Last Workout */}
-        {lastWorkout && (
-          <div className="card-brutalist">
-            <h3 className="section-header">LAST SESSION</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold">{lastWorkout.day_name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {format(new Date(lastWorkout.date), 'EEEE, MMM d')}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold tabular-nums">
-                  W{lastWorkout.week_number}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {lastWorkout.day}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Recent Activity */}
+        <RecentActivity />
 
         {/* Activity Heatmap */}
         <Heatmap />
-
-        {/* Empty state */}
-        {!isLoading && workouts.length === 0 && (
-          <div className="card-brutalist text-center py-8">
-            <p className="text-muted-foreground">
-              No workouts logged yet.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Start your 12-week transformation today!
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* Floating Action Button */}
+      <Link
+        to="/log"
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+        aria-label="Log workout"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </MainLayout>
   );
 }
