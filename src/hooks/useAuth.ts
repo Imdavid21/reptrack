@@ -48,6 +48,27 @@ export function useAuth() {
     return { error };
   };
 
+  const resetPassword = async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?type=recovery`,
+    });
+    return { data, error };
+  };
+
+  const updateEmail = async (newEmail: string) => {
+    const { data, error } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+    return { data, error };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return { data, error };
+  };
+
   return {
     user,
     session,
@@ -55,5 +76,8 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
+    resetPassword,
+    updateEmail,
+    updatePassword,
   };
 }
