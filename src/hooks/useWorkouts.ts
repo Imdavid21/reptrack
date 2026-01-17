@@ -75,10 +75,16 @@ export function useWorkouts() {
       day: string;
       day_name: string;
       week_number: number;
+      date?: Date;
       exercises: WorkoutExercise[];
       habits: Habits;
     }) => {
       if (!user) throw new Error('Not authenticated');
+
+      // Format date for Supabase (YYYY-MM-DD)
+      const workoutDate = workout.date 
+        ? workout.date.toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
       // Create workout
       const { data: workoutData, error: workoutError } = await supabase
@@ -88,6 +94,7 @@ export function useWorkouts() {
           day: workout.day,
           day_name: workout.day_name,
           week_number: workout.week_number,
+          date: workoutDate,
         })
         .select()
         .single();

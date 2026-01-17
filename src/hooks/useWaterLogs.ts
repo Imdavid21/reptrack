@@ -43,34 +43,43 @@ export function useWaterLogs() {
     if (!user) return;
 
     const channel = supabase
-      .channel('water-logs-realtime')
+      .channel(`water-logs-realtime-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'water_logs',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          console.log('Water log realtime update:', payload);
           // Check if this log is from today
-          const logTimestamp = new Date(payload.new.timestamp);
-          const today = new Date();
-          if (
-            logTimestamp >= startOfDay(today) &&
-            logTimestamp <= endOfDay(today)
-          ) {
-            // Invalidate query to refresh data
+          const timestamp = (payload.new as WaterLog)?.timestamp || (payload.old as WaterLog)?.timestamp;
+          if (timestamp) {
+            const logTimestamp = new Date(timestamp);
+            const today = new Date();
+            if (
+              logTimestamp >= startOfDay(today) &&
+              logTimestamp <= endOfDay(today)
+            ) {
+              // Invalidate query to refresh data
+              queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
+            }
+          } else {
+            // If no timestamp, still refresh to be safe
             queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Water logs realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user, queryClient, todayStart]);
 
   const addWaterLogMutation = useMutation({
     mutationFn: async (amount: number = 0.25) => {

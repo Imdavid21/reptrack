@@ -40,17 +40,19 @@ function parseTargetReps(targetReps: string): { sets: number; reps: string } {
 
 export default function LogWorkout() {
   const navigate = useNavigate();
-  const { createWorkout, isCreating, workouts } = useWorkouts();
+  const { createWorkout, isCreating } = useWorkouts();
   
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [habits, setHabits] = useState<Habits>(defaultHabits);
 
-  const weekNumber = Math.ceil((workouts.length + 1) / 6);
-
-  const handleDaySelect = (day: string) => {
+  const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
+    setSelectedDate(date);
+    setWeekNumber(week);
     
     // Load exercises from routine with individual sets
     const dayData = defaultRoutine.days[day];
@@ -108,6 +110,7 @@ export default function LogWorkout() {
         day: selectedDay,
         day_name: defaultRoutine.days[selectedDay].name,
         week_number: weekNumber,
+        date: selectedDate,
         exercises,
         habits,
       });
