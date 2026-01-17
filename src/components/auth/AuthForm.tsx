@@ -1,35 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
+
 export function AuthForm() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword } = useAuth();
+
+  // Check for recovery mode from URL
+  useEffect(() => {
+    if (searchParams.get('type') === 'recovery') {
+      setMode('reset');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      if (mode === 'signup') {
         const { error } = await signUp(email, password);
         if (error) throw error;
         toast.success('Account created! You can now sign in.');
-        setIsSignUp(false);
-      } else {
+        setMode('signin');
+      } else if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast.success('Welcome back!');
+      } else if (mode === 'forgot') {
+        const { error } = await resetPassword(email);
+        if (error) throw error;
+        toast.success('Password reset email sent! Check your inbox.');
+        setMode('signin');
+      } else if (mode === 'reset') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        if (password.length < 6) {
+          throw new Error('Password must be at least 6 characters');
+        }
+        const { error } = await updatePassword(password);
+        if (error) throw error;
+        toast.success('Password updated successfully!');
+        setMode('signin');
       }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'signup': return 'CREATE ACCOUNT';
+      case 'forgot': return 'FORGOT PASSWORD';
+      case 'reset': return 'SET NEW PASSWORD';
+      default: return 'SIGN IN';
+    }
+  };
+
+  const getButtonText = () => {
+    if (loading) return 'LOADING...';
+    switch (mode) {
+      case 'signup': return 'CREATE ACCOUNT';
+      case 'forgot': return 'SEND RESET LINK';
+      case 'reset': return 'UPDATE PASSWORD';
+      default: return 'SIGN IN';
     }
   };
 
@@ -39,53 +86,104 @@ export function AuthForm() {
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-widest">FITTRACK</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            12-WEEK TRANSFORMATION
+            {mode === 'forgot' ? 'RESET YOUR PASSWORD' : 
+             mode === 'reset' ? 'ENTER NEW PASSWORD' :
+             '12-WEEK TRANSFORMATION'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label className="text-xs text-muted-foreground">EMAIL</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="input-terminal mt-1"
-            />
-          </div>
+          {mode !== 'reset' && (
+            <div>
+              <Label className="text-xs text-muted-foreground">EMAIL</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="input-terminal mt-1"
+              />
+            </div>
+          )}
 
-          <div>
-            <Label className="text-xs text-muted-foreground">PASSWORD</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              className="input-terminal mt-1"
-            />
-          </div>
+          {(mode === 'signin' || mode === 'signup' || mode === 'reset') && (
+            <div>
+              <Label className="text-xs text-muted-foreground">
+                {mode === 'reset' ? 'NEW PASSWORD' : 'PASSWORD'}
+              </Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                className="input-terminal mt-1"
+              />
+            </div>
+          )}
+
+          {mode === 'reset' && (
+            <div>
+              <Label className="text-xs text-muted-foreground">CONFIRM PASSWORD</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                className="input-terminal mt-1"
+              />
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="btn-brutalist btn-primary w-full py-4"
           >
-            {loading ? 'LOADING...' : isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
+            {getButtonText()}
           </button>
         </form>
 
-        <button
-          onClick={() => setIsSignUp(!isSignUp)}
-          className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isSignUp
-            ? 'Already have an account? Sign in'
-            : "Don't have an account? Sign up"}
-        </button>
+        <div className="space-y-2">
+          {mode === 'signin' && (
+            <>
+              <button
+                onClick={() => setMode('forgot')}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Forgot your password?
+              </button>
+              <button
+                onClick={() => setMode('signup')}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Don't have an account? Sign up
+              </button>
+            </>
+          )}
+          
+          {mode === 'signup' && (
+            <button
+              onClick={() => setMode('signin')}
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Already have an account? Sign in
+            </button>
+          )}
+
+          {(mode === 'forgot' || mode === 'reset') && (
+            <button
+              onClick={() => setMode('signin')}
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back to sign in
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

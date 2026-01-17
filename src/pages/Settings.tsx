@@ -4,15 +4,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useWaterReminderConfig } from '@/hooks/useWaterReminderConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube, ExternalLink } from 'lucide-react';
+import { LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube, ExternalLink, Mail, Key } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 export default function Settings() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { config, isLoading, saveConfig, isSaving, toggleActive, isToggling } = useWaterReminderConfig();
+  
+  // Account management state
+  const [newEmail, setNewEmail] = useState('');
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   
   // Telegram automation state
   const [telegramUsername, setTelegramUsername] = useState('');
@@ -116,12 +121,86 @@ export default function Settings() {
           <h3 className="section-header">ACCOUNT</h3>
           <div className="space-y-4">
             <div>
-              <div className="text-xs text-muted-foreground">EMAIL</div>
+              <div className="text-xs text-muted-foreground">CURRENT EMAIL</div>
               <div className="font-medium">{user?.email}</div>
             </div>
+            
+            {/* Change Email */}
+            <div className="border border-border p-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Mail className="h-4 w-4" />
+                CHANGE EMAIL
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">NEW EMAIL ADDRESS</Label>
+                <Input
+                  type="email"
+                  placeholder="newemail@example.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="input-terminal mt-1"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newEmail.trim()) {
+                    toast.error('Please enter a new email address');
+                    return;
+                  }
+                  setIsUpdatingEmail(true);
+                  try {
+                    const { error } = await updateEmail(newEmail);
+                    if (error) throw error;
+                    toast.success('Confirmation email sent to both addresses. Please check your inbox.');
+                    setNewEmail('');
+                  } catch (error: any) {
+                    toast.error(error.message || 'Failed to update email');
+                  } finally {
+                    setIsUpdatingEmail(false);
+                  }
+                }}
+                disabled={isUpdatingEmail || !newEmail.trim()}
+                className="btn-brutalist w-full flex items-center justify-center gap-2"
+              >
+                {isUpdatingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                UPDATE EMAIL
+              </button>
+            </div>
+
+            {/* Reset Password */}
+            <div className="border border-border p-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Key className="h-4 w-4" />
+                CHANGE PASSWORD
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We'll send a password reset link to your current email address.
+              </p>
+              <button
+                onClick={async () => {
+                  if (!user?.email) return;
+                  setIsResettingPassword(true);
+                  try {
+                    const { error } = await resetPassword(user.email);
+                    if (error) throw error;
+                    toast.success('Password reset email sent! Check your inbox.');
+                  } catch (error: any) {
+                    toast.error(error.message || 'Failed to send reset email');
+                  } finally {
+                    setIsResettingPassword(false);
+                  }
+                }}
+                disabled={isResettingPassword}
+                className="btn-brutalist w-full flex items-center justify-center gap-2"
+              >
+                {isResettingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                SEND RESET LINK
+              </button>
+            </div>
+
             <button
               onClick={handleSignOut}
-              className="btn-brutalist w-full flex items-center justify-center gap-2"
+              className="btn-brutalist w-full flex items-center justify-center gap-2 border-destructive text-destructive"
             >
               <LogOut className="h-4 w-4" />
               SIGN OUT
