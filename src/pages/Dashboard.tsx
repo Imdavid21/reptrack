@@ -3,9 +3,10 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
-import { Dumbbell, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
   return (
@@ -16,6 +17,9 @@ export default function Dashboard() {
 
         {/* Weekly Overview */}
         <WeeklyProgress />
+
+        {/* Personal Records */}
+        <PersonalRecords />
 
         {/* Water Tracking */}
         <WaterTracker />
