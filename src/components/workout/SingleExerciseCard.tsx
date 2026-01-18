@@ -3,8 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, RefreshCw, ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { getExerciseVariants, hasVariants, getEquipmentEmoji } from '@/lib/exerciseVariants';
+import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,7 +105,6 @@ export function SingleExerciseCard({
   const allCompleted = completedSets === exercise.sets.length;
   const variants = getExerciseVariants(exercise.name);
   const showVariantSwitch = hasVariants(exercise.name);
-  const currentVariant = variants.find(v => v.name === exercise.name);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -113,7 +112,7 @@ export function SingleExerciseCard({
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Exercise {exerciseIndex + 1} of {totalExercises}</span>
         <span className={cn(
-          'px-2 py-0.5 rounded text-xs font-medium',
+          'px-2 py-0.5 text-xs font-medium',
           exercise.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted'
         )}>
           {exercise.category.toUpperCase()}
@@ -126,7 +125,7 @@ export function SingleExerciseCard({
           <div
             key={i}
             className={cn(
-              'h-1 flex-1 rounded-full transition-colors',
+              'h-1 flex-1 transition-colors',
               i < exerciseIndex ? 'bg-primary' :
               i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
             )}
@@ -136,27 +135,26 @@ export function SingleExerciseCard({
 
       {/* Exercise header */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-xl font-bold">{exercise.name}</h2>
           {showVariantSwitch && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  {currentVariant && getEquipmentEmoji(currentVariant.equipmentType)}
-                  Switch
-                </Button>
+                <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border hover:border-foreground/30">
+                  <ArrowLeftRight className="h-3 w-3" />
+                  <span>ALT</span>
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-background border-border">
                 {variants.map((variant) => (
                   <DropdownMenuItem
                     key={variant.name}
                     onClick={() => switchVariant(variant.name, variant.defaultWeight)}
                     className={cn(
+                      'cursor-pointer',
                       variant.name === exercise.name && 'bg-primary/10'
                     )}
                   >
-                    <span className="mr-2">{getEquipmentEmoji(variant.equipmentType)}</span>
                     {variant.name}
                     {variant.name === exercise.name && (
                       <Check className="h-4 w-4 ml-auto" />
