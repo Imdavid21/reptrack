@@ -14,15 +14,28 @@ interface ExerciseProgression {
   data: ExerciseDataPoint[];
 }
 
-// Key exercises to track for progression
-const TRACKED_EXERCISES = [
-  'Incline DB Press',
-  'Flat Barbell Bench',
-  'Barbell Squat',
-  'Conventional Deadlift',
-  'Barbell Row',
-  'Overhead Press',
-];
+// Key exercises to track for progression - map variations to canonical names
+const EXERCISE_NAME_MAP: Record<string, string> = {
+  'Incline DB Press': 'Incline DB Press',
+  'Incline Dumbbell Press': 'Incline DB Press',
+  'Incline BB Bench': 'Incline Barbell Bench',
+  'Incline Barbell Bench': 'Incline Barbell Bench',
+  'Flat DB Bench': 'Flat DB Bench',
+  'Flat DB Bench Press': 'Flat DB Bench',
+  'Flat Dumbbell Bench Press': 'Flat DB Bench',
+  'Flat Barbell Bench': 'Flat Barbell Bench',
+  'Barbell Squat': 'Barbell Squat',
+  'Goblet Squat': 'Goblet Squat',
+  'Leg Press': 'Leg Press',
+  'Deadlift': 'Deadlift',
+  'Conventional Deadlift': 'Deadlift',
+  'Barbell Row': 'Barbell Row',
+  'Overhead Press': 'Overhead Press',
+  'Barbell OHP': 'Overhead Press',
+  'DB Shoulder Press': 'DB Shoulder Press',
+  'Seated DB Shoulder Press': 'DB Shoulder Press',
+  'Dumbbell Shoulder Press': 'DB Shoulder Press',
+};
 
 export function useExerciseProgression() {
   const { user } = useAuth();
@@ -57,10 +70,11 @@ export function useExerciseProgression() {
 
       for (const ex of exercises || []) {
         // Extract base exercise name (remove "Set X" suffix)
-        const baseName = ex.name.replace(/\s*\(Set \d+\)$/, '');
+        const rawBaseName = ex.name.replace(/\s*\(Set \d+\)$/, '').trim();
         
-        // Only track key exercises
-        if (!TRACKED_EXERCISES.includes(baseName)) continue;
+        // Map to canonical name, skip if not tracked
+        const baseName = EXERCISE_NAME_MAP[rawBaseName];
+        if (!baseName) continue;
 
         const workout = ex.workouts as unknown as { date: string; week_number: number };
         
