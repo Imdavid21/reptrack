@@ -63,9 +63,14 @@ export function useExerciseProgression() {
         if (!TRACKED_EXERCISES.includes(baseName)) continue;
 
         const workout = ex.workouts as unknown as { date: string; week_number: number };
-        const weight = parseFloat(ex.actual_weight || '0');
         
-        if (isNaN(weight) || weight === 0) continue;
+        // Parse weight from various formats: "15kg", "30kg plates", "60kg total", "Level 6", etc.
+        const weightStr = ex.actual_weight || '';
+        const weightMatch = weightStr.match(/(\d+(?:\.\d+)?)/);
+        const weight = weightMatch ? parseFloat(weightMatch[1]) : 0;
+        
+        // Skip entries with no valid weight or machine levels
+        if (weight === 0 || weightStr.toLowerCase().includes('level') || weightStr.toLowerCase() === 'bw') continue;
 
         if (!progressionMap[baseName]) {
           progressionMap[baseName] = new Map();
