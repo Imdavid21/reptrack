@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DaySelector } from '@/components/workout/DaySelector';
 import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
@@ -6,6 +6,7 @@ import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
+import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
@@ -52,6 +53,7 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { createWorkout, isCreating } = useWorkouts();
+  const { draft, loaded, saveDraft, clearDraft, hasProgress } = useDraftWorkout();
   
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -59,10 +61,42 @@ export default function LogWorkout() {
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [habits, setHabits] = useState<Habits>(defaultHabits);
+  const [draftRestored, setDraftRestored] = useState(false);
   
   // Single exercise mode state
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+
+  // Restore from draft if available
+  useEffect(() => {
+    if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
+      setSelectedDay(draft.day);
+      setSelectedDate(new Date(draft.date));
+      setWeekNumber(draft.weekNumber);
+      setExercises(draft.exercises);
+      setHabits(draft.habits);
+      setStep(draft.step);
+      setCurrentExerciseIndex(draft.currentExerciseIndex);
+      setDraftRestored(true);
+      toast.info('Restored your previous session');
+    }
+  }, [loaded, draft, draftRestored]);
+
+  // Auto-save when exercises change
+  useEffect(() => {
+    if (step !== 'select-day' && selectedDay && exercises.length > 0) {
+      saveDraft({
+        day: selectedDay,
+        dayName: defaultRoutine.days[selectedDay]?.name || '',
+        date: selectedDate.toISOString(),
+        weekNumber,
+        exercises,
+        habits,
+        currentExerciseIndex,
+        step,
+      });
+    }
+  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -163,6 +197,8 @@ export default function LogWorkout() {
         habits,
       });
       
+      // Clear draft after successful save
+      clearDraft();
       toast.success('Workout logged! 💪');
       navigate('/');
     } catch (error) {

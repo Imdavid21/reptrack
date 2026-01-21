@@ -1,10 +1,12 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkouts } from '@/hooks/useWorkouts';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Calendar } from 'lucide-react';
+import { ChevronRight, Calendar, Edit2 } from 'lucide-react';
 
 export default function History() {
   const { workouts, isLoading } = useWorkouts();
+  const navigate = useNavigate();
 
   // Group workouts by week
   const workoutsByWeek = workouts.reduce((acc, workout) => {
@@ -37,9 +39,10 @@ export default function History() {
               <h3 className="section-header">{week.toUpperCase()}</h3>
               <div className="space-y-2">
                 {weekWorkouts.map((workout) => (
-                  <div
+                  <button
                     key={workout.id}
-                    className="card-brutalist flex items-center justify-between"
+                    onClick={() => navigate(`/history/${workout.id}`)}
+                    className="card-brutalist flex items-center justify-between w-full text-left hover:bg-muted/50 transition-colors"
                   >
                     <div>
                       <div className="font-bold">{workout.day_name}</div>
@@ -49,9 +52,9 @@ export default function History() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="badge-brutalist">{workout.day}</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <Edit2 className="h-4 w-4 text-muted-foreground" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

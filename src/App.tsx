@@ -9,6 +9,7 @@ import CreateRoutine from "./pages/CreateRoutine";
 import Analytics from "./pages/Analytics";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/create" element={<CreateRoutine />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/history" element={<History />} />
+          <Route path="/history/:workoutId" element={<WorkoutDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
