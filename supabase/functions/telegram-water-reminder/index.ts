@@ -115,11 +115,28 @@ serve(async (req) => {
 
         // User is confirming they drank water
         if (text === "done" || text === "✓" || text === "yes" || text === "drank") {
-          // Find the latest pending reminder for this chat
+          // First, try to find the user config by chat_id
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(
+              chatId,
+              "❓ I don't recognize this chat. Please use /start first."
+            );
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // Find pending reminder for this user
           const { data: pendingLog } = await supabase
             .from("water_reminder_logs")
-            .select("*, water_reminder_configs!inner(user_id, telegram_chat_id)")
-            .eq("water_reminder_configs.telegram_chat_id", chatId.toString())
+            .select("id")
+            .eq("user_id", config.user_id)
             .eq("status", "pending")
             .order("sent_at", { ascending: false })
             .limit(1)
@@ -131,39 +148,21 @@ serve(async (req) => {
               .from("water_reminder_logs")
               .update({ status: "confirmed", confirmed_at: new Date().toISOString() })
               .eq("id", pendingLog.id);
-
-            // Log water intake
-            await supabase.from("water_logs").insert({
-              user_id: pendingLog.water_reminder_configs.user_id,
-              amount: 0.25,
-              method: "automation",
-            });
-
-            await sendTelegramMessage(
-              chatId,
-              "✅ <b>Great job!</b> 250ml water logged.\n\nKeep it up! 💪"
-            );
-          } else {
-            await sendTelegramMessage(
-              chatId,
-              "👍 No pending reminder, but I logged 250ml for you anyway!"
-            );
-
-            // Try to find user by chat_id and log water
-            const { data: config } = await supabase
-              .from("water_reminder_configs")
-              .select("user_id")
-              .eq("telegram_chat_id", chatId.toString())
-              .single();
-
-            if (config) {
-              await supabase.from("water_logs").insert({
-                user_id: config.user_id,
-                amount: 0.25,
-                method: "automation",
-              });
-            }
           }
+
+          // Always log water intake when user says done
+          await supabase.from("water_logs").insert({
+            user_id: config.user_id,
+            amount: 0.25,
+            method: "automation",
+          });
+
+          await sendTelegramMessage(
+            chatId,
+            pendingLog 
+              ? "✅ <b>Great job!</b> 250ml water logged.\n\nKeep it up! 💪"
+              : "👍 250ml water logged!"
+          );
 
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -441,6 +440,128 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    }
+
+    // Action: Send weekly progress report
+    if (action === "send-weekly-report") {
+      const { userId } = await req.json().catch(() => ({}));
+
+      // If userId specified, send to that user; otherwise send to all active users
+      let configs;
+      if (userId) {
+        const { data } = await supabase
+          .from("water_reminder_configs")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("is_active", true)
+          .not("telegram_chat_id", "is", null);
+        configs = data;
+      } else {
+        const { data } = await supabase
+          .from("water_reminder_configs")
+          .select("*")
+          .eq("is_active", true)
+          .not("telegram_chat_id", "is", null);
+        configs = data;
+      }
+
+      if (!configs || configs.length === 0) {
+        return new Response(JSON.stringify({ sent: 0 }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let sent = 0;
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      for (const config of configs) {
+        // Get water logs for the past week
+        const { data: waterLogs } = await supabase
+          .from("water_logs")
+          .select("amount, timestamp")
+          .eq("user_id", config.user_id)
+          .gte("timestamp", oneWeekAgo);
+
+        // Get workouts for the past week
+        const { data: workouts } = await supabase
+          .from("workouts")
+          .select("id, day_name, date")
+          .eq("user_id", config.user_id)
+          .gte("date", oneWeekAgo.split('T')[0]);
+
+        // Get habits data
+        const workoutIds = workouts?.map(w => w.id) || [];
+        let habits: any[] = [];
+        if (workoutIds.length > 0) {
+          const { data: habitsData } = await supabase
+            .from("habits")
+            .select("pullups, water_intake, sleep_hours, energy_level")
+            .in("workout_id", workoutIds);
+          habits = habitsData || [];
+        }
+
+        // Calculate stats
+        const totalWaterL = (waterLogs || []).reduce((sum, log) => sum + Number(log.amount || 0), 0);
+        const avgDailyWater = totalWaterL / 7;
+        const workoutCount = workouts?.length || 0;
+        const totalPullups = habits.reduce((sum, h) => sum + (h.pullups || 0), 0);
+        const avgSleep = habits.length > 0 
+          ? habits.reduce((sum, h) => sum + Number(h.sleep_hours || 0), 0) / habits.length 
+          : 0;
+        const avgEnergy = habits.length > 0
+          ? habits.reduce((sum, h) => sum + (h.energy_level || 0), 0) / habits.length
+          : 0;
+
+        // Build report message
+        let report = "📊 <b>WEEKLY PROGRESS REPORT</b>\n\n";
+        
+        // Hydration
+        report += "💧 <b>Hydration</b>\n";
+        report += `• Total: ${totalWaterL.toFixed(1)}L\n`;
+        report += `• Daily avg: ${avgDailyWater.toFixed(2)}L\n`;
+        const waterGoal = 3; // 3L daily goal
+        const hydrationScore = Math.min(100, (avgDailyWater / waterGoal) * 100);
+        report += `• Goal progress: ${hydrationScore.toFixed(0)}%\n\n`;
+
+        // Workouts
+        report += "🏋️ <b>Training</b>\n";
+        report += `• Sessions: ${workoutCount}/6\n`;
+        if (workouts && workouts.length > 0) {
+          const dayNames = workouts.map(w => w.day_name).join(", ");
+          report += `• Completed: ${dayNames}\n`;
+        }
+        report += `• Pull-ups: ${totalPullups}\n\n`;
+
+        // Recovery
+        if (habits.length > 0) {
+          report += "😴 <b>Recovery</b>\n";
+          report += `• Avg sleep: ${avgSleep.toFixed(1)}h\n`;
+          report += `• Avg energy: ${avgEnergy.toFixed(1)}/10\n\n`;
+        }
+
+        // Insight
+        report += "💡 <b>Insight:</b> ";
+        if (workoutCount >= 5) {
+          report += "Excellent consistency! Keep pushing.";
+        } else if (workoutCount >= 3) {
+          report += "Good effort! Aim for 1-2 more sessions next week.";
+        } else if (workoutCount > 0) {
+          report += "Room for improvement. Try to hit at least 4 sessions.";
+        } else {
+          report += "No workouts logged. Let's get back on track!";
+        }
+
+        if (avgDailyWater < 2) {
+          report += " 🚰 Drink more water!";
+        }
+
+        const success = await sendTelegramMessage(config.telegram_chat_id, report);
+        if (success) sent++;
+      }
+
+      return new Response(JSON.stringify({ sent }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
