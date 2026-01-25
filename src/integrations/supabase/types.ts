@@ -340,31 +340,55 @@ export type Database = {
       }
       workouts: {
         Row: {
+          completed_at: string | null
           created_at: string | null
           date: string
           day: string
           day_name: string
           id: string
+          post_difficulty: number | null
+          post_satisfaction: number | null
+          pre_energy: number | null
+          pre_motivation: number | null
+          pre_soreness: number | null
+          started_at: string | null
           user_id: string
           week_number: number
+          workout_duration_minutes: number | null
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string | null
           date?: string
           day: string
           day_name: string
           id?: string
+          post_difficulty?: number | null
+          post_satisfaction?: number | null
+          pre_energy?: number | null
+          pre_motivation?: number | null
+          pre_soreness?: number | null
+          started_at?: string | null
           user_id: string
           week_number?: number
+          workout_duration_minutes?: number | null
         }
         Update: {
+          completed_at?: string | null
           created_at?: string | null
           date?: string
           day?: string
           day_name?: string
           id?: string
+          post_difficulty?: number | null
+          post_satisfaction?: number | null
+          pre_energy?: number | null
+          pre_motivation?: number | null
+          pre_soreness?: number | null
+          started_at?: string | null
           user_id?: string
           week_number?: number
+          workout_duration_minutes?: number | null
         }
         Relationships: []
       }

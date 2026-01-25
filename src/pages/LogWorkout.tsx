@@ -4,6 +4,8 @@ import { DaySelector } from '@/components/workout/DaySelector';
 import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
+import { PreWorkoutCheckin, PreWorkoutData } from '@/components/workout/PreWorkoutCheckin';
+import { PostWorkoutCheckin, PostWorkoutData } from '@/components/workout/PostWorkoutCheckin';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -12,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type Step = 'select-day' | 'exercises' | 'habits';
+type Step = 'select-day' | 'pre-checkin' | 'exercises' | 'post-checkin' | 'habits';
 type ExerciseViewMode = 'single' | 'overview';
 
 const defaultHabits: Habits = {
@@ -33,6 +35,18 @@ const defaultHabits: Habits = {
   },
 };
 
+const defaultPreCheckin: PreWorkoutData = {
+  energy: 5,
+  motivation: 5,
+  soreness: 3,
+};
+
+const defaultPostCheckin: PostWorkoutData = {
+  difficulty: 5,
+  satisfaction: 7,
+  durationMinutes: undefined,
+};
+
 // Parse target reps like "4x8-10" into number of sets and rep range
 function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   const match = targetReps.match(/^(\d+)x(.+)$/);
@@ -50,10 +64,12 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
+const STEPS: Step[] = ['select-day', 'pre-checkin', 'exercises', 'post-checkin', 'habits'];
+
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { createWorkout, isCreating } = useWorkouts();
-  const { draft, loaded, saveDraft, clearDraft, hasProgress } = useDraftWorkout();
+  const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -61,6 +77,9 @@ export default function LogWorkout() {
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [habits, setHabits] = useState<Habits>(defaultHabits);
+  const [preCheckin, setPreCheckin] = useState<PreWorkoutData>(defaultPreCheckin);
+  const [postCheckin, setPostCheckin] = useState<PostWorkoutData>(defaultPostCheckin);
+  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   
   // Single exercise mode state
@@ -75,14 +94,19 @@ export default function LogWorkout() {
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       setHabits(draft.habits);
-      setStep(draft.step);
+      // Handle old drafts that don't have the new step values
+      const validStep = STEPS.includes(draft.step as Step) ? draft.step as Step : 'exercises';
+      setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
+      if (draft.preCheckin) setPreCheckin(draft.preCheckin);
+      if (draft.postCheckin) setPostCheckin(draft.postCheckin);
+      if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
       setDraftRestored(true);
       toast.info('Restored your previous session');
     }
   }, [loaded, draft, draftRestored]);
 
-  // Auto-save when exercises change
+  // Auto-save when state changes
   useEffect(() => {
     if (step !== 'select-day' && selectedDay && exercises.length > 0) {
       saveDraft({
@@ -94,9 +118,12 @@ export default function LogWorkout() {
         habits,
         currentExerciseIndex,
         step,
+        preCheckin,
+        postCheckin,
+        workoutStartTime: workoutStartTime?.toISOString(),
       });
     }
-  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, saveDraft]);
+  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, preCheckin, postCheckin, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -130,6 +157,11 @@ export default function LogWorkout() {
     }
     
     setCurrentExerciseIndex(0);
+    setStep('pre-checkin');
+  };
+
+  const handlePreCheckinDone = () => {
+    setWorkoutStartTime(new Date());
     setStep('exercises');
   };
 
@@ -174,6 +206,18 @@ export default function LogWorkout() {
       toast.error('Complete at least one set');
       return;
     }
+    
+    // Auto-calculate duration if we have start time
+    if (workoutStartTime && !postCheckin.durationMinutes) {
+      const durationMs = Date.now() - workoutStartTime.getTime();
+      const durationMins = Math.round(durationMs / 60000);
+      setPostCheckin(prev => ({ ...prev, durationMinutes: durationMins }));
+    }
+    
+    setStep('post-checkin');
+  };
+
+  const handlePostCheckinDone = () => {
     setStep('habits');
   };
 
@@ -195,6 +239,10 @@ export default function LogWorkout() {
         date: selectedDate,
         exercises,
         habits,
+        preCheckin,
+        postCheckin,
+        startedAt: workoutStartTime || undefined,
+        completedAt: new Date(),
       });
       
       // Clear draft after successful save
@@ -207,14 +255,15 @@ export default function LogWorkout() {
   };
 
   const handleBack = () => {
+    const currentIndex = STEPS.indexOf(step);
     if (step === 'exercises') {
       if (exerciseViewMode === 'single' && currentExerciseIndex > 0) {
         setCurrentExerciseIndex(prev => prev - 1);
       } else {
-        setStep('select-day');
+        setStep('pre-checkin');
       }
-    } else if (step === 'habits') {
-      setStep('exercises');
+    } else if (currentIndex > 0) {
+      setStep(STEPS[currentIndex - 1]);
     }
   };
 
@@ -229,10 +278,11 @@ export default function LogWorkout() {
 
   const dayType = selectedDay ? getDayType(defaultRoutine.days[selectedDay]?.name || '') : undefined;
   const currentExercise = exercises[currentExerciseIndex];
+  const stepProgress = STEPS.indexOf(step) / (STEPS.length - 1);
 
   return (
     <MainLayout title="LOG WORKOUT">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in pb-20">
         {/* Back Button */}
         {step !== 'select-day' && (
           <button
@@ -240,19 +290,17 @@ export default function LogWorkout() {
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            {step === 'exercises' && exerciseViewMode === 'single' && currentExerciseIndex === 0 
-              ? 'BACK TO DAY SELECTION' 
-              : 'BACK'}
+            BACK
           </button>
         )}
 
         {/* Progress indicator */}
-        <div className="flex gap-2">
-          {['select-day', 'exercises', 'habits'].map((s, i) => (
+        <div className="flex gap-1">
+          {STEPS.map((s, i) => (
             <div
               key={s}
-              className={`h-1 flex-1 ${
-                i <= ['select-day', 'exercises', 'habits'].indexOf(step)
+              className={`h-1 flex-1 transition-colors ${
+                i <= STEPS.indexOf(step)
                   ? 'bg-primary'
                   : 'bg-muted'
               }`}
@@ -263,6 +311,19 @@ export default function LogWorkout() {
         {/* Step Content */}
         {step === 'select-day' && (
           <DaySelector selectedDay={selectedDay} onSelect={handleDaySelect} />
+        )}
+
+        {step === 'pre-checkin' && (
+          <>
+            <PreWorkoutCheckin data={preCheckin} onChange={setPreCheckin} />
+            
+            <button
+              onClick={handlePreCheckinDone}
+              className="btn-brutalist btn-primary w-full py-4"
+            >
+              START WORKOUT
+            </button>
+          </>
         )}
 
         {step === 'exercises' && (
@@ -335,10 +396,23 @@ export default function LogWorkout() {
                   disabled={completedSets === 0}
                   className="btn-brutalist btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  CONTINUE TO HABITS
+                  FINISH EXERCISES
                 </button>
               </>
             )}
+          </>
+        )}
+
+        {step === 'post-checkin' && (
+          <>
+            <PostWorkoutCheckin data={postCheckin} onChange={setPostCheckin} />
+            
+            <button
+              onClick={handlePostCheckinDone}
+              className="btn-brutalist btn-primary w-full py-4"
+            >
+              CONTINUE TO HABITS
+            </button>
           </>
         )}
 
