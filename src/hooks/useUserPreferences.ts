@@ -33,6 +33,28 @@ export function useUserPreferences() {
         .maybeSingle();
 
       if (error) throw error;
+      
+      // If no preferences exist, check if user has existing data (returning user)
+      if (!data) {
+        const { count: workoutCount } = await supabase
+          .from('workouts')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        // If user has existing workouts, they're a returning user - auto-create preferences
+        if (workoutCount && workoutCount > 0) {
+          const { data: newPrefs } = await supabase
+            .from('user_preferences')
+            .insert({
+              user_id: user.id,
+              onboarding_completed: true, // Skip onboarding for existing users
+            })
+            .select()
+            .single();
+          return newPrefs as UserPreferences;
+        }
+      }
+      
       return data as UserPreferences | null;
     },
     enabled: !!user,
