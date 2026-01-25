@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import LogWorkout from "./pages/LogWorkout";
 import CreateRoutine from "./pages/CreateRoutine";
 import Analytics from "./pages/Analytics";
+import HealthAnalytics from "./pages/HealthAnalytics";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/log" element={<LogWorkout />} />
           <Route path="/create" element={<CreateRoutine />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/health" element={<HealthAnalytics />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/:workoutId" element={<WorkoutDetail />} />
           <Route path="/settings" element={<Settings />} />
