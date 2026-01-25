@@ -10,6 +10,7 @@ import { StrengthProgressionChart } from '@/components/analytics/StrengthProgres
 import { VolumeChart } from '@/components/analytics/VolumeChart';
 import { PreWorkoutCorrelationChart } from '@/components/analytics/PreWorkoutCorrelationChart';
 import { AICoachInsights } from '@/components/analytics/AICoachInsights';
+import { IntelligenceInsights } from '@/components/analytics/IntelligenceInsights';
 
 // Body tab components
 import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
@@ -57,10 +58,10 @@ function PerformanceTab() {
         ))}
       </div>
 
-      <AICoachInsights />
-      <PreWorkoutCorrelationChart />
+      <IntelligenceInsights />
       <StrengthProgressionChart />
       <VolumeChart />
+      <PreWorkoutCorrelationChart />
     </div>
   );
 }
@@ -266,6 +267,7 @@ function VitalsTab() {
 function AITab() {
   return (
     <div className="space-y-4">
+      <IntelligenceInsights />
       <AICoachInsights />
       <PreWorkoutCorrelationChart />
     </div>
