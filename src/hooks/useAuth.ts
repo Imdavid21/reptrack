@@ -49,15 +49,35 @@ export function useAuth() {
   };
 
   const resetPassword = async (email: string) => {
+    // Use Supabase's built-in method which triggers the password reset flow
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?type=recovery`,
     });
+    
+    if (error) return { data, error };
+
+    // Also send via our custom Resend edge function for reliability
+    try {
+      await supabase.functions.invoke('send-auth-email', {
+        body: {
+          type: 'password_reset',
+          email,
+          redirectUrl: `${window.location.origin}/auth?type=recovery`,
+        },
+      });
+    } catch (e) {
+      // Silent fail - Supabase's email may have worked
+      console.log('Custom email fallback attempted');
+    }
+
     return { data, error };
   };
 
   const updateEmail = async (newEmail: string) => {
     const { data, error } = await supabase.auth.updateUser({
       email: newEmail,
+    }, {
+      emailRedirectTo: `${window.location.origin}/auth`,
     });
     return { data, error };
   };
