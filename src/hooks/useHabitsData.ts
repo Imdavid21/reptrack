@@ -5,6 +5,7 @@ import { format, subDays, parseISO } from 'date-fns';
 
 export interface HabitDataPoint {
   date: string;
+  hasData: boolean;
   sleepHours: number | null;
   energyLevel: number | null;
   bodyweight: number | null;
@@ -28,6 +29,7 @@ export interface HabitsAnalytics {
     avgSleep: number | null;
     avgEnergy: number | null;
     avgBodyweight: number | null;
+    daysWithData: number;
   };
   supplementAdherence: Record<string, number>;
 }
@@ -41,7 +43,7 @@ export function useHabitsData(days: number = 30) {
       if (!user) {
         return {
           dataPoints: [],
-          totals: { totalPullups: 0, avgSleep: null, avgEnergy: null, avgBodyweight: null },
+          totals: { totalPullups: 0, avgSleep: null, avgEnergy: null, avgBodyweight: null, daysWithData: 0 },
           supplementAdherence: {},
         };
       }
@@ -69,17 +71,20 @@ export function useHabitsData(days: number = 30) {
 
       if (error) throw error;
 
-      // Transform into data points
-      const dataPoints: HabitDataPoint[] = (workouts || []).map((w: any) => {
-        const habit = w.habits?.[0] || {};
+      // Transform into data points - only include workouts that have habits data
+      const allDataPoints: HabitDataPoint[] = (workouts || []).map((w: any) => {
+        const habit = w.habits?.[0];
+        const hasHabitData = habit !== undefined && habit !== null;
+        
         return {
           date: w.date,
-          sleepHours: habit.sleep_hours ?? null,
-          energyLevel: habit.energy_level ?? null,
-          bodyweight: habit.bodyweight ?? null,
-          pullups: habit.pullups ?? 0,
-          waterIntake: habit.water_intake ?? 0,
-          supplements: habit.supplements ?? {
+          hasData: hasHabitData,
+          sleepHours: hasHabitData ? (habit.sleep_hours ?? null) : null,
+          energyLevel: hasHabitData ? (habit.energy_level ?? null) : null,
+          bodyweight: hasHabitData ? (habit.bodyweight ?? null) : null,
+          pullups: hasHabitData ? (habit.pullups ?? 0) : 0,
+          waterIntake: hasHabitData ? (habit.water_intake ?? 0) : 0,
+          supplements: hasHabitData && habit.supplements ? habit.supplements : {
             whey: false,
             casein: false,
             creatine: false,
@@ -91,13 +96,19 @@ export function useHabitsData(days: number = 30) {
         };
       });
 
-      // Calculate totals
-      const validSleep = dataPoints.filter(d => d.sleepHours !== null && d.sleepHours > 0);
-      const validEnergy = dataPoints.filter(d => d.energyLevel !== null && d.energyLevel > 0);
-      const validBodyweight = dataPoints.filter(d => d.bodyweight !== null && d.bodyweight > 0);
+      // Filter to only entries with actual habit data for calculations
+      const dataPointsWithHabits = allDataPoints.filter(d => d.hasData);
+
+      // For charts, use all dataPoints to show gaps
+      // For calculations, only use dataPointsWithHabits
+      
+      // Calculate totals - only from entries with actual data
+      const validSleep = dataPointsWithHabits.filter(d => d.sleepHours !== null && d.sleepHours > 0);
+      const validEnergy = dataPointsWithHabits.filter(d => d.energyLevel !== null);
+      const validBodyweight = dataPointsWithHabits.filter(d => d.bodyweight !== null && d.bodyweight > 0);
 
       const totals = {
-        totalPullups: dataPoints.reduce((sum, d) => sum + d.pullups, 0),
+        totalPullups: dataPointsWithHabits.reduce((sum, d) => sum + d.pullups, 0),
         avgSleep: validSleep.length > 0
           ? validSleep.reduce((sum, d) => sum + (d.sleepHours || 0), 0) / validSleep.length
           : null,
@@ -107,20 +118,21 @@ export function useHabitsData(days: number = 30) {
         avgBodyweight: validBodyweight.length > 0
           ? validBodyweight.reduce((sum, d) => sum + (d.bodyweight || 0), 0) / validBodyweight.length
           : null,
+        daysWithData: dataPointsWithHabits.length,
       };
 
-      // Calculate supplement adherence percentages
+      // Calculate supplement adherence - ONLY based on days with habit data
       const supplementKeys = ['whey', 'casein', 'creatine', 'omega3', 'vitaminD', 'magnesium', 'zinc'] as const;
       const supplementAdherence: Record<string, number> = {};
       
-      if (dataPoints.length > 0) {
+      if (dataPointsWithHabits.length > 0) {
         supplementKeys.forEach(key => {
-          const taken = dataPoints.filter(d => d.supplements[key]).length;
-          supplementAdherence[key] = Math.round((taken / dataPoints.length) * 100);
+          const taken = dataPointsWithHabits.filter(d => d.supplements[key]).length;
+          supplementAdherence[key] = Math.round((taken / dataPointsWithHabits.length) * 100);
         });
       }
 
-      return { dataPoints, totals, supplementAdherence };
+      return { dataPoints: allDataPoints, totals, supplementAdherence };
     },
     enabled: !!user,
   });

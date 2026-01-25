@@ -20,11 +20,14 @@ export function PullupAccumulator() {
       return { chartData: [], totalPullups: 0, weeklyAvg: 0 };
     }
 
+    // Only use data points that have actual habit data
+    const validDataPoints = data.dataPoints.filter(d => d.hasData);
+    
     // Group by week
     const weeklyMap = new Map<string, { week: string; pullups: number; cumulative: number }>();
     let runningTotal = 0;
 
-    data.dataPoints.forEach(d => {
+    validDataPoints.forEach(d => {
       const weekStart = startOfWeek(parseISO(d.date), { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
       const displayWeek = format(weekStart, 'MMM d');
