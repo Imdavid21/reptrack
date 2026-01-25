@@ -43,12 +43,12 @@ function parseReps(reps: string | null): number {
   return match ? parseInt(match[0], 10) : 0;
 }
 
-function categorizeExercise(category: string): 'push' | 'pull' | 'legs' {
-  const lower = category.toLowerCase();
-  if (lower.includes('push') || lower.includes('chest') || lower.includes('shoulder') || lower.includes('tricep')) {
+function categorizeByWorkoutDay(dayName: string): 'push' | 'pull' | 'legs' {
+  const lower = dayName.toLowerCase();
+  if (lower.includes('push')) {
     return 'push';
   }
-  if (lower.includes('pull') || lower.includes('back') || lower.includes('bicep')) {
+  if (lower.includes('pull')) {
     return 'pull';
   }
   return 'legs';
@@ -96,6 +96,9 @@ export function useVolumeData(days: number = 60) {
         let pullVolume = 0;
         let legsVolume = 0;
 
+        // Categorize based on workout day_name (Push A, Pull B, Legs A, etc.)
+        const workoutType = categorizeByWorkoutDay(w.day_name || w.day || '');
+
         (w.exercises || []).forEach((ex: any) => {
           if (!ex.completed) return;
           
@@ -103,9 +106,8 @@ export function useVolumeData(days: number = 60) {
           const reps = parseReps(ex.actual_reps);
           const volume = weight * reps;
           
-          const category = categorizeExercise(ex.category);
-          if (category === 'push') pushVolume += volume;
-          else if (category === 'pull') pullVolume += volume;
+          if (workoutType === 'push') pushVolume += volume;
+          else if (workoutType === 'pull') pullVolume += volume;
           else legsVolume += volume;
         });
 
