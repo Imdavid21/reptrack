@@ -71,19 +71,20 @@ export function useVolumeData(days: number = 60) {
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
 
       // Fetch workouts with exercises
-      const { data: workouts, error } = await supabase
-        .from('workouts')
-        .select(`
-          id,
-          date,
-          day,
-          exercises (
-            category,
-            actual_weight,
-            actual_reps,
-            completed
-          )
-        `)
+       const { data: workouts, error } = await supabase
+         .from('workouts')
+         .select(`
+           id,
+           date,
+           day,
+           day_name,
+           exercises (
+             category,
+             actual_weight,
+             actual_reps,
+             completed
+           )
+         `)
         .eq('user_id', user.id)
         .gte('date', startDate)
         .order('date', { ascending: true });

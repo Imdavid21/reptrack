@@ -146,7 +146,12 @@ export function useWorkouts() {
       return workoutData;
     },
     onSuccess: () => {
+      // Keep analytics in sync immediately after logging a workout
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['habitsData'] });
+      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
+      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
     },
   });
 

@@ -73,7 +73,8 @@ export function useHabitsData(days: number = 30) {
 
       // Transform into data points - only include workouts that have habits data
       const allDataPoints: HabitDataPoint[] = (workouts || []).map((w: any) => {
-        const habit = w.habits?.[0];
+        // PostgREST returns 1:1 relationships as an object, but can be an array
+        const habit = Array.isArray(w.habits) ? w.habits[0] : w.habits;
         const hasHabitData = habit !== undefined && habit !== null;
         
         return {
@@ -84,7 +85,7 @@ export function useHabitsData(days: number = 30) {
           bodyweight: hasHabitData ? (habit.bodyweight ?? null) : null,
           pullups: hasHabitData ? (habit.pullups ?? 0) : 0,
           waterIntake: hasHabitData ? (habit.water_intake ?? 0) : 0,
-          supplements: hasHabitData && habit.supplements ? habit.supplements : {
+          supplements: hasHabitData && habit?.supplements ? habit.supplements : {
             whey: false,
             casein: false,
             creatine: false,
