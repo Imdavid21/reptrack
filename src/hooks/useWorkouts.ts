@@ -57,6 +57,14 @@ export interface Workout {
   day_name: string;
   week_number: number;
   created_at: string;
+  started_at?: string;
+  completed_at?: string;
+  workout_duration_minutes?: number;
+  pre_energy?: number;
+  pre_motivation?: number;
+  pre_soreness?: number;
+  post_difficulty?: number;
+  post_satisfaction?: number;
   exercises?: WorkoutExercise[];
   habits?: Habits;
 }

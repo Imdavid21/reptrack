@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/layout/Logo';
+import { ProfileSection } from '@/components/settings/ProfileSection';
 
 export default function Settings() {
   const { user, signOut, updateEmail, resetPassword } = useAuth();
@@ -129,6 +130,12 @@ export default function Settings() {
   return (
     <MainLayout title="SETTINGS">
       <div className="space-y-4 animate-fade-in pb-8">
+        
+        {/* Profile Section */}
+        <ProfileSection 
+          isExpanded={expandedSections.profile || false}
+          onToggle={() => toggleSection('profile')}
+        />
         
         {/* Telegram Automation - Primary Section */}
         <div className="card-brutalist">

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
+import { WorkoutHint } from './WorkoutHint';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -216,6 +217,15 @@ export function SingleExerciseCard({
             )}
           </div>
         )}
+
+        {/* AI Workout Hint */}
+        <WorkoutHint 
+          exerciseName={exercise.name}
+          personalRecord={personalRecord}
+          recentSets={exercise.sets
+            .filter(s => s.completed && s.actualWeight && s.actualReps)
+            .map(s => ({ weight: parseFloat(s.actualWeight), reps: parseInt(s.actualReps) }))}
+        />
       </div>
 
       {/* Sets */}

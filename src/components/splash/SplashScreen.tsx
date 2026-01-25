@@ -8,14 +8,21 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete, minDuration = 1500 }: SplashScreenProps) {
   const [fadeOut, setFadeOut] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
 
   useEffect(() => {
+    // Show pulse animation after logo appears
+    const pulseTimer = setTimeout(() => setShowPulse(true), 300);
+    
     const timer = setTimeout(() => {
       setFadeOut(true);
       setTimeout(onComplete, 300);
     }, minDuration);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(pulseTimer);
+    };
   }, [onComplete, minDuration]);
 
   return (
@@ -25,31 +32,26 @@ export function SplashScreen({ onComplete, minDuration = 1500 }: SplashScreenPro
       }`}
     >
       <div className="flex flex-col items-center gap-8">
-        {/* Logo */}
-        <div className="animate-fade-in">
-          <Logo size="lg" />
-        </div>
-
-        {/* Pulse line animation */}
-        <div className="w-48 h-8 relative overflow-hidden">
+        {/* Heartbeat Animation */}
+        <div className={`w-64 h-16 relative overflow-hidden transition-opacity duration-500 ${showPulse ? 'opacity-100' : 'opacity-0'}`}>
           <svg
-            viewBox="0 0 200 40"
+            viewBox="0 0 240 60"
             className="w-full h-full"
             preserveAspectRatio="xMidYMid meet"
           >
-            {/* Static line */}
+            {/* Static baseline */}
             <line
               x1="0"
-              y1="20"
-              x2="200"
-              y2="20"
+              y1="30"
+              x2="240"
+              y2="30"
               stroke="hsl(var(--muted-foreground))"
               strokeWidth="1"
-              opacity="0.3"
+              opacity="0.2"
             />
-            {/* Animated pulse */}
+            {/* Animated heartbeat line */}
             <polyline
-              points="0,20 60,20 70,20 80,8 90,32 100,20 110,20 200,20"
+              points="0,30 50,30 60,30 75,30 85,10 95,50 105,30 115,30 125,30 135,10 145,50 155,30 165,30 240,30"
               fill="none"
               stroke="hsl(var(--foreground))"
               strokeWidth="2"
@@ -60,37 +62,48 @@ export function SplashScreen({ onComplete, minDuration = 1500 }: SplashScreenPro
           </svg>
         </div>
 
-        {/* Loading indicator */}
-        <div className="flex gap-1">
-          <div className="w-1.5 h-1.5 bg-foreground animate-pulse-dot" style={{ animationDelay: '0ms' }} />
-          <div className="w-1.5 h-1.5 bg-foreground animate-pulse-dot" style={{ animationDelay: '150ms' }} />
-          <div className="w-1.5 h-1.5 bg-foreground animate-pulse-dot" style={{ animationDelay: '300ms' }} />
+        {/* Logo */}
+        <div className="animate-fade-in">
+          <Logo size="lg" />
+        </div>
+
+        {/* Loading dots */}
+        <div className="flex gap-1.5">
+          <div className="w-1.5 h-1.5 bg-foreground/60 animate-pulse-dot" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 bg-foreground/60 animate-pulse-dot" style={{ animationDelay: '150ms' }} />
+          <div className="w-1.5 h-1.5 bg-foreground/60 animate-pulse-dot" style={{ animationDelay: '300ms' }} />
         </div>
       </div>
 
       <style>{`
         @keyframes pulse-line {
-          0%, 100% {
-            opacity: 0.4;
-            transform: translateX(-20px);
+          0% {
+            stroke-dashoffset: 500;
+            opacity: 0.3;
           }
           50% {
             opacity: 1;
-            transform: translateX(0);
+          }
+          100% {
+            stroke-dashoffset: 0;
+            opacity: 0.3;
           }
         }
         
         @keyframes pulse-dot {
           0%, 100% {
             opacity: 0.3;
+            transform: scale(0.8);
           }
           50% {
             opacity: 1;
+            transform: scale(1);
           }
         }
         
         .animate-pulse-line {
-          animation: pulse-line 1.5s ease-in-out infinite;
+          stroke-dasharray: 500;
+          animation: pulse-line 2s ease-in-out infinite;
         }
         
         .animate-pulse-dot {
