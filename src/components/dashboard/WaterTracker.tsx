@@ -1,7 +1,7 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { Droplets, Plus, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';

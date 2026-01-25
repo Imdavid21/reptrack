@@ -3,7 +3,7 @@ import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Droplets, Dumbbell, Moon, Target, ArrowRight, Check } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 
