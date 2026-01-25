@@ -80,7 +80,7 @@ export function PullupAccumulator() {
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
 
     return (
@@ -115,7 +115,7 @@ export function PullupAccumulator() {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Bar dataKey="pullups" fill="hsl(var(--foreground))">
               {chartData.map((entry, index) => (
                 <Cell

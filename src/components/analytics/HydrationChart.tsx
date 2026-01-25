@@ -34,7 +34,7 @@ export function HydrationChart() {
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload;
     
@@ -89,7 +89,7 @@ export function HydrationChart() {
                   strokeDasharray="4 4"
                   strokeOpacity={0.7}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={renderTooltip} />
                 <Bar dataKey="total" radius={[2, 2, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell

@@ -55,7 +55,7 @@ export function VolumeChart() {
     return value.toString();
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
 
     return (
@@ -96,7 +96,7 @@ export function VolumeChart() {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Bar
               dataKey="pushVolume"
               name="Push"

@@ -110,8 +110,7 @@ export function StrengthProgressionChart() {
 
   const hasEnoughData = chartData.length >= 1;
 
-  // Custom tooltip that only shows selected exercises
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null;
     
     return (
@@ -195,7 +194,7 @@ export function StrengthProgressionChart() {
                   width={35}
                   tickFormatter={(value) => `${value}`}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={renderTooltip} />
                 {filteredProgressions.map(p => (
                   <Line
                     key={p.exerciseName}
