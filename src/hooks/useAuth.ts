@@ -74,11 +74,19 @@ export function useAuth() {
   };
 
   const updateEmail = async (newEmail: string) => {
+    // Directly update the email without confirmation
     const { data, error } = await supabase.auth.updateUser({
       email: newEmail,
-    }, {
-      emailRedirectTo: `${window.location.origin}/auth`,
     });
+    
+    if (!error && user) {
+      // Also update the profiles table
+      await supabase
+        .from('profiles')
+        .update({ email: newEmail })
+        .eq('id', user.id);
+    }
+    
     return { data, error };
   };
 
