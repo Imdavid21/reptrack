@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ComparisonStat } from './ComparisonStat';
 import {
   BarChart,
   Bar,
@@ -12,8 +13,9 @@ import {
 } from 'recharts';
 
 export function VolumeChart() {
-  const { dateRange } = useDateRange();
+  const { dateRange, comparisonEnabled, previousDateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
+  const { data: prevData } = useExerciseSets(comparisonEnabled ? previousDateRange ?? undefined : undefined);
 
   const chartData = useMemo(() => {
     if (!data?.weeklyVolume) return [];
@@ -120,7 +122,35 @@ export function VolumeChart() {
         </ResponsiveContainer>
       </div>
 
-      {categoryDistribution && (
+      {/* Volume comparison stats */}
+      {comparisonEnabled && prevData?.volumeTotals && data?.volumeTotals ? (
+        <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-border">
+          <ComparisonStat
+            label="TOTAL"
+            currentValue={data.volumeTotals.total}
+            previousValue={prevData.volumeTotals.total}
+            formatValue={(v) => formatVolume(v) + ' kg'}
+          />
+          <ComparisonStat
+            label="PUSH"
+            currentValue={data.volumeTotals.push}
+            previousValue={prevData.volumeTotals.push}
+            formatValue={(v) => formatVolume(v)}
+          />
+          <ComparisonStat
+            label="PULL"
+            currentValue={data.volumeTotals.pull}
+            previousValue={prevData.volumeTotals.pull}
+            formatValue={(v) => formatVolume(v)}
+          />
+          <ComparisonStat
+            label="LEGS"
+            currentValue={data.volumeTotals.legs}
+            previousValue={prevData.volumeTotals.legs}
+            formatValue={(v) => formatVolume(v)}
+          />
+        </div>
+      ) : categoryDistribution && (
         <div className="mt-4 pt-4 border-t border-border">
           <div className="text-xs text-muted-foreground mb-2">VOLUME DISTRIBUTION</div>
           <div className="flex h-3 overflow-hidden border border-border">

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ComparisonStat } from './ComparisonStat';
 import { format, parseISO } from 'date-fns';
 import {
   LineChart,
@@ -13,8 +14,9 @@ import {
 } from 'recharts';
 
 export function SleepEnergyChart() {
-  const { dateRange } = useDateRange();
+  const { dateRange, comparisonEnabled, previousDateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
+  const { data: prevData } = useDailyMetrics(comparisonEnabled ? previousDateRange ?? undefined : undefined);
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
@@ -133,18 +135,39 @@ export function SleepEnergyChart() {
 
       {data?.totals && (
         <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border">
-          <div>
-            <div className="text-lg font-bold tabular-nums">
-              {data.totals.avgSleep?.toFixed(1) ?? '—'}h
-            </div>
-            <div className="text-xs text-muted-foreground">AVG SLEEP</div>
-          </div>
-          <div>
-            <div className="text-lg font-bold tabular-nums">
-              {data.totals.avgEnergy?.toFixed(1) ?? '—'}/10
-            </div>
-            <div className="text-xs text-muted-foreground">AVG ENERGY</div>
-          </div>
+          {comparisonEnabled && prevData ? (
+            <>
+              <ComparisonStat
+                label="AVG SLEEP"
+                currentValue={data.totals.avgSleep}
+                previousValue={prevData.totals.avgSleep}
+                unit="h"
+                formatValue={(v) => v.toFixed(1)}
+              />
+              <ComparisonStat
+                label="AVG ENERGY"
+                currentValue={data.totals.avgEnergy}
+                previousValue={prevData.totals.avgEnergy}
+                unit="/10"
+                formatValue={(v) => v.toFixed(1)}
+              />
+            </>
+          ) : (
+            <>
+              <div>
+                <div className="text-lg font-bold tabular-nums">
+                  {data.totals.avgSleep?.toFixed(1) ?? '—'}h
+                </div>
+                <div className="text-xs text-muted-foreground">AVG SLEEP</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold tabular-nums">
+                  {data.totals.avgEnergy?.toFixed(1) ?? '—'}/10
+                </div>
+                <div className="text-xs text-muted-foreground">AVG ENERGY</div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

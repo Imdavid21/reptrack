@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import { subDays, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 
 export interface DateRange {
   from: Date;
@@ -11,6 +11,10 @@ interface DateRangeContextType {
   setDateRange: (range: DateRange) => void;
   preset: string;
   setPreset: (preset: string) => void;
+  // Comparison mode
+  comparisonEnabled: boolean;
+  setComparisonEnabled: (enabled: boolean) => void;
+  previousDateRange: DateRange | null;
 }
 
 const DateRangeContext = createContext<DateRangeContextType | undefined>(undefined);
@@ -26,14 +30,27 @@ export const DATE_PRESETS = [
 ];
 
 export function DateRangeProvider({ children }: { children: ReactNode }) {
-  const [preset, setPreset] = useState('all');
+  const [preset, setPreset] = useState('30d');
+  const [comparisonEnabled, setComparisonEnabled] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    // Default to all time
+    // Default to last 30 days for better comparison
     return {
-      from: startOfDay(subDays(new Date(), 365 * 2)),
+      from: startOfDay(subDays(new Date(), 30)),
       to: endOfDay(new Date()),
     };
   });
+
+  // Calculate the previous period based on current range
+  const previousDateRange = useMemo((): DateRange | null => {
+    if (!comparisonEnabled) return null;
+    
+    const daysDiff = differenceInDays(dateRange.to, dateRange.from) + 1;
+    
+    return {
+      from: startOfDay(subDays(dateRange.from, daysDiff)),
+      to: endOfDay(subDays(dateRange.from, 1)),
+    };
+  }, [dateRange, comparisonEnabled]);
 
   const handleSetPreset = (newPreset: string) => {
     setPreset(newPreset);
@@ -52,7 +69,10 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
         dateRange, 
         setDateRange, 
         preset, 
-        setPreset: handleSetPreset 
+        setPreset: handleSetPreset,
+        comparisonEnabled,
+        setComparisonEnabled,
+        previousDateRange,
       }}
     >
       {children}
