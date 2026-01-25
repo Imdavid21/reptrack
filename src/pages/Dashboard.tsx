@@ -6,12 +6,12 @@ import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 import { TodayStats } from '@/components/dashboard/TodayStats';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
-import { CalorieTracker } from '@/components/health/CalorieTracker';
+import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { SupplementCard } from '@/components/dashboard/SupplementCard';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { Heatmap } from '@/components/dashboard/Heatmap';
-import { HealthReadingsCard } from '@/components/health/HealthReadingsCard';
+import { HealthReadingsSmartCard } from '@/components/health/HealthReadingsSmartCard';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
@@ -39,10 +39,13 @@ export default function Dashboard() {
         {/* Weekly Progress Grid */}
         <WeeklyProgress />
 
+        {/* Smart Health Readings (only shows when due) */}
+        <HealthReadingsSmartCard />
+
         {/* Core Trackers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <WaterTracker />
-          <CalorieTracker />
+          <CalorieTrackerCompact />
         </div>
 
         {/* Supplements - Standalone Card */}
@@ -54,12 +57,9 @@ export default function Dashboard() {
             <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
             {showMore ? 'SHOW LESS' : 'MORE'}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 mt-4">
+          <CollapsibleContent className="space-y-4 mt-4 animate-accordion-down">
             {/* Personal Records */}
             <PersonalRecords />
-
-            {/* Health Readings (BP/Sugar) */}
-            <HealthReadingsCard />
 
             {/* Recent Activity */}
             <RecentActivity />

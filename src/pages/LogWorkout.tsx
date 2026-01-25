@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { DaySelector } from '@/components/workout/DaySelector';
+import { DaySelectorWithCheckin, PreWorkoutData } from '@/components/workout/DaySelectorWithCheckin';
 import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
-import { PreWorkoutCheckin, PreWorkoutData } from '@/components/workout/PreWorkoutCheckin';
-import { PostWorkoutCheckin, PostWorkoutData } from '@/components/workout/PostWorkoutCheckin';
+import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWorkoutSimple';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -14,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type Step = 'select-day' | 'pre-checkin' | 'exercises' | 'post-checkin' | 'habits';
+type Step = 'select-day' | 'exercises' | 'post-checkin' | 'habits';
 type ExerciseViewMode = 'single' | 'overview';
 
 const defaultHabits: Habits = {
@@ -45,6 +44,7 @@ const defaultPostCheckin: PostWorkoutData = {
   difficulty: 5,
   satisfaction: 7,
   durationMinutes: undefined,
+  notes: undefined,
 };
 
 // Parse target reps like "4x8-10" into number of sets and rep range
@@ -64,7 +64,7 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
-const STEPS: Step[] = ['select-day', 'pre-checkin', 'exercises', 'post-checkin', 'habits'];
+const STEPS: Step[] = ['select-day', 'exercises', 'post-checkin', 'habits'];
 
 export default function LogWorkout() {
   const navigate = useNavigate();
@@ -94,8 +94,12 @@ export default function LogWorkout() {
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       setHabits(draft.habits);
-      // Handle old drafts that don't have the new step values
-      const validStep = STEPS.includes(draft.step as Step) ? draft.step as Step : 'exercises';
+      // Handle old drafts - map old step values to new ones
+      let validStep: Step = 'exercises';
+      if (draft.step === 'select-day') validStep = 'select-day';
+      else if (draft.step === 'pre-checkin' || draft.step === 'exercises') validStep = 'exercises';
+      else if (draft.step === 'post-checkin') validStep = 'post-checkin';
+      else if (draft.step === 'habits') validStep = 'habits';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       if (draft.preCheckin) setPreCheckin(draft.preCheckin);
@@ -157,12 +161,19 @@ export default function LogWorkout() {
     }
     
     setCurrentExerciseIndex(0);
-    setStep('pre-checkin');
-  };
-
-  const handlePreCheckinDone = () => {
     setWorkoutStartTime(new Date());
     setStep('exercises');
+  };
+
+  const handleQuickLog = () => {
+    // Quick log - skip exercises, just log that workout happened
+    if (!selectedDay) {
+      toast.error('Please select a workout day first');
+      return;
+    }
+    setExercises([]);
+    setWorkoutStartTime(new Date());
+    setStep('post-checkin');
   };
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
@@ -260,7 +271,7 @@ export default function LogWorkout() {
       if (exerciseViewMode === 'single' && currentExerciseIndex > 0) {
         setCurrentExerciseIndex(prev => prev - 1);
       } else {
-        setStep('pre-checkin');
+        setStep('select-day');
       }
     } else if (currentIndex > 0) {
       setStep(STEPS[currentIndex - 1]);
@@ -310,20 +321,13 @@ export default function LogWorkout() {
 
         {/* Step Content */}
         {step === 'select-day' && (
-          <DaySelector selectedDay={selectedDay} onSelect={handleDaySelect} />
-        )}
-
-        {step === 'pre-checkin' && (
-          <>
-            <PreWorkoutCheckin data={preCheckin} onChange={setPreCheckin} />
-            
-            <button
-              onClick={handlePreCheckinDone}
-              className="btn-brutalist btn-primary w-full py-4"
-            >
-              START WORKOUT
-            </button>
-          </>
+          <DaySelectorWithCheckin 
+            selectedDay={selectedDay} 
+            preCheckin={preCheckin}
+            onSelect={handleDaySelect}
+            onPreCheckinChange={setPreCheckin}
+            onQuickLog={selectedDay ? handleQuickLog : undefined}
+          />
         )}
 
         {step === 'exercises' && (
@@ -405,7 +409,15 @@ export default function LogWorkout() {
 
         {step === 'post-checkin' && (
           <>
-            <PostWorkoutCheckin data={postCheckin} onChange={setPostCheckin} />
+            <PostWorkoutSimple 
+              data={postCheckin} 
+              onChange={setPostCheckin}
+              autoCalculatedDuration={
+                workoutStartTime 
+                  ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
+                  : undefined
+              }
+            />
             
             <button
               onClick={handlePostCheckinDone}
