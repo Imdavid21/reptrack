@@ -446,6 +446,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          daily_calorie_goal: number | null
+          daily_water_goal: number | null
+          id: string
+          onboarding_completed: boolean | null
+          sleep_goal: number | null
+          units_system: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_workout_goal: number | null
+          weight_goal: number | null
+          weight_goal_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_calorie_goal?: number | null
+          daily_water_goal?: number | null
+          id?: string
+          onboarding_completed?: boolean | null
+          sleep_goal?: number | null
+          units_system?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_workout_goal?: number | null
+          weight_goal?: number | null
+          weight_goal_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_calorie_goal?: number | null
+          daily_water_goal?: number | null
+          id?: string
+          onboarding_completed?: boolean | null
+          sleep_goal?: number | null
+          units_system?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_workout_goal?: number | null
+          weight_goal?: number | null
+          weight_goal_type?: string | null
+        }
+        Relationships: []
+      }
       water_logs: {
         Row: {
           amount: number | null
