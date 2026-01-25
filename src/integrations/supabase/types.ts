@@ -182,6 +182,48 @@ export type Database = {
         }
         Relationships: []
       }
+      deload_weeks: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          fatigue_indicators: Json | null
+          id: string
+          intensity_reduction_percent: number | null
+          notes: string | null
+          trigger_reason: string
+          user_id: string
+          volume_reduction_percent: number | null
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          fatigue_indicators?: Json | null
+          id?: string
+          intensity_reduction_percent?: number | null
+          notes?: string | null
+          trigger_reason: string
+          user_id: string
+          volume_reduction_percent?: number | null
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          fatigue_indicators?: Json | null
+          id?: string
+          intensity_reduction_percent?: number | null
+          notes?: string | null
+          trigger_reason?: string
+          user_id?: string
+          volume_reduction_percent?: number | null
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       exercise_sets: {
         Row: {
           actual_reps: number | null
@@ -191,9 +233,13 @@ export type Database = {
           exercise_category: string
           exercise_name: string
           id: string
+          movement_pattern: string | null
+          primary_muscles: string[] | null
           set_number: number
           target_reps: number | null
           target_weight: number | null
+          template_id: string | null
+          template_snapshot: Json | null
           workout_id: string
         }
         Insert: {
@@ -204,9 +250,13 @@ export type Database = {
           exercise_category: string
           exercise_name: string
           id?: string
+          movement_pattern?: string | null
+          primary_muscles?: string[] | null
           set_number: number
           target_reps?: number | null
           target_weight?: number | null
+          template_id?: string | null
+          template_snapshot?: Json | null
           workout_id: string
         }
         Update: {
@@ -217,12 +267,23 @@ export type Database = {
           exercise_category?: string
           exercise_name?: string
           id?: string
+          movement_pattern?: string | null
+          primary_muscles?: string[] | null
           set_number?: number
           target_reps?: number | null
           target_weight?: number | null
+          template_id?: string | null
+          template_snapshot?: Json | null
           workout_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "exercise_sets_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "exercise_sets_workout_id_fkey"
             columns: ["workout_id"]
@@ -231,6 +292,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exercise_templates: {
+        Row: {
+          canonical_name: string
+          category: string
+          created_at: string | null
+          default_reps: string | null
+          default_weight: string | null
+          deprecated_at: string | null
+          equipment: string
+          id: string
+          movement_pattern: string
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[] | null
+          updated_at: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          canonical_name: string
+          category: string
+          created_at?: string | null
+          default_reps?: string | null
+          default_weight?: string | null
+          deprecated_at?: string | null
+          equipment?: string
+          id?: string
+          movement_pattern?: string
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          version?: number
+        }
+        Update: {
+          canonical_name?: string
+          category?: string
+          created_at?: string | null
+          default_reps?: string | null
+          default_weight?: string | null
+          deprecated_at?: string | null
+          equipment?: string
+          id?: string
+          movement_pattern?: string
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
       }
       exercises: {
         Row: {
@@ -491,6 +606,60 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recovery_metrics: {
+        Row: {
+          created_at: string | null
+          date: string
+          deload_recommended: boolean | null
+          fatigue_level: number | null
+          hrv_ms: number | null
+          id: string
+          muscle_soreness: number | null
+          notes: string | null
+          recovery_score: number | null
+          resting_hr: number | null
+          sleep_quality: number | null
+          stress_level: number | null
+          updated_at: string | null
+          user_id: string
+          workout_readiness: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          deload_recommended?: boolean | null
+          fatigue_level?: number | null
+          hrv_ms?: number | null
+          id?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id: string
+          workout_readiness?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          deload_recommended?: boolean | null
+          fatigue_level?: number | null
+          hrv_ms?: number | null
+          id?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id?: string
+          workout_readiness?: number | null
         }
         Relationships: []
       }
