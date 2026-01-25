@@ -1,6 +1,7 @@
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { Progress } from '@/components/ui/progress';
 import { Flame, Target, Calendar } from 'lucide-react';
+import { startOfWeek, format } from 'date-fns';
 
 export function ProgressHeader() {
   const { workouts } = useWorkouts();
@@ -9,7 +10,11 @@ export function ProgressHeader() {
   const targetSessions = 72; // 12 weeks × 6 days
   const progressPercent = Math.min((totalSessions / targetSessions) * 100, 100);
   const currentWeek = Math.ceil(totalSessions / 6) || 1;
-  const sessionsThisWeek = totalSessions % 6 || (totalSessions > 0 ? 6 : 0);
+  
+  // Count sessions this calendar week (Mon-Sun)
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const sessionsThisWeek = workouts.filter(w => w.date >= weekStartStr).length;
 
   // Calculate current streak
   const calculateStreak = () => {
