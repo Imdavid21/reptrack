@@ -13,12 +13,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Ensure single React instance for all dependencies
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom'],
   },
 }));
