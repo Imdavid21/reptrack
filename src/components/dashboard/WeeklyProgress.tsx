@@ -4,12 +4,12 @@ import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const WORKOUT_DAYS = [
-  { day: 'Mon', label: 'Push A' },
-  { day: 'Tue', label: 'Pull A' },
-  { day: 'Wed', label: 'Legs A' },
-  { day: 'Thu', label: 'Push B' },
-  { day: 'Fri', label: 'Pull B' },
-  { day: 'Sat', label: 'Legs B' },
+  { day: 'Mon', label: 'Push' },
+  { day: 'Tue', label: 'Pull' },
+  { day: 'Wed', label: 'Legs' },
+  { day: 'Thu', label: 'Push' },
+  { day: 'Fri', label: 'Pull' },
+  { day: 'Sat', label: 'Legs' },
   { day: 'Sun', label: 'Rest' },
 ];
 
@@ -18,10 +18,19 @@ export function WeeklyProgress() {
   
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
-  // Get workouts for this week
+  // Get dates for this week and create a lookup for workout dates
   const weekDates = WORKOUT_DAYS.map((_, i) => addDays(weekStart, i));
-  const workoutDatesSet = new Set(workouts.map(w => w.date));
+  
+  // Create a Set of workout date strings for quick lookup
+  const workoutDatesSet = new Set(
+    workouts.map(w => {
+      // Ensure consistent date format comparison
+      const d = new Date(w.date + 'T00:00:00');
+      return format(d, 'yyyy-MM-dd');
+    })
+  );
 
   return (
     <div className="card-brutalist">
@@ -30,10 +39,11 @@ export function WeeklyProgress() {
       <div className="grid grid-cols-7 gap-1">
         {WORKOUT_DAYS.map((item, i) => {
           const date = weekDates[i];
+          date.setHours(0, 0, 0, 0);
           const dateStr = format(date, 'yyyy-MM-dd');
           const isCompleted = workoutDatesSet.has(dateStr);
           const isToday = isSameDay(date, today);
-          const isPast = date < today && !isToday;
+          const isPast = date.getTime() < today.getTime() && !isToday;
           const isRest = item.day === 'Sun';
 
           return (
