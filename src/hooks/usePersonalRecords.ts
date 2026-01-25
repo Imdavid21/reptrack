@@ -2,13 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-interface PersonalRecord {
+export interface PersonalRecord {
   exerciseName: string;
   maxWeight: number;
   reps: string;
   date: string;
 }
 
+// Expanded list of tracked exercises for PR display
 const TRACKED_EXERCISES = [
   'Incline DB Press',
   'Flat Barbell Bench',
@@ -16,12 +17,46 @@ const TRACKED_EXERCISES = [
   'Conventional Deadlift',
   'Barbell Row',
   'Overhead Press',
+  'Flat DB Press',
+  'Incline Barbell Bench',
+  'Cable Flyes',
+  'Dumbbell Shoulder Press',
+  'Lateral Raises',
+  'Romanian Deadlift',
+  'Leg Press',
+  'Hack Squat',
+  'Lat Pulldown',
+  'Seated Cable Row',
+  'T-Bar Row',
+  'Dumbbell Curl',
+  'Barbell Curl',
+  'Tricep Pushdown',
+  'Skull Crushers',
 ];
+
+// Canonical name mapping for exercise variants
+const EXERCISE_ALIASES: Record<string, string> = {
+  'Barbell OHP': 'Overhead Press',
+  'Barbell Overhead Press': 'Overhead Press',
+  'DB Press': 'Flat DB Press',
+  'Dumbbell Bench Press': 'Flat DB Press',
+  'BB Squat': 'Barbell Squat',
+  'Back Squat': 'Barbell Squat',
+  'Deadlift': 'Conventional Deadlift',
+  'RDL': 'Romanian Deadlift',
+  'DB Shoulder Press': 'Dumbbell Shoulder Press',
+  'DB OHP': 'Dumbbell Shoulder Press',
+};
+
+function getCanonicalName(name: string): string {
+  const baseName = name.replace(/\s*\(Set \d+\)$/, '').trim();
+  return EXERCISE_ALIASES[baseName] || baseName;
+}
 
 export function usePersonalRecords() {
   const { user } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['personalRecords', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -46,18 +81,18 @@ export function usePersonalRecords() {
       const prMap: Record<string, PersonalRecord> = {};
 
       for (const ex of exercises || []) {
-        const baseName = ex.name.replace(/\s*\(Set \d+\)$/, '');
+        const canonicalName = getCanonicalName(ex.name);
         
-        if (!TRACKED_EXERCISES.includes(baseName)) continue;
+        if (!TRACKED_EXERCISES.includes(canonicalName)) continue;
 
         const weight = parseFloat(ex.actual_weight || '0');
         if (isNaN(weight) || weight === 0) continue;
 
         const workout = ex.workouts as unknown as { date: string };
 
-        if (!prMap[baseName] || weight > prMap[baseName].maxWeight) {
-          prMap[baseName] = {
-            exerciseName: baseName,
+        if (!prMap[canonicalName] || weight > prMap[canonicalName].maxWeight) {
+          prMap[canonicalName] = {
+            exerciseName: canonicalName,
             maxWeight: weight,
             reps: ex.actual_reps || '',
             date: workout.date,
@@ -69,4 +104,15 @@ export function usePersonalRecords() {
     },
     enabled: !!user,
   });
+
+  // Helper to get PR for a specific exercise
+  const getPRForExercise = (exerciseName: string): PersonalRecord | undefined => {
+    const canonicalName = getCanonicalName(exerciseName);
+    return query.data?.find(pr => pr.exerciseName === canonicalName);
+  };
+
+  return {
+    ...query,
+    getPRForExercise,
+  };
 }

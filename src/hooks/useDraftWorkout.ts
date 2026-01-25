@@ -53,44 +53,19 @@ export function useDraftWorkout() {
     setLoaded(true);
   }, [user]);
 
-  // Save draft to localStorage
-  const saveDraft = useCallback((draftData: Partial<DraftWorkout>) => {
+  // Save draft to localStorage - use ref to avoid dependency loop
+  const saveDraft = useCallback((draftData: Omit<DraftWorkout, 'lastSavedAt'>) => {
     if (!user) return;
 
     const key = `${DRAFT_KEY}_${user.id}`;
     const newDraft: DraftWorkout = {
-      ...(draft || {
-        day: '',
-        dayName: '',
-        date: new Date().toISOString(),
-        weekNumber: 1,
-        exercises: [],
-        habits: {
-          pullups: 0,
-          water_intake: 0,
-          sleep_hours: 0,
-          energy_level: 5,
-          supplements: {
-            whey: false,
-            casein: false,
-            creatine: false,
-            omega3: false,
-            vitaminD: false,
-            magnesium: false,
-            zinc: false,
-          },
-        },
-        currentExerciseIndex: 0,
-        step: 'select-day',
-        lastSavedAt: new Date().toISOString(),
-      }),
       ...draftData,
       lastSavedAt: new Date().toISOString(),
     };
 
     setDraft(newDraft);
     localStorage.setItem(key, JSON.stringify(newDraft));
-  }, [user, draft]);
+  }, [user]);
 
   // Clear draft after successful submission
   const clearDraft = useCallback(() => {

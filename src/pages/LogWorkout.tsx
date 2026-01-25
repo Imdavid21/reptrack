@@ -8,6 +8,7 @@ import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWor
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
+import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
@@ -70,6 +71,7 @@ export default function LogWorkout() {
   const navigate = useNavigate();
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
+  const { getPRForExercise } = usePersonalRecords();
   
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -110,9 +112,11 @@ export default function LogWorkout() {
     }
   }, [loaded, draft, draftRestored]);
 
-  // Auto-save when state changes
+  // Auto-save when state changes (debounced to prevent rapid updates)
   useEffect(() => {
-    if (step !== 'select-day' && selectedDay && exercises.length > 0) {
+    if (step === 'select-day' || !selectedDay || exercises.length === 0) return;
+    
+    const timeoutId = setTimeout(() => {
       saveDraft({
         day: selectedDay,
         dayName: defaultRoutine.days[selectedDay]?.name || '',
@@ -126,7 +130,9 @@ export default function LogWorkout() {
         postCheckin,
         workoutStartTime: workoutStartTime?.toISOString(),
       });
-    }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, preCheckin, postCheckin, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
@@ -379,6 +385,7 @@ export default function LogWorkout() {
                 onComplete={handleExercisesDone}
                 isFirst={currentExerciseIndex === 0}
                 isLast={currentExerciseIndex === exercises.length - 1}
+                personalRecord={getPRForExercise(currentExercise.name)}
               />
             )}
 
