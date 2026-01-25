@@ -1,6 +1,12 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { StrengthProgressionChart } from '@/components/analytics/StrengthProgressionChart';
+import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
+import { BodyweightChart } from '@/components/analytics/BodyweightChart';
+import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
+import { HydrationChart } from '@/components/analytics/HydrationChart';
+import { VolumeChart } from '@/components/analytics/VolumeChart';
+import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
 import { TrendingUp, Target, Percent } from 'lucide-react';
 
 export default function Analytics() {
@@ -34,7 +40,7 @@ export default function Analytics() {
 
   return (
     <MainLayout title="ANALYTICS">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in pb-20">
         {/* Stats */}
         <div className="grid gap-2">
           {stats.map(({ label, value, icon: Icon, description }) => (
@@ -51,6 +57,25 @@ export default function Analytics() {
 
         {/* Strength Progression Chart */}
         <StrengthProgressionChart />
+
+        {/* Volume Analytics */}
+        <VolumeChart />
+
+        {/* Habit Trends Section */}
+        <div className="space-y-4">
+          <h2 className="section-header">HABIT TRENDS</h2>
+          
+          <SleepEnergyChart />
+          <BodyweightChart />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PullupAccumulator />
+            <HydrationChart />
+          </div>
+        </div>
+
+        {/* Supplement Adherence */}
+        <SupplementAdherence />
       </div>
     </MainLayout>
   );
