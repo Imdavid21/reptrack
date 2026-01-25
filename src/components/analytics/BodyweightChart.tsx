@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ComparisonStat } from './ComparisonStat';
 import { format, parseISO } from 'date-fns';
 import {
   LineChart,
@@ -15,9 +14,8 @@ import {
 } from 'recharts';
 
 export function BodyweightChart() {
-  const { dateRange, comparisonEnabled, previousDateRange } = useDateRange();
+  const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
-  const { data: prevData } = useDailyMetrics(comparisonEnabled ? previousDateRange ?? undefined : undefined);
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
@@ -131,45 +129,18 @@ export function BodyweightChart() {
       </div>
 
       <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
-        {comparisonEnabled && prevData ? (
-          <>
-            <ComparisonStat
-              label="CURRENT"
-              currentValue={lastWeight}
-              previousValue={prevData.totals.avgBodyweight}
-              unit=" kg"
-              formatValue={(v) => v.toFixed(1)}
-              higherIsBetter={false}
-            />
-            <ComparisonStat
-              label="AVERAGE"
-              currentValue={avgWeight}
-              previousValue={prevData.totals.avgBodyweight}
-              unit=" kg"
-              formatValue={(v) => v.toFixed(1)}
-              higherIsBetter={false}
-            />
-            <div>
-              <div className="text-lg font-bold tabular-nums">{firstWeight} kg</div>
-              <div className="text-xs text-muted-foreground">START</div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <div className="text-lg font-bold tabular-nums">{firstWeight} kg</div>
-              <div className="text-xs text-muted-foreground">START</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold tabular-nums">{lastWeight} kg</div>
-              <div className="text-xs text-muted-foreground">CURRENT</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold tabular-nums">{avgWeight?.toFixed(1)} kg</div>
-              <div className="text-xs text-muted-foreground">AVERAGE</div>
-            </div>
-          </>
-        )}
+        <div>
+          <div className="text-lg font-bold tabular-nums">{firstWeight} kg</div>
+          <div className="text-xs text-muted-foreground">START</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold tabular-nums">{lastWeight} kg</div>
+          <div className="text-xs text-muted-foreground">CURRENT</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold tabular-nums">{avgWeight?.toFixed(1)} kg</div>
+          <div className="text-xs text-muted-foreground">AVERAGE</div>
+        </div>
       </div>
     </div>
   );

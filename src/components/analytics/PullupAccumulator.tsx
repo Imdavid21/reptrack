@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ComparisonStat } from './ComparisonStat';
 import { format, parseISO, startOfWeek } from 'date-fns';
 import {
   BarChart,
@@ -15,9 +14,8 @@ import {
 } from 'recharts';
 
 export function PullupAccumulator() {
-  const { dateRange, comparisonEnabled, previousDateRange } = useDateRange();
+  const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
-  const { data: prevData } = useDailyMetrics(comparisonEnabled ? previousDateRange ?? undefined : undefined);
 
   const { chartData, totalPullups, weeklyAvg } = useMemo(() => {
     if (!data?.dataPoints) {
@@ -63,20 +61,6 @@ export function PullupAccumulator() {
         : 0,
     };
   }, [data]);
-
-  const prevWeeklyAvg = useMemo(() => {
-    if (!prevData?.dataPoints || prevData.dataPoints.length === 0) return 0;
-    
-    const weeklyMap = new Map<string, number>();
-    prevData.dataPoints.forEach(d => {
-      const weekStart = startOfWeek(parseISO(d.date), { weekStartsOn: 1 });
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-      weeklyMap.set(weekKey, (weeklyMap.get(weekKey) || 0) + (d.pullups || 0));
-    });
-    
-    const weeks = Array.from(weeklyMap.values());
-    return weeks.length > 0 ? Math.round(weeks.reduce((a, b) => a + b, 0) / weeks.length) : 0;
-  }, [prevData]);
 
   if (isLoading) {
     return (
@@ -150,31 +134,14 @@ export function PullupAccumulator() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border">
-        {comparisonEnabled && prevData ? (
-          <>
-            <ComparisonStat
-              label="TOTAL"
-              currentValue={totalPullups}
-              previousValue={prevData.totals.totalPullups}
-            />
-            <ComparisonStat
-              label="AVG/WEEK"
-              currentValue={weeklyAvg}
-              previousValue={prevWeeklyAvg}
-            />
-          </>
-        ) : (
-          <>
-            <div>
-              <div className="text-lg font-bold tabular-nums">{weeklyAvg}</div>
-              <div className="text-xs text-muted-foreground">AVG/WEEK</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold tabular-nums">{chartData.length}</div>
-              <div className="text-xs text-muted-foreground">WEEKS TRACKED</div>
-            </div>
-          </>
-        )}
+        <div>
+          <div className="text-lg font-bold tabular-nums">{weeklyAvg}</div>
+          <div className="text-xs text-muted-foreground">AVG/WEEK</div>
+        </div>
+        <div>
+          <div className="text-lg font-bold tabular-nums">{chartData.length}</div>
+          <div className="text-xs text-muted-foreground">WEEKS TRACKED</div>
+        </div>
       </div>
     </div>
   );
