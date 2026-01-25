@@ -26,14 +26,6 @@ interface DaySelectorWithCheckinProps {
   onQuickLog?: () => void;
 }
 
-const EMOJI_SCALE = ['😴', '😐', '🙂', '😊', '🔥'];
-
-function getEmoji(value: number, inverted?: boolean): string {
-  const v = inverted ? 11 - value : value;
-  const index = Math.min(Math.floor((v - 1) / 2), 4);
-  return EMOJI_SCALE[index];
-}
-
 export function DaySelectorWithCheckin({ 
   selectedDay, 
   preCheckin,
@@ -146,15 +138,13 @@ export function DaySelectorWithCheckin({
         <CollapsibleTrigger className="flex items-center justify-between w-full p-3 border border-border bg-card hover:bg-muted/50 transition-colors">
           <span className="text-xs font-medium text-muted-foreground">PRE-WORKOUT CHECK-IN</span>
           <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {checkinMetrics.map(({ key, inverted }) => (
-                <span key={key} className="text-lg">{getEmoji(preCheckin[key], inverted)}</span>
-              ))}
-            </div>
+            <span className="text-xs font-mono text-muted-foreground">
+              {preCheckin.energy}/{preCheckin.motivation}/{preCheckin.soreness}
+            </span>
             {showCheckin ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </CollapsibleTrigger>
-        <CollapsibleContent className="border border-t-0 border-border p-4 space-y-4 animate-accordion-down">
+        <CollapsibleContent className="border border-t-0 border-border p-4 space-y-4">
           {checkinMetrics.map(({ key, label, icon: Icon, lowLabel, highLabel, inverted }) => (
             <div key={key} className="space-y-2">
               <div className="flex items-center justify-between">
@@ -162,10 +152,7 @@ export function DaySelectorWithCheckin({
                   <Icon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs font-medium">{label}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{getEmoji(preCheckin[key], inverted)}</span>
-                  <span className="font-bold tabular-nums w-6 text-right">{preCheckin[key]}</span>
-                </div>
+                <span className="font-bold tabular-nums">{preCheckin[key]}</span>
               </div>
               <Slider
                 value={[preCheckin[key]]}

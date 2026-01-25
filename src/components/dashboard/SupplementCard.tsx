@@ -36,7 +36,6 @@ export function SupplementCard() {
     from: new Date(),
     to: new Date(),
   });
-  const [animatingKey, setAnimatingKey] = useState<string | null>(null);
 
   const todayData = data?.dataPoints.find(d => d.date === today);
   const currentSupplements = todayData?.supplements || DEFAULT_SUPPLEMENTS;
@@ -46,11 +45,7 @@ export function SupplementCard() {
 
   const handleToggle = async (key: SupplementKey) => {
     const willBeChecked = !currentSupplements[key];
-    
-    // Trigger animation and haptic
-    setAnimatingKey(key);
-    haptic(willBeChecked ? 'success' : 'light');
-    setTimeout(() => setAnimatingKey(null), 300);
+    haptic('light');
     
     try {
       const newSupplements = {
@@ -93,7 +88,6 @@ export function SupplementCard() {
         <div className="grid grid-cols-2 gap-3">
           {supplements.map(({ key, label }) => {
             const isChecked = currentSupplements[key];
-            const isAnimating = animatingKey === key;
             
             return (
               <button
@@ -104,23 +98,22 @@ export function SupplementCard() {
               >
                 <div
                   className={cn(
-                    "w-5 h-5 border-2 flex items-center justify-center transition-all duration-200",
+                    "w-4 h-4 border flex items-center justify-center transition-colors duration-150",
                     isChecked 
                       ? "bg-primary border-primary" 
-                      : "border-muted-foreground bg-transparent",
-                    isAnimating && "scale-125"
+                      : "border-muted-foreground bg-transparent"
                   )}
                 >
                   <Check 
                     className={cn(
-                      "h-3 w-3 text-primary-foreground transition-all duration-200",
-                      isChecked ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                      "h-2.5 w-2.5 text-primary-foreground transition-opacity duration-150",
+                      isChecked ? "opacity-100" : "opacity-0"
                     )} 
                   />
                 </div>
                 <Label 
                   className={cn(
-                    "text-sm cursor-pointer transition-colors",
+                    "text-sm cursor-pointer transition-colors duration-150",
                     isChecked ? "text-foreground" : "text-muted-foreground"
                   )}
                 >
