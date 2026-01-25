@@ -6,6 +6,10 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
+import { MorningCheckinCard } from '@/components/health/MorningCheckinCard';
+import { NightCheckinCard } from '@/components/health/NightCheckinCard';
+import { CalorieTracker } from '@/components/health/CalorieTracker';
+import { HealthReadingsCard } from '@/components/health/HealthReadingsCard';
 import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
@@ -15,14 +19,26 @@ export default function Dashboard() {
         {/* Main Progress */}
         <ProgressHeader />
 
+        {/* Morning & Night Check-ins */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MorningCheckinCard />
+          <NightCheckinCard />
+        </div>
+
+        {/* Calorie Tracking */}
+        <CalorieTracker />
+
+        {/* Water Tracking */}
+        <WaterTracker />
+
+        {/* Health Readings */}
+        <HealthReadingsCard />
+
         {/* Weekly Overview */}
         <WeeklyProgress />
 
         {/* Personal Records */}
         <PersonalRecords />
-
-        {/* Water Tracking */}
-        <WaterTracker />
 
         {/* Recent Activity */}
         <RecentActivity />

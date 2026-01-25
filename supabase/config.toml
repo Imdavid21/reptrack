@@ -1,7 +1,13 @@
 project_id = "kfifgbqkykyvnrirxwze"
 
+[functions.analyze-food]
+verify_jwt = false
+
 [functions.generate-workout]
 verify_jwt = false
 
 [functions.telegram-water-reminder]
+verify_jwt = false
+
+[functions.generate-insights]
 verify_jwt = false
