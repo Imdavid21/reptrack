@@ -7,7 +7,7 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
         sm: "640px",
         md: "768px",
@@ -37,10 +37,6 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -56,6 +52,21 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        heat: {
+          0: "hsl(var(--heat-0))",
+          1: "hsl(var(--heat-1))",
+          2: "hsl(var(--heat-2))",
+          3: "hsl(var(--heat-3))",
+          4: "hsl(var(--heat-4))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -74,9 +85,10 @@ export default {
         'safe-top': 'env(safe-area-inset-top)',
       },
       borderRadius: {
-        lg: "0px",
-        md: "0px",
-        sm: "0px",
+        lg: "var(--radius)",
+        md: "var(--radius)",
+        sm: "var(--radius)",
+        progress: "var(--progress-radius)",
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
@@ -92,8 +104,8 @@ export default {
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.15s ease-out",
-        "accordion-up": "accordion-up 0.15s ease-out",
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
