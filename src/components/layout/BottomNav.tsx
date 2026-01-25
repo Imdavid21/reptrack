@@ -1,11 +1,11 @@
-import { Home, Dumbbell, Sparkles, BarChart3, History, Settings } from 'lucide-react';
+import { Home, Dumbbell, Sparkles, BarChart3, History, Settings, HeartPulse } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/log', icon: Dumbbell, label: 'Log' },
-  { to: '/create', icon: Sparkles, label: 'Create' },
+  { to: '/health', icon: HeartPulse, label: 'Health' },
   { to: '/analytics', icon: BarChart3, label: 'Stats' },
   { to: '/history', icon: History, label: 'History' },
   { to: '/settings', icon: Settings, label: 'Settings' },
