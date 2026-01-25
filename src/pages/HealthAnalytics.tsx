@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
 import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
-import { AppleHealthSync } from '@/components/health/AppleHealthSync';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import {
@@ -68,8 +67,6 @@ export default function HealthAnalytics() {
         {/* AI Health Insights */}
         <HealthInsightsCard />
 
-        {/* Apple Health Sync */}
-        <AppleHealthSync />
 
         {/* Weekly Summaries */}
         {weeklySummaries.length > 0 && (

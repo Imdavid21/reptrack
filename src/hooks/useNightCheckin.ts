@@ -10,6 +10,8 @@ export interface NightCheckin {
   performance_score: number | null;
   energy_score: number | null;
   steps: number;
+  bodyweight: number | null;
+  is_rest_day: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;

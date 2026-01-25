@@ -111,6 +111,7 @@ export type Database = {
           date: string
           energy_level: number | null
           id: string
+          is_rest_day: boolean | null
           notes: string | null
           pullups: number | null
           sleep_hours: number | null
@@ -124,6 +125,7 @@ export type Database = {
           date: string
           energy_level?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
@@ -137,6 +139,7 @@ export type Database = {
           date?: string
           energy_level?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
@@ -334,6 +337,7 @@ export type Database = {
       }
       morning_checkins: {
         Row: {
+          bodyweight: number | null
           created_at: string | null
           date: string
           energy_level: number | null
@@ -348,6 +352,7 @@ export type Database = {
           wake_time: string | null
         }
         Insert: {
+          bodyweight?: number | null
           created_at?: string | null
           date?: string
           energy_level?: number | null
@@ -362,6 +367,7 @@ export type Database = {
           wake_time?: string | null
         }
         Update: {
+          bodyweight?: number | null
           created_at?: string | null
           date?: string
           energy_level?: number | null
@@ -379,10 +385,12 @@ export type Database = {
       }
       night_checkins: {
         Row: {
+          bodyweight: number | null
           created_at: string | null
           date: string
           energy_score: number | null
           id: string
+          is_rest_day: boolean | null
           notes: string | null
           performance_score: number | null
           steps: number | null
@@ -390,10 +398,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bodyweight?: number | null
           created_at?: string | null
           date?: string
           energy_score?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           performance_score?: number | null
           steps?: number | null
@@ -401,10 +411,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bodyweight?: number | null
           created_at?: string | null
           date?: string
           energy_score?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           performance_score?: number | null
           steps?: number | null
