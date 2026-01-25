@@ -12,7 +12,7 @@ export function MainLayout({ children, title, hideHeader }: MainLayoutProps) {
   return (
     <div className="min-h-screen bg-background pb-20">
       {!hideHeader && <Header title={title} />}
-      <main className="px-4 py-4">{children}</main>
+      <main className="px-8 py-6">{children}</main>
       <BottomNav />
     </div>
   );

@@ -3,11 +3,11 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/', icon: Home, label: 'Today' },
-  { to: '/log', icon: Dumbbell, label: 'Workout' },
-  { to: '/insights', icon: BarChart3, label: 'Insights' },
-  { to: '/history', icon: History, label: 'History' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/', icon: Home, label: 'TODAY' },
+  { to: '/log', icon: Dumbbell, label: 'LOG' },
+  { to: '/insights', icon: BarChart3, label: 'STATS' },
+  { to: '/history', icon: History, label: 'HISTORY' },
+  { to: '/settings', icon: Settings, label: 'SETTINGS' },
 ];
 
 export function BottomNav() {
@@ -22,8 +22,8 @@ export function BottomNav() {
               cn('tab-item min-w-[48px]', isActive && 'tab-item-active')
             }
           >
-            <Icon className="h-5 w-5" />
-            <span className="text-2xs mt-1">{label}</span>
+            <Icon className="h-5 w-5" strokeWidth={1.5} />
+            <span className="text-[10px] mt-1 font-mono">{label}</span>
           </NavLink>
         ))}
       </div>
