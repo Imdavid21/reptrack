@@ -2,12 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import LogWorkout from "./pages/LogWorkout";
 import CreateRoutine from "./pages/CreateRoutine";
-import Analytics from "./pages/Analytics";
-import HealthAnalytics from "./pages/HealthAnalytics";
+import Insights from "./pages/Insights";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
@@ -35,8 +34,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/log" element={<LogWorkout />} />
           <Route path="/create" element={<CreateRoutine />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/health" element={<HealthAnalytics />} />
+          <Route path="/insights" element={<Insights />} />
+          {/* Redirect old routes to new unified insights */}
+          <Route path="/analytics" element={<Navigate to="/insights" replace />} />
+          <Route path="/health" element={<Navigate to="/insights?tab=vitals" replace />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/:workoutId" element={<WorkoutDetail />} />
           <Route path="/settings" element={<Settings />} />

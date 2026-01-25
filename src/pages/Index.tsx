@@ -10,7 +10,7 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-2xl font-bold tracking-widest animate-pulse">
-            FITTRACK
+            HEALTH OS
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             Loading...

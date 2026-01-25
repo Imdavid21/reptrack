@@ -1,50 +1,69 @@
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
+import { DailyRitualCard } from '@/components/dashboard/DailyRitualCard';
+import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
+import { TodayStats } from '@/components/dashboard/TodayStats';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
-import { RecentActivity } from '@/components/dashboard/RecentActivity';
-import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
-import { Heatmap } from '@/components/dashboard/Heatmap';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
-import { MorningCheckinCard } from '@/components/health/MorningCheckinCard';
-import { NightCheckinCard } from '@/components/health/NightCheckinCard';
 import { CalorieTracker } from '@/components/health/CalorieTracker';
+import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { Heatmap } from '@/components/dashboard/Heatmap';
 import { HealthReadingsCard } from '@/components/health/HealthReadingsCard';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
+  const [showMore, setShowMore] = useState(false);
+
   return (
     <MainLayout>
       <div className="space-y-4 animate-fade-in pb-20">
-        {/* Main Progress */}
+        {/* Progress Overview */}
         <ProgressHeader />
 
-        {/* Morning & Night Check-ins */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MorningCheckinCard />
-          <NightCheckinCard />
-        </div>
+        {/* Quick Actions Bar */}
+        <QuickActionsBar />
 
-        {/* Calorie Tracking */}
-        <CalorieTracker />
+        {/* Today's Stats (horizontal scroll) */}
+        <TodayStats />
 
-        {/* Water Tracking */}
-        <WaterTracker />
+        {/* Time-Aware Daily Ritual Card */}
+        <DailyRitualCard />
 
-        {/* Health Readings */}
-        <HealthReadingsCard />
-
-        {/* Weekly Overview */}
+        {/* Weekly Progress Grid */}
         <WeeklyProgress />
 
-        {/* Personal Records */}
-        <PersonalRecords />
+        {/* Core Trackers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <WaterTracker />
+          <CalorieTracker />
+        </div>
 
-        {/* Recent Activity */}
-        <RecentActivity />
+        {/* Collapsible More Section */}
+        <Collapsible open={showMore} onOpenChange={setShowMore}>
+          <CollapsibleTrigger className="flex items-center justify-center gap-2 w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border bg-card">
+            <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
+            {showMore ? 'SHOW LESS' : 'MORE'}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 mt-4">
+            {/* Personal Records */}
+            <PersonalRecords />
 
-        {/* Activity Heatmap */}
-        <Heatmap />
+            {/* Health Readings (BP/Sugar) */}
+            <HealthReadingsCard />
+
+            {/* Recent Activity */}
+            <RecentActivity />
+
+            {/* Activity Heatmap */}
+            <Heatmap />
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Floating Action Button */}
