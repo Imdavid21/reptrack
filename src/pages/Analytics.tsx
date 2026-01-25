@@ -7,6 +7,7 @@ import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { VolumeChart } from '@/components/analytics/VolumeChart';
 import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
+import { AICoachInsights } from '@/components/analytics/AICoachInsights';
 import { TrendingUp, Target, Percent } from 'lucide-react';
 
 export default function Analytics() {
@@ -54,6 +55,9 @@ export default function Analytics() {
             </div>
           ))}
         </div>
+
+        {/* AI Coach Insights */}
+        <AICoachInsights />
 
         {/* Strength Progression Chart */}
         <StrengthProgressionChart />

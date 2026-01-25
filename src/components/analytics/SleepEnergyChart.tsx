@@ -47,7 +47,7 @@ export function SleepEnergyChart() {
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     
     return (
@@ -104,7 +104,7 @@ export function SleepEnergyChart() {
               tickLine={false}
               hide
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Line
               yAxisId="left"
               type="monotone"
