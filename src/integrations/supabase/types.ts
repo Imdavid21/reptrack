@@ -41,6 +41,98 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_metrics: {
+        Row: {
+          bodyweight: number | null
+          created_at: string | null
+          date: string
+          energy_level: number | null
+          id: string
+          notes: string | null
+          pullups: number | null
+          sleep_hours: number | null
+          supplements: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bodyweight?: number | null
+          created_at?: string | null
+          date: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          pullups?: number | null
+          sleep_hours?: number | null
+          supplements?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bodyweight?: number | null
+          created_at?: string | null
+          date?: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          pullups?: number | null
+          sleep_hours?: number | null
+          supplements?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exercise_sets: {
+        Row: {
+          actual_reps: number | null
+          actual_weight: number | null
+          completed: boolean | null
+          created_at: string | null
+          exercise_category: string
+          exercise_name: string
+          id: string
+          set_number: number
+          target_reps: number | null
+          target_weight: number | null
+          workout_id: string
+        }
+        Insert: {
+          actual_reps?: number | null
+          actual_weight?: number | null
+          completed?: boolean | null
+          created_at?: string | null
+          exercise_category: string
+          exercise_name: string
+          id?: string
+          set_number: number
+          target_reps?: number | null
+          target_weight?: number | null
+          workout_id: string
+        }
+        Update: {
+          actual_reps?: number | null
+          actual_weight?: number | null
+          completed?: boolean | null
+          created_at?: string | null
+          exercise_category?: string
+          exercise_name?: string
+          id?: string
+          set_number?: number
+          target_reps?: number | null
+          target_weight?: number | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sets_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           actual_reps: string | null

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useHabitsData } from '@/hooks/useHabitsData';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { format, parseISO, subDays, startOfWeek, eachWeekOfInterval } from 'date-fns';
+import { format, parseISO, subDays, eachWeekOfInterval } from 'date-fns';
 
 const SUPPLEMENT_LABELS: Record<string, string> = {
   whey: 'Whey',
@@ -15,26 +15,21 @@ const SUPPLEMENT_LABELS: Record<string, string> = {
 };
 
 export function SupplementAdherence() {
-  const { data, isLoading } = useHabitsData(28); // 4 weeks
+  const { data, isLoading } = useDailyMetrics(28); // 4 weeks
 
   const { weeklyGrid, adherenceStats, daysWithData } = useMemo(() => {
     if (!data?.dataPoints || data.dataPoints.length === 0) {
       return { weeklyGrid: [], adherenceStats: [], daysWithData: 0 };
     }
 
-    // Only use entries that have actual habit data
-    const validDataPoints = data.dataPoints.filter(d => d.hasData);
-    
-    if (validDataPoints.length === 0) {
-      return { weeklyGrid: [], adherenceStats: [], daysWithData: 0 };
-    }
-
     const supplements = Object.keys(SUPPLEMENT_LABELS);
     
-    // Build date -> supplements map (only from valid data)
+    // Build date -> supplements map
     const dateMap = new Map<string, Record<string, boolean>>();
-    validDataPoints.forEach(d => {
-      dateMap.set(d.date, d.supplements);
+    data.dataPoints.forEach(d => {
+      if (d.supplements) {
+        dateMap.set(d.date, d.supplements as Record<string, boolean>);
+      }
     });
 
     // Generate last 4 weeks
@@ -47,8 +42,7 @@ export function SupplementAdherence() {
 
     // Build weekly grid for each supplement
     const weeklyGrid = supplements.map(supp => {
-      const weekData = weeks.map((weekStart, weekIdx) => {
-        // Count days taken in this week
+      const weekData = weeks.map((weekStart) => {
         let taken = 0;
         let total = 0;
         
@@ -62,7 +56,7 @@ export function SupplementAdherence() {
           
           if (dayData) {
             total++;
-            if (dayData[supp as keyof typeof dayData]) taken++;
+            if (dayData[supp]) taken++;
           }
         }
 
@@ -88,7 +82,7 @@ export function SupplementAdherence() {
       percent: data.supplementAdherence[supp] ?? 0,
     })).sort((a, b) => b.percent - a.percent);
 
-    return { weeklyGrid, adherenceStats, daysWithData: validDataPoints.length };
+    return { weeklyGrid, adherenceStats, daysWithData: data.totals.daysWithData };
   }, [data]);
 
   if (isLoading) {

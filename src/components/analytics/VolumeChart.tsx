@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useVolumeData } from '@/hooks/useVolumeData';
+import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart,
@@ -8,27 +8,26 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 export function VolumeChart() {
-  const { data, isLoading } = useVolumeData(60);
+  const { data, isLoading } = useExerciseSets(60);
 
   const chartData = useMemo(() => {
-    if (!data?.weeklyData) return [];
-    return data.weeklyData;
-  }, [data?.weeklyData]);
+    if (!data?.weeklyVolume) return [];
+    return data.weeklyVolume;
+  }, [data?.weeklyVolume]);
 
   const categoryDistribution = useMemo(() => {
-    if (!data?.totals || data.totals.totalVolume === 0) return null;
+    if (!data?.volumeTotals || data.volumeTotals.total === 0) return null;
     
-    const { pushVolume, pullVolume, legsVolume, totalVolume } = data.totals;
+    const { push, pull, legs, total } = data.volumeTotals;
     return {
-      push: Math.round((pushVolume / totalVolume) * 100),
-      pull: Math.round((pullVolume / totalVolume) * 100),
-      legs: Math.round((legsVolume / totalVolume) * 100),
+      push: Math.round((push / total) * 100),
+      pull: Math.round((pull / total) * 100),
+      legs: Math.round((legs / total) * 100),
     };
-  }, [data?.totals]);
+  }, [data?.volumeTotals]);
 
   if (isLoading) {
     return (
@@ -74,9 +73,9 @@ export function VolumeChart() {
     <div className="border border-border p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="section-header mb-0">WEEKLY VOLUME</h3>
-        {data?.totals && (
+        {data?.volumeTotals && (
           <div className="text-xs text-muted-foreground">
-            Total: {formatVolume(data.totals.totalVolume)} kg
+            Total: {formatVolume(data.volumeTotals.total)} kg
           </div>
         )}
       </div>
@@ -119,7 +118,6 @@ export function VolumeChart() {
         </ResponsiveContainer>
       </div>
 
-      {/* Category distribution */}
       {categoryDistribution && (
         <div className="mt-4 pt-4 border-t border-border">
           <div className="text-xs text-muted-foreground mb-2">VOLUME DISTRIBUTION</div>

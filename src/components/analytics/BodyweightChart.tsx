@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useHabitsData } from '@/hooks/useHabitsData';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import {
@@ -13,14 +13,13 @@ import {
 } from 'recharts';
 
 export function BodyweightChart() {
-  const { data, isLoading } = useHabitsData(60);
+  const { data, isLoading } = useDailyMetrics(60);
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
     
-    // Only include entries that have actual habit data AND have bodyweight
     return data.dataPoints
-      .filter(d => d.hasData && d.bodyweight !== null && d.bodyweight > 0)
+      .filter(d => d.bodyweight !== null && d.bodyweight > 0)
       .map(d => ({
         date: format(parseISO(d.date), 'MMM d'),
         weight: d.bodyweight,
@@ -127,7 +126,6 @@ export function BodyweightChart() {
         </ResponsiveContainer>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
         <div>
           <div className="text-lg font-bold tabular-nums">{firstWeight} kg</div>
