@@ -42,7 +42,7 @@ serve(async (req: Request) => {
         'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5-mini',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
@@ -58,7 +58,7 @@ Keep each bullet under 15 words. No fluff.`
             content: prompt
           }
         ],
-        max_tokens: 300,
+        max_completion_tokens: 300,
         temperature: 0.7,
       }),
     });
