@@ -1,10 +1,10 @@
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
+import { PredictiveSetCard } from './PredictiveSetCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,30 +45,15 @@ export function SingleExerciseCard({
   isLast,
   personalRecord,
 }: SingleExerciseCardProps) {
-  const handleSetToggle = (setIndex: number) => {
+  const handleSetUpdate = (setIndex: number, weight: string, reps: string, completed: boolean) => {
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    const set = { ...updated.sets[setIndex] };
-    set.completed = !set.completed;
-    
-    haptic('light');
-    
-    if (!set.completed) {
-      set.actualWeight = '';
-      set.actualReps = '';
-    }
-    updated.sets[setIndex] = set;
-    onChange(updated);
-  };
-
-  const handleSetChange = (
-    setIndex: number,
-    field: 'actualWeight' | 'actualReps',
-    value: string
-  ) => {
-    const updated = { ...exercise };
-    updated.sets = [...updated.sets];
-    updated.sets[setIndex] = { ...updated.sets[setIndex], [field]: value };
+    updated.sets[setIndex] = { 
+      ...updated.sets[setIndex], 
+      actualWeight: weight,
+      actualReps: reps,
+      completed,
+    };
     onChange(updated);
   };
 
@@ -105,7 +90,6 @@ export function SingleExerciseCard({
     haptic('medium');
     const updated = { ...exercise };
     updated.name = variantName;
-    // Update target weights if we have a default
     if (defaultWeight) {
       updated.sets = updated.sets.map(set => ({
         ...set,
@@ -116,7 +100,6 @@ export function SingleExerciseCard({
   };
 
   const completedSets = exercise.sets.filter(s => s.completed).length;
-  const allCompleted = completedSets === exercise.sets.length;
   const variants = getExerciseVariants(exercise.name);
   const showVariantSwitch = hasVariants(exercise.name);
 
@@ -216,83 +199,22 @@ export function SingleExerciseCard({
             )}
           </div>
         )}
-
       </div>
 
-      {/* Sets */}
-      <div className="space-y-2">
+      {/* Predictive Sets */}
+      <div className="space-y-3">
         {exercise.sets.map((set, setIndex) => (
-          <div
+          <PredictiveSetCard
             key={set.setNumber}
-            className={cn(
-              'border border-border p-4 transition-colors duration-150',
-              set.completed && 'bg-primary/5 border-primary/30'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleSetToggle(setIndex)}
-                className="shrink-0"
-              >
-                <div
-                  className={cn(
-                    "w-5 h-5 border flex items-center justify-center transition-colors duration-150",
-                    set.completed 
-                      ? "bg-primary border-primary" 
-                      : "border-muted-foreground bg-transparent"
-                  )}
-                >
-                  <Check 
-                    className={cn(
-                      "h-3 w-3 text-primary-foreground transition-opacity duration-150",
-                      set.completed ? "opacity-100" : "opacity-0"
-                    )} 
-                  />
-                </div>
-              </button>
-                <span className="text-lg font-bold w-16">Set {set.setNumber}</span>
-                
-                <div className="flex-1 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">
-                      Weight
-                    </label>
-                    <Input
-                      placeholder={set.targetWeight}
-                      value={set.actualWeight}
-                      onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                      className="input-terminal h-10"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">
-                      Reps
-                    </label>
-                    <Input
-                      placeholder={set.targetReps}
-                      value={set.actualReps}
-                      onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
-                      className="input-terminal h-10"
-                    />
-                  </div>
-                </div>
-
-                {exercise.sets.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => removeSet(setIndex)}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          )
-        )}
+            exerciseName={exercise.name}
+            set={set}
+            setIndex={setIndex}
+            personalRecord={personalRecord}
+            onUpdate={(weight, reps, completed) => handleSetUpdate(setIndex, weight, reps, completed)}
+            onRemove={() => removeSet(setIndex)}
+            canRemove={exercise.sets.length > 1}
+          />
+        ))}
 
         <Button
           type="button"
