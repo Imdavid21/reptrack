@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import {
@@ -13,7 +14,8 @@ import {
 } from 'recharts';
 
 export function BodyweightChart() {
-  const { data, isLoading } = useDailyMetrics(60);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useDailyMetrics(dateRange);
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useHydrationData } from '@/hooks/useHydrationData';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart,
@@ -15,7 +16,8 @@ import {
 const DAILY_GOAL = 3.5;
 
 export function HydrationChart() {
-  const { data, isLoading } = useHydrationData(14);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useHydrationData(dateRange);
 
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
@@ -52,7 +54,7 @@ export function HydrationChart() {
   return (
     <div className="border border-border p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">HYDRATION (14 DAYS)</h3>
+        <h3 className="section-header mb-0">HYDRATION</h3>
         {data?.totals && (
           <div className="text-xs text-muted-foreground">
             Goal: {DAILY_GOAL}L/day
@@ -74,7 +76,7 @@ export function HydrationChart() {
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={false}
-                  interval={1}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   domain={[0, 5]}

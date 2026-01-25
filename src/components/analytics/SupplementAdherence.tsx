@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { format, parseISO, subDays, eachWeekOfInterval } from 'date-fns';
+import { format, parseISO, eachWeekOfInterval } from 'date-fns';
 
 const SUPPLEMENT_LABELS: Record<string, string> = {
   whey: 'Whey',
@@ -15,7 +16,8 @@ const SUPPLEMENT_LABELS: Record<string, string> = {
 };
 
 export function SupplementAdherence() {
-  const { data, isLoading } = useDailyMetrics(28); // 4 weeks
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useDailyMetrics(dateRange);
 
   const { weeklyGrid, adherenceStats, daysWithData } = useMemo(() => {
     if (!data?.dataPoints || data.dataPoints.length === 0) {
@@ -32,11 +34,9 @@ export function SupplementAdherence() {
       }
     });
 
-    // Generate last 4 weeks
-    const endDate = new Date();
-    const startDate = subDays(endDate, 27);
+    // Generate weeks from date range
     const weeks = eachWeekOfInterval(
-      { start: startDate, end: endDate },
+      { start: dateRange.from, end: dateRange.to },
       { weekStartsOn: 1 }
     );
 
@@ -49,7 +49,8 @@ export function SupplementAdherence() {
         for (let i = 0; i < 7; i++) {
           const day = new Date(weekStart);
           day.setDate(day.getDate() + i);
-          if (day > endDate) break;
+          if (day > dateRange.to) break;
+          if (day < dateRange.from) continue;
           
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayData = dateMap.get(dateKey);
@@ -83,7 +84,7 @@ export function SupplementAdherence() {
     })).sort((a, b) => b.percent - a.percent);
 
     return { weeklyGrid, adherenceStats, daysWithData: data.totals.daysWithData };
-  }, [data]);
+  }, [data, dateRange]);
 
   if (isLoading) {
     return (
@@ -116,7 +117,7 @@ export function SupplementAdherence() {
   return (
     <div className="border border-border p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">SUPPLEMENT ADHERENCE (4 WEEKS)</h3>
+        <h3 className="section-header mb-0">SUPPLEMENT ADHERENCE</h3>
         <div className="text-xs text-muted-foreground">{daysWithData} days logged</div>
       </div>
 

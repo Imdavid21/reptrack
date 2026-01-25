@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { format } from 'date-fns';
 
 interface ExerciseDataPoint {
   date: string;
@@ -12,6 +13,11 @@ interface ExerciseDataPoint {
 interface ExerciseProgression {
   exerciseName: string;
   data: ExerciseDataPoint[];
+}
+
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
 }
 
 // Key exercises to track for progression - map variations to canonical names
@@ -37,16 +43,15 @@ const EXERCISE_NAME_MAP: Record<string, string> = {
   'Dumbbell Shoulder Press': 'DB Shoulder Press',
 };
 
-export function useExerciseProgression() {
+export function useExerciseProgression(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['exerciseProgression', user?.id],
+    queryKey: ['exerciseProgression', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
       if (!user) return [];
 
-      // Fetch all exercises for user's workouts
-      const { data: exercises, error } = await supabase
+      let query = supabase
         .from('exercises')
         .select(`
           name,
@@ -62,6 +67,14 @@ export function useExerciseProgression() {
         .eq('workouts.user_id', user.id)
         .not('actual_weight', 'is', null)
         .order('workouts(date)', { ascending: true });
+
+      if (dateRange) {
+        query = query
+          .gte('workouts.date', format(dateRange.from, 'yyyy-MM-dd'))
+          .lte('workouts.date', format(dateRange.to, 'yyyy-MM-dd'));
+      }
+
+      const { data: exercises, error } = await query;
 
       if (error) throw error;
 
@@ -117,4 +130,3 @@ export function useExerciseProgression() {
     enabled: !!user,
   });
 }
-

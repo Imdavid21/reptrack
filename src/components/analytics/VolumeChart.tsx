@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart,
@@ -11,7 +12,8 @@ import {
 } from 'recharts';
 
 export function VolumeChart() {
-  const { data, isLoading } = useExerciseSets(60);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useExerciseSets(dateRange);
 
   const chartData = useMemo(() => {
     if (!data?.weeklyVolume) return [];

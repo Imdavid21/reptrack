@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useExerciseProgression } from '@/hooks/useExerciseProgression';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +26,8 @@ const EXERCISE_COLORS: string[] = [
 ];
 
 export function StrengthProgressionChart() {
-  const { data: progressions, isLoading } = useExerciseProgression();
+  const { dateRange } = useDateRange();
+  const { data: progressions, isLoading } = useExerciseProgression(dateRange);
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
 
   // Get available exercises
