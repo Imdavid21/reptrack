@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { format, subDays, startOfWeek, parseISO } from 'date-fns';
+import { format, startOfWeek, parseISO } from 'date-fns';
 
 export interface ExerciseSet {
   id: string;
@@ -39,11 +39,16 @@ export interface ExerciseProgression {
   data: { week: number; weekLabel: string; weight: number; volume: number }[];
 }
 
-export function useExerciseSets(days: number = 60) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useExerciseSets(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['exerciseSets', user?.id, days],
+    queryKey: ['exerciseSets', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
       if (!user) {
         return {
@@ -54,18 +59,23 @@ export function useExerciseSets(days: number = 60) {
         };
       }
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
-
-      // Fetch exercise sets with workout date
-      const { data, error } = await supabase
+      let query = supabase
         .from('exercise_sets')
         .select(`
           *,
-          workouts!inner (date)
+          workouts!inner (date, user_id)
         `)
-        .gte('workouts.date', startDate)
+        .eq('workouts.user_id', user.id)
         .eq('completed', true)
         .order('created_at', { ascending: true });
+
+      if (dateRange) {
+        query = query
+          .gte('workouts.date', format(dateRange.from, 'yyyy-MM-dd'))
+          .lte('workouts.date', format(dateRange.to, 'yyyy-MM-dd'));
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

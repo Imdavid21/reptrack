@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 
 export interface DailyMetric {
   id: string;
@@ -46,12 +46,17 @@ const DEFAULT_SUPPLEMENTS = {
   zinc: false,
 };
 
-export function useDailyMetrics(days: number = 30) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useDailyMetrics(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['dailyMetrics', user?.id, days],
+    queryKey: ['dailyMetrics', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<MetricsAnalytics> => {
       if (!user) {
         return {
@@ -61,14 +66,19 @@ export function useDailyMetrics(days: number = 30) {
         };
       }
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
+      let query = supabase
         .from('daily_metrics')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', startDate)
         .order('date', { ascending: true });
+
+      if (dateRange) {
+        query = query
+          .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
+          .lte('date', format(dateRange.to, 'yyyy-MM-dd'));
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

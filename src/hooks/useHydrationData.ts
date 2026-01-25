@@ -22,11 +22,16 @@ export interface HydrationAnalytics {
 
 const DAILY_GOAL = 3.5; // liters
 
-export function useHydrationData(days: number = 14) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useHydrationData(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['hydrationData', user?.id, days],
+    queryKey: ['hydrationData', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<HydrationAnalytics> => {
       if (!user) {
         return {
@@ -35,8 +40,8 @@ export function useHydrationData(days: number = 14) {
         };
       }
 
-      const endDate = new Date();
-      const startDate = subDays(endDate, days - 1);
+      const endDate = dateRange?.to ?? new Date();
+      const startDate = dateRange?.from ?? subDays(endDate, 13);
 
       // Fetch water logs
       const { data: logs, error } = await supabase

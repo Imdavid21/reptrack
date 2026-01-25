@@ -8,9 +8,11 @@ import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { VolumeChart } from '@/components/analytics/VolumeChart';
 import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
 import { AICoachInsights } from '@/components/analytics/AICoachInsights';
+import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
+import { DateRangeProvider } from '@/contexts/DateRangeContext';
 import { TrendingUp, Target, Percent } from 'lucide-react';
 
-export default function Analytics() {
+function AnalyticsContent() {
   const { workouts } = useWorkouts();
 
   // Calculate metrics
@@ -40,47 +42,61 @@ export default function Analytics() {
   ];
 
   return (
-    <MainLayout title="ANALYTICS">
-      <div className="space-y-6 animate-fade-in pb-20">
-        {/* Stats */}
-        <div className="grid gap-2">
-          {stats.map(({ label, value, icon: Icon, description }) => (
-            <div key={label} className="stat-block flex items-center justify-between">
-              <div>
-                <div className="stat-value tabular-nums">{value}</div>
-                <div className="stat-label">{label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{description}</div>
-              </div>
-              <Icon className="h-8 w-8 text-muted-foreground" />
-            </div>
-          ))}
-        </div>
-
-        {/* AI Coach Insights */}
-        <AICoachInsights />
-
-        {/* Strength Progression Chart */}
-        <StrengthProgressionChart />
-
-        {/* Volume Analytics */}
-        <VolumeChart />
-
-        {/* Habit Trends Section */}
-        <div className="space-y-4">
-          <h2 className="section-header">HABIT TRENDS</h2>
-          
-          <SleepEnergyChart />
-          <BodyweightChart />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PullupAccumulator />
-            <HydrationChart />
-          </div>
-        </div>
-
-        {/* Supplement Adherence */}
-        <SupplementAdherence />
+    <div className="space-y-6 animate-fade-in pb-20">
+      {/* Date Range Selector */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h2 className="text-sm font-medium text-muted-foreground">DATE RANGE</h2>
+        <DateRangeSelector />
       </div>
-    </MainLayout>
+
+      {/* Stats */}
+      <div className="grid gap-2">
+        {stats.map(({ label, value, icon: Icon, description }) => (
+          <div key={label} className="stat-block flex items-center justify-between">
+            <div>
+              <div className="stat-value tabular-nums">{value}</div>
+              <div className="stat-label">{label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{description}</div>
+            </div>
+            <Icon className="h-8 w-8 text-muted-foreground" />
+          </div>
+        ))}
+      </div>
+
+      {/* AI Coach Insights */}
+      <AICoachInsights />
+
+      {/* Strength Progression Chart */}
+      <StrengthProgressionChart />
+
+      {/* Volume Analytics */}
+      <VolumeChart />
+
+      {/* Habit Trends Section */}
+      <div className="space-y-4">
+        <h2 className="section-header">HABIT TRENDS</h2>
+        
+        <SleepEnergyChart />
+        <BodyweightChart />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <PullupAccumulator />
+          <HydrationChart />
+        </div>
+      </div>
+
+      {/* Supplement Adherence */}
+      <SupplementAdherence />
+    </div>
+  );
+}
+
+export default function Analytics() {
+  return (
+    <DateRangeProvider>
+      <MainLayout title="ANALYTICS">
+        <AnalyticsContent />
+      </MainLayout>
+    </DateRangeProvider>
   );
 }
