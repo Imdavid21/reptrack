@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
-import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,19 +45,13 @@ export function SingleExerciseCard({
   isLast,
   personalRecord,
 }: SingleExerciseCardProps) {
-  const [animatingSetIndex, setAnimatingSetIndex] = useState<number | null>(null);
-
   const handleSetToggle = (setIndex: number) => {
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
     const set = { ...updated.sets[setIndex] };
-    const wasCompleted = set.completed;
     set.completed = !set.completed;
     
-    // Trigger haptic and animation
-    haptic(set.completed ? 'success' : 'light');
-    setAnimatingSetIndex(setIndex);
-    setTimeout(() => setAnimatingSetIndex(null), 300);
+    haptic('light');
     
     if (!set.completed) {
       set.actualWeight = '';
@@ -206,14 +199,14 @@ export function SingleExerciseCard({
         {/* Personal Record Display */}
         {personalRecord && (
           <div className={cn(
-            "flex items-center gap-2 p-2 border text-sm transition-colors",
+            "flex items-center gap-2 p-2 border text-sm",
             isNewPR 
-              ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" 
-              : "border-border bg-muted/50"
+              ? "border-primary bg-primary/5" 
+              : "border-border bg-muted/30"
           )}>
-            <Trophy className={cn("h-4 w-4", isNewPR && "text-yellow-500")} />
+            <Trophy className={cn("h-3.5 w-3.5", isNewPR ? "text-primary" : "text-muted-foreground")} />
             {isNewPR ? (
-              <span className="font-bold">🎉 NEW PR! {currentMaxWeight}kg</span>
+              <span className="font-medium text-primary">NEW PR: {currentMaxWeight}kg</span>
             ) : (
               <span>
                 <span className="text-muted-foreground">PR:</span>{' '}
@@ -227,41 +220,36 @@ export function SingleExerciseCard({
 
       {/* Sets */}
       <div className="space-y-2">
-        {exercise.sets.map((set, setIndex) => {
-          const isAnimating = animatingSetIndex === setIndex;
-          
-          return (
-            <div
-              key={set.setNumber}
-              className={cn(
-                'border border-border p-4 transition-all',
-                set.completed && 'bg-primary/5 border-primary/30',
-                isAnimating && 'scale-[1.02]'
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleSetToggle(setIndex)}
-                  className="shrink-0"
+        {exercise.sets.map((set, setIndex) => (
+          <div
+            key={set.setNumber}
+            className={cn(
+              'border border-border p-4 transition-colors duration-150',
+              set.completed && 'bg-primary/5 border-primary/30'
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleSetToggle(setIndex)}
+                className="shrink-0"
+              >
+                <div
+                  className={cn(
+                    "w-5 h-5 border flex items-center justify-center transition-colors duration-150",
+                    set.completed 
+                      ? "bg-primary border-primary" 
+                      : "border-muted-foreground bg-transparent"
+                  )}
                 >
-                  <div
+                  <Check 
                     className={cn(
-                      "w-6 h-6 border-2 flex items-center justify-center transition-all duration-200",
-                      set.completed 
-                        ? "bg-primary border-primary" 
-                        : "border-muted-foreground bg-transparent",
-                      isAnimating && "scale-125"
-                    )}
-                  >
-                    <Check 
-                      className={cn(
-                        "h-4 w-4 text-primary-foreground transition-all duration-200",
-                        set.completed ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                      )} 
-                    />
-                  </div>
-                </button>
+                      "h-3 w-3 text-primary-foreground transition-opacity duration-150",
+                      set.completed ? "opacity-100" : "opacity-0"
+                    )} 
+                  />
+                </div>
+              </button>
                 <span className="text-lg font-bold w-16">Set {set.setNumber}</span>
                 
                 <div className="flex-1 grid grid-cols-2 gap-3">
@@ -302,8 +290,8 @@ export function SingleExerciseCard({
                 )}
               </div>
             </div>
-          );
-        })}
+          )
+        )}
 
         <Button
           type="button"
