@@ -3,12 +3,13 @@ import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
 
 export function VolumeChart() {
@@ -59,17 +60,47 @@ export function VolumeChart() {
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
 
+    const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+
     return (
-      <div className="border border-border bg-card p-2 text-xs">
-        <p className="font-medium mb-1">Week of {label}</p>
-        {payload.map((p: any) => (
-          <p key={p.dataKey} style={{ color: p.fill }}>
-            {p.name}: {formatVolume(p.value)} kg
-          </p>
-        ))}
+      <div className="border border-border bg-card p-3 text-xs">
+        <p className="font-medium mb-2">Week of {label}</p>
+        <div className="space-y-1">
+          {payload.map((p: any) => (
+            <div key={p.dataKey} className="flex items-center gap-2">
+              <div 
+                className="w-2 h-2" 
+                style={{ backgroundColor: p.stroke }}
+              />
+              <span className="text-muted-foreground">{p.name}:</span>
+              <span className="font-medium">{formatVolume(p.value)} kg</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-border mt-2 pt-2">
+          <span className="text-muted-foreground">Total:</span>
+          <span className="font-medium ml-2">{formatVolume(total)} kg</span>
+        </div>
       </div>
     );
   };
+
+  const renderLegend = () => (
+    <div className="flex justify-center gap-6 text-xs mt-2">
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-[2px] bg-foreground" />
+        <span>Push</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-[2px] bg-muted-foreground" />
+        <span>Pull</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-[2px] bg-accent" />
+        <span>Legs</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="border border-border p-4">
@@ -82,9 +113,9 @@ export function VolumeChart() {
         )}
       </div>
 
-      <div className="h-[200px]">
+      <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <XAxis
               dataKey="week"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
@@ -98,27 +129,38 @@ export function VolumeChart() {
               tickLine={false}
             />
             <Tooltip content={renderTooltip} />
-            <Bar
+            <Line
+              type="monotone"
               dataKey="pushVolume"
               name="Push"
-              stackId="a"
-              fill="hsl(var(--foreground))"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--foreground))', strokeWidth: 0, r: 4 }}
+              activeDot={{ r: 6, fill: 'hsl(var(--foreground))' }}
             />
-            <Bar
+            <Line
+              type="monotone"
               dataKey="pullVolume"
               name="Pull"
-              stackId="a"
-              fill="hsl(var(--muted-foreground))"
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--muted-foreground))', strokeWidth: 0, r: 4 }}
+              activeDot={{ r: 6, fill: 'hsl(var(--muted-foreground))' }}
             />
-            <Bar
+            <Line
+              type="monotone"
               dataKey="legsVolume"
               name="Legs"
-              stackId="a"
-              fill="hsl(var(--border))"
+              stroke="hsl(var(--accent))"
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--accent))', strokeWidth: 0, r: 4 }}
+              activeDot={{ r: 6, fill: 'hsl(var(--accent))' }}
             />
-          </BarChart>
+          </LineChart>
         </ResponsiveContainer>
       </div>
+
+      {renderLegend()}
 
       {categoryDistribution && (
         <div className="mt-4 pt-4 border-t border-border">
@@ -133,7 +175,7 @@ export function VolumeChart() {
               style={{ width: `${categoryDistribution.pull}%` }}
             />
             <div
-              className="bg-border"
+              className="bg-accent"
               style={{ width: `${categoryDistribution.legs}%` }}
             />
           </div>
