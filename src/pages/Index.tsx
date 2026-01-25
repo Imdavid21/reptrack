@@ -8,13 +8,12 @@ import Dashboard from './Dashboard';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
-  const { needsOnboarding, isLoading: prefsLoading } = useUserPreferences();
+  const { needsOnboarding, isLoading: prefsLoading, preferences } = useUserPreferences();
   const [showSplash, setShowSplash] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
   // Show splash on initial load
   useEffect(() => {
-    // Check if this is a fresh page load (not a navigation)
     const hasSeenSplash = sessionStorage.getItem('splashShown');
     if (hasSeenSplash) {
       setShowSplash(false);
@@ -25,13 +24,6 @@ const Index = () => {
     sessionStorage.setItem('splashShown', 'true');
     setShowSplash(false);
   };
-
-  // Show onboarding after auth and prefs load
-  useEffect(() => {
-    if (!authLoading && !prefsLoading && user && needsOnboarding) {
-      setShowOnboarding(true);
-    }
-  }, [authLoading, prefsLoading, user, needsOnboarding]);
 
   // Splash screen
   if (showSplash) {
@@ -59,9 +51,14 @@ const Index = () => {
     return <AuthForm />;
   }
 
-  // Onboarding flow
-  if (showOnboarding) {
-    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
+  // Onboarding flow - only show if:
+  // 1. User needs onboarding (no preferences or onboarding_completed is false)
+  // 2. User hasn't dismissed it this session
+  // 3. Preferences have loaded (not just null from initial state)
+  const shouldShowOnboarding = needsOnboarding && !onboardingDismissed && !prefsLoading;
+  
+  if (shouldShowOnboarding) {
+    return <OnboardingFlow onComplete={() => setOnboardingDismissed(true)} />;
   }
 
   return <Dashboard />;

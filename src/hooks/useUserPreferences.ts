@@ -110,10 +110,17 @@ export function useUserPreferences() {
     }
   };
 
+  // Only show onboarding if:
+  // 1. Loading is complete
+  // 2. Either no preferences exist OR onboarding_completed is explicitly false
+  // 3. This accounts for returning users who get auto-created preferences
+  const needsOnboarding = !isLoading && preferences !== undefined && 
+    (preferences === null || preferences.onboarding_completed === false);
+
   return {
     preferences,
     isLoading,
-    needsOnboarding: !isLoading && !preferences?.onboarding_completed,
+    needsOnboarding,
     createPreferences,
     updatePreferences,
     completeOnboarding,
