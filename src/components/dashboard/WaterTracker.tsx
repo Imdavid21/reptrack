@@ -1,17 +1,32 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
-import { Droplets, Plus } from 'lucide-react';
+import { Droplets, Plus, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const DAILY_GOAL = 3.5;
 const MILESTONES = [0.5, 1];
 
+const WATER_SIZES = [
+  { label: '250ml', value: 0.25 },
+  { label: '330ml', value: 0.33 },
+  { label: '500ml', value: 0.5 },
+  { label: '750ml', value: 0.75 },
+  { label: '1L', value: 1.0 },
+];
+
 export function WaterTracker() {
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(WATER_SIZES[0]);
   const prevTotalRef = useRef(totalToday);
 
   const progressPercent = Math.min((totalToday / DAILY_GOAL) * 100, 100);
@@ -31,13 +46,14 @@ export function WaterTracker() {
     prevTotalRef.current = totalToday;
   }, [totalToday, progressRatio]);
 
-  const handleLogWater = async () => {
+  const handleLogWater = async (amount?: number) => {
+    const logAmount = amount || selectedSize.value;
     try {
       setIsAnimating(true);
       haptic('light');
       
-      await addWaterLog(0.25);
-      toast.success('+250ml');
+      await addWaterLog(logAmount);
+      toast.success(`+${Math.round(logAmount * 1000)}ml`);
       
       setTimeout(() => setIsAnimating(false), 150);
     } catch (error) {
@@ -80,17 +96,40 @@ export function WaterTracker() {
         </div>
       )}
 
-      <button
-        onClick={handleLogWater}
-        disabled={isAdding}
-        className={cn(
-          "btn-brutalist w-full mt-4 flex items-center justify-center gap-2 transition-opacity",
-          isAnimating && "opacity-70"
-        )}
-      >
-        <Plus className="h-4 w-4" />
-        LOG 250ML
-      </button>
+      <div className="flex gap-2 mt-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="border border-border px-3 py-2 flex items-center gap-2 hover:bg-muted transition-colors">
+            <span className="text-sm font-medium">{selectedSize.label}</span>
+            <ChevronDown className="h-3 w-3" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-background border-border">
+            {WATER_SIZES.map((size) => (
+              <DropdownMenuItem
+                key={size.label}
+                onClick={() => setSelectedSize(size)}
+                className={cn(
+                  "cursor-pointer",
+                  selectedSize.value === size.value && "bg-primary/10"
+                )}
+              >
+                {size.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <button
+          onClick={() => handleLogWater()}
+          disabled={isAdding}
+          className={cn(
+            "btn-brutalist flex-1 flex items-center justify-center gap-2 transition-opacity",
+            isAnimating && "opacity-70"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          LOG {selectedSize.label.toUpperCase()}
+        </button>
+      </div>
     </div>
   );
 }

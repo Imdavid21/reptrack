@@ -17,6 +17,8 @@ import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
 import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
+import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
+import { NutritionInsights } from '@/components/health/NutritionInsights';
 
 // Vitals tab components
 import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
@@ -66,6 +68,8 @@ function PerformanceTab() {
 function BodyTab() {
   return (
     <div className="space-y-4">
+      <EnergyBalanceCard />
+      <NutritionInsights />
       <SleepEnergyChart />
       <BodyweightChart />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

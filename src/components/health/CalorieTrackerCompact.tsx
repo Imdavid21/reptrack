@@ -27,10 +27,14 @@ const MEAL_LABELS = {
 };
 
 interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number }[];
+  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number }[];
   total_calories: number;
+  total_protein?: number;
+  total_carbs?: number;
+  total_fat?: number;
   confidence: number;
   description: string;
+  food_quality?: string;
 }
 
 export function CalorieTrackerCompact() {
@@ -41,6 +45,8 @@ export function CalorieTrackerCompact() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [manualMode, setManualMode] = useState(false);
+  const [textMode, setTextMode] = useState(false);
+  const [textInput, setTextInput] = useState('');
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
@@ -52,6 +58,8 @@ export function CalorieTrackerCompact() {
     setIsDialogOpen(true);
     setAnalysis(null);
     setManualMode(false);
+    setTextMode(false);
+    setTextInput('');
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
     setUploadedPhotoUrl(null);
@@ -99,6 +107,34 @@ export function CalorieTrackerCompact() {
     }
   };
 
+  const handleTextAnalyze = async () => {
+    if (!textInput.trim()) {
+      toast.error('Please describe your meal');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-food-text', {
+        body: { text: textInput },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setAnalysis(data as FoodAnalysis);
+    } catch (error) {
+      console.error('Text analysis failed:', error);
+      toast.error('Could not parse food. Try manual entry.');
+      setManualMode(true);
+      setTextMode(false);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleConfirmAnalysis = async () => {
     if (!analysis) return;
 
@@ -111,7 +147,11 @@ export function CalorieTrackerCompact() {
         ai_detected_food: analysis.foods.map(f => f.name).join(', '),
         ai_confidence: analysis.confidence,
         is_confirmed: true,
-      });
+        protein: analysis.total_protein,
+        carbs: analysis.total_carbs,
+        fat: analysis.total_fat,
+        food_quality: analysis.food_quality,
+      } as any);
       toast.success('Meal logged');
       setIsDialogOpen(false);
     } catch (error) {
@@ -260,7 +300,7 @@ export function CalorieTrackerCompact() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {!analysis && !manualMode && (
+          {!analysis && !manualMode && !textMode && (
               <>
                 <input
                   ref={fileInputRef}
@@ -283,27 +323,70 @@ export function CalorieTrackerCompact() {
                     <p className="text-sm text-muted-foreground">Analyzing food...</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-brutalist flex items-center justify-center gap-2 py-6"
-                    >
-                      <Camera className="h-5 w-5" />
-                      PHOTO
-                    </button>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn-brutalist flex items-center justify-center gap-2 py-6"
+                      >
+                        <Camera className="h-5 w-5" />
+                        PHOTO
+                      </button>
+                      <button
+                        onClick={() => setTextMode(true)}
+                        className="border border-border p-4 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                      >
+                        <Plus className="h-5 w-5" />
+                        DESCRIBE
+                      </button>
+                    </div>
                     <button
                       onClick={() => setManualMode(true)}
-                      className="border border-border p-4 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                      className="w-full border border-dashed border-border p-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
                     >
-                      <Plus className="h-5 w-5" />
-                      MANUAL
+                      Manual entry (food + calories)
                     </button>
                   </div>
                 )}
               </>
             )}
 
-            {analysis && !manualMode && (
+            {textMode && !analysis && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">DESCRIBE YOUR MEAL</Label>
+                  <textarea
+                    placeholder="e.g., 2 eggs, toast with butter, and a glass of orange juice"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    className="w-full mt-1 p-3 border border-border bg-background text-sm min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    AI will estimate calories and macros
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => { setTextMode(false); setTextInput(''); }}
+                    className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={handleTextAnalyze}
+                    disabled={isAnalyzing || !textInput.trim()}
+                    className="btn-brutalist flex items-center justify-center gap-2"
+                  >
+                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    ANALYZE
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {analysis && !manualMode && !textMode && (
               <div className="space-y-4">
                 {previewUrl && (
                   <div className="aspect-video bg-muted overflow-hidden">

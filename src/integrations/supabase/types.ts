@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      calorie_burns: {
+        Row: {
+          activity_type: string | null
+          calories: number
+          created_at: string | null
+          date: string
+          duration_minutes: number | null
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          activity_type?: string | null
+          calories: number
+          created_at?: string | null
+          date?: string
+          duration_minutes?: number | null
+          id?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string | null
+          calories?: number
+          created_at?: string | null
+          date?: string
+          duration_minutes?: number | null
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_routines: {
         Row: {
           created_at: string | null
@@ -295,42 +328,57 @@ export type Database = {
           ai_confidence: number | null
           ai_detected_food: string | null
           calories: number | null
+          carbs: number | null
           created_at: string | null
           date: string
+          fat: number | null
+          fiber: number | null
           food_name: string | null
+          food_quality: string | null
           id: string
           is_confirmed: boolean | null
           meal_type: string
           notes: string | null
           photo_url: string | null
+          protein: number | null
           user_id: string
         }
         Insert: {
           ai_confidence?: number | null
           ai_detected_food?: string | null
           calories?: number | null
+          carbs?: number | null
           created_at?: string | null
           date?: string
+          fat?: number | null
+          fiber?: number | null
           food_name?: string | null
+          food_quality?: string | null
           id?: string
           is_confirmed?: boolean | null
           meal_type: string
           notes?: string | null
           photo_url?: string | null
+          protein?: number | null
           user_id: string
         }
         Update: {
           ai_confidence?: number | null
           ai_detected_food?: string | null
           calories?: number | null
+          carbs?: number | null
           created_at?: string | null
           date?: string
+          fat?: number | null
+          fiber?: number | null
           food_name?: string | null
+          food_quality?: string | null
           id?: string
           is_confirmed?: boolean | null
           meal_type?: string
           notes?: string | null
           photo_url?: string | null
+          protein?: number | null
           user_id?: string
         }
         Relationships: []
@@ -448,9 +496,15 @@ export type Database = {
       }
       user_preferences: {
         Row: {
+          activity_level: string | null
+          age: number | null
           created_at: string | null
           daily_calorie_goal: number | null
           daily_water_goal: number | null
+          dietary_preferences: string[] | null
+          fitness_goal: string | null
+          gender: string | null
+          height_cm: number | null
           id: string
           onboarding_completed: boolean | null
           sleep_goal: number | null
@@ -462,9 +516,15 @@ export type Database = {
           weight_goal_type: string | null
         }
         Insert: {
+          activity_level?: string | null
+          age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_water_goal?: number | null
+          dietary_preferences?: string[] | null
+          fitness_goal?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
           sleep_goal?: number | null
@@ -476,9 +536,15 @@ export type Database = {
           weight_goal_type?: string | null
         }
         Update: {
+          activity_level?: string | null
+          age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_water_goal?: number | null
+          dietary_preferences?: string[] | null
+          fitness_goal?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
           sleep_goal?: number | null
