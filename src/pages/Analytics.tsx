@@ -10,6 +10,7 @@ import { SupplementAdherence } from '@/components/analytics/SupplementAdherence'
 import { AICoachInsights } from '@/components/analytics/AICoachInsights';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { DateRangeProvider } from '@/contexts/DateRangeContext';
+import { PreWorkoutCorrelationChart } from '@/components/analytics/PreWorkoutCorrelationChart';
 import { TrendingUp, Target, Percent } from 'lucide-react';
 
 function AnalyticsContent() {
@@ -65,6 +66,9 @@ function AnalyticsContent() {
 
       {/* AI Coach Insights */}
       <AICoachInsights />
+
+      {/* Pre-Workout Correlations */}
+      <PreWorkoutCorrelationChart />
 
       {/* Strength Progression Chart */}
       <StrengthProgressionChart />
