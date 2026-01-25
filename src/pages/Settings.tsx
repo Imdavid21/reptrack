@@ -423,7 +423,7 @@ export default function Settings() {
 
         {/* Version */}
         <div className="text-center text-xs text-muted-foreground py-4">
-          FITTRACK v1.0.0 • 12-WEEK TRANSFORMATION
+          HEALTH OS v2.0 • YOUR PERSONAL HEALTH OPERATING SYSTEM
         </div>
       </div>
     </MainLayout>
