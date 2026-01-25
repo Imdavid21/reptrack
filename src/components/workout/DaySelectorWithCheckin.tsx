@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Calendar, Zap, Target, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Zap, Target, Activity, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -68,18 +68,31 @@ export function DaySelectorWithCheckin({
     { key: 'soreness' as const, label: 'SORENESS', icon: Activity, lowLabel: 'Fresh', highLabel: 'Sore', inverted: true },
   ];
 
+  const isBackdated = selectedDate.toDateString() !== new Date().toDateString();
+
   return (
     <div className="space-y-4">
       {/* Date & Week Row */}
       <div className="grid grid-cols-2 gap-2">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
-            <button className="btn-brutalist text-left p-4 flex items-center justify-between">
+            <button className={cn(
+              "btn-brutalist text-left p-4 flex items-center justify-between transition-colors",
+              isBackdated && "border-primary bg-primary/5"
+            )}>
               <div>
-                <div className="text-xs text-muted-foreground mb-1">DATE</div>
+                <div className="text-xs text-muted-foreground mb-1">
+                  {isBackdated ? 'BACKFILL DATE' : 'DATE'}
+                </div>
                 <div className="font-bold">{format(selectedDate, 'MMM d, yyyy')}</div>
+                {isBackdated && (
+                  <div className="text-xs text-primary mt-1">Logging past workout</div>
+                )}
               </div>
-              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <Calendar className={cn(
+                "h-5 w-5",
+                isBackdated ? "text-primary" : "text-muted-foreground"
+              )} />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -114,6 +127,19 @@ export function DaySelectorWithCheckin({
           </div>
         </div>
       </div>
+
+      {/* Backfill notice */}
+      {isBackdated && (
+        <div className="border border-primary/30 bg-primary/5 p-3 text-sm flex items-start gap-2">
+          <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <div>
+            <div className="font-medium text-primary">Logging for {format(selectedDate, 'EEEE, MMM d')}</div>
+            <div className="text-muted-foreground text-xs mt-1">
+              You're backfilling a past workout. Select today's date to log for today.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Collapsible Pre-Workout Check-in */}
       <Collapsible open={showCheckin} onOpenChange={setShowCheckin}>

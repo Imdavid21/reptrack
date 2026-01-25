@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Pill } from 'lucide-react';
+import { Pill, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/haptics';
+import { useState } from 'react';
 
 const supplements = [
   { key: 'whey', label: 'Whey' },
@@ -34,6 +36,7 @@ export function SupplementCard() {
     from: new Date(),
     to: new Date(),
   });
+  const [animatingKey, setAnimatingKey] = useState<string | null>(null);
 
   const todayData = data?.dataPoints.find(d => d.date === today);
   const currentSupplements = todayData?.supplements || DEFAULT_SUPPLEMENTS;
@@ -42,10 +45,17 @@ export function SupplementCard() {
   const totalCount = supplements.length;
 
   const handleToggle = async (key: SupplementKey) => {
+    const willBeChecked = !currentSupplements[key];
+    
+    // Trigger animation and haptic
+    setAnimatingKey(key);
+    haptic(willBeChecked ? 'success' : 'light');
+    setTimeout(() => setAnimatingKey(null), 300);
+    
     try {
       const newSupplements = {
         ...currentSupplements,
-        [key]: !currentSupplements[key],
+        [key]: willBeChecked,
       };
 
       await upsertMetrics({
@@ -81,23 +91,44 @@ export function SupplementCard() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3">
-          {supplements.map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-3">
-              <Checkbox
-                id={`supp-${key}`}
-                checked={currentSupplements[key]}
-                onCheckedChange={() => handleToggle(key)}
+          {supplements.map(({ key, label }) => {
+            const isChecked = currentSupplements[key];
+            const isAnimating = animatingKey === key;
+            
+            return (
+              <button
+                key={key}
+                onClick={() => handleToggle(key)}
                 disabled={isUpserting}
-                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-              <Label 
-                htmlFor={`supp-${key}`} 
-                className={`text-sm cursor-pointer ${currentSupplements[key] ? 'text-foreground' : 'text-muted-foreground'}`}
+                className="flex items-center gap-3 text-left disabled:opacity-50"
               >
-                {label}
-              </Label>
-            </div>
-          ))}
+                <div
+                  className={cn(
+                    "w-5 h-5 border-2 flex items-center justify-center transition-all duration-200",
+                    isChecked 
+                      ? "bg-primary border-primary" 
+                      : "border-muted-foreground bg-transparent",
+                    isAnimating && "scale-125"
+                  )}
+                >
+                  <Check 
+                    className={cn(
+                      "h-3 w-3 text-primary-foreground transition-all duration-200",
+                      isChecked ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                    )} 
+                  />
+                </div>
+                <Label 
+                  className={cn(
+                    "text-sm cursor-pointer transition-colors",
+                    isChecked ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </Label>
+              </button>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
