@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHydrationData } from '@/hooks/useHydrationData';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ComparisonStat } from './ComparisonStat';
 import {
   BarChart,
   Bar,
@@ -16,8 +17,9 @@ import {
 const DAILY_GOAL = 3.5;
 
 export function HydrationChart() {
-  const { dateRange } = useDateRange();
+  const { dateRange, comparisonEnabled, previousDateRange } = useDateRange();
   const { data, isLoading } = useHydrationData(dateRange);
+  const { data: prevData } = useHydrationData(comparisonEnabled ? previousDateRange ?? undefined : undefined);
 
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
@@ -110,24 +112,50 @@ export function HydrationChart() {
           {/* Stats */}
           {data?.totals && (
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
-              <div>
-                <div className="text-lg font-bold tabular-nums">
-                  {data.totals.avgDaily.toFixed(1)}L
-                </div>
-                <div className="text-xs text-muted-foreground">AVG/DAY</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">
-                  {data.totals.daysMetGoal}/{data.totals.daysTracked}
-                </div>
-                <div className="text-xs text-muted-foreground">GOALS MET</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">
-                  {data.totals.totalLiters.toFixed(1)}L
-                </div>
-                <div className="text-xs text-muted-foreground">TOTAL</div>
-              </div>
+              {comparisonEnabled && prevData?.totals ? (
+                <>
+                  <ComparisonStat
+                    label="AVG/DAY"
+                    currentValue={data.totals.avgDaily}
+                    previousValue={prevData.totals.avgDaily}
+                    unit="L"
+                    formatValue={(v) => v.toFixed(1)}
+                  />
+                  <ComparisonStat
+                    label="GOALS MET"
+                    currentValue={data.totals.daysMetGoal}
+                    previousValue={prevData.totals.daysMetGoal}
+                  />
+                  <ComparisonStat
+                    label="TOTAL"
+                    currentValue={data.totals.totalLiters}
+                    previousValue={prevData.totals.totalLiters}
+                    unit="L"
+                    formatValue={(v) => v.toFixed(1)}
+                  />
+                </>
+              ) : (
+                <>
+                  <div>
+                    <div className="text-lg font-bold tabular-nums">
+                      {data.totals.avgDaily.toFixed(1)}L
+                    </div>
+                    <div className="text-xs text-muted-foreground">AVG/DAY</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold tabular-nums">
+                      {data.totals.daysMetGoal}/{data.totals.daysTracked}
+                    </div>
+                    <div className="text-xs text-muted-foreground">GOALS MET</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold tabular-nums">
+                      {data.totals.totalLiters.toFixed(1)}L
+                    </div>
+                    <div className="text-xs text-muted-foreground">TOTAL</div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </>

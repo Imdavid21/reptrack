@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -20,7 +20,15 @@ import { useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
 export function DateRangeSelector() {
-  const { dateRange, setDateRange, preset, setPreset } = useDateRange();
+  const { 
+    dateRange, 
+    setDateRange, 
+    preset, 
+    setPreset,
+    comparisonEnabled,
+    setComparisonEnabled,
+    previousDateRange,
+  } = useDateRange();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const handleCalendarSelect = (range: DateRange | undefined) => {
@@ -91,6 +99,27 @@ export function DateRangeSelector() {
           />
         </PopoverContent>
       </Popover>
+
+      {/* Comparison toggle */}
+      <Button
+        variant={comparisonEnabled ? "default" : "outline"}
+        size="sm"
+        className={cn(
+          "h-8 text-xs gap-1.5",
+          comparisonEnabled && "bg-foreground text-background"
+        )}
+        onClick={() => setComparisonEnabled(!comparisonEnabled)}
+      >
+        <GitCompare className="h-3 w-3" />
+        Compare
+      </Button>
+
+      {/* Show comparison period */}
+      {comparisonEnabled && previousDateRange && (
+        <span className="text-xs text-muted-foreground">
+          vs {format(previousDateRange.from, 'MMM d')} - {format(previousDateRange.to, 'MMM d')}
+        </span>
+      )}
     </div>
   );
 }
