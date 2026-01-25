@@ -840,6 +840,116 @@ serve(async (req) => {
       }
     }
 
+    // Action: Send daily summary report (triggered at end of day)
+    if (action === "send-daily-summary") {
+      const { data: configs } = await supabase
+        .from("water_reminder_configs")
+        .select("*")
+        .eq("is_active", true)
+        .not("telegram_chat_id", "is", null);
+
+      if (!configs || configs.length === 0) {
+        return new Response(JSON.stringify({ sent: 0 }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let sent = 0;
+      const today = new Date().toISOString().split("T")[0];
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      for (const config of configs) {
+        // Get today's water logs
+        const { data: waterLogs } = await supabase
+          .from("water_logs")
+          .select("amount")
+          .eq("user_id", config.user_id)
+          .gte("timestamp", startOfDay.toISOString());
+
+        // Get today's meals
+        const { data: meals } = await supabase
+          .from("meals")
+          .select("food_name, calories, meal_type")
+          .eq("user_id", config.user_id)
+          .eq("date", today);
+
+        // Get today's workout
+        const { data: workout } = await supabase
+          .from("workouts")
+          .select("day_name, completed_at")
+          .eq("user_id", config.user_id)
+          .eq("date", today)
+          .maybeSingle();
+
+        // Get morning checkin
+        const { data: morningCheckin } = await supabase
+          .from("morning_checkins")
+          .select("sleep_hours, energy_level, bodyweight")
+          .eq("user_id", config.user_id)
+          .eq("date", today)
+          .maybeSingle();
+
+        // Calculate stats
+        const totalWaterL = (waterLogs || []).reduce((sum, log) => sum + Number(log.amount || 0), 0);
+        const totalCalories = (meals || []).reduce((sum, meal) => sum + (meal.calories || 0), 0);
+        const mealCount = meals?.length || 0;
+
+        // Build daily summary
+        let summary = "📅 <b>TODAY'S SUMMARY</b>\n\n";
+
+        // Water
+        const waterGoal = 3;
+        const waterPercent = Math.min(100, (totalWaterL / waterGoal) * 100);
+        const waterBar = "█".repeat(Math.floor(waterPercent / 10)) + "░".repeat(10 - Math.floor(waterPercent / 10));
+        summary += `💧 Water: ${totalWaterL.toFixed(1)}L / ${waterGoal}L\n`;
+        summary += `   ${waterBar} ${waterPercent.toFixed(0)}%\n\n`;
+
+        // Nutrition
+        if (mealCount > 0) {
+          summary += `🍽️ Nutrition: ${totalCalories} cal (${mealCount} meals)\n`;
+          const mealList = (meals || []).map(m => `   • ${m.meal_type}: ${m.food_name || 'Unknown'}${m.calories ? ` (${m.calories})` : ''}`).join("\n");
+          summary += mealList + "\n\n";
+        } else {
+          summary += "🍽️ No meals logged today\n\n";
+        }
+
+        // Workout
+        if (workout) {
+          summary += `🏋️ Workout: ${workout.day_name} ✅\n\n`;
+        } else {
+          summary += "🏋️ No workout logged today\n\n";
+        }
+
+        // Morning stats
+        if (morningCheckin) {
+          summary += "🌅 <b>Morning Stats</b>\n";
+          if (morningCheckin.sleep_hours) summary += `   • Sleep: ${morningCheckin.sleep_hours}h\n`;
+          if (morningCheckin.energy_level) summary += `   • Energy: ${morningCheckin.energy_level}/10\n`;
+          if (morningCheckin.bodyweight) summary += `   • Weight: ${morningCheckin.bodyweight}kg\n`;
+        }
+
+        // Quick tip
+        summary += "\n💡 ";
+        if (totalWaterL < 2) {
+          summary += "Try to drink more water tomorrow!";
+        } else if (mealCount === 0) {
+          summary += "Don't forget to log your meals!";
+        } else if (!workout) {
+          summary += "Rest day? Get back at it tomorrow!";
+        } else {
+          summary += "Great day! Keep up the momentum!";
+        }
+
+        const success = await sendTelegramMessage(config.telegram_chat_id, summary);
+        if (success) sent++;
+      }
+
+      return new Response(JSON.stringify({ sent }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Action: Send weekly progress report
     if (action === "send-weekly-report") {
       const { userId } = await req.json().catch(() => ({}));
@@ -871,6 +981,7 @@ serve(async (req) => {
 
       let sent = 0;
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const oneWeekAgoDate = oneWeekAgo.split('T')[0];
 
       for (const config of configs) {
         // Get water logs for the past week
@@ -883,74 +994,103 @@ serve(async (req) => {
         // Get workouts for the past week
         const { data: workouts } = await supabase
           .from("workouts")
-          .select("id, day_name, date")
+          .select("id, day_name, date, completed_at")
           .eq("user_id", config.user_id)
-          .gte("date", oneWeekAgo.split('T')[0]);
+          .gte("date", oneWeekAgoDate);
 
-        // Get habits data
-        const workoutIds = workouts?.map(w => w.id) || [];
-        let habits: any[] = [];
-        if (workoutIds.length > 0) {
-          const { data: habitsData } = await supabase
-            .from("habits")
-            .select("pullups, water_intake, sleep_hours, energy_level")
-            .in("workout_id", workoutIds);
-          habits = habitsData || [];
-        }
+        // Get meals for the past week
+        const { data: meals } = await supabase
+          .from("meals")
+          .select("calories, date")
+          .eq("user_id", config.user_id)
+          .gte("date", oneWeekAgoDate);
+
+        // Get morning checkins for the past week
+        const { data: checkins } = await supabase
+          .from("morning_checkins")
+          .select("sleep_hours, energy_level, bodyweight")
+          .eq("user_id", config.user_id)
+          .gte("date", oneWeekAgoDate);
 
         // Calculate stats
         const totalWaterL = (waterLogs || []).reduce((sum, log) => sum + Number(log.amount || 0), 0);
         const avgDailyWater = totalWaterL / 7;
         const workoutCount = workouts?.length || 0;
-        const totalPullups = habits.reduce((sum, h) => sum + (h.pullups || 0), 0);
-        const avgSleep = habits.length > 0 
-          ? habits.reduce((sum, h) => sum + Number(h.sleep_hours || 0), 0) / habits.length 
+        const totalCalories = (meals || []).reduce((sum, m) => sum + (m.calories || 0), 0);
+        const avgDailyCalories = meals && meals.length > 0 ? totalCalories / 7 : 0;
+        
+        const avgSleep = checkins && checkins.length > 0
+          ? checkins.reduce((sum, c) => sum + Number(c.sleep_hours || 0), 0) / checkins.length
           : 0;
-        const avgEnergy = habits.length > 0
-          ? habits.reduce((sum, h) => sum + (h.energy_level || 0), 0) / habits.length
+        const avgEnergy = checkins && checkins.length > 0
+          ? checkins.reduce((sum, c) => sum + (c.energy_level || 0), 0) / checkins.length
           : 0;
+        
+        // Get weight trend
+        const weights = (checkins || []).filter(c => c.bodyweight).map(c => Number(c.bodyweight));
+        const weightChange = weights.length >= 2 ? weights[weights.length - 1] - weights[0] : null;
 
         // Build report message
-        let report = "📊 <b>WEEKLY PROGRESS REPORT</b>\n\n";
+        let report = "📊 <b>WEEKLY PROGRESS REPORT</b>\n";
+        report += "━━━━━━━━━━━━━━━━━━━\n\n";
         
         // Hydration
-        report += "💧 <b>Hydration</b>\n";
-        report += `• Total: ${totalWaterL.toFixed(1)}L\n`;
-        report += `• Daily avg: ${avgDailyWater.toFixed(2)}L\n`;
-        const waterGoal = 3; // 3L daily goal
+        const waterGoal = 3;
         const hydrationScore = Math.min(100, (avgDailyWater / waterGoal) * 100);
-        report += `• Goal progress: ${hydrationScore.toFixed(0)}%\n\n`;
+        report += "💧 <b>Hydration</b>\n";
+        report += `   Total: ${totalWaterL.toFixed(1)}L\n`;
+        report += `   Daily avg: ${avgDailyWater.toFixed(1)}L (${hydrationScore.toFixed(0)}%)\n\n`;
 
-        // Workouts
+        // Training
         report += "🏋️ <b>Training</b>\n";
-        report += `• Sessions: ${workoutCount}/6\n`;
+        report += `   Sessions: ${workoutCount}/6\n`;
         if (workouts && workouts.length > 0) {
-          const dayNames = workouts.map(w => w.day_name).join(", ");
-          report += `• Completed: ${dayNames}\n`;
+          const dayNames = workouts.map(w => w.day_name).slice(0, 4).join(", ");
+          report += `   ${dayNames}${workouts.length > 4 ? '...' : ''}\n`;
         }
-        report += `• Pull-ups: ${totalPullups}\n\n`;
+        report += "\n";
+
+        // Nutrition
+        if (meals && meals.length > 0) {
+          report += "🍽️ <b>Nutrition</b>\n";
+          report += `   Total: ${totalCalories.toLocaleString()} cal\n`;
+          report += `   Daily avg: ${Math.round(avgDailyCalories).toLocaleString()} cal\n\n`;
+        }
 
         // Recovery
-        if (habits.length > 0) {
+        if (checkins && checkins.length > 0) {
           report += "😴 <b>Recovery</b>\n";
-          report += `• Avg sleep: ${avgSleep.toFixed(1)}h\n`;
-          report += `• Avg energy: ${avgEnergy.toFixed(1)}/10\n\n`;
+          report += `   Avg sleep: ${avgSleep.toFixed(1)}h\n`;
+          report += `   Avg energy: ${avgEnergy.toFixed(1)}/10\n`;
+          if (weightChange !== null) {
+            const sign = weightChange >= 0 ? "+" : "";
+            report += `   Weight: ${sign}${weightChange.toFixed(1)}kg\n`;
+          }
+          report += "\n";
         }
 
-        // Insight
-        report += "💡 <b>Insight:</b> ";
-        if (workoutCount >= 5) {
-          report += "Excellent consistency! Keep pushing.";
-        } else if (workoutCount >= 3) {
-          report += "Good effort! Aim for 1-2 more sessions next week.";
-        } else if (workoutCount > 0) {
-          report += "Room for improvement. Try to hit at least 4 sessions.";
+        // Weekly grade
+        let grade = "C";
+        let gradeEmoji = "⭐";
+        const score = (workoutCount / 6) * 40 + (hydrationScore / 100) * 30 + (avgEnergy / 10) * 30;
+        if (score >= 85) { grade = "A+"; gradeEmoji = "🏆"; }
+        else if (score >= 75) { grade = "A"; gradeEmoji = "🥇"; }
+        else if (score >= 65) { grade = "B"; gradeEmoji = "🥈"; }
+        else if (score >= 50) { grade = "C"; gradeEmoji = "🥉"; }
+        else { grade = "D"; gradeEmoji = "📈"; }
+
+        report += `${gradeEmoji} <b>Weekly Grade: ${grade}</b>\n\n`;
+
+        // Personalized insight
+        report += "💡 <b>Focus for next week:</b> ";
+        if (workoutCount < 3) {
+          report += "Prioritize consistency - aim for 4+ workouts.";
+        } else if (avgDailyWater < 2) {
+          report += "Hydration is key - try to hit 2.5L daily.";
+        } else if (avgSleep < 7) {
+          report += "Recovery matters - aim for 7+ hours of sleep.";
         } else {
-          report += "No workouts logged. Let's get back on track!";
-        }
-
-        if (avgDailyWater < 2) {
-          report += " 🚰 Drink more water!";
+          report += "You're crushing it! Maintain the momentum.";
         }
 
         const success = await sendTelegramMessage(config.telegram_chat_id, report);
