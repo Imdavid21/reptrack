@@ -1,5 +1,5 @@
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { Logo } from './Logo';
+import { ASCIIProgress } from '@/components/ui/ASCIIProgress';
 
 interface HeaderProps {
   title?: string;
@@ -8,27 +8,23 @@ interface HeaderProps {
 export function Header({ title }: HeaderProps) {
   const { workouts } = useWorkouts();
   const totalSessions = workouts.length;
-  const progressPercent = Math.min((totalSessions / 72) * 100, 100);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background px-4 py-3">
+    <header className="sticky top-0 z-40 border-b border-border bg-background px-8 py-4">
       <div className="flex items-center justify-between">
         {title ? (
           <h1 className="text-sm font-bold tracking-widest">{title}</h1>
         ) : (
-          <Logo />
+          <div className="font-bold tracking-widest text-sm">
+            REPS & REMINDERS
+          </div>
         )}
-        <div className="text-right">
-          <span className="text-xs text-muted-foreground">
-            {totalSessions}/72 SESSIONS
-          </span>
+        <div className="text-right font-mono text-xs text-muted-foreground">
+          {totalSessions}/72
         </div>
       </div>
-      <div className="progress-bar mt-2">
-        <div
-          className="progress-bar-fill"
-          style={{ width: `${progressPercent}%` }}
-        />
+      <div className="mt-2">
+        <ASCIIProgress value={totalSessions} max={72} width={30} showPercent={false} />
       </div>
     </header>
   );
