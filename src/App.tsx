@@ -1,5 +1,3 @@
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import LogWorkout from "./pages/LogWorkout";
@@ -10,28 +8,13 @@ import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/log" element={<LogWorkout />} />
-          <Route path="/create" element={<CreateRoutine />} />
-          <Route path="/insights" element={<Insights />} />
-          {/* Redirect old routes to new unified insights */}
-          <Route path="/analytics" element={<Navigate to="/insights" replace />} />
-          <Route path="/health" element={<Navigate to="/insights?tab=vitals" replace />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/history/:workoutId" element={<WorkoutDetail />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<div className="p-8 text-white">App Loading...</div>} />
+      <Route path="*" element={<div className="p-8 text-white">404</div>} />
+    </Routes>
+  </BrowserRouter>
 );
 
 export default App;
