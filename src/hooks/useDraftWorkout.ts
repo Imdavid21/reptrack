@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { WorkoutExercise, Habits } from './useWorkouts';
+import { WorkoutExercise, Habits, PreCheckin, PostCheckin } from './useWorkouts';
 import { useAuth } from './useAuth';
 
 export interface DraftWorkout {
@@ -10,8 +10,11 @@ export interface DraftWorkout {
   exercises: WorkoutExercise[];
   habits: Habits;
   currentExerciseIndex: number;
-  step: 'select-day' | 'exercises' | 'habits';
+  step: 'select-day' | 'pre-checkin' | 'exercises' | 'post-checkin' | 'habits';
   lastSavedAt: string;
+  preCheckin?: PreCheckin;
+  postCheckin?: PostCheckin;
+  workoutStartTime?: string;
 }
 
 const DRAFT_KEY = 'fittrack_draft_workout';

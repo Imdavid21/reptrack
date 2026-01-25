@@ -37,6 +37,18 @@ export interface Habits {
   };
 }
 
+export interface PreCheckin {
+  energy: number;
+  motivation: number;
+  soreness: number;
+}
+
+export interface PostCheckin {
+  difficulty: number;
+  satisfaction: number;
+  durationMinutes?: number;
+}
+
 export interface Workout {
   id: string;
   user_id: string;
@@ -78,6 +90,10 @@ export function useWorkouts() {
       date?: Date;
       exercises: WorkoutExercise[];
       habits: Habits;
+      preCheckin?: PreCheckin;
+      postCheckin?: PostCheckin;
+      startedAt?: Date;
+      completedAt?: Date;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
@@ -86,7 +102,7 @@ export function useWorkouts() {
         ? workout.date.toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
 
-      // Create workout
+      // Create workout with check-in data
       const { data: workoutData, error: workoutError } = await supabase
         .from('workouts')
         .insert({
@@ -95,6 +111,14 @@ export function useWorkouts() {
           day_name: workout.day_name,
           week_number: workout.week_number,
           date: workoutDate,
+          pre_energy: workout.preCheckin?.energy,
+          pre_motivation: workout.preCheckin?.motivation,
+          pre_soreness: workout.preCheckin?.soreness,
+          post_difficulty: workout.postCheckin?.difficulty,
+          post_satisfaction: workout.postCheckin?.satisfaction,
+          workout_duration_minutes: workout.postCheckin?.durationMinutes,
+          started_at: workout.startedAt?.toISOString(),
+          completed_at: workout.completedAt?.toISOString(),
         })
         .select()
         .single();
