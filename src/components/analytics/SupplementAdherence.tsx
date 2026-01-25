@@ -17,16 +17,23 @@ const SUPPLEMENT_LABELS: Record<string, string> = {
 export function SupplementAdherence() {
   const { data, isLoading } = useHabitsData(28); // 4 weeks
 
-  const { weeklyGrid, adherenceStats } = useMemo(() => {
+  const { weeklyGrid, adherenceStats, daysWithData } = useMemo(() => {
     if (!data?.dataPoints || data.dataPoints.length === 0) {
-      return { weeklyGrid: [], adherenceStats: [] };
+      return { weeklyGrid: [], adherenceStats: [], daysWithData: 0 };
+    }
+
+    // Only use entries that have actual habit data
+    const validDataPoints = data.dataPoints.filter(d => d.hasData);
+    
+    if (validDataPoints.length === 0) {
+      return { weeklyGrid: [], adherenceStats: [], daysWithData: 0 };
     }
 
     const supplements = Object.keys(SUPPLEMENT_LABELS);
     
-    // Build date -> supplements map
+    // Build date -> supplements map (only from valid data)
     const dateMap = new Map<string, Record<string, boolean>>();
-    data.dataPoints.forEach(d => {
+    validDataPoints.forEach(d => {
       dateMap.set(d.date, d.supplements);
     });
 
@@ -81,7 +88,7 @@ export function SupplementAdherence() {
       percent: data.supplementAdherence[supp] ?? 0,
     })).sort((a, b) => b.percent - a.percent);
 
-    return { weeklyGrid, adherenceStats };
+    return { weeklyGrid, adherenceStats, daysWithData: validDataPoints.length };
   }, [data]);
 
   if (isLoading) {
@@ -114,7 +121,10 @@ export function SupplementAdherence() {
 
   return (
     <div className="border border-border p-4">
-      <h3 className="section-header">SUPPLEMENT ADHERENCE (4 WEEKS)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="section-header mb-0">SUPPLEMENT ADHERENCE (4 WEEKS)</h3>
+        <div className="text-xs text-muted-foreground">{daysWithData} days logged</div>
+      </div>
 
       {/* Adherence bars */}
       <div className="space-y-2 mb-6">

@@ -18,8 +18,9 @@ export function SleepEnergyChart() {
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
     
+    // Only include entries that have actual habit data AND have sleep or energy values
     return data.dataPoints
-      .filter(d => d.sleepHours !== null || d.energyLevel !== null)
+      .filter(d => d.hasData && (d.sleepHours !== null || d.energyLevel !== null))
       .map(d => ({
         date: format(parseISO(d.date), 'MMM d'),
         sleep: d.sleepHours,

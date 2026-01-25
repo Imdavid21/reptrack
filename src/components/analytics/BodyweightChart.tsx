@@ -18,8 +18,9 @@ export function BodyweightChart() {
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
     
+    // Only include entries that have actual habit data AND have bodyweight
     return data.dataPoints
-      .filter(d => d.bodyweight !== null && d.bodyweight > 0)
+      .filter(d => d.hasData && d.bodyweight !== null && d.bodyweight > 0)
       .map(d => ({
         date: format(parseISO(d.date), 'MMM d'),
         weight: d.bodyweight,
