@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useHabitsData } from '@/hooks/useHabitsData';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, startOfWeek } from 'date-fns';
 import {
@@ -13,36 +13,33 @@ import {
 } from 'recharts';
 
 export function PullupAccumulator() {
-  const { data, isLoading } = useHabitsData(60);
+  const { data, isLoading } = useDailyMetrics(60);
 
   const { chartData, totalPullups, weeklyAvg } = useMemo(() => {
     if (!data?.dataPoints) {
       return { chartData: [], totalPullups: 0, weeklyAvg: 0 };
     }
 
-    // Only use data points that have actual habit data
-    const validDataPoints = data.dataPoints.filter(d => d.hasData);
-    
     // Group by week
     const weeklyMap = new Map<string, { week: string; pullups: number; cumulative: number }>();
     let runningTotal = 0;
 
-    validDataPoints.forEach(d => {
+    data.dataPoints.forEach(d => {
       const weekStart = startOfWeek(parseISO(d.date), { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
       const displayWeek = format(weekStart, 'MMM d');
 
       const existing = weeklyMap.get(weekKey);
       if (existing) {
-        existing.pullups += d.pullups;
+        existing.pullups += d.pullups || 0;
       } else {
         weeklyMap.set(weekKey, {
           week: displayWeek,
-          pullups: d.pullups,
+          pullups: d.pullups || 0,
           cumulative: 0,
         });
       }
-      runningTotal += d.pullups;
+      runningTotal += d.pullups || 0;
     });
 
     // Add cumulative totals

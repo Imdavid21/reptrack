@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useHabitsData } from './useHabitsData';
-import { useVolumeData } from './useVolumeData';
-import { useExerciseProgression } from './useExerciseProgression';
+import { useDailyMetrics } from './useDailyMetrics';
+import { useExerciseSets } from './useExerciseSets';
 
 export interface WorkoutSummary {
   totalWorkouts: number;
@@ -20,20 +19,18 @@ export function useAIInsights() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: habitsData } = useHabitsData(30);
-  const { data: volumeData } = useVolumeData(30);
-  const { data: progressions } = useExerciseProgression();
+  const { data: metricsData } = useDailyMetrics(30);
+  const { data: exerciseData } = useExerciseSets(30);
 
   const generateInsights = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Build summary from hooks data
-      const exerciseProgress = (progressions || []).slice(0, 5).map(p => {
-        const sorted = [...p.data].sort((a, b) => a.week - b.week);
-        const first = sorted[0]?.weight || 0;
-        const last = sorted[sorted.length - 1]?.weight || 0;
+      // Build exercise progress from progressions
+      const exerciseProgress = (exerciseData?.progressions || []).slice(0, 5).map(p => {
+        const first = p.data[0]?.weight || 0;
+        const last = p.data[p.data.length - 1]?.weight || 0;
         return {
           name: p.exerciseName,
           startWeight: first,
@@ -43,17 +40,17 @@ export function useAIInsights() {
       }).filter(e => e.startWeight > 0);
 
       const summary: WorkoutSummary = {
-        totalWorkouts: habitsData?.dataPoints.length || 0,
-        daysActive: habitsData?.dataPoints.length || 0,
+        totalWorkouts: metricsData?.totals.daysTracked || 0,
+        daysActive: metricsData?.totals.daysWithData || 0,
         exerciseProgress,
-        avgSleep: habitsData?.totals.avgSleep || null,
-        avgEnergy: habitsData?.totals.avgEnergy || null,
-        supplementAdherence: habitsData?.supplementAdherence || {},
-        pullupTotal: habitsData?.totals.totalPullups || 0,
+        avgSleep: metricsData?.totals.avgSleep || null,
+        avgEnergy: metricsData?.totals.avgEnergy || null,
+        supplementAdherence: metricsData?.supplementAdherence || {},
+        pullupTotal: metricsData?.totals.totalPullups || 0,
         volumeBreakdown: {
-          push: volumeData?.totals.pushVolume || 0,
-          pull: volumeData?.totals.pullVolume || 0,
-          legs: volumeData?.totals.legsVolume || 0,
+          push: exerciseData?.volumeTotals.push || 0,
+          pull: exerciseData?.volumeTotals.pull || 0,
+          legs: exerciseData?.volumeTotals.legs || 0,
         },
       };
 
@@ -77,13 +74,13 @@ export function useAIInsights() {
     } finally {
       setIsLoading(false);
     }
-  }, [habitsData, volumeData, progressions]);
+  }, [metricsData, exerciseData]);
 
   return {
     insights,
     isLoading,
     error,
     generateInsights,
-    hasData: (habitsData?.dataPoints.length || 0) > 0 || (progressions?.length || 0) > 0,
+    hasData: (metricsData?.totals.daysTracked || 0) > 0 || (exerciseData?.progressions?.length || 0) > 0,
   };
 }

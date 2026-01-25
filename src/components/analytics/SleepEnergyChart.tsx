@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useHabitsData } from '@/hooks/useHabitsData';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import {
@@ -9,22 +9,20 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 export function SleepEnergyChart() {
-  const { data, isLoading } = useHabitsData(30);
+  const { data, isLoading } = useDailyMetrics(30);
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
     
-    // Only include entries that have actual habit data AND have sleep or energy values
     return data.dataPoints
-      .filter(d => d.hasData && (d.sleepHours !== null || d.energyLevel !== null))
+      .filter(d => d.sleep_hours !== null || d.energy_level !== null)
       .map(d => ({
         date: format(parseISO(d.date), 'MMM d'),
-        sleep: d.sleepHours,
-        energy: d.energyLevel,
+        sleep: d.sleep_hours,
+        energy: d.energy_level,
       }));
   }, [data?.dataPoints]);
 
@@ -131,7 +129,6 @@ export function SleepEnergyChart() {
         </ResponsiveContainer>
       </div>
 
-      {/* Stats row */}
       {data?.totals && (
         <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border">
           <div>
