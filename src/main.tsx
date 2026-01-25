@@ -1,21 +1,9 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { registerServiceWorker } from "./hooks/useOfflineSync";
 
-// Service worker registration moved to after app loads
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      await navigator.serviceWorker.register('/sw.js');
-    } catch (error) {
-      console.error('SW registration failed:', error);
-    }
-  });
-}
+// Register service worker for offline support
+registerServiceWorker();
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+createRoot(document.getElementById("root")!).render(<App />);

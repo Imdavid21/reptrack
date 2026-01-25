@@ -378,8 +378,6 @@ export default function LogWorkout() {
                 exercise={currentExercise}
                 exerciseIndex={currentExerciseIndex}
                 totalExercises={exercises.length}
-                weekNumber={weekNumber}
-                dayName={selectedDay}
                 onChange={handleExerciseChange}
                 onNext={handleNextExercise}
                 onPrev={handlePrevExercise}
