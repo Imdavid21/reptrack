@@ -1,7 +1,7 @@
 {
-  "name": "FitTrack",
-  "short_name": "FitTrack",
-  "description": "12-Week Fitness Transformation Tracker",
+  "name": "HEALTH/OS",
+  "short_name": "HEALTH/OS",
+  "description": "Your Personal Health Operating System",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

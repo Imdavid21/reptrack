@@ -154,7 +154,7 @@ serve(async (req) => {
           await supabase.from("water_logs").insert({
             user_id: config.user_id,
             amount: 0.25,
-            method: "automation",
+            method: "telegram",
           });
 
           await sendTelegramMessage(
@@ -164,6 +164,168 @@ serve(async (req) => {
               : "👍 250ml water logged!"
           );
 
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Weight logging: "weight 75.5" or "w 75.5"
+        if (text?.startsWith("weight ") || text?.startsWith("w ")) {
+          const weightStr = text.replace(/^(weight|w)\s+/, "").trim();
+          const weight = parseFloat(weightStr);
+
+          if (isNaN(weight) || weight < 20 || weight > 300) {
+            await sendTelegramMessage(chatId, "❌ Invalid weight. Use: <code>weight 75.5</code>");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(chatId, "❓ Please use /start first.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const today = new Date().toISOString().split("T")[0];
+
+          // Check for existing morning checkin
+          const { data: existing } = await supabase
+            .from("morning_checkins")
+            .select("id")
+            .eq("user_id", config.user_id)
+            .eq("date", today)
+            .single();
+
+          if (existing) {
+            await supabase
+              .from("morning_checkins")
+              .update({ bodyweight: weight, updated_at: new Date().toISOString() })
+              .eq("id", existing.id);
+          } else {
+            await supabase.from("morning_checkins").insert({
+              user_id: config.user_id,
+              date: today,
+              bodyweight: weight,
+            });
+          }
+
+          await sendTelegramMessage(chatId, `⚖️ Weight logged: <b>${weight}kg</b>`);
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Meal logging: "meal pizza 500" or "m pizza 500"
+        if (text?.startsWith("meal ") || text?.startsWith("m ")) {
+          const mealStr = text.replace(/^(meal|m)\s+/, "").trim();
+          const parts = mealStr.split(/\s+/);
+          
+          // Try to extract calories from the last part
+          const lastPart = parts[parts.length - 1];
+          const calories = parseInt(lastPart);
+          
+          let foodName: string;
+          let cals: number | null = null;
+          
+          if (!isNaN(calories) && calories > 0 && calories < 5000) {
+            foodName = parts.slice(0, -1).join(" ");
+            cals = calories;
+          } else {
+            foodName = parts.join(" ");
+          }
+
+          if (!foodName) {
+            await sendTelegramMessage(chatId, "❌ Use: <code>meal pizza 500</code> or <code>meal pizza</code>");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(chatId, "❓ Please use /start first.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // Determine meal type by time
+          const hour = new Date().getHours();
+          let mealType = "snack";
+          if (hour >= 5 && hour < 11) mealType = "breakfast";
+          else if (hour >= 11 && hour < 15) mealType = "lunch";
+          else if (hour >= 15 && hour < 20) mealType = "dinner";
+
+          const today = new Date().toISOString().split("T")[0];
+
+          await supabase.from("meals").insert({
+            user_id: config.user_id,
+            date: today,
+            meal_type: mealType,
+            food_name: foodName,
+            calories: cals,
+            is_confirmed: true,
+          });
+
+          const calStr = cals ? ` (${cals} cal)` : "";
+          await sendTelegramMessage(
+            chatId,
+            `🍽️ <b>${mealType.charAt(0).toUpperCase() + mealType.slice(1)}</b> logged: ${foodName}${calStr}`
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Water amount: "water 500" for 500ml
+        if (text?.startsWith("water ") || text?.match(/^\d+\s*ml$/i)) {
+          let amount = 0;
+          if (text.startsWith("water ")) {
+            amount = parseInt(text.replace("water ", ""));
+          } else {
+            amount = parseInt(text);
+          }
+
+          if (isNaN(amount) || amount < 50 || amount > 2000) {
+            await sendTelegramMessage(chatId, "❌ Invalid amount. Use: <code>water 500</code> (in ml)");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(chatId, "❓ Please use /start first.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          await supabase.from("water_logs").insert({
+            user_id: config.user_id,
+            amount: amount / 1000, // Convert to liters
+            method: "telegram",
+          });
+
+          await sendTelegramMessage(chatId, `💧 ${amount}ml water logged!`);
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -191,6 +353,25 @@ serve(async (req) => {
             "⏭️ Skipped. I'll remind you again later!"
           );
 
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Help command
+        if (text === "/help" || text === "help") {
+          await sendTelegramMessage(
+            chatId,
+            "📋 <b>Commands:</b>\n\n" +
+            "💧 <b>Water</b>\n" +
+            "• <code>done</code> - Log 250ml\n" +
+            "• <code>water 500</code> - Log specific ml\n\n" +
+            "🍽️ <b>Meals</b>\n" +
+            "• <code>meal pizza 500</code> - Log meal + calories\n" +
+            "• <code>meal salad</code> - Log meal (no calories)\n\n" +
+            "⚖️ <b>Weight</b>\n" +
+            "• <code>weight 75.5</code> - Log weight in kg"
+          );
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
