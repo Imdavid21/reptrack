@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useMorningCheckin } from '@/hooks/useMorningCheckin';
 import { useNightCheckin } from '@/hooks/useNightCheckin';
+import { useTimezone } from '@/hooks/useTimezone';
 import { 
   Sun, Moon, Clock, Heart, Scale, Activity, 
   Footprints, Star, Check, Loader2, ChevronDown,
@@ -12,15 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { BackfillDialog } from './BackfillDialog';
 
 type TimeOfDay = 'morning' | 'midday' | 'evening';
-
-function getTimeOfDay(): TimeOfDay {
-  const hour = new Date().getHours();
-  if (hour < 11) return 'morning';
-  if (hour < 18) return 'midday';
-  return 'evening';
-}
 
 const TIME_CONFIG = {
   morning: {
@@ -41,7 +36,7 @@ const TIME_CONFIG = {
 };
 
 export function DailyRitualCard() {
-  const timeOfDay = getTimeOfDay();
+  const { timeOfDay, isLoading: isLoadingTimezone } = useTimezone();
   const config = TIME_CONFIG[timeOfDay];
   const Icon = config.icon;
 
@@ -275,7 +270,10 @@ export function DailyRitualCard() {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground mt-4">Tap to edit</p>
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-muted-foreground">Tap to edit</p>
+          <BackfillDialog />
+        </div>
       </div>
     );
   }
@@ -544,6 +542,11 @@ export function DailyRitualCard() {
         )}
         SAVE
       </button>
+
+      {/* Subtle backfill option */}
+      <div className="mt-3 flex justify-center">
+        <BackfillDialog />
+      </div>
     </div>
   );
 }
