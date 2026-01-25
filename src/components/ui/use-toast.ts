@@ -1,11 +1,3 @@
-import { toast } from "sonner";
+import { useToast, toast } from "@/hooks/use-toast";
 
-// Re-export Sonner's toast for backward compatibility
-export { toast };
-
-// Dummy useToast for backward compatibility with old Radix imports
-export const useToast = () => ({
-  toast,
-  toasts: [],
-  dismiss: () => {},
-});
+export { useToast, toast };
