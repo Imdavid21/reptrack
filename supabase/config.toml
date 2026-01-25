@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.workout-hints]
 verify_jwt = false
+
+[functions.smart-coach]
+verify_jwt = false
