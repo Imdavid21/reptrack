@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      blood_pressure_readings: {
+        Row: {
+          created_at: string | null
+          diastolic: number
+          id: string
+          measured_at: string | null
+          notes: string | null
+          pulse: number | null
+          systolic: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          diastolic: number
+          id?: string
+          measured_at?: string | null
+          notes?: string | null
+          pulse?: number | null
+          systolic: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          diastolic?: number
+          id?: string
+          measured_at?: string | null
+          notes?: string | null
+          pulse?: number | null
+          systolic?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      blood_sugar_readings: {
+        Row: {
+          created_at: string | null
+          glucose_level: number
+          id: string
+          measured_at: string | null
+          notes: string | null
+          reading_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          glucose_level: number
+          id?: string
+          measured_at?: string | null
+          notes?: string | null
+          reading_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          glucose_level?: number
+          id?: string
+          measured_at?: string | null
+          notes?: string | null
+          reading_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_routines: {
         Row: {
           created_at: string | null
@@ -223,6 +286,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meals: {
+        Row: {
+          ai_confidence: number | null
+          ai_detected_food: string | null
+          calories: number | null
+          created_at: string | null
+          date: string
+          food_name: string | null
+          id: string
+          is_confirmed: boolean | null
+          meal_type: string
+          notes: string | null
+          photo_url: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_detected_food?: string | null
+          calories?: number | null
+          created_at?: string | null
+          date?: string
+          food_name?: string | null
+          id?: string
+          is_confirmed?: boolean | null
+          meal_type: string
+          notes?: string | null
+          photo_url?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_detected_food?: string | null
+          calories?: number | null
+          created_at?: string | null
+          date?: string
+          food_name?: string | null
+          id?: string
+          is_confirmed?: boolean | null
+          meal_type?: string
+          notes?: string | null
+          photo_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      morning_checkins: {
+        Row: {
+          created_at: string | null
+          date: string
+          energy_level: number | null
+          heart_rate: number | null
+          id: string
+          notes: string | null
+          oxygen_level: number | null
+          sleep_hours: number | null
+          sleep_time: string | null
+          updated_at: string | null
+          user_id: string
+          wake_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          energy_level?: number | null
+          heart_rate?: number | null
+          id?: string
+          notes?: string | null
+          oxygen_level?: number | null
+          sleep_hours?: number | null
+          sleep_time?: string | null
+          updated_at?: string | null
+          user_id: string
+          wake_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          energy_level?: number | null
+          heart_rate?: number | null
+          id?: string
+          notes?: string | null
+          oxygen_level?: number | null
+          sleep_hours?: number | null
+          sleep_time?: string | null
+          updated_at?: string | null
+          user_id?: string
+          wake_time?: string | null
+        }
+        Relationships: []
+      }
+      night_checkins: {
+        Row: {
+          created_at: string | null
+          date: string
+          energy_score: number | null
+          id: string
+          notes: string | null
+          performance_score: number | null
+          steps: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          energy_score?: number | null
+          id?: string
+          notes?: string | null
+          performance_score?: number | null
+          steps?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          energy_score?: number | null
+          id?: string
+          notes?: string | null
+          performance_score?: number | null
+          steps?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
