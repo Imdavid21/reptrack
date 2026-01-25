@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Pill, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const supplements = [
   { key: 'whey', label: 'Whey' },
@@ -20,7 +20,9 @@ const supplements = [
 
 type SupplementKey = typeof supplements[number]['key'];
 
-const DEFAULT_SUPPLEMENTS: Record<SupplementKey, boolean> = {
+type SupplementState = Record<SupplementKey, boolean>;
+
+const DEFAULT_SUPPLEMENTS: SupplementState = {
   whey: false,
   casein: false,
   creatine: false,
@@ -38,25 +40,38 @@ export function SupplementCard() {
   });
 
   const todayData = data?.dataPoints.find(d => d.date === today);
-  const currentSupplements = todayData?.supplements || DEFAULT_SUPPLEMENTS;
+  
+  // Local state for optimistic updates
+  const [localSupplements, setLocalSupplements] = useState<SupplementState>(DEFAULT_SUPPLEMENTS);
+  
+  // Sync local state with server data
+  useEffect(() => {
+    if (todayData?.supplements) {
+      setLocalSupplements({
+        ...DEFAULT_SUPPLEMENTS,
+        ...todayData.supplements,
+      });
+    }
+  }, [todayData?.supplements]);
 
-  const takenCount = Object.values(currentSupplements).filter(Boolean).length;
+  const takenCount = Object.values(localSupplements).filter(Boolean).length;
   const totalCount = supplements.length;
 
   const handleToggle = async (key: SupplementKey) => {
-    const willBeChecked = !currentSupplements[key];
+    const willBeChecked = !localSupplements[key];
+    
+    // Optimistic update
+    const newSupplements = {
+      ...localSupplements,
+      [key]: willBeChecked,
+    };
+    setLocalSupplements(newSupplements);
     haptic('light');
     
     try {
-      const newSupplements = {
-        ...currentSupplements,
-        [key]: willBeChecked,
-      };
-
       await upsertMetrics({
         date: today,
         supplements: newSupplements,
-        // Preserve other fields if they exist
         sleep_hours: todayData?.sleep_hours,
         energy_level: todayData?.energy_level,
         bodyweight: todayData?.bodyweight,
@@ -64,9 +79,14 @@ export function SupplementCard() {
         notes: todayData?.notes,
       });
 
-      const action = newSupplements[key] ? 'logged' : 'removed';
+      const action = willBeChecked ? 'logged' : 'removed';
       toast.success(`${supplements.find(s => s.key === key)?.label} ${action}`);
     } catch (error) {
+      // Revert on error
+      setLocalSupplements(prev => ({
+        ...prev,
+        [key]: !willBeChecked,
+      }));
       toast.error('Failed to update supplement');
     }
   };
@@ -87,7 +107,7 @@ export function SupplementCard() {
       <CardContent>
         <div className="grid grid-cols-2 gap-3">
           {supplements.map(({ key, label }) => {
-            const isChecked = currentSupplements[key];
+            const isChecked = localSupplements[key];
             
             return (
               <button
