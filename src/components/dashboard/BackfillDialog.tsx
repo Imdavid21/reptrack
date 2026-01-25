@@ -19,7 +19,7 @@ import {
   Check, Loader2, ChevronRight, BedDouble 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 export function BackfillDialog() {
   const [open, setOpen] = useState(false);

@@ -3,7 +3,7 @@ import { useMorningCheckin } from '@/hooks/useMorningCheckin';
 import { Sun, Heart, Wind, Moon, Check, Loader2, Scale } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { toast} from '@/lib/toast';
 
 export function MorningCheckinCard() {
   const { checkin, upsertCheckin, isUpserting, isLoading } = useMorningCheckin();

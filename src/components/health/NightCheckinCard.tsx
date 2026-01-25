@@ -4,7 +4,7 @@ import { Moon, Activity, Footprints, Star, Check, Loader2, Scale, BedDouble } fr
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 export function NightCheckinCard() {
   const { checkin, upsertCheckin, isUpserting, isLoading } = useNightCheckin();

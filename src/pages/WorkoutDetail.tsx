@@ -6,7 +6,7 @@ import { EditExerciseDialog } from '@/components/workout/EditExerciseDialog';
 import { format } from 'date-fns';
 import { ChevronLeft, Check, Edit2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 export default function WorkoutDetail() {
