@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2 
+  Coffee, Sun, Sunset, Cookie, Trash2, Image 
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,8 @@ export function CalorieTracker() {
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenDialog = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
     setSelectedMealType(mealType);
@@ -235,10 +236,17 @@ export function CalorieTracker() {
             {!analysis && !manualMode && (
               <>
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -255,20 +263,29 @@ export function CalorieTracker() {
                     <p className="text-sm text-muted-foreground">Analyzing food...</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-brutalist flex items-center justify-center gap-2 py-6"
-                    >
-                      <Camera className="h-5 w-5" />
-                      TAKE PHOTO
-                    </button>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="btn-brutalist flex items-center justify-center gap-2 py-6"
+                      >
+                        <Camera className="h-5 w-5" />
+                        CAMERA
+                      </button>
+                      <button
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="btn-brutalist flex items-center justify-center gap-2 py-6"
+                      >
+                        <Image className="h-5 w-5" />
+                        GALLERY
+                      </button>
+                    </div>
                     <button
                       onClick={() => setManualMode(true)}
-                      className="border border-border p-4 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                      className="w-full border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                     >
-                      <Plus className="h-5 w-5" />
-                      MANUAL
+                      <Plus className="h-4 w-4" />
+                      MANUAL ENTRY
                     </button>
                   </div>
                 )}
