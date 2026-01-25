@@ -9,13 +9,92 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 interface TelegramUpdate {
   message?: {
     chat: { id: number };
     from?: { username?: string };
     text?: string;
+    photo?: Array<{ file_id: string; file_size?: number; width?: number; height?: number }>;
+    caption?: string;
   };
+}
+
+// Analyze food image using Lovable AI
+async function analyzeFoodImage(imageUrl: string): Promise<{ food: string; calories: number } | null> {
+  if (!LOVABLE_API_KEY) {
+    console.error("LOVABLE_API_KEY not configured");
+    return null;
+  }
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Analyze this food image. Respond with ONLY a JSON object (no markdown, no code blocks) in this exact format: {\"food\": \"description of food\", \"calories\": estimated_calories_number}. Be concise with the food description (max 5 words). Estimate calories as a single number for the portion shown."
+              },
+              {
+                type: "image_url",
+                image_url: { url: imageUrl }
+              }
+            ]
+          }
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      console.error("No content in AI response");
+      return null;
+    }
+
+    // Parse the JSON response
+    const cleaned = content.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    
+    return {
+      food: parsed.food || "Unknown food",
+      calories: parseInt(parsed.calories) || 0,
+    };
+  } catch (error) {
+    console.error("Error analyzing food image:", error);
+    return null;
+  }
+}
+
+// Get Telegram file URL
+async function getTelegramFileUrl(fileId: string): Promise<string | null> {
+  if (!TELEGRAM_BOT_TOKEN) return null;
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
+    );
+    const data = await response.json();
+    
+    if (data.ok && data.result?.file_path) {
+      return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${data.result.file_path}`;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting file URL:", error);
+    return null;
+  }
 }
 
 // Send a Telegram message
@@ -80,6 +159,80 @@ serve(async (req) => {
         const chatId = update.message.chat.id;
         const username = update.message.from?.username;
         const text = update.message.text?.toLowerCase().trim();
+        const photo = update.message.photo;
+        const caption = update.message.caption?.toLowerCase().trim();
+
+        // Handle photo messages for meal logging
+        if (photo && photo.length > 0) {
+          // Get the largest photo (last in array)
+          const largestPhoto = photo[photo.length - 1];
+          
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(chatId, "❓ Please use /start first.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          await sendTelegramMessage(chatId, "🔍 Analyzing your food...");
+
+          // Get file URL and analyze
+          const fileUrl = await getTelegramFileUrl(largestPhoto.file_id);
+          
+          if (!fileUrl) {
+            await sendTelegramMessage(chatId, "❌ Could not process the image. Please try again.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const analysis = await analyzeFoodImage(fileUrl);
+
+          if (!analysis) {
+            await sendTelegramMessage(chatId, "❌ Could not analyze the food. Please try again or use: <code>meal food_name calories</code>");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // Determine meal type by time
+          const hour = new Date().getHours();
+          let mealType = "snack";
+          if (hour >= 5 && hour < 11) mealType = "breakfast";
+          else if (hour >= 11 && hour < 15) mealType = "lunch";
+          else if (hour >= 15 && hour < 20) mealType = "dinner";
+
+          const today = new Date().toISOString().split("T")[0];
+
+          await supabase.from("meals").insert({
+            user_id: config.user_id,
+            date: today,
+            meal_type: mealType,
+            food_name: analysis.food,
+            calories: analysis.calories,
+            ai_detected_food: analysis.food,
+            ai_confidence: 0.8,
+            is_confirmed: true,
+          });
+
+          await sendTelegramMessage(
+            chatId,
+            `🍽️ <b>${mealType.charAt(0).toUpperCase() + mealType.slice(1)}</b> logged!\n\n` +
+            `📸 <b>${analysis.food}</b>\n` +
+            `🔥 ~${analysis.calories} calories\n\n` +
+            `<i>Reply with correct calories if needed: e.g. <code>cal 400</code></i>`
+          );
+
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         // User is starting the bot - save their chat_id (handle /start or /start <param>)
         if (text === "/start" || text?.startsWith("/start ")) {
@@ -100,12 +253,18 @@ serve(async (req) => {
 
           await sendTelegramMessage(
             chatId,
-            "💧 <b>Welcome to Water Reminder Bot!</b>\n\n" +
-            "I'll remind you to drink water throughout the day.\n\n" +
-            "When you receive a reminder, reply with:\n" +
-            "• <b>done</b> or <b>✓</b> - to confirm you drank water\n" +
-            "• <b>skip</b> - to skip this reminder\n\n" +
-            "Stay hydrated! 🚰"
+            "👋 <b>Welcome to HEALTH/OS Bot!</b>\n\n" +
+            "I can help you track:\n" +
+            "💧 Water intake\n" +
+            "🍽️ Meals (send a photo!)\n" +
+            "⚖️ Weight\n\n" +
+            "<b>Commands:</b>\n" +
+            "• <code>done</code> - Log 250ml water\n" +
+            "• <code>water 500</code> - Log specific ml\n" +
+            "• <code>meal pizza 500</code> - Log meal\n" +
+            "• <code>weight 75.5</code> - Log weight\n" +
+            "• 📸 Send a photo to log a meal!\n\n" +
+            "Type <code>/help</code> for more info."
           );
 
           return new Response(JSON.stringify({ ok: true }), {
@@ -358,17 +517,75 @@ serve(async (req) => {
           });
         }
 
+        // Calorie correction: "cal 400" updates the last logged meal
+        if (text?.startsWith("cal ") || text?.startsWith("calories ")) {
+          const calStr = text.replace(/^(cal|calories)\s+/, "").trim();
+          const newCalories = parseInt(calStr);
+
+          if (isNaN(newCalories) || newCalories < 0 || newCalories > 5000) {
+            await sendTelegramMessage(chatId, "❌ Invalid calories. Use: <code>cal 400</code>");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: config } = await supabase
+            .from("water_reminder_configs")
+            .select("user_id")
+            .eq("telegram_chat_id", chatId.toString())
+            .single();
+
+          if (!config) {
+            await sendTelegramMessage(chatId, "❓ Please use /start first.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // Get the most recent meal for today
+          const today = new Date().toISOString().split("T")[0];
+          const { data: lastMeal } = await supabase
+            .from("meals")
+            .select("id, food_name")
+            .eq("user_id", config.user_id)
+            .eq("date", today)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!lastMeal) {
+            await sendTelegramMessage(chatId, "❌ No meals logged today to update.");
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          await supabase
+            .from("meals")
+            .update({ calories: newCalories })
+            .eq("id", lastMeal.id);
+
+          await sendTelegramMessage(
+            chatId,
+            `✅ Updated <b>${lastMeal.food_name}</b> to ${newCalories} calories`
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         // Help command
         if (text === "/help" || text === "help") {
           await sendTelegramMessage(
             chatId,
-            "📋 <b>Commands:</b>\n\n" +
+            "📋 <b>HEALTH/OS Commands:</b>\n\n" +
             "💧 <b>Water</b>\n" +
             "• <code>done</code> - Log 250ml\n" +
             "• <code>water 500</code> - Log specific ml\n\n" +
             "🍽️ <b>Meals</b>\n" +
-            "• <code>meal pizza 500</code> - Log meal + calories\n" +
-            "• <code>meal salad</code> - Log meal (no calories)\n\n" +
+            "• 📸 Send a photo - AI analyzes food\n" +
+            "• <code>meal pizza 500</code> - Manual entry\n" +
+            "• <code>cal 400</code> - Correct last meal calories\n\n" +
             "⚖️ <b>Weight</b>\n" +
             "• <code>weight 75.5</code> - Log weight in kg"
           );
