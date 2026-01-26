@@ -319,8 +319,8 @@ export default function LogWorkout() {
           ))}
         </div>
 
-        {/* Weekly Progress - show on select-day step */}
-        {step === 'select-day' && <WeeklyProgress />}
+        {/* Weekly Progress - show during day selection and exercises */}
+        {(step === 'select-day' || step === 'exercises') && <WeeklyProgress />}
 
         {/* Step Content */}
         {step === 'select-day' && (
