@@ -29,6 +29,20 @@ function calculateWeekNumber(selectedDate: Date, programStart: Date): number {
   return Math.max(1, Math.min(12, weeks));
 }
 
+// Map weekday (0=Sun, 1=Mon, ...) to workout day key
+function getDefaultDayForDate(date: Date): string | null {
+  const dayOfWeek = date.getDay();
+  const dayMap: Record<number, string> = {
+    1: 'Day 1', // Monday → Push A
+    2: 'Day 2', // Tuesday → Pull A
+    3: 'Day 3', // Wednesday → Legs A
+    4: 'Day 4', // Thursday → Push B
+    5: 'Day 5', // Friday → Pull B
+    6: 'Day 6', // Saturday → Legs B
+  };
+  return dayMap[dayOfWeek] || null; // Sunday = rest
+}
+
 interface DaySelectorWithCheckinProps {
   selectedDay: string;
   onSelect: (day: string, date: Date, weekNumber: number) => void;
@@ -48,6 +62,14 @@ export function DaySelectorWithCheckin({
   );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isManualWeek, setIsManualWeek] = useState(false);
+
+  // Auto-select workout day based on weekday on mount
+  useEffect(() => {
+    const defaultDay = getDefaultDayForDate(selectedDate);
+    if (defaultDay && !selectedDay) {
+      onSelect(defaultDay, selectedDate, weekNumber);
+    }
+  }, []); // Only on mount
 
   // Auto-calculate week when date changes (unless manually overridden)
   useEffect(() => {
