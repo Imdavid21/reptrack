@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/lib/toast';
-import { BackfillDialog } from './BackfillDialog';
+
 
 type TimeOfDay = 'morning' | 'midday' | 'evening';
 
@@ -266,10 +266,7 @@ export function DailyRitualCard() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-muted-foreground">Tap to edit</p>
-          <BackfillDialog />
-        </div>
+        <p className="text-xs text-muted-foreground mt-4">Tap to edit</p>
       </div>
     );
   }
