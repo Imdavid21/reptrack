@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useMorningCheckinHistory } from '@/hooks/useMorningCheckin';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import {
   LineChart,
   Line,
@@ -15,18 +15,24 @@ import {
 
 export function BodyweightChart() {
   const { dateRange } = useDateRange();
-  const { data, isLoading } = useDailyMetrics(dateRange);
+  const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+  const { data: checkins, isLoading } = useMorningCheckinHistory(days);
 
   const chartData = useMemo(() => {
-    if (!data?.dataPoints) return [];
+    if (!checkins) return [];
     
-    return data.dataPoints
-      .filter(d => d.bodyweight !== null && d.bodyweight > 0)
-      .map(d => ({
-        date: format(parseISO(d.date), 'MMM d'),
-        weight: d.bodyweight,
+    // Filter to date range and only entries with bodyweight
+    return checkins
+      .filter(c => {
+        const date = parseISO(c.date);
+        return date >= dateRange.from && date <= dateRange.to && c.bodyweight !== null && c.bodyweight > 0;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(c => ({
+        date: format(parseISO(c.date), 'MMM d'),
+        weight: c.bodyweight,
       }));
-  }, [data?.dataPoints]);
+  }, [checkins, dateRange]);
 
   const { yMin, yMax, avgWeight } = useMemo(() => {
     if (chartData.length === 0) return { yMin: 60, yMax: 100, avgWeight: null };
@@ -58,7 +64,7 @@ export function BodyweightChart() {
       <div className="border border-border p-4">
         <h3 className="section-header">BODYWEIGHT</h3>
         <p className="text-sm text-muted-foreground">
-          No bodyweight data yet. Log workouts with your weight!
+          No bodyweight data yet. Log your weight in morning check-in!
         </p>
       </div>
     );
