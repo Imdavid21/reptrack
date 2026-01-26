@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
+import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Copy } from 'lucide-react';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
@@ -69,6 +69,43 @@ export function SingleExerciseCard({
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
     updated.sets[setIndex] = { ...updated.sets[setIndex], [field]: value };
+    onChange(updated);
+  };
+
+  // Tap-to-fill: Fill with target value when tapping empty input
+  const handleTapToFill = (setIndex: number, field: 'actualWeight' | 'actualReps') => {
+    const set = exercise.sets[setIndex];
+    const currentValue = field === 'actualWeight' ? set.actualWeight : set.actualReps;
+    const targetValue = field === 'actualWeight' ? set.targetWeight : set.targetReps;
+    
+    // Only fill if currently empty and target exists
+    if (!currentValue && targetValue) {
+      haptic('light');
+      handleSetChange(setIndex, field, targetValue);
+    }
+  };
+
+  // ±2.5kg weight adjustment
+  const adjustWeight = (setIndex: number, delta: number) => {
+    haptic('light');
+    const set = exercise.sets[setIndex];
+    const currentWeight = parseFloat(set.actualWeight || set.targetWeight || '0');
+    const newWeight = Math.max(0, currentWeight + delta);
+    handleSetChange(setIndex, 'actualWeight', newWeight.toString());
+  };
+
+  // Copy from previous set
+  const copyFromPreviousSet = (setIndex: number) => {
+    if (setIndex === 0) return;
+    haptic('light');
+    const prevSet = exercise.sets[setIndex - 1];
+    const updated = { ...exercise };
+    updated.sets = [...updated.sets];
+    updated.sets[setIndex] = {
+      ...updated.sets[setIndex],
+      actualWeight: prevSet.actualWeight || prevSet.targetWeight,
+      actualReps: prevSet.actualReps || prevSet.targetReps,
+    };
     onChange(updated);
   };
 
@@ -206,60 +243,102 @@ export function SingleExerciseCard({
         )}
       </div>
 
-      {/* Compact Sets */}
+      {/* Compact Sets with Quick-Fill */}
       <div className="space-y-1.5">
-        {exercise.sets.map((set, setIndex) => (
-          <div
-            key={set.setNumber}
-            className={cn(
-              'flex items-center gap-2 p-2 rounded-lg border transition-colors',
-              set.completed ? 'bg-primary/5 border-primary/20' : 'border-border'
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => handleSetToggle(setIndex)}
+        {exercise.sets.map((set, setIndex) => {
+          const hasPreviousSet = setIndex > 0;
+          const prevSet = hasPreviousSet ? exercise.sets[setIndex - 1] : null;
+          const canCopyFromPrev = hasPreviousSet && (prevSet?.actualWeight || prevSet?.actualReps);
+          
+          return (
+            <div
+              key={set.setNumber}
               className={cn(
-                "h-6 w-6 rounded-full border flex items-center justify-center shrink-0 transition-colors",
-                set.completed 
-                  ? "bg-primary border-primary" 
-                  : "border-muted-foreground"
+                'p-2 rounded-lg border transition-colors',
+                set.completed ? 'bg-primary/5 border-primary/20' : 'border-border'
               )}
             >
-              <Check className={cn(
-                "h-3 w-3 text-primary-foreground transition-opacity",
-                set.completed ? "opacity-100" : "opacity-0"
-              )} />
-            </button>
-            
-            <span className="text-xs font-medium w-6 text-muted-foreground">{set.setNumber}</span>
-            
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <Input
-                placeholder={set.targetWeight}
-                value={set.actualWeight}
-                onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                className="h-8 text-xs rounded-lg"
-              />
-              <Input
-                placeholder={set.targetReps}
-                value={set.actualReps}
-                onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
-                className="h-8 text-xs rounded-lg"
-              />
-            </div>
+              {/* Main row */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetToggle(setIndex)}
+                  className={cn(
+                    "h-6 w-6 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+                    set.completed 
+                      ? "bg-primary border-primary" 
+                      : "border-muted-foreground"
+                  )}
+                >
+                  <Check className={cn(
+                    "h-3 w-3 text-primary-foreground transition-opacity",
+                    set.completed ? "opacity-100" : "opacity-0"
+                  )} />
+                </button>
+                
+                <span className="text-xs font-medium w-5 text-muted-foreground tabular-nums">{set.setNumber}</span>
+                
+                {/* Weight with ±2.5 buttons */}
+                <div className="flex-1 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => adjustWeight(setIndex, -2.5)}
+                    className="h-7 w-7 rounded-full border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center shrink-0"
+                  >
+                    -2.5
+                  </button>
+                  <Input
+                    placeholder={set.targetWeight}
+                    value={set.actualWeight}
+                    onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
+                    onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
+                    className="h-8 text-xs rounded-lg text-center flex-1 min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustWeight(setIndex, 2.5)}
+                    className="h-7 w-7 rounded-full border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center shrink-0"
+                  >
+                    +2.5
+                  </button>
+                </div>
 
-            {exercise.sets.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeSet(setIndex)}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        ))}
+                {/* Reps */}
+                <div className="w-16">
+                  <Input
+                    placeholder={set.targetReps}
+                    value={set.actualReps}
+                    onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
+                    onFocus={() => handleTapToFill(setIndex, 'actualReps')}
+                    className="h-8 text-xs rounded-lg text-center"
+                  />
+                </div>
+
+                {/* Copy from prev OR remove */}
+                {canCopyFromPrev ? (
+                  <button
+                    type="button"
+                    onClick={() => copyFromPreviousSet(setIndex)}
+                    title="Copy from previous set"
+                    className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                ) : exercise.sets.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeSet(setIndex)}
+                    className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <div className="w-6" /> // Spacer for alignment
+                )}
+              </div>
+            </div>
+          );
+        })}
 
         <button
           type="button"
