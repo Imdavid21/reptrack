@@ -1,5 +1,3 @@
-import { Logo } from './Logo';
-
 interface HeaderProps {
   title?: string;
 }
@@ -8,11 +6,7 @@ export function Header({ title }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background px-4 py-3">
       <div className="flex items-center justify-between">
-        {title ? (
-          <h1 className="text-sm font-bold tracking-widest">{title}</h1>
-        ) : (
-          <Logo />
-        )}
+        <h1 className="text-sm font-bold tracking-widest">{title || 'HEALTH/OS'}</h1>
       </div>
     </header>
   );

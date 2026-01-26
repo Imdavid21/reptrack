@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { cn } from '@/lib/utils';
-import { format, differenceInWeeks, startOfWeek } from 'date-fns';
+import { format } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
 import {
   Popover,
@@ -9,25 +9,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-
-const PROGRAM_START_KEY = 'fittrack_program_start';
-
-function getProgramStartDate(): Date {
-  const stored = localStorage.getItem(PROGRAM_START_KEY);
-  if (stored) {
-    return new Date(stored);
-  }
-  // Default to start of current week if no start date set
-  const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-  localStorage.setItem(PROGRAM_START_KEY, startDate.toISOString());
-  return startDate;
-}
-
-function calculateWeekNumber(selectedDate: Date, programStart: Date): number {
-  const weeks = differenceInWeeks(selectedDate, programStart) + 1;
-  // Clamp between 1 and 12 (3 phases × 4 weeks)
-  return Math.max(1, Math.min(12, weeks));
-}
+import { useWorkouts } from '@/hooks/useWorkouts';
 
 // Map weekday (0=Sun, 1=Mon, ...) to workout day key
 function getDefaultDayForDate(date: Date): string | null {
@@ -55,13 +37,46 @@ export function DaySelectorWithCheckin({
   onQuickLog 
 }: DaySelectorWithCheckinProps) {
   const days = Object.entries(defaultRoutine.days);
+  const { workouts } = useWorkouts();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [programStart] = useState<Date>(getProgramStartDate);
-  const [weekNumber, setWeekNumber] = useState<number>(() => 
-    calculateWeekNumber(new Date(), getProgramStartDate())
-  );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isManualWeek, setIsManualWeek] = useState(false);
+  
+  // Calculate week number based on past workout data
+  const getWeekFromPastData = (): number => {
+    if (!workouts || workouts.length === 0) {
+      return 1; // Start at week 1 if no data
+    }
+    
+    // Get the most recent workout's week number
+    const mostRecentWorkout = workouts[0]; // Already sorted desc by date
+    const lastWeek = mostRecentWorkout.week_number;
+    
+    // Check if last workout was today - if so, same week
+    const lastWorkoutDate = new Date(mostRecentWorkout.date).toDateString();
+    const today = new Date().toDateString();
+    
+    if (lastWorkoutDate === today) {
+      return lastWeek;
+    }
+    
+    // Check if we should increment week based on new week starting
+    const lastWorkoutDateObj = new Date(mostRecentWorkout.date);
+    const daysSince = Math.floor((Date.now() - lastWorkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // If it's been 7+ days, increment week
+    if (daysSince >= 7) {
+      return Math.min(12, lastWeek + 1);
+    }
+    
+    return lastWeek;
+  };
+
+  const [weekNumber, setWeekNumber] = useState<number>(1);
+  
+  // Update week number when workouts data loads
+  useEffect(() => {
+    setWeekNumber(getWeekFromPastData());
+  }, [workouts]);
 
   // Auto-select workout day based on weekday on mount
   useEffect(() => {
@@ -71,13 +86,6 @@ export function DaySelectorWithCheckin({
     }
   }, []); // Only on mount
 
-  // Auto-calculate week when date changes (unless manually overridden)
-  useEffect(() => {
-    if (!isManualWeek) {
-      setWeekNumber(calculateWeekNumber(selectedDate, programStart));
-    }
-  }, [selectedDate, programStart, isManualWeek]);
-
   const handleDaySelect = (dayKey: string) => {
     onSelect(dayKey, selectedDate, weekNumber);
   };
@@ -85,13 +93,11 @@ export function DaySelectorWithCheckin({
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-      setIsManualWeek(false); // Reset manual override on date change
       setIsCalendarOpen(false);
     }
   };
 
   const handleWeekChange = (delta: number) => {
-    setIsManualWeek(true);
     setWeekNumber(prev => Math.max(1, Math.min(12, prev + delta)));
   };
 
