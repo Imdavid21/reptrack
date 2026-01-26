@@ -157,15 +157,15 @@
 }
 
 @layer components {
-  /* Brutalist button styles */
+  /* Compact rounded button styles */
   .btn-brutalist {
-    @apply border border-border px-4 py-3 font-medium transition-all duration-100;
+    @apply rounded-full px-4 py-2 text-xs font-medium transition-all duration-100;
     @apply hover:bg-primary hover:text-primary-foreground;
-    @apply active:translate-y-[1px];
+    @apply active:scale-[0.98];
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground border-primary;
+    @apply bg-primary text-primary-foreground;
     @apply hover:bg-primary/90;
   }
 
