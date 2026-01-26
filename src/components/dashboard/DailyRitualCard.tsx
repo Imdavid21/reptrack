@@ -430,7 +430,7 @@ export function DailyRitualCard() {
         </div>
       )}
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex justify-center">
         <button
           onClick={handleSave}
           disabled={isUpsertingMorning || isUpsertingNight}
