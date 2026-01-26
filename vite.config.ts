@@ -19,8 +19,13 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "react/jsx-runtime"],
-    force: true,
+    include: [
+      "react", 
+      "react-dom", 
+      "react/jsx-runtime",
+      "react-dom/client"
+    ],
+    exclude: ["@radix-ui/react-toast"],
     esbuildOptions: {
       define: {
         global: 'globalThis'
@@ -28,6 +33,13 @@ export default defineConfig(({ mode }) => ({
     }
   },
   build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
+        },
+      },
+    },
     commonjsOptions: {
       include: [/node_modules/],
     },
