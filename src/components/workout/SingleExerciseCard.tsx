@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy } from 'lucide-react';
+import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Copy } from 'lucide-react';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
@@ -69,6 +69,34 @@ export function SingleExerciseCard({
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
     updated.sets[setIndex] = { ...updated.sets[setIndex], [field]: value };
+    onChange(updated);
+  };
+
+  const copyPreviousSet = (setIndex: number) => {
+    if (setIndex === 0) return;
+    haptic('light');
+    const prevSet = exercise.sets[setIndex - 1];
+    const updated = { ...exercise };
+    updated.sets = [...updated.sets];
+    updated.sets[setIndex] = { 
+      ...updated.sets[setIndex], 
+      actualWeight: prevSet.actualWeight || prevSet.targetWeight,
+      actualReps: prevSet.actualReps || prevSet.targetReps,
+    };
+    onChange(updated);
+  };
+
+  const adjustWeight = (setIndex: number, delta: number) => {
+    haptic('light');
+    const set = exercise.sets[setIndex];
+    const currentWeight = parseFloat(set.actualWeight || set.targetWeight) || 0;
+    const newWeight = Math.max(0, currentWeight + delta);
+    const updated = { ...exercise };
+    updated.sets = [...updated.sets];
+    updated.sets[setIndex] = { 
+      ...updated.sets[setIndex], 
+      actualWeight: newWeight.toString(),
+    };
     onChange(updated);
   };
 
@@ -234,19 +262,50 @@ export function SingleExerciseCard({
             
             <span className="text-xs font-medium w-6 text-muted-foreground">{set.setNumber}</span>
             
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <Input
-                placeholder={set.targetWeight}
-                value={set.actualWeight}
-                onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                className="h-8 text-xs rounded-lg"
-              />
+            <div className="flex-1 flex items-center gap-1">
+              {/* Weight with increment buttons */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => adjustWeight(setIndex, -2.5)}
+                  className="h-6 w-6 rounded-full bg-muted text-muted-foreground hover:text-foreground text-2xs font-medium flex items-center justify-center"
+                >
+                  -2.5
+                </button>
+                <Input
+                  placeholder={set.targetWeight}
+                  value={set.actualWeight}
+                  onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
+                  className="h-8 w-14 text-xs rounded-lg text-center px-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => adjustWeight(setIndex, 2.5)}
+                  className="h-6 w-6 rounded-full bg-muted text-muted-foreground hover:text-foreground text-2xs font-medium flex items-center justify-center"
+                >
+                  +2.5
+                </button>
+              </div>
+              
+              {/* Reps input */}
               <Input
                 placeholder={set.targetReps}
                 value={set.actualReps}
                 onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
-                className="h-8 text-xs rounded-lg"
+                className="h-8 w-12 text-xs rounded-lg text-center px-1"
               />
+
+              {/* Same as last button */}
+              {setIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={() => copyPreviousSet(setIndex)}
+                  className="h-6 w-6 rounded-full bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center"
+                  title="Same as last"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              )}
             </div>
 
             {exercise.sets.length > 1 && (
