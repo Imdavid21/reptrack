@@ -8,7 +8,7 @@ import { differenceInDays } from 'date-fns';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { StrengthProgressionChart } from '@/components/analytics/StrengthProgressionChart';
 import { VolumeChart } from '@/components/analytics/VolumeChart';
-import { PreWorkoutCorrelationChart } from '@/components/analytics/PreWorkoutCorrelationChart';
+
 import { AICoachInsights } from '@/components/analytics/AICoachInsights';
 
 // Body tab components
@@ -59,7 +59,6 @@ function PerformanceTab() {
       </div>
 
       <AICoachInsights />
-      <PreWorkoutCorrelationChart />
       <StrengthProgressionChart />
       <VolumeChart />
     </div>
@@ -192,7 +191,6 @@ function AITab() {
     <div className="space-y-4">
       <HealthInsightsCard days={days} />
       <AICoachInsights />
-      <PreWorkoutCorrelationChart />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { DaySelectorWithCheckin, PreWorkoutData } from '@/components/workout/DaySelectorWithCheckin';
+import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
@@ -35,11 +35,6 @@ const defaultHabits: Habits = {
   },
 };
 
-const defaultPreCheckin: PreWorkoutData = {
-  energy: 5,
-  motivation: 5,
-  soreness: 3,
-};
 
 const defaultPostCheckin: PostWorkoutData = {
   difficulty: 5,
@@ -79,7 +74,7 @@ export default function LogWorkout() {
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [habits, setHabits] = useState<Habits>(defaultHabits);
-  const [preCheckin, setPreCheckin] = useState<PreWorkoutData>(defaultPreCheckin);
+  
   const [postCheckin, setPostCheckin] = useState<PostWorkoutData>(defaultPostCheckin);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
@@ -99,12 +94,12 @@ export default function LogWorkout() {
       // Handle old drafts - map old step values to new ones
       let validStep: Step = 'exercises';
       if (draft.step === 'select-day') validStep = 'select-day';
-      else if (draft.step === 'pre-checkin' || draft.step === 'exercises') validStep = 'exercises';
+      else if (draft.step === 'exercises') validStep = 'exercises';
       else if (draft.step === 'post-checkin') validStep = 'post-checkin';
       else if (draft.step === 'habits') validStep = 'habits';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
-      if (draft.preCheckin) setPreCheckin(draft.preCheckin);
+      
       if (draft.postCheckin) setPostCheckin(draft.postCheckin);
       if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
       setDraftRestored(true);
@@ -126,14 +121,13 @@ export default function LogWorkout() {
         habits,
         currentExerciseIndex,
         step,
-        preCheckin,
         postCheckin,
         workoutStartTime: workoutStartTime?.toISOString(),
       });
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, preCheckin, postCheckin, workoutStartTime, saveDraft]);
+  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -256,7 +250,6 @@ export default function LogWorkout() {
         date: selectedDate,
         exercises,
         habits,
-        preCheckin,
         postCheckin,
         startedAt: workoutStartTime || undefined,
         completedAt: new Date(),
@@ -329,9 +322,7 @@ export default function LogWorkout() {
         {step === 'select-day' && (
           <DaySelectorWithCheckin 
             selectedDay={selectedDay} 
-            preCheckin={preCheckin}
             onSelect={handleDaySelect}
-            onPreCheckinChange={setPreCheckin}
             onQuickLog={selectedDay ? handleQuickLog : undefined}
           />
         )}
