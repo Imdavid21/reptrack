@@ -22,18 +22,6 @@ export interface CalorieDataPoint {
   snack: number;
 }
 
-export interface BPDataPoint {
-  date: string;
-  systolic: number;
-  diastolic: number;
-  pulse: number | null;
-}
-
-export interface SugarDataPoint {
-  date: string;
-  glucose: number;
-  type: string;
-}
 
 export interface WeeklySummary {
   avgSleep: number | null;
@@ -131,52 +119,6 @@ export function useHealthAnalytics(days: number = 30) {
     enabled: !!user,
   });
 
-  const bpQuery = useQuery({
-    queryKey: ['healthAnalytics', 'bp', user?.id],
-    queryFn: async (): Promise<BPDataPoint[]> => {
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('blood_pressure_readings')
-        .select('measured_at, systolic, diastolic, pulse')
-        .eq('user_id', user.id)
-        .order('measured_at', { ascending: true })
-        .limit(52);
-
-      if (error) throw error;
-
-      return (data || []).map((r: any) => ({
-        date: format(new Date(r.measured_at), 'yyyy-MM-dd'),
-        systolic: r.systolic,
-        diastolic: r.diastolic,
-        pulse: r.pulse,
-      }));
-    },
-    enabled: !!user,
-  });
-
-  const sugarQuery = useQuery({
-    queryKey: ['healthAnalytics', 'sugar', user?.id],
-    queryFn: async (): Promise<SugarDataPoint[]> => {
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('blood_sugar_readings')
-        .select('measured_at, glucose_level, reading_type')
-        .eq('user_id', user.id)
-        .order('measured_at', { ascending: true })
-        .limit(24);
-
-      if (error) throw error;
-
-      return (data || []).map((r: any) => ({
-        date: format(new Date(r.measured_at), 'yyyy-MM-dd'),
-        glucose: r.glucose_level,
-        type: r.reading_type,
-      }));
-    },
-    enabled: !!user,
-  });
 
   const summaryQuery = useQuery({
     queryKey: ['healthAnalytics', 'summary', user?.id, days],
@@ -254,9 +196,7 @@ export function useHealthAnalytics(days: number = 30) {
   return {
     vitals: vitalsQuery.data ?? [],
     calories: caloriesQuery.data ?? [],
-    bloodPressure: bpQuery.data ?? [],
-    bloodSugar: sugarQuery.data ?? [],
     weeklySummaries: summaryQuery.data ?? [],
-    isLoading: vitalsQuery.isLoading || caloriesQuery.isLoading || bpQuery.isLoading || sugarQuery.isLoading,
+    isLoading: vitalsQuery.isLoading || caloriesQuery.isLoading,
   };
 }

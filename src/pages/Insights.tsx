@@ -23,11 +23,11 @@ import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 
 // Vitals tab components
 import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
-import { useBloodPressureReadings, useBloodSugarReadings } from '@/hooks/useHealthReadings';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, AreaChart, Area } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, Target, Percent, Heart, Activity, Droplet } from 'lucide-react';
+import { TrendingUp, Target, Percent, Heart, Activity } from 'lucide-react';
 
 function PerformanceTab() {
   const { workouts } = useWorkouts();
@@ -87,8 +87,6 @@ function VitalsTab() {
   // Calculate days from date range
   const days = differenceInDays(dateRange.to, dateRange.from) || 30;
   const { vitals, isLoading } = useHealthAnalytics(days);
-  const { readings: bpReadings } = useBloodPressureReadings();
-  const { readings: sugarReadings } = useBloodSugarReadings();
 
   if (isLoading) {
     return <div className="text-center py-8 text-muted-foreground">Loading vitals...</div>;
@@ -109,21 +107,6 @@ function VitalsTab() {
       date: format(new Date(v.date), 'MMM d'),
       steps: v.steps,
     }));
-
-  // Format BP data for chart
-  const bpChartData = bpReadings.slice(0, 30).reverse().map(bp => ({
-    date: format(new Date(bp.measured_at || bp.created_at!), 'MMM d'),
-    systolic: bp.systolic,
-    diastolic: bp.diastolic,
-    pulse: bp.pulse,
-  }));
-
-  // Format blood sugar data for chart
-  const sugarChartData = sugarReadings.slice(0, 30).reverse().map(bs => ({
-    date: format(new Date(bs.measured_at || bs.created_at!), 'MMM d'),
-    glucose: bs.glucose_level,
-    type: bs.reading_type,
-  }));
 
   return (
     <div className="space-y-4">
@@ -191,70 +174,7 @@ function VitalsTab() {
         </Card>
       )}
 
-      {/* Blood Pressure Chart */}
-      {bpChartData.length > 0 && (
-        <Card className="border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Heart className="h-4 w-4" />
-              BLOOD PRESSURE HISTORY
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={bpChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis domain={[60, 160]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 0,
-                    }}
-                  />
-                  <Line type="monotone" dataKey="systolic" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} name="Systolic" />
-                  <Line type="monotone" dataKey="diastolic" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Diastolic" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Blood Sugar Chart */}
-      {sugarChartData.length > 0 && (
-        <Card className="border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Droplet className="h-4 w-4" />
-              BLOOD GLUCOSE HISTORY
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={sugarChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis domain={[60, 200]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 0,
-                    }}
-                  />
-                  <Line type="monotone" dataKey="glucose" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Glucose (mg/dL)" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {bpChartData.length === 0 && sugarChartData.length === 0 && heartRateData.length === 0 && (
+      {heartRateData.length === 0 && stepsData.length === 0 && (
         <div className="text-center py-12 text-muted-foreground border border-dashed border-border">
           <p>No vitals data yet.</p>
           <p className="text-xs mt-1">Log your morning check-ins to see trends here.</p>
