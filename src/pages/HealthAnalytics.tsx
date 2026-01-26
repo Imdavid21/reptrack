@@ -20,7 +20,7 @@ import {
 
 export default function HealthAnalytics() {
   const [timeRange, setTimeRange] = useState<30 | 60 | 90>(30);
-  const { vitals, calories, bloodPressure, bloodSugar, weeklySummaries, isLoading } = useHealthAnalytics(timeRange);
+  const { vitals, calories, weeklySummaries, isLoading } = useHealthAnalytics(timeRange);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -365,101 +365,6 @@ export default function HealthAnalytics() {
           )}
         </div>
 
-        {/* Blood Pressure */}
-        <div className="card-brutalist">
-          <h3 className="section-header">BLOOD PRESSURE HISTORY</h3>
-          {bloodPressure.length > 0 ? (
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={bloodPressure}>
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={formatDate}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[60, 160]}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={renderTooltip} />
-                  <Line
-                    type="monotone"
-                    dataKey="systolic"
-                    name="Systolic"
-                    stroke="hsl(var(--destructive))"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: 'hsl(var(--destructive))' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="diastolic"
-                    name="Diastolic"
-                    stroke="hsl(var(--foreground))"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: 'hsl(var(--foreground))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-8 text-center">
-              No blood pressure readings yet
-            </p>
-          )}
-          <div className="flex justify-center gap-6 text-xs mt-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-[2px] bg-destructive" />
-              <span>Systolic</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-[2px] bg-foreground" />
-              <span>Diastolic</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Blood Sugar */}
-        <div className="card-brutalist">
-          <h3 className="section-header">BLOOD SUGAR HISTORY</h3>
-          {bloodSugar.length > 0 ? (
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={bloodSugar}>
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={formatDate}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[60, 180]}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={renderTooltip} />
-                  <Line
-                    type="monotone"
-                    dataKey="glucose"
-                    name="Glucose (mg/dL)"
-                    stroke="hsl(var(--foreground))"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: 'hsl(var(--foreground))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-8 text-center">
-              No blood sugar readings yet
-            </p>
-          )}
-        </div>
       </div>
     </MainLayout>
   );
