@@ -4,11 +4,10 @@ import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { Flame, TrendingUp, TrendingDown, Minus, Footprints, Dumbbell } from 'lucide-react';
 import { format } from 'date-fns';
-import { useEffect } from 'react';
 
 export function EnergyBalanceCard() {
   const { totalCalories: caloriesIn } = useMeals();
-  const { totalBurned, addBurn, calculateStepCalories, calculateWorkoutCalories } = useCalorieBurn();
+  const { totalBurned, calculateStepCalories, calculateWorkoutCalories } = useCalorieBurn();
   const { checkin: nightCheckin } = useNightCheckin();
   const { workouts } = useWorkouts();
 
@@ -16,37 +15,17 @@ export function EnergyBalanceCard() {
   const todayWorkout = workouts.find(w => w.date === todayStr);
   const steps = nightCheckin?.steps || 0;
 
-  // Auto-calculate and log burns when data changes
-  useEffect(() => {
-    const logBurns = async () => {
-      // Log step calories
-      if (steps > 0) {
-        const stepCals = calculateStepCalories(steps);
-        await addBurn.mutateAsync({
-          source: 'steps',
-          calories: stepCals,
-          activity_type: 'walking',
-        });
-      }
+  // Calculate burns directly from source data - no duplicate logging
+  // Steps and workout calories are calculated on display, not stored redundantly
+  const stepCalories = calculateStepCalories(steps);
+  const workoutCalories = todayWorkout?.workout_duration_minutes 
+    ? calculateWorkoutCalories(todayWorkout.workout_duration_minutes) 
+    : 0;
+  
+  // Use either stored burns OR calculated values (prevents double-counting)
+  const displayBurned = totalBurned > 0 ? totalBurned : stepCalories + workoutCalories;
 
-      // Log workout calories
-      if (todayWorkout?.workout_duration_minutes) {
-        const workoutCals = calculateWorkoutCalories(todayWorkout.workout_duration_minutes);
-        await addBurn.mutateAsync({
-          source: 'workout',
-          calories: workoutCals,
-          duration_minutes: todayWorkout.workout_duration_minutes,
-          activity_type: 'strength',
-        });
-      }
-    };
-
-    if (steps > 0 || todayWorkout) {
-      logBurns().catch(console.error);
-    }
-  }, [steps, todayWorkout?.workout_duration_minutes]);
-
-  const netCalories = caloriesIn - totalBurned;
+  const netCalories = caloriesIn - displayBurned;
   const isDeficit = netCalories < 0;
   const isSurplus = netCalories > 200;
 
@@ -67,7 +46,7 @@ export function EnergyBalanceCard() {
         
         <div className="text-center">
           <div className="text-2xl font-bold tabular-nums text-destructive">
-            -{totalBurned.toLocaleString()}
+            -{displayBurned.toLocaleString()}
           </div>
           <div className="text-xs text-muted-foreground">BURNED</div>
         </div>
@@ -89,7 +68,7 @@ export function EnergyBalanceCard() {
             <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
             <span>Steps ({steps.toLocaleString()})</span>
           </div>
-          <span className="tabular-nums">-{calculateStepCalories(steps)} cal</span>
+          <span className="tabular-nums">-{stepCalories} cal</span>
         </div>
         
         {todayWorkout && (
@@ -98,9 +77,7 @@ export function EnergyBalanceCard() {
               <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Workout ({todayWorkout.workout_duration_minutes}min)</span>
             </div>
-            <span className="tabular-nums">
-              -{calculateWorkoutCalories(todayWorkout.workout_duration_minutes || 0)} cal
-            </span>
+            <span className="tabular-nums">-{workoutCalories} cal</span>
           </div>
         )}
       </div>
