@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, differenceInWeeks, startOfWeek } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
 import {
   Popover,
@@ -9,6 +9,25 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+
+const PROGRAM_START_KEY = 'fittrack_program_start';
+
+function getProgramStartDate(): Date {
+  const stored = localStorage.getItem(PROGRAM_START_KEY);
+  if (stored) {
+    return new Date(stored);
+  }
+  // Default to start of current week if no start date set
+  const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+  localStorage.setItem(PROGRAM_START_KEY, startDate.toISOString());
+  return startDate;
+}
+
+function calculateWeekNumber(selectedDate: Date, programStart: Date): number {
+  const weeks = differenceInWeeks(selectedDate, programStart) + 1;
+  // Clamp between 1 and 12 (3 phases × 4 weeks)
+  return Math.max(1, Math.min(12, weeks));
+}
 
 interface DaySelectorWithCheckinProps {
   selectedDay: string;
@@ -23,8 +42,19 @@ export function DaySelectorWithCheckin({
 }: DaySelectorWithCheckinProps) {
   const days = Object.entries(defaultRoutine.days);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [weekNumber, setWeekNumber] = useState<number>(1);
+  const [programStart] = useState<Date>(getProgramStartDate);
+  const [weekNumber, setWeekNumber] = useState<number>(() => 
+    calculateWeekNumber(new Date(), getProgramStartDate())
+  );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isManualWeek, setIsManualWeek] = useState(false);
+
+  // Auto-calculate week when date changes (unless manually overridden)
+  useEffect(() => {
+    if (!isManualWeek) {
+      setWeekNumber(calculateWeekNumber(selectedDate, programStart));
+    }
+  }, [selectedDate, programStart, isManualWeek]);
 
   const handleDaySelect = (dayKey: string) => {
     onSelect(dayKey, selectedDate, weekNumber);
@@ -33,11 +63,18 @@ export function DaySelectorWithCheckin({
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
+      setIsManualWeek(false); // Reset manual override on date change
       setIsCalendarOpen(false);
     }
   };
 
+  const handleWeekChange = (delta: number) => {
+    setIsManualWeek(true);
+    setWeekNumber(prev => Math.max(1, Math.min(12, prev + delta)));
+  };
+
   const isToday = selectedDate.toDateString() === new Date().toDateString();
+  const phase = Math.ceil(weekNumber / 4);
 
   return (
     <div className="space-y-4">
@@ -63,21 +100,22 @@ export function DaySelectorWithCheckin({
               onSelect={handleDateSelect}
               disabled={(date) => date > new Date()}
               initialFocus
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
 
         <div className="flex items-center gap-1 text-sm">
-          <span className="text-muted-foreground">Week</span>
+          <span className="text-muted-foreground text-xs">P{phase} W</span>
           <button
-            onClick={() => setWeekNumber(Math.max(1, weekNumber - 1))}
+            onClick={() => handleWeekChange(-1)}
             className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
           >
             −
           </button>
           <span className="font-bold tabular-nums w-5 text-center">{weekNumber}</span>
           <button
-            onClick={() => setWeekNumber(Math.min(12, weekNumber + 1))}
+            onClick={() => handleWeekChange(1)}
             className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
           >
             +
