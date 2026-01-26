@@ -530,18 +530,20 @@ export function DailyRitualCard() {
         </CollapsibleContent>
       </Collapsible>
 
-      <button
-        onClick={handleSave}
-        disabled={isUpsertingMorning || isUpsertingNight}
-        className="btn-brutalist w-full mt-4 flex items-center justify-center gap-2"
-      >
-        {(isUpsertingMorning || isUpsertingNight) ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Check className="h-4 w-4" />
-        )}
-        SAVE
-      </button>
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={isUpsertingMorning || isUpsertingNight}
+          className="px-6 py-2 text-xs font-medium bg-foreground text-background hover:bg-foreground/80 disabled:opacity-50 transition-colors flex items-center gap-2"
+        >
+          {(isUpsertingMorning || isUpsertingNight) ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3" />
+          )}
+          SAVE
+        </button>
+      </div>
 
       {/* Subtle backfill option */}
       <div className="mt-3 flex justify-center">
