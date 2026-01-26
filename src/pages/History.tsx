@@ -2,7 +2,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Calendar, Edit2 } from 'lucide-react';
+import { ChevronRight, Calendar, Edit2, Clock } from 'lucide-react';
+import { BackfillDialog } from '@/components/dashboard/BackfillDialog';
 
 export default function History() {
   const { workouts, isLoading } = useWorkouts();
@@ -21,6 +22,11 @@ export default function History() {
   return (
     <MainLayout title="HISTORY">
       <div className="space-y-6 animate-fade-in">
+        {/* Backfill Action */}
+        <div className="flex justify-end">
+          <BackfillDialog />
+        </div>
+
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
             Loading workouts...
