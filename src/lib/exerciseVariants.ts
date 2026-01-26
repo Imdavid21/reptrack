@@ -79,6 +79,11 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
   ],
   'Dips': [
     { name: 'Dips', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Weighted Dips', defaultWeight: '+10kg', equipmentType: 'bodyweight' },
+  ],
+  'Weighted Dips': [
+    { name: 'Weighted Dips', defaultWeight: '+10kg', equipmentType: 'bodyweight' },
+    { name: 'Dips', defaultWeight: 'BW', equipmentType: 'bodyweight' },
   ],
   
   // Shoulders - Pressing
