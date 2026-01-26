@@ -46,9 +46,11 @@ export function SplashScreen({ onComplete, minDuration = 1500 }: SplashScreenPro
       }`}
     >
       <div className="flex flex-col items-center gap-6">
-        {/* Logo */}
+        {/* Logo with pulse animation */}
         <div className="animate-fade-in">
-          <Logo size="lg" />
+          <div className="animate-pulse">
+            <Logo size="lg" />
+          </div>
         </div>
 
         {/* ASCII Progress Bar */}
