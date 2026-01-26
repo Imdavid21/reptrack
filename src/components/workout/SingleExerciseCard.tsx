@@ -284,8 +284,8 @@ export function SingleExerciseCard({
         )}
       </div>
 
-      {/* Compact Sets with Quick-Fill */}
-      <div className="space-y-1.5">
+      {/* Ultra-Compact Sets */}
+      <div className="space-y-1">
         {exercise.sets.map((set, setIndex) => {
           const hasPreviousSet = setIndex > 0;
           const prevSet = hasPreviousSet ? exercise.sets[setIndex - 1] : null;
@@ -295,92 +295,82 @@ export function SingleExerciseCard({
             <div
               key={set.setNumber}
               className={cn(
-                'p-2 rounded-lg border transition-colors',
+                'p-1.5 rounded-lg border transition-colors',
                 set.completed ? 'bg-primary/5 border-primary/20' : 'border-border'
               )}
             >
-              {/* Main row */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                {/* Checkbox */}
                 <button
                   type="button"
                   onClick={() => handleSetToggle(setIndex)}
                   className={cn(
-                    "h-6 w-6 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+                    "h-5 w-5 rounded-full border flex items-center justify-center shrink-0 transition-colors",
                     set.completed 
                       ? "bg-primary border-primary" 
                       : "border-muted-foreground"
                   )}
                 >
                   <Check className={cn(
-                    "h-3 w-3 text-primary-foreground transition-opacity",
+                    "h-2.5 w-2.5 text-primary-foreground transition-opacity",
                     set.completed ? "opacity-100" : "opacity-0"
                   )} />
                 </button>
                 
-                <span className="text-xs font-medium w-5 text-muted-foreground tabular-nums">{set.setNumber}</span>
+                {/* Set number */}
+                <span className="text-[10px] font-medium w-3 text-muted-foreground tabular-nums">{set.setNumber}</span>
                 
-                {/* Weight with ±2.5 buttons and kg label */}
-                <div className="flex-1 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => adjustWeight(setIndex, -2.5)}
-                    className="h-7 w-7 rounded-full border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center shrink-0"
-                  >
-                    -2.5
-                  </button>
-                  <div className="relative flex-1 min-w-0">
-                    <Input
-                      placeholder={normalizeWeight(set.targetWeight)}
-                      value={set.actualWeight}
-                      onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                      onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
-                      inputMode="decimal"
-                      className="h-8 text-xs rounded-lg text-center pr-9"
-                    />
-                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground pointer-events-none whitespace-nowrap">{weightLabel}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => adjustWeight(setIndex, 2.5)}
-                    className="h-7 w-7 rounded-full border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center shrink-0"
-                  >
-                    +2.5
-                  </button>
+                {/* Weight: -2.5, input, +2.5 */}
+                <button
+                  type="button"
+                  onClick={() => adjustWeight(setIndex, -2.5)}
+                  className="h-6 px-1.5 rounded border border-border text-[9px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  -2.5
+                </button>
+                <div className="relative flex-1 min-w-0">
+                  <Input
+                    placeholder={normalizeWeight(set.targetWeight)}
+                    value={set.actualWeight}
+                    onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
+                    onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
+                    inputMode="decimal"
+                    className="h-6 text-[11px] rounded text-center px-1 pr-6"
+                  />
+                  <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] text-muted-foreground pointer-events-none">{weightLabel}</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => adjustWeight(setIndex, 2.5)}
+                  className="h-6 px-1.5 rounded border border-border text-[9px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  +2.5
+                </button>
 
-                {/* Reps with label */}
-                <div className="relative w-16">
+                {/* Reps */}
+                <div className="relative w-12 shrink-0">
                   <Input
                     placeholder={set.targetReps}
                     value={set.actualReps}
                     onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
                     onFocus={() => handleTapToFill(setIndex, 'actualReps')}
                     inputMode="numeric"
-                    className="h-8 text-xs rounded-lg text-center pr-6"
+                    className="h-6 text-[11px] rounded text-center px-1 pr-4"
                   />
-                  <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">×</span>
+                  <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground pointer-events-none">×</span>
                 </div>
 
-                {/* Copy from prev OR remove */}
-                {canCopyFromPrev ? (
-                  <button
-                    type="button"
-                    onClick={() => copyFromPreviousSet(setIndex)}
-                    title="Copy from previous set"
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </button>
-                ) : exercise.sets.length > 1 ? (
+                {/* Remove set */}
+                {exercise.sets.length > 1 ? (
                   <button
                     type="button"
                     onClick={() => removeSet(setIndex)}
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   >
-                    <Minus className="h-3 w-3" />
+                    <Minus className="h-2.5 w-2.5" />
                   </button>
                 ) : (
-                  <div className="w-6" /> // Spacer for alignment
+                  <div className="w-5 shrink-0" />
                 )}
               </div>
             </div>
@@ -390,9 +380,9 @@ export function SingleExerciseCard({
         <button
           type="button"
           onClick={addSet}
-          className="w-full h-8 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center gap-1"
+          className="w-full h-7 rounded-lg border border-dashed border-border text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center gap-1"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-2.5 w-2.5" />
           Add set
         </button>
       </div>
