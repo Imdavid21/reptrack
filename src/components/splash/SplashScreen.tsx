@@ -5,17 +5,16 @@ interface SplashScreenProps {
   minDuration?: number;
 }
 
-declare global {
-  interface Window {
-    hideSplash?: () => void;
-  }
-}
-
 export function SplashScreen({ onComplete, minDuration = 800 }: SplashScreenProps) {
   useEffect(() => {
     // Hide the HTML splash and complete
     const timer = setTimeout(() => {
-      window.hideSplash?.();
+      // Hide HTML splash if it exists
+      const splash = document.getElementById('splash');
+      if (splash) {
+        splash.classList.add('fade-out');
+        setTimeout(() => splash.remove(), 300);
+      }
       onComplete();
     }, minDuration);
 
