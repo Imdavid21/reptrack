@@ -37,12 +37,6 @@ export interface Habits {
   };
 }
 
-export interface PreCheckin {
-  energy: number;
-  motivation: number;
-  soreness: number;
-}
-
 export interface PostCheckin {
   difficulty: number;
   satisfaction: number;
@@ -60,9 +54,6 @@ export interface Workout {
   started_at?: string;
   completed_at?: string;
   workout_duration_minutes?: number;
-  pre_energy?: number;
-  pre_motivation?: number;
-  pre_soreness?: number;
   post_difficulty?: number;
   post_satisfaction?: number;
   exercises?: WorkoutExercise[];
@@ -98,7 +89,6 @@ export function useWorkouts() {
       date?: Date;
       exercises: WorkoutExercise[];
       habits: Habits;
-      preCheckin?: PreCheckin;
       postCheckin?: PostCheckin;
       startedAt?: Date;
       completedAt?: Date;
@@ -119,9 +109,6 @@ export function useWorkouts() {
           day_name: workout.day_name,
           week_number: workout.week_number,
           date: workoutDate,
-          pre_energy: workout.preCheckin?.energy,
-          pre_motivation: workout.preCheckin?.motivation,
-          pre_soreness: workout.preCheckin?.soreness,
           post_difficulty: workout.postCheckin?.difficulty,
           post_satisfaction: workout.postCheckin?.satisfaction,
           workout_duration_minutes: workout.postCheckin?.durationMinutes,

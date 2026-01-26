@@ -2,42 +2,29 @@ import { useState } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Calendar, Zap, Target, Activity, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Slider } from '@/components/ui/slider';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-export interface PreWorkoutData {
-  energy: number;
-  motivation: number;
-  soreness: number;
-}
 
 interface DaySelectorWithCheckinProps {
   selectedDay: string;
-  preCheckin: PreWorkoutData;
   onSelect: (day: string, date: Date, weekNumber: number) => void;
-  onPreCheckinChange: (data: PreWorkoutData) => void;
   onQuickLog?: () => void;
 }
 
 export function DaySelectorWithCheckin({ 
   selectedDay, 
-  preCheckin,
   onSelect, 
-  onPreCheckinChange,
   onQuickLog 
 }: DaySelectorWithCheckinProps) {
   const days = Object.entries(defaultRoutine.days);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [showCheckin, setShowCheckin] = useState(true);
 
   const handleDaySelect = (dayKey: string) => {
     onSelect(dayKey, selectedDate, weekNumber);
@@ -49,16 +36,6 @@ export function DaySelectorWithCheckin({
       setIsCalendarOpen(false);
     }
   };
-
-  const handleCheckinChange = (field: keyof PreWorkoutData, value: number) => {
-    onPreCheckinChange({ ...preCheckin, [field]: value });
-  };
-
-  const checkinMetrics = [
-    { key: 'energy' as const, label: 'ENERGY', icon: Zap, lowLabel: 'Low', highLabel: 'High' },
-    { key: 'motivation' as const, label: 'MOTIVATION', icon: Target, lowLabel: 'Low', highLabel: 'Pumped' },
-    { key: 'soreness' as const, label: 'SORENESS', icon: Activity, lowLabel: 'Fresh', highLabel: 'Sore', inverted: true },
-  ];
 
   const isBackdated = selectedDate.toDateString() !== new Date().toDateString();
 
@@ -132,44 +109,6 @@ export function DaySelectorWithCheckin({
           </div>
         </div>
       )}
-
-      {/* Collapsible Pre-Workout Check-in */}
-      <Collapsible open={showCheckin} onOpenChange={setShowCheckin}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 border border-border bg-card hover:bg-muted/50 transition-colors">
-          <span className="text-xs font-medium text-muted-foreground">PRE-WORKOUT CHECK-IN</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              {preCheckin.energy}/{preCheckin.motivation}/{preCheckin.soreness}
-            </span>
-            {showCheckin ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="border border-t-0 border-border p-4 space-y-4">
-          {checkinMetrics.map(({ key, label, icon: Icon, lowLabel, highLabel, inverted }) => (
-            <div key={key} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-medium">{label}</span>
-                </div>
-                <span className="font-bold tabular-nums">{preCheckin[key]}</span>
-              </div>
-              <Slider
-                value={[preCheckin[key]]}
-                onValueChange={([v]) => handleCheckinChange(key, v)}
-                min={1}
-                max={10}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{lowLabel}</span>
-                <span>{highLabel}</span>
-              </div>
-            </div>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Workout Day Grid */}
       <div className="space-y-2">
