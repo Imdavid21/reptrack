@@ -386,7 +386,7 @@ export function CalorieTrackerCompact() {
               </div>
             )}
 
-            {analysis && !manualMode && !textMode && (
+            {analysis && !manualMode && (
               <div className="space-y-4">
                 {previewUrl && (
                   <div className="aspect-video bg-muted overflow-hidden">
