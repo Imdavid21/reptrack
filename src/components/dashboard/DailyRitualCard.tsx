@@ -4,14 +4,11 @@ import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useTimezone } from '@/hooks/useTimezone';
 import { 
   Sun, Moon, Clock, Heart, Scale, Activity, 
-  Footprints, Star, Check, Loader2, ChevronDown,
-  BedDouble
+  Footprints, Star, Check, Loader2, BedDouble
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
 import { toast } from '@/lib/toast';
 import { BackfillDialog } from './BackfillDialog';
 
@@ -54,8 +51,8 @@ export function DailyRitualCard() {
     isLoading: isLoadingNight 
   } = useNightCheckin();
 
+
   const [isEditing, setIsEditing] = useState(false);
-  const [showOtherSection, setShowOtherSection] = useState(false);
   
   const [morningForm, setMorningForm] = useState({
     sleep_hours: '',
@@ -128,8 +125,8 @@ export function DailyRitualCard() {
         });
       }
 
-      // Save night data if on evening or if editing other section
-      if (timeOfDay === 'evening' || showOtherSection) {
+      // Save night data if on evening
+      if (timeOfDay === 'evening') {
         await upsertNight({
           performance_score: nightForm.performance_score ? parseInt(nightForm.performance_score) : null,
           energy_score: nightForm.energy_score ? parseInt(nightForm.energy_score) : null,
@@ -140,7 +137,6 @@ export function DailyRitualCard() {
       }
 
       setIsEditing(false);
-      setShowOtherSection(false);
       toast.success('Check-in saved');
     } catch (error) {
       toast.error('Failed to save check-in');
@@ -437,99 +433,6 @@ export function DailyRitualCard() {
         </div>
       )}
 
-      {/* Collapsible "Other" section to access the other time's data */}
-      <Collapsible open={showOtherSection} onOpenChange={setShowOtherSection} className="mt-4">
-        <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
-          <ChevronDown className={cn("h-3 w-3 transition-transform", showOtherSection && "rotate-180")} />
-          {timeOfDay === 'evening' ? 'Edit morning data' : 'Edit evening data'}
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-4 pt-4 border-t border-border">
-          {timeOfDay === 'evening' ? (
-            // Show morning form in evening
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <Label className="text-xs text-muted-foreground">SLEEP</Label>
-                <div className="flex gap-2 mt-1">
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="24"
-                      placeholder="7"
-                      value={morningForm.sleep_hours}
-                      onChange={(e) => setMorningForm(prev => ({ ...prev, sleep_hours: e.target.value }))}
-                      className="input-terminal"
-                    />
-                    <span className="text-xs text-muted-foreground">hrs</span>
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="30"
-                      value={morningForm.sleep_minutes}
-                      onChange={(e) => setMorningForm(prev => ({ ...prev, sleep_minutes: e.target.value }))}
-                      className="input-terminal"
-                    />
-                    <span className="text-xs text-muted-foreground">min</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">WEIGHT (KG)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="75.5"
-                  value={morningForm.bodyweight}
-                  onChange={(e) => setMorningForm(prev => ({ ...prev, bodyweight: e.target.value }))}
-                  className="input-terminal mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">ENERGY (1-10)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  placeholder="7"
-                  value={morningForm.energy_level}
-                  onChange={(e) => setMorningForm(prev => ({ ...prev, energy_level: e.target.value }))}
-                  className="input-terminal mt-1"
-                />
-              </div>
-            </div>
-          ) : (
-            // Show night form in morning/midday
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">STEPS</Label>
-                <Input
-                  type="number"
-                  placeholder="10000"
-                  value={nightForm.steps}
-                  onChange={(e) => setNightForm(prev => ({ ...prev, steps: e.target.value }))}
-                  className="input-terminal mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">PERFORMANCE</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  placeholder="7"
-                  value={nightForm.performance_score}
-                  onChange={(e) => setNightForm(prev => ({ ...prev, performance_score: e.target.value }))}
-                  className="input-terminal mt-1"
-                />
-              </div>
-            </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-
       <div className="mt-4 flex justify-end">
         <button
           onClick={handleSave}
@@ -543,11 +446,6 @@ export function DailyRitualCard() {
           )}
           SAVE
         </button>
-      </div>
-
-      {/* Subtle backfill option */}
-      <div className="mt-3 flex justify-center">
-        <BackfillDialog />
       </div>
     </div>
   );
