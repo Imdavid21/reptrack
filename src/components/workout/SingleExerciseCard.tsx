@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Copy } from 'lucide-react';
+import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Copy, Info } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
@@ -11,6 +11,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface PersonalRecord {
   maxWeight: number;
@@ -166,6 +172,18 @@ export function SingleExerciseCard({
   const equipmentType = getEquipmentType(exercise.name);
   const weightLabel = getWeightLabel(equipmentType);
 
+  // Get weight convention explanation
+  const getWeightHint = () => {
+    switch (equipmentType) {
+      case 'dumbbell': return 'Log weight per hand';
+      case 'barbell': return 'Log total weight (bar + plates)';
+      case 'cable': return 'Log stack weight';
+      case 'machine': return 'Log stack/plate weight';
+      case 'bodyweight': return 'Log added weight only';
+      default: return 'Log weight used';
+    }
+  };
+
   // Check if current weight beats PR
   const currentMaxWeight = Math.max(
     ...exercise.sets
@@ -205,7 +223,21 @@ export function SingleExerciseCard({
       {/* Compact exercise header */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold truncate">{exercise.name}</h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-base font-bold truncate">{exercise.name}</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                  <p className="font-medium">{getWeightHint()}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="tabular-nums font-medium text-foreground">{completedSets}/{exercise.sets.length}</span>
             <span>sets</span>
