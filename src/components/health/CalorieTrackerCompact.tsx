@@ -51,7 +51,8 @@ export function CalorieTrackerCompact() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenDialog = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
     setSelectedMealType(mealType);
@@ -302,11 +303,19 @@ export function CalorieTrackerCompact() {
           <div className="space-y-4">
           {!analysis && !manualMode && !textMode && (
               <>
+                {/* Separate inputs: camera with capture, gallery without */}
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -324,20 +333,27 @@ export function CalorieTrackerCompact() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="btn-brutalist flex items-center justify-center gap-2 py-6"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="btn-brutalist flex flex-col items-center justify-center gap-1 py-4"
                       >
                         <Camera className="h-5 w-5" />
-                        PHOTO
+                        <span className="text-xs">CAMERA</span>
+                      </button>
+                      <button
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="border border-border p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+                      >
+                        <Plus className="h-5 w-5" />
+                        <span className="text-xs">GALLERY</span>
                       </button>
                       <button
                         onClick={() => setTextMode(true)}
-                        className="border border-border p-4 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                        className="border border-border p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
                       >
-                        <Plus className="h-5 w-5" />
-                        DESCRIBE
+                        <Utensils className="h-5 w-5" />
+                        <span className="text-xs">DESCRIBE</span>
                       </button>
                     </div>
                     <button
