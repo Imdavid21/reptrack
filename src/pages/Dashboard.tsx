@@ -4,7 +4,7 @@ import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { DailyRitualCard } from '@/components/dashboard/DailyRitualCard';
 import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 import { TodayStats } from '@/components/dashboard/TodayStats';
-import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
+
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { SupplementCard } from '@/components/dashboard/SupplementCard';
@@ -35,10 +35,6 @@ export default function Dashboard() {
 
         {/* Time-Aware Daily Ritual Card */}
         <DailyRitualCard />
-
-        {/* Weekly Progress Grid */}
-        <WeeklyProgress />
-
 
         {/* Core Trackers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
