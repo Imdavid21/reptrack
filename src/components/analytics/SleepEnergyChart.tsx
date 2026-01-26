@@ -42,7 +42,7 @@ export function SleepEnergyChart() {
       <div className="border border-border p-4">
         <h3 className="section-header">SLEEP & ENERGY</h3>
         <p className="text-sm text-muted-foreground">
-          No sleep/energy data yet. Log your first workout with habits!
+          No sleep/energy data yet. Log your morning check-in!
         </p>
       </div>
     );

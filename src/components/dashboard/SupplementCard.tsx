@@ -72,9 +72,6 @@ export function SupplementCard() {
       await upsertMetrics({
         date: today,
         supplements: newSupplements,
-        sleep_hours: todayData?.sleep_hours,
-        energy_level: todayData?.energy_level,
-        bodyweight: todayData?.bodyweight,
         pullups: todayData?.pullups ?? 0,
         notes: todayData?.notes,
       });
