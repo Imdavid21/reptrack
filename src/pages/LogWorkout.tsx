@@ -5,6 +5,7 @@ import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
 import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWorkoutSimple';
+import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -317,6 +318,9 @@ export default function LogWorkout() {
             />
           ))}
         </div>
+
+        {/* Weekly Progress - show on select-day step */}
+        {step === 'select-day' && <WeeklyProgress />}
 
         {/* Step Content */}
         {step === 'select-day' && (
