@@ -31,6 +31,9 @@
 
     <!-- Inline critical CSS for instant splash -->
     <style>
+      html, body {
+        height: 100%;
+      }
       body {
         margin: 0;
         background: #000;
@@ -42,6 +45,8 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        box-sizing: border-box;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         background: #000;
         z-index: 9999;
         transition: opacity 0.3s ease-out;
@@ -113,15 +118,47 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Hide splash when React is ready -->
+    <!-- Auto-hide splash when React mounts (and fail-safe timeout so it never gets stuck) -->
     <script>
-      window.hideSplash = function() {
+      (function () {
         var splash = document.getElementById('splash');
-        if (splash) {
+        var root = document.getElementById('root');
+        if (!splash) return;
+
+        var hidden = false;
+        function hideSplash() {
+          if (hidden) return;
+          hidden = true;
           splash.classList.add('fade-out');
-          setTimeout(function() { splash.remove(); }, 300);
+          setTimeout(function () {
+            try { splash.remove(); } catch (e) {}
+          }, 300);
         }
-      };
+
+        // If React already rendered, hide immediately
+        try {
+          if (root && root.children && root.children.length > 0) {
+            hideSplash();
+            return;
+          }
+        } catch (e) {}
+
+        // Observe for first render into #root
+        if (root && 'MutationObserver' in window) {
+          try {
+            var obs = new MutationObserver(function () {
+              if (root.children && root.children.length > 0) {
+                obs.disconnect();
+                hideSplash();
+              }
+            });
+            obs.observe(root, { childList: true, subtree: true });
+          } catch (e) {}
+        }
+
+        // Hard fail-safe: never block the UI forever
+        setTimeout(hideSplash, 8000);
+      })();
     </script>
   </body>
 </html>
