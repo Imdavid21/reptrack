@@ -19,15 +19,15 @@ interface CorrelationData {
   stepsToEnergy: { date: string; steps: number; energy: number }[];
 }
 
-export function useHealthInsights() {
+export function useHealthInsights(days: number = 30) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['healthInsights', user?.id],
+    queryKey: ['healthInsights', user?.id, days],
     queryFn: async (): Promise<{ insights: HealthInsight[]; correlations: CorrelationData }> => {
       if (!user) return { insights: [], correlations: { morningEnergy: { high: [], low: [] }, sleepHours: { good: [], poor: [] }, heartRate: { low: [], high: [] }, stepsToEnergy: [] } };
 
-      const startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
 
       // Fetch all relevant data in parallel
       const [morningRes, nightRes, workoutsRes] = await Promise.all([
@@ -214,6 +214,7 @@ export function useHealthInsights() {
       return { insights, correlations };
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000, // Refresh every minute for latest data
+    refetchOnMount: true,
   });
 }

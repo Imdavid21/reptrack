@@ -19,6 +19,7 @@ import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
 import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
 import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
 import { NutritionInsights } from '@/components/health/NutritionInsights';
+import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 
 // Vitals tab components
 import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
@@ -264,8 +265,12 @@ function VitalsTab() {
 }
 
 function AITab() {
+  const { dateRange } = useDateRange();
+  const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+  
   return (
     <div className="space-y-4">
+      <HealthInsightsCard days={days} />
       <AICoachInsights />
       <PreWorkoutCorrelationChart />
     </div>
