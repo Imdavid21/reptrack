@@ -130,223 +130,186 @@ export function SingleExerciseCard({
   const isNewPR = personalRecord && currentMaxWeight > personalRecord.maxWeight;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Progress indicator */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Exercise {exerciseIndex + 1} of {totalExercises}</span>
+    <div className="space-y-3 animate-fade-in">
+      {/* Compact progress header */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {exerciseIndex + 1}/{totalExercises}
+        </span>
+        <div className="flex gap-0.5 flex-1 mx-3">
+          {Array.from({ length: totalExercises }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'h-0.5 flex-1 rounded-full transition-colors',
+                i < exerciseIndex ? 'bg-primary' :
+                i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
+              )}
+            />
+          ))}
+        </div>
         <span className={cn(
-          'px-2 py-0.5 text-xs font-medium',
-          exercise.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted'
+          'text-2xs px-1.5 py-0.5 rounded-full',
+          exercise.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
         )}>
           {exercise.category.toUpperCase()}
         </span>
       </div>
 
-      {/* Progress bar */}
-      <div className="flex gap-1">
-        {Array.from({ length: totalExercises }).map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'h-1 flex-1 transition-colors',
-              i < exerciseIndex ? 'bg-primary' :
-              i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
+      {/* Compact exercise header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-bold truncate">{exercise.name}</h2>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="tabular-nums font-medium text-foreground">{completedSets}/{exercise.sets.length}</span>
+            <span>sets</span>
+            {personalRecord && !isNewPR && (
+              <>
+                <span>•</span>
+                <Trophy className="h-3 w-3" />
+                <span className="tabular-nums">{personalRecord.maxWeight}kg</span>
+              </>
             )}
-          />
-        ))}
-      </div>
-
-      {/* Exercise header */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xl font-bold">{exercise.name}</h2>
-          {showVariantSwitch && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 border border-border hover:border-foreground/30">
-                  <ArrowLeftRight className="h-3 w-3" />
-                  <span>ALT</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border-border">
-                {variants.map((variant) => (
-                  <DropdownMenuItem
-                    key={variant.name}
-                    onClick={() => switchVariant(variant.name, variant.defaultWeight)}
-                    className={cn(
-                      'cursor-pointer',
-                      variant.name === exercise.name && 'bg-primary/10'
-                    )}
-                  >
-                    {variant.name}
-                    {variant.name === exercise.name && (
-                      <Check className="h-4 w-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold tabular-nums">
-            {completedSets}/{exercise.sets.length}
-          </div>
-          <span className="text-muted-foreground">sets completed</span>
-        </div>
-
-        {/* Personal Record Display */}
-        {personalRecord && (
-          <div className={cn(
-            "flex items-center gap-2 p-2 border text-sm",
-            isNewPR 
-              ? "border-primary bg-primary/5" 
-              : "border-border bg-muted/30"
-          )}>
-            <Trophy className={cn("h-3.5 w-3.5", isNewPR ? "text-primary" : "text-muted-foreground")} />
-            {isNewPR ? (
-              <span className="font-medium text-primary">NEW PR: {currentMaxWeight}kg</span>
-            ) : (
-              <span>
-                <span className="text-muted-foreground">PR:</span>{' '}
-                <span className="font-medium">{personalRecord.maxWeight}kg</span>{' '}
-                <span className="text-muted-foreground">× {personalRecord.reps}</span>
-              </span>
+            {isNewPR && (
+              <>
+                <span>•</span>
+                <span className="text-primary font-medium">NEW PR</span>
+              </>
             )}
           </div>
+        </div>
+        {showVariantSwitch && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-center h-7 w-7 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                <ArrowLeftRight className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background border-border">
+              {variants.map((variant) => (
+                <DropdownMenuItem
+                  key={variant.name}
+                  onClick={() => switchVariant(variant.name, variant.defaultWeight)}
+                  className={cn(
+                    'cursor-pointer text-xs',
+                    variant.name === exercise.name && 'bg-primary/10'
+                  )}
+                >
+                  {variant.name}
+                  {variant.name === exercise.name && (
+                    <Check className="h-3 w-3 ml-auto" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-
       </div>
 
-      {/* Sets */}
-      <div className="space-y-2">
+      {/* Compact Sets */}
+      <div className="space-y-1.5">
         {exercise.sets.map((set, setIndex) => (
           <div
             key={set.setNumber}
             className={cn(
-              'border border-border p-4 transition-colors duration-150',
-              set.completed && 'bg-primary/5 border-primary/30'
+              'flex items-center gap-2 p-2 rounded-lg border transition-colors',
+              set.completed ? 'bg-primary/5 border-primary/20' : 'border-border'
             )}
           >
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleSetToggle(setIndex)}
+              className={cn(
+                "h-6 w-6 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+                set.completed 
+                  ? "bg-primary border-primary" 
+                  : "border-muted-foreground"
+              )}
+            >
+              <Check className={cn(
+                "h-3 w-3 text-primary-foreground transition-opacity",
+                set.completed ? "opacity-100" : "opacity-0"
+              )} />
+            </button>
+            
+            <span className="text-xs font-medium w-6 text-muted-foreground">{set.setNumber}</span>
+            
+            <div className="flex-1 grid grid-cols-2 gap-2">
+              <Input
+                placeholder={set.targetWeight}
+                value={set.actualWeight}
+                onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
+                className="h-8 text-xs rounded-lg"
+              />
+              <Input
+                placeholder={set.targetReps}
+                value={set.actualReps}
+                onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
+                className="h-8 text-xs rounded-lg"
+              />
+            </div>
+
+            {exercise.sets.length > 1 && (
               <button
                 type="button"
-                onClick={() => handleSetToggle(setIndex)}
-                className="shrink-0"
+                onClick={() => removeSet(setIndex)}
+                className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
-                <div
-                  className={cn(
-                    "w-5 h-5 border flex items-center justify-center transition-colors duration-150",
-                    set.completed 
-                      ? "bg-primary border-primary" 
-                      : "border-muted-foreground bg-transparent"
-                  )}
-                >
-                  <Check 
-                    className={cn(
-                      "h-3 w-3 text-primary-foreground transition-opacity duration-150",
-                      set.completed ? "opacity-100" : "opacity-0"
-                    )} 
-                  />
-                </div>
+                <Minus className="h-3 w-3" />
               </button>
-                <span className="text-lg font-bold w-16">Set {set.setNumber}</span>
-                
-                <div className="flex-1 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">
-                      Weight
-                    </label>
-                    <Input
-                      placeholder={set.targetWeight}
-                      value={set.actualWeight}
-                      onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                      className="input-terminal h-10"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">
-                      Reps
-                    </label>
-                    <Input
-                      placeholder={set.targetReps}
-                      value={set.actualReps}
-                      onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
-                      className="input-terminal h-10"
-                    />
-                  </div>
-                </div>
+            )}
+          </div>
+        ))}
 
-                {exercise.sets.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => removeSet(setIndex)}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          )
-        )}
-
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
-          className="w-full"
           onClick={addSet}
+          className="w-full h-8 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center gap-1"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Set
-        </Button>
+          <Plus className="h-3 w-3" />
+          Add set
+        </button>
       </div>
 
-      {/* Navigation */}
-      <div className="flex gap-2 pt-4">
+      {/* Compact Navigation */}
+      <div className="flex gap-2 pt-2">
         {!isFirst && (
-          <Button
-            variant="outline"
+          <button
             onClick={() => { haptic('light'); onPrev(); }}
-            className="flex-1"
+            className="h-9 px-3 rounded-full border border-border text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1"
           >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
+            <ChevronLeft className="h-3 w-3" />
+            Prev
+          </button>
         )}
         
         {completedSets === 0 && (
-          <Button
-            variant="ghost"
+          <button
             onClick={() => { haptic('light'); onSkip(); }}
-            className="shrink-0 text-muted-foreground"
+            className="h-9 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             Skip
-          </Button>
+          </button>
         )}
 
-        {isLast ? (
-          <Button
-            onClick={() => { haptic('success'); onComplete(); }}
-            className="flex-1 btn-brutalist btn-primary"
-            disabled={completedSets === 0}
-          >
-            <Check className="h-4 w-4 mr-1" />
-            Continue to Habits
-          </Button>
-        ) : (
-          <Button
-            onClick={() => { haptic('medium'); onNext(); }}
-            className="flex-1 btn-brutalist btn-primary"
-          >
-            Next Exercise
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
+        <button
+          onClick={() => { 
+            if (isLast) { haptic('success'); onComplete(); } 
+            else { haptic('medium'); onNext(); }
+          }}
+          disabled={isLast && completedSets === 0}
+          className={cn(
+            "flex-1 h-9 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1",
+            "bg-primary text-primary-foreground hover:bg-primary/90",
+            "disabled:opacity-50 disabled:cursor-not-allowed"
+          )}
+        >
+          {isLast ? (
+            <>Done<Check className="h-3 w-3" /></>
+          ) : (
+            <>Next<ChevronRight className="h-3 w-3" /></>
+          )}
+        </button>
       </div>
     </div>
   );
