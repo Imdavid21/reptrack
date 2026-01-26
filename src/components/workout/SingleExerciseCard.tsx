@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Copy } from 'lucide-react';
-import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
+import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
   DropdownMenu,
@@ -163,6 +163,8 @@ export function SingleExerciseCard({
   const allCompleted = completedSets === exercise.sets.length;
   const variants = getExerciseVariants(exercise.name);
   const showVariantSwitch = hasVariants(exercise.name);
+  const equipmentType = getEquipmentType(exercise.name);
+  const weightLabel = getWeightLabel(equipmentType);
 
   // Check if current weight beats PR
   const currentMaxWeight = Math.max(
@@ -301,9 +303,9 @@ export function SingleExerciseCard({
                       onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
                       onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
                       inputMode="decimal"
-                      className="h-8 text-xs rounded-lg text-center pr-7"
+                      className="h-8 text-xs rounded-lg text-center pr-9"
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">kg</span>
+                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground pointer-events-none whitespace-nowrap">{weightLabel}</span>
                   </div>
                   <button
                     type="button"

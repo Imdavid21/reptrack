@@ -140,6 +140,34 @@ export function hasVariants(exerciseName: string): boolean {
   return exerciseName in exerciseVariants && exerciseVariants[exerciseName].length > 1;
 }
 
+// Get equipment type for an exercise
+export function getEquipmentType(exerciseName: string): ExerciseVariant['equipmentType'] {
+  const variants = exerciseVariants[exerciseName];
+  if (variants && variants.length > 0) {
+    return variants[0].equipmentType;
+  }
+  // Infer from exercise name
+  const lowerName = exerciseName.toLowerCase();
+  if (lowerName.includes('barbell') || lowerName.includes('bb ')) return 'barbell';
+  if (lowerName.includes('dumbbell') || lowerName.includes('db ')) return 'dumbbell';
+  if (lowerName.includes('cable')) return 'cable';
+  if (lowerName.includes('machine') || lowerName.includes('hack') || lowerName.includes('leg press')) return 'machine';
+  if (lowerName.includes('pull-up') || lowerName.includes('dip') || lowerName.includes('pushup')) return 'bodyweight';
+  return 'dumbbell'; // Default
+}
+
+// Get weight label based on equipment type
+export function getWeightLabel(equipmentType: ExerciseVariant['equipmentType']): string {
+  switch (equipmentType) {
+    case 'barbell': return 'kg';      // Total weight (bar + plates)
+    case 'dumbbell': return 'kg ea';  // Per hand
+    case 'cable': return 'kg';        // Stack weight
+    case 'machine': return 'kg';      // Stack/plate weight
+    case 'bodyweight': return 'kg';   // Added weight
+    default: return 'kg';
+  }
+}
+
 // Get equipment icon
 export function getEquipmentEmoji(type: ExerciseVariant['equipmentType']): string {
   switch (type) {
