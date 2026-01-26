@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNightCheckin } from '@/hooks/useNightCheckin';
-import { Moon, Activity, Footprints, Star, Check, Loader2, Scale, BedDouble } from 'lucide-react';
+import { Moon, Activity, Footprints, Star, Check, Loader2, BedDouble } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,7 +13,6 @@ export function NightCheckinCard() {
     performance_score: '',
     energy_score: '',
     steps: '',
-    bodyweight: '',
     is_rest_day: false,
   });
 
@@ -22,7 +21,6 @@ export function NightCheckinCard() {
       performance_score: checkin?.performance_score?.toString() || '',
       energy_score: checkin?.energy_score?.toString() || '',
       steps: checkin?.steps?.toString() || '',
-      bodyweight: checkin?.bodyweight?.toString() || '',
       is_rest_day: checkin?.is_rest_day || false,
     });
     setIsEditing(true);
@@ -34,7 +32,6 @@ export function NightCheckinCard() {
         performance_score: formData.performance_score ? parseInt(formData.performance_score) : null,
         energy_score: formData.energy_score ? parseInt(formData.energy_score) : null,
         steps: formData.steps ? parseInt(formData.steps) : 0,
-        bodyweight: formData.bodyweight ? parseFloat(formData.bodyweight) : null,
         is_rest_day: formData.is_rest_day,
       });
       setIsEditing(false);
@@ -52,7 +49,7 @@ export function NightCheckinCard() {
     );
   }
 
-  const hasData = checkin && (checkin.performance_score || checkin.energy_score || checkin.steps || checkin.bodyweight);
+  const hasData = checkin && (checkin.performance_score || checkin.energy_score || checkin.steps);
 
   if (!isEditing && hasData) {
     return (
@@ -67,19 +64,12 @@ export function NightCheckinCard() {
           <Moon className="h-4 w-4 text-muted-foreground" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="flex items-center gap-2">
             <Footprints className="h-4 w-4 text-muted-foreground" />
             <div>
               <div className="text-2xl font-bold tabular-nums">{checkin.steps?.toLocaleString() || '-'}</div>
               <div className="text-xs text-muted-foreground">STEPS</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.bodyweight || '-'} kg</div>
-              <div className="text-xs text-muted-foreground">WEIGHT</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -110,7 +100,7 @@ export function NightCheckinCard() {
         <Moon className="h-4 w-4 text-muted-foreground" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <Label className="text-xs text-muted-foreground">STEPS</Label>
           <Input
@@ -121,17 +111,9 @@ export function NightCheckinCard() {
             className="input-terminal mt-1"
           />
         </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">WEIGHT (KG)</Label>
-          <Input
-            type="number"
-            step="0.1"
-            placeholder="75.0"
-            value={formData.bodyweight}
-            onChange={(e) => setFormData(prev => ({ ...prev, bodyweight: e.target.value }))}
-            className="input-terminal mt-1"
-          />
-        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3 mt-3">
         <div>
           <Label className="text-xs text-muted-foreground">PERFORMANCE</Label>
           <Input
