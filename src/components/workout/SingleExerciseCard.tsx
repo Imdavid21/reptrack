@@ -61,6 +61,11 @@ export function SingleExerciseCard({
     onChange(updated);
   };
 
+  // Normalize weight input: strip "kg" suffix, keep only numbers/decimals
+  const normalizeWeight = (value: string): string => {
+    return value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+  };
+
   const handleSetChange = (
     setIndex: number,
     field: 'actualWeight' | 'actualReps',
@@ -68,7 +73,9 @@ export function SingleExerciseCard({
   ) => {
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    updated.sets[setIndex] = { ...updated.sets[setIndex], [field]: value };
+    // Normalize weight values to numbers only
+    const normalizedValue = field === 'actualWeight' ? normalizeWeight(value) : value;
+    updated.sets[setIndex] = { ...updated.sets[setIndex], [field]: normalizedValue };
     onChange(updated);
   };
 
@@ -278,7 +285,7 @@ export function SingleExerciseCard({
                 
                 <span className="text-xs font-medium w-5 text-muted-foreground tabular-nums">{set.setNumber}</span>
                 
-                {/* Weight with ±2.5 buttons */}
+                {/* Weight with ±2.5 buttons and kg label */}
                 <div className="flex-1 flex items-center gap-1">
                   <button
                     type="button"
@@ -287,13 +294,17 @@ export function SingleExerciseCard({
                   >
                     -2.5
                   </button>
-                  <Input
-                    placeholder={set.targetWeight}
-                    value={set.actualWeight}
-                    onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
-                    onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
-                    className="h-8 text-xs rounded-lg text-center flex-1 min-w-0"
-                  />
+                  <div className="relative flex-1 min-w-0">
+                    <Input
+                      placeholder={normalizeWeight(set.targetWeight)}
+                      value={set.actualWeight}
+                      onChange={(e) => handleSetChange(setIndex, 'actualWeight', e.target.value)}
+                      onFocus={() => handleTapToFill(setIndex, 'actualWeight')}
+                      inputMode="decimal"
+                      className="h-8 text-xs rounded-lg text-center pr-7"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">kg</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => adjustWeight(setIndex, 2.5)}
@@ -303,15 +314,17 @@ export function SingleExerciseCard({
                   </button>
                 </div>
 
-                {/* Reps */}
-                <div className="w-16">
+                {/* Reps with label */}
+                <div className="relative w-16">
                   <Input
                     placeholder={set.targetReps}
                     value={set.actualReps}
                     onChange={(e) => handleSetChange(setIndex, 'actualReps', e.target.value)}
                     onFocus={() => handleTapToFill(setIndex, 'actualReps')}
-                    className="h-8 text-xs rounded-lg text-center"
+                    inputMode="numeric"
+                    className="h-8 text-xs rounded-lg text-center pr-6"
                   />
+                  <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">×</span>
                 </div>
 
                 {/* Copy from prev OR remove */}
