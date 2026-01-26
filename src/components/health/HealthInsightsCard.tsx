@@ -1,8 +1,12 @@
 import { useHealthInsights } from '@/hooks/useHealthInsights';
 import { Lightbulb, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 
-export function HealthInsightsCard() {
-  const { data, isLoading } = useHealthInsights();
+interface HealthInsightsCardProps {
+  days?: number;
+}
+
+export function HealthInsightsCard({ days = 30 }: HealthInsightsCardProps) {
+  const { data, isLoading } = useHealthInsights(days);
 
   if (isLoading) {
     return (
