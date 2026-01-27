@@ -1,38 +1,28 @@
 import { Home, Dumbbell, BarChart3, History, Settings } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import { useDraftWorkout } from '@/hooks/useDraftWorkout';
+import { useWorkouts } from '@/hooks/useWorkouts';
+import { format } from 'date-fns';
 
-function formatElapsedTime(startTime: Date): string {
-  const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
-  const mins = Math.floor(elapsed / 60);
-  const secs = elapsed % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${m}m` : `${h}h`;
 }
 
 export function BottomNav() {
-  const { draft } = useDraftWorkout();
-  const [elapsed, setElapsed] = useState<string | null>(null);
-
-  // Update elapsed time every second when workout is active
-  useEffect(() => {
-    if (!draft?.workoutStartTime) {
-      setElapsed(null);
-      return;
-    }
-
-    const startTime = new Date(draft.workoutStartTime);
-    const updateTime = () => setElapsed(formatElapsedTime(startTime));
-    updateTime();
-
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, [draft?.workoutStartTime]);
+  const { workouts } = useWorkouts();
+  
+  // Get today's completed workout duration
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const todayWorkout = workouts.find(w => w.date === today);
+  const duration = todayWorkout?.workout_duration_minutes;
+  const durationLabel = duration ? formatDuration(duration) : null;
 
   const navItems = [
     { to: '/', icon: Home, label: 'Today' },
-    { to: '/log', icon: Dumbbell, label: elapsed || 'Workout' },
+    { to: '/log', icon: Dumbbell, label: durationLabel || 'Workout' },
     { to: '/insights', icon: BarChart3, label: 'Insights' },
     { to: '/history', icon: History, label: 'History' },
     { to: '/settings', icon: Settings, label: 'Settings' },
@@ -52,7 +42,7 @@ export function BottomNav() {
             <Icon className="h-5 w-5" />
             <span className={cn(
               "text-2xs mt-1 tabular-nums",
-              to === '/log' && elapsed && "text-primary font-medium"
+              to === '/log' && durationLabel && "text-primary font-medium"
             )}>
               {label}
             </span>
