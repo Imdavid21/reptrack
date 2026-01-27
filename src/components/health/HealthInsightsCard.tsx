@@ -52,7 +52,7 @@ export function HealthInsightsCard({ days = 30 }: HealthInsightsCardProps) {
   const getTypeStyles = (type: 'positive' | 'negative' | 'neutral') => {
     switch (type) {
       case 'positive':
-        return 'border-l-4 border-l-green-500 bg-green-500/5';
+        return 'border-l-4 border-l-success bg-success/5';
       case 'negative':
         return 'border-l-4 border-l-destructive bg-destructive/5';
       default:
