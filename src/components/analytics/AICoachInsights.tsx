@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAIInsights } from '@/hooks/useAIInsights';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +14,6 @@ export function AICoachInsights() {
     setHasGenerated(true);
   };
 
-  // Parse insights into bullet points
   const bulletPoints = insights
     ? insights
         .split('\n')
@@ -25,10 +24,12 @@ export function AICoachInsights() {
 
   if (!hasData && !hasGenerated) {
     return (
-      <div className="border border-border p-4">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4" />
-          <h3 className="section-header mb-0">AI COACH</h3>
+          <div className="p-2 rounded-xl bg-insight-lavender/15">
+            <Sparkles className="h-4 w-4 text-insight-lavender" />
+          </div>
+          <h3 className="text-sm font-semibold">AI Coach</h3>
         </div>
         <p className="text-sm text-muted-foreground">
           Log workouts to unlock AI-powered coaching insights.
@@ -38,18 +39,20 @@ export function AICoachInsights() {
   }
 
   return (
-    <div className="border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4" />
-          <h3 className="section-header mb-0">AI COACH</h3>
+          <div className="p-2 rounded-xl bg-insight-lavender/15">
+            <Sparkles className="h-4 w-4 text-insight-lavender" />
+          </div>
+          <h3 className="text-sm font-semibold">AI Coach</h3>
         </div>
         {hasGenerated && !isLoading && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleGenerate}
-            className="h-7 px-2 text-xs"
+            className="h-8 px-3 text-xs rounded-full"
           >
             <RefreshCw className="h-3 w-3 mr-1" />
             Refresh
@@ -58,13 +61,13 @@ export function AICoachInsights() {
       </div>
 
       {!hasGenerated && !isLoading && (
-        <div className="text-center py-4">
-          <p className="text-sm text-muted-foreground mb-3">
+        <div className="text-center py-6">
+          <p className="text-sm text-muted-foreground mb-4">
             Get personalized insights based on your workout data
           </p>
           <Button
             onClick={handleGenerate}
-            className="gap-2"
+            className="gap-2 rounded-full"
             disabled={isLoading}
           >
             <Sparkles className="h-4 w-4" />
@@ -75,10 +78,10 @@ export function AICoachInsights() {
 
       {isLoading && (
         <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-full rounded-full" />
+          <Skeleton className="h-4 w-3/4 rounded-full" />
+          <Skeleton className="h-4 w-5/6 rounded-full" />
+          <Skeleton className="h-4 w-2/3 rounded-full" />
         </div>
       )}
 
@@ -89,7 +92,7 @@ export function AICoachInsights() {
             variant="outline"
             size="sm"
             onClick={handleGenerate}
-            className="ml-3"
+            className="ml-3 rounded-full"
           >
             Retry
           </Button>
@@ -97,17 +100,17 @@ export function AICoachInsights() {
       )}
 
       {hasGenerated && !isLoading && !error && bulletPoints.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {bulletPoints.map((point, idx) => (
             <li
               key={idx}
               className={cn(
-                'flex items-start gap-2 text-sm',
+                'flex items-start gap-3 text-sm p-3 rounded-xl bg-muted/30',
                 'animate-fade-in'
               )}
               style={{ animationDelay: `${idx * 100}ms` }}
             >
-              <span className="text-muted-foreground mt-0.5">→</span>
+              <span className="text-insight-lavender mt-0.5">→</span>
               <span>{point}</span>
             </li>
           ))}
@@ -115,7 +118,7 @@ export function AICoachInsights() {
       )}
 
       {hasGenerated && !isLoading && !error && bulletPoints.length === 0 && insights && (
-        <p className="text-sm">{insights}</p>
+        <p className="text-sm p-3 rounded-xl bg-muted/30">{insights}</p>
       )}
     </div>
   );

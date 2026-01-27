@@ -29,9 +29,9 @@ export function HydrationChart() {
 
   if (isLoading) {
     return (
-      <div className="border border-border p-4 space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-[180px]" />
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Hydration</h3>
+        <Skeleton className="h-[180px] rounded-xl" />
       </div>
     );
   }
@@ -41,10 +41,12 @@ export function HydrationChart() {
     const d = payload[0].payload;
     
     return (
-      <div className="border border-border bg-card p-2 text-xs">
+      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
         <p className="font-medium mb-1">{label}</p>
-        <p>{d.total.toFixed(2)}L ({d.logs} logs)</p>
-        {d.metGoal && <p className="text-muted-foreground">✓ Goal met!</p>}
+        <p className="text-muted-foreground">
+          {d.total.toFixed(2)}L ({d.logs} logs)
+        </p>
+        {d.metGoal && <p className="text-insight-mint mt-1">✓ Goal met!</p>}
       </div>
     );
   };
@@ -52,9 +54,9 @@ export function HydrationChart() {
   const hasData = chartData.some(d => d.total > 0);
 
   return (
-    <div className="border border-border p-4">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">HYDRATION</h3>
+        <h3 className="text-sm font-semibold">Hydration</h3>
         {data?.totals && (
           <div className="text-xs text-muted-foreground">
             Goal: {DAILY_GOAL}L/day
@@ -63,18 +65,18 @@ export function HydrationChart() {
       </div>
 
       {!hasData ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground py-8 text-center">
           No hydration data yet. Start logging water!
         </p>
       ) : (
         <>
-          <div className="h-[180px]">
+          <div className="h-[160px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis
                   dataKey="displayDate"
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
                 />
@@ -89,16 +91,16 @@ export function HydrationChart() {
                   y={DAILY_GOAL}
                   stroke="hsl(var(--muted-foreground))"
                   strokeDasharray="4 4"
-                  strokeOpacity={0.7}
+                  strokeOpacity={0.5}
                 />
                 <Tooltip content={renderTooltip} />
-                <Bar dataKey="total" radius={[2, 2, 0, 0]}>
+                <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={entry.metGoal
-                        ? 'hsl(var(--foreground))'
-                        : 'hsl(var(--muted-foreground))'
+                        ? 'hsl(var(--insight-blue))'
+                        : 'hsl(var(--insight-blue) / 0.3)'
                       }
                     />
                   ))}
@@ -109,24 +111,24 @@ export function HydrationChart() {
 
           {/* Stats */}
           {data?.totals && (
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
-              <div>
-                <div className="text-lg font-bold tabular-nums">
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border/30">
+              <div className="bg-insight-blue/10 rounded-xl p-2.5 text-center">
+                <div className="text-base font-bold tabular-nums">
                   {data.totals.avgDaily.toFixed(1)}L
                 </div>
-                <div className="text-xs text-muted-foreground">AVG/DAY</div>
+                <div className="text-xs text-muted-foreground">Avg/Day</div>
               </div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">
+              <div className="bg-insight-mint/10 rounded-xl p-2.5 text-center">
+                <div className="text-base font-bold tabular-nums">
                   {data.totals.daysMetGoal}/{data.totals.daysTracked}
                 </div>
-                <div className="text-xs text-muted-foreground">GOALS MET</div>
+                <div className="text-xs text-muted-foreground">Goals Met</div>
               </div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">
+              <div className="bg-insight-lavender/10 rounded-xl p-2.5 text-center">
+                <div className="text-base font-bold tabular-nums">
                   {data.totals.totalLiters.toFixed(1)}L
                 </div>
-                <div className="text-xs text-muted-foreground">TOTAL</div>
+                <div className="text-xs text-muted-foreground">Total</div>
               </div>
             </div>
           )}
