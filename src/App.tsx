@@ -1,5 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { AnimatePresence } from "framer-motion";
+import { lightTheme, darkTheme } from "./theme/muiTheme";
+import { useTheme } from "./hooks/useTheme";
 import Index from "./pages/Index";
 import LogWorkout from "./pages/LogWorkout";
 import CreateRoutine from "./pages/CreateRoutine";
@@ -11,10 +15,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <Routes>
+function AppRoutes() {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Index />} />
         <Route path="/log" element={<LogWorkout />} />
         <Route path="/create" element={<CreateRoutine />} />
@@ -27,7 +33,26 @@ const App = () => (
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </AnimatePresence>
+  );
+}
+
+function ThemedApp() {
+  const { isDark } = useTheme();
+  
+  return (
+    <ThemeProvider theme={isDark ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemedApp />
   </QueryClientProvider>
 );
 

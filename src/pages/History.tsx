@@ -1,8 +1,12 @@
+import { Box, Typography, Chip } from '@mui/material';
+import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { MuiCard } from '@/components/ui/MuiCard';
+import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Calendar, Edit2, Clock } from 'lucide-react';
+import { ChevronRight, Calendar, Edit2 } from 'lucide-react';
 import { BackfillDialog } from '@/components/dashboard/BackfillDialog';
 
 export default function History() {
@@ -21,66 +25,114 @@ export default function History() {
 
   return (
     <MainLayout title="HISTORY">
-      <div className="space-y-6 animate-fade-in">
-        {/* Backfill Action */}
-        <div className="flex justify-end">
-          <BackfillDialog />
-        </div>
+      <AnimatedPage>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
+          {/* Backfill Action */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <BackfillDialog />
+          </Box>
 
-        {workouts.length === 0 ? (
-          <div className="card-brutalist text-center py-8">
-            <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No workouts logged yet</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Start logging to build your history
-            </p>
-          </div>
-        ) : (
-          Object.entries(workoutsByWeek).map(([week, weekWorkouts]) => (
-            <div key={week}>
-              <h3 className="section-header">{week.toUpperCase()}</h3>
-              <div className="space-y-2">
-                {weekWorkouts.map((workout) => (
-                  <button
-                    key={workout.id}
-                    onClick={() => navigate(`/history/${workout.id}`)}
-                    className="card-brutalist flex items-center justify-between w-full text-left hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <div className="font-bold">{workout.day_name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(workout.date), 'EEEE, MMM d')}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="badge-brutalist">{workout.day}</span>
-                      <Edit2 className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
+          {workouts.length === 0 ? (
+            <MuiCard>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Calendar size={32} style={{ margin: '0 auto', opacity: 0.5 }} />
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                  No workouts logged yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Start logging to build your history
+                </Typography>
+              </Box>
+            </MuiCard>
+          ) : (
+            <motion.div variants={staggerContainer} initial="hidden" animate="show">
+              {Object.entries(workoutsByWeek).map(([week, weekWorkouts]) => (
+                <motion.div key={week} variants={staggerItem}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em',
+                        fontWeight: 600,
+                        mb: 1.5,
+                        display: 'block',
+                      }}
+                    >
+                      {week}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {weekWorkouts.map((workout) => (
+                        <MuiCard
+                          key={workout.id}
+                          onClick={() => navigate(`/history/${workout.id}`)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
+                              transform: 'translateX(4px)',
+                            },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box>
+                              <Typography variant="body1" fontWeight={600}>
+                                {workout.day_name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {format(new Date(workout.date), 'EEEE, MMM d')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Chip 
+                                label={workout.day} 
+                                size="small"
+                                sx={{ 
+                                  fontSize: '0.65rem',
+                                  height: 24,
+                                }}
+                              />
+                              <Edit2 size={16} style={{ opacity: 0.5 }} />
+                            </Box>
+                          </Box>
+                        </MuiCard>
+                      ))}
+                    </Box>
+                  </Box>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
 
-        {/* Stats summary */}
-        {workouts.length > 0 && (
-          <div className="stat-block">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="stat-value tabular-nums">{workouts.length}</div>
-                <div className="stat-label">TOTAL SESSIONS</div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold tabular-nums">
-                  {Math.max(...workouts.map((w) => w.week_number))}
-                </div>
-                <div className="text-xs text-muted-foreground">WEEKS COMPLETED</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          {/* Stats summary */}
+          {workouts.length > 0 && (
+            <motion.div variants={staggerItem}>
+              <MuiCard>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {workouts.length}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                      Total Sessions
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="h4" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.max(...workouts.map((w) => w.week_number))}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Weeks Completed
+                    </Typography>
+                  </Box>
+                </Box>
+              </MuiCard>
+            </motion.div>
+          )}
+        </Box>
+      </AnimatedPage>
     </MainLayout>
   );
 }

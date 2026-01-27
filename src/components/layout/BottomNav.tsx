@@ -1,6 +1,6 @@
+import { BottomNavigation, BottomNavigationAction, Paper, Box, Badge } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, BarChart3, History, Settings } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { format, differenceInMinutes } from 'date-fns';
@@ -14,66 +14,116 @@ function formatDuration(minutes: number): string {
 }
 
 export function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { workouts } = useWorkouts();
   const { draft } = useDraftWorkout();
   const [elapsed, setElapsed] = useState<number | null>(null);
   
-  // Update elapsed time every minute for active workout
   useEffect(() => {
     if (!draft?.workoutStartTime) {
       setElapsed(null);
       return;
     }
-    
     const updateElapsed = () => {
       const mins = differenceInMinutes(new Date(), new Date(draft.workoutStartTime!));
       setElapsed(mins > 0 ? mins : 1);
     };
-    
     updateElapsed();
     const interval = setInterval(updateElapsed, 60000);
     return () => clearInterval(interval);
   }, [draft?.workoutStartTime]);
   
-  // Get today's completed workout duration
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayWorkout = workouts.find(w => w.date === today);
   const completedDuration = todayWorkout?.workout_duration_minutes;
-  
-  // Show active elapsed time, or completed duration
   const durationLabel = elapsed ? formatDuration(elapsed) : (completedDuration ? formatDuration(completedDuration) : null);
   const isWorkoutActive = !!elapsed;
 
   const navItems = [
-    { to: '/', icon: Home, label: 'Today' },
-    { to: '/log', icon: Dumbbell, label: durationLabel || 'Workout' },
-    { to: '/insights', icon: BarChart3, label: 'Insights' },
-    { to: '/history', icon: History, label: 'History' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/', icon: Home, label: 'Today' },
+    { path: '/log', icon: Dumbbell, label: durationLabel || 'Workout' },
+    { path: '/insights', icon: BarChart3, label: 'Insights' },
+    { path: '/history', icon: History, label: 'History' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
+  const currentPath = location.pathname;
+  const currentValue = navItems.findIndex(item => 
+    item.path === currentPath || 
+    (item.path !== '/' && currentPath.startsWith(item.path))
+  );
+
   return (
-    <nav className="tab-bar z-50">
-      <div className="flex items-center justify-around">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn('tab-item min-w-[48px]', isActive && 'tab-item-active')
+    <Paper 
+      sx={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0,
+        zIndex: 50,
+        borderTop: 1,
+        borderColor: 'divider',
+        pb: 'env(safe-area-inset-bottom)',
+      }} 
+      elevation={0}
+    >
+      <BottomNavigation
+        value={currentValue >= 0 ? currentValue : 0}
+        onChange={(_, newValue) => {
+          navigate(navItems[newValue].path);
+        }}
+        sx={{
+          bgcolor: 'background.paper',
+          '& .MuiBottomNavigationAction-root': {
+            minWidth: 48,
+            py: 1,
+            color: 'text.secondary',
+            '&.Mui-selected': {
+              color: 'text.primary',
+            },
+          },
+          '& .MuiBottomNavigationAction-label': {
+            fontSize: '0.625rem',
+            fontFamily: 'inherit',
+            letterSpacing: '0.02em',
+            mt: 0.5,
+            '&.Mui-selected': {
+              fontSize: '0.625rem',
+            },
+          },
+        }}
+      >
+        {navItems.map((item, index) => (
+          <BottomNavigationAction
+            key={item.path}
+            label={item.label}
+            icon={
+              <Box sx={{ position: 'relative' }}>
+                <item.icon size={20} />
+                {item.path === '/log' && isWorkoutActive && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -6,
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: 'primary.main',
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                      },
+                    }}
+                  />
+                )}
+              </Box>
             }
-          >
-            <Icon className="h-5 w-5" />
-            <span className={cn(
-              "text-2xs mt-1 tabular-nums",
-              to === '/log' && durationLabel && "text-primary font-medium",
-              to === '/log' && isWorkoutActive && "animate-pulse"
-            )}>
-              {label}
-            </span>
-          </NavLink>
+          />
         ))}
-      </div>
-    </nav>
+      </BottomNavigation>
+    </Paper>
   );
 }
