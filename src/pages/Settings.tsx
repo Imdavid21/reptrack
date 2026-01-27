@@ -6,7 +6,7 @@ import { useWaterReminderConfig } from '@/hooks/useWaterReminderConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   LogOut, Send, Smartphone, Moon, Sun, Loader2, TestTube, ExternalLink, 
-  Mail, Key, Droplets, Utensils, Scale, ChevronRight, Settings2
+  Mail, Key, Droplets, Utensils, Scale, ChevronRight, Settings2, Code
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/layout/Logo';
 import { ProfileSection } from '@/components/settings/ProfileSection';
+import { ApiKeySection } from '@/components/settings/ApiKeySection';
 
 export default function Settings() {
   const { user, signOut, updateEmail, resetPassword } = useAuth();
@@ -445,6 +446,23 @@ export default function Settings() {
                 <LogOut className="h-4 w-4" />
                 SIGN OUT
               </button>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+
+        {/* API Access */}
+        <Collapsible open={expandedSections.api} onOpenChange={() => toggleSection('api')}>
+          <div className="card-brutalist">
+            <CollapsibleTrigger className="flex items-center justify-between w-full">
+              <h3 className="section-header mb-0 flex items-center gap-2">
+                <Code className="h-4 w-4" />
+                API ACCESS
+              </h3>
+              <ChevronRight className={cn("h-4 w-4 transition-transform", expandedSections.api && "rotate-90")} />
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="mt-4">
+              <ApiKeySection />
             </CollapsibleContent>
           </div>
         </Collapsible>

@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.workout-hints]
 verify_jwt = false
+
+[functions.api]
+verify_jwt = false
+
+[functions.api-key]
+verify_jwt = false
+
+[functions.mcp]
+verify_jwt = false
