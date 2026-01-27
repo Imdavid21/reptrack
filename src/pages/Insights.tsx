@@ -87,10 +87,6 @@ function VitalsTab() {
   const days = differenceInDays(dateRange.to, dateRange.from) || 30;
   const { vitals, isLoading } = useHealthAnalytics(days);
 
-  if (isLoading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading vitals...</div>;
-  }
-
   // Transform vitals data for heart rate and steps charts
   const heartRateData = vitals
     .filter(v => v.heartRate !== null || v.oxygenLevel !== null)
