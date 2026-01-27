@@ -114,7 +114,7 @@ export default function LogWorkout() {
 
   // Auto-save when state changes (debounced)
   useEffect(() => {
-    if (step === 'select-day' || !selectedDay || exercises.length === 0) return;
+    if (step === 'select-day' || !selectedDay) return;
     
     const timeoutId = setTimeout(() => {
       saveDraft({
