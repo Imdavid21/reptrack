@@ -231,10 +231,13 @@ export function ApiKeySection() {
   "mcpServers": {
     "fitness-tracker": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "${mcpUrl}"],
-      "env": {
-        "API_KEY": "${showKey && apiKey?.api_key ? apiKey.api_key : 'your_api_key'}"
-      }
+      "args": [
+        "-y", 
+        "mcp-remote", 
+        "${mcpUrl}",
+        "--header",
+        "X-API-Key:${showKey && apiKey?.api_key ? apiKey.api_key : 'your_api_key'}"
+      ]
     }
   }
 }`}
