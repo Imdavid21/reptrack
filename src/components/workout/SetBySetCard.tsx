@@ -1,7 +1,6 @@
-import { Input } from '@/components/ui/input';
-import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
+import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, ArrowLeftRight, ChevronLeft, ChevronRight, Check, Trophy, Info, SkipForward } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, Info, SkipForward } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
@@ -10,12 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface PersonalRecord {
   maxWeight: number;
@@ -57,75 +50,74 @@ export function SetBySetCard({
   const currentSet = exercise.sets[currentSetIndex];
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
   const isFirstSet = currentSetIndex === 0;
-
-  // Get previous set for auto-copy
   const prevSet = currentSetIndex > 0 ? exercise.sets[currentSetIndex - 1] : null;
 
-  // Normalize weight input
-  const normalizeWeight = (value: string): string => {
-    return value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-  };
+  // Get base values for generating options
+  const baseWeight = parseFloat(
+    currentSet.actualWeight || prevSet?.actualWeight || prevSet?.targetWeight || currentSet.targetWeight || '0'
+  );
+  const baseReps = parseInt(
+    currentSet.actualReps || prevSet?.actualReps || prevSet?.targetReps || currentSet.targetReps || '8'
+  );
 
-  const handleSetChange = (field: 'actualWeight' | 'actualReps', value: string) => {
+  // Generate weight options: base ±5, ±2.5
+  const weightOptions = [
+    baseWeight - 5,
+    baseWeight - 2.5,
+    baseWeight,
+    baseWeight + 2.5,
+    baseWeight + 5,
+  ].filter(w => w > 0);
+
+  // Generate rep options around base
+  const repOptions = [
+    baseReps - 2,
+    baseReps - 1,
+    baseReps,
+    baseReps + 1,
+    baseReps + 2,
+  ].filter(r => r > 0);
+
+  const handleWeightSelect = (weight: number) => {
+    haptic('light');
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    const normalizedValue = field === 'actualWeight' ? normalizeWeight(value) : value;
-    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], [field]: normalizedValue };
+    updated.sets[currentSetIndex] = { 
+      ...updated.sets[currentSetIndex], 
+      actualWeight: weight.toString() 
+    };
     onChange(updated);
   };
 
-  // Tap-to-fill: Use previous set values or target values
-  const handleTapToFill = (field: 'actualWeight' | 'actualReps') => {
-    const currentValue = field === 'actualWeight' ? currentSet.actualWeight : currentSet.actualReps;
-    
-    if (!currentValue) {
-      haptic('light');
-      // Priority: previous set actual -> previous set target -> current target
-      let fillValue = '';
-      if (prevSet) {
-        fillValue = field === 'actualWeight' 
-          ? (prevSet.actualWeight || prevSet.targetWeight)
-          : (prevSet.actualReps || prevSet.targetReps);
-      } else {
-        fillValue = field === 'actualWeight' ? currentSet.targetWeight : currentSet.targetReps;
-      }
-      if (fillValue) {
-        handleSetChange(field, fillValue);
-      }
-    }
-  };
-
-  // ±2.5kg weight adjustment
-  const adjustWeight = (delta: number) => {
+  const handleRepsSelect = (reps: number) => {
     haptic('light');
-    // Use previous set value as base if current is empty
-    let baseWeight = currentSet.actualWeight;
-    if (!baseWeight && prevSet) {
-      baseWeight = prevSet.actualWeight || prevSet.targetWeight;
-    }
-    if (!baseWeight) {
-      baseWeight = currentSet.targetWeight;
-    }
-    const currentWeight = parseFloat(baseWeight || '0');
-    const newWeight = Math.max(0, currentWeight + delta);
-    handleSetChange('actualWeight', newWeight.toString());
+    const updated = { ...exercise };
+    updated.sets = [...updated.sets];
+    updated.sets[currentSetIndex] = { 
+      ...updated.sets[currentSetIndex], 
+      actualReps: reps.toString() 
+    };
+    onChange(updated);
   };
 
   // Complete current set and advance
   const completeSet = () => {
+    // Ensure we have values
+    const finalWeight = currentSet.actualWeight || baseWeight.toString();
+    const finalReps = currentSet.actualReps || baseReps.toString();
+
     haptic('success');
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
     updated.sets[currentSetIndex] = { 
       ...updated.sets[currentSetIndex], 
       completed: true,
-      // Auto-fill with previous set or target if empty
-      actualWeight: currentSet.actualWeight || (prevSet?.actualWeight || prevSet?.targetWeight || currentSet.targetWeight),
-      actualReps: currentSet.actualReps || (prevSet?.actualReps || prevSet?.targetReps || currentSet.targetReps),
+      actualWeight: finalWeight,
+      actualReps: finalReps,
     };
     onChange(updated);
 
-    // Auto-advance to next set or exercise
+    // Auto-advance
     if (isLastSet) {
       if (isLastExercise) {
         onComplete();
@@ -133,46 +125,34 @@ export function SetBySetCard({
         onNextExercise();
       }
     } else {
-      // Move to next set, auto-copy values
       const nextSetIndex = currentSetIndex + 1;
-      const nextSet = updated.sets[nextSetIndex];
-      
-      // Pre-fill next set with current set's values
+      // Pre-fill next set
       updated.sets[nextSetIndex] = {
-        ...nextSet,
-        actualWeight: nextSet.actualWeight || updated.sets[currentSetIndex].actualWeight,
-        actualReps: nextSet.actualReps || updated.sets[currentSetIndex].actualReps,
+        ...updated.sets[nextSetIndex],
+        actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
+        actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
       };
       onChange(updated);
       onSetIndexChange(nextSetIndex);
     }
   };
 
-  // Skip current set
   const skipSet = () => {
     haptic('light');
     if (isLastSet) {
-      if (isLastExercise) {
-        onComplete();
-      } else {
-        onSkipExercise();
-      }
+      if (isLastExercise) onComplete();
+      else onSkipExercise();
     } else {
       onSetIndexChange(currentSetIndex + 1);
     }
   };
 
-  // Go to previous set
   const goToPrevSet = () => {
     haptic('light');
-    if (!isFirstSet) {
-      onSetIndexChange(currentSetIndex - 1);
-    } else if (!isFirstExercise) {
-      onPrevExercise();
-    }
+    if (!isFirstSet) onSetIndexChange(currentSetIndex - 1);
+    else if (!isFirstExercise) onPrevExercise();
   };
 
-  // Add extra set
   const addSet = () => {
     haptic('light');
     const updated = { ...exercise };
@@ -189,11 +169,9 @@ export function SetBySetCard({
       },
     ];
     onChange(updated);
-    // Jump to new set
     onSetIndexChange(updated.sets.length - 1);
   };
 
-  // Switch exercise variant
   const switchVariant = (variantName: string, defaultWeight: string) => {
     haptic('medium');
     const updated = { ...exercise };
@@ -213,18 +191,6 @@ export function SetBySetCard({
   const equipmentType = getEquipmentType(exercise.name);
   const weightLabel = getWeightLabel(equipmentType);
 
-  // Weight convention hint
-  const getWeightHint = () => {
-    switch (equipmentType) {
-      case 'dumbbell': return 'Weight per hand';
-      case 'barbell': return 'Total weight (bar + plates)';
-      case 'cable': return 'Stack weight';
-      case 'machine': return 'Stack/plate weight';
-      case 'bodyweight': return 'Added weight only';
-      default: return 'Weight used';
-    }
-  };
-
   // Check for new PR
   const currentMaxWeight = Math.max(
     ...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0),
@@ -232,80 +198,61 @@ export function SetBySetCard({
   );
   const isNewPR = personalRecord && currentMaxWeight > personalRecord.maxWeight;
 
-  // Pre-filled placeholder values (from previous set or target)
-  const weightPlaceholder = prevSet?.actualWeight || prevSet?.targetWeight || currentSet.targetWeight;
-  const repsPlaceholder = prevSet?.actualReps || prevSet?.targetReps || currentSet.targetReps;
+  const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
+  const selectedReps = parseInt(currentSet.actualReps) || baseReps;
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Exercise progress header */}
-      <div className="flex items-center justify-between">
+      {/* Exercise progress */}
+      <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums">
-          Exercise {exerciseIndex + 1}/{totalExercises}
+          {exerciseIndex + 1}/{totalExercises}
         </span>
-        <div className="flex gap-0.5 flex-1 mx-3">
+        <div className="flex gap-0.5 flex-1">
           {Array.from({ length: totalExercises }).map((_, i) => (
             <div
               key={i}
               className={cn(
-                'h-0.5 flex-1 rounded-full transition-colors',
+                'h-0.5 flex-1 rounded-full',
                 i < exerciseIndex ? 'bg-primary' :
                 i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
               )}
             />
           ))}
         </div>
-        <span className={cn(
-          'text-2xs px-1.5 py-0.5 rounded-full',
-          exercise.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-        )}>
-          {exercise.category.toUpperCase()}
-        </span>
       </div>
 
-      {/* Exercise name and PR */}
+      {/* Exercise name with PR inline */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h2 className="text-lg font-bold truncate">{exercise.name}</h2>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  <p>{getWeightHint()}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold truncate">{exercise.name}</h2>
             {personalRecord && !isNewPR && (
-              <>
-                <Trophy className="h-3 w-3" />
-                <span className="tabular-nums">PR: {personalRecord.maxWeight}kg</span>
-              </>
+              <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                PR {personalRecord.maxWeight}{weightLabel}
+              </span>
             )}
             {isNewPR && (
-              <span className="text-primary font-bold animate-pulse">🏆 NEW PR!</span>
+              <span className="text-xs text-primary font-medium shrink-0">NEW PR</span>
             )}
           </div>
+          <span className="text-xs text-muted-foreground">
+            {completedSets}/{exercise.sets.length} sets • {exercise.category}
+          </span>
         </div>
         {showVariantSwitch && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center justify-center h-8 w-8 rounded-full border border-border text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeftRight className="h-4 w-4" />
+              <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeftRight className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background border-border">
+            <DropdownMenuContent align="end" className="bg-background border-border z-50">
               {variants.map((variant) => (
                 <DropdownMenuItem
                   key={variant.name}
                   onClick={() => switchVariant(variant.name, variant.defaultWeight)}
-                  className={cn('cursor-pointer', variant.name === exercise.name && 'bg-primary/10')}
+                  className={cn('cursor-pointer text-xs', variant.name === exercise.name && 'bg-primary/10')}
                 >
                   {variant.name}
                   {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
@@ -323,108 +270,78 @@ export function SetBySetCard({
             key={idx}
             onClick={() => onSetIndexChange(idx)}
             className={cn(
-              'h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium transition-all',
+              'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all',
               idx === currentSetIndex 
                 ? 'bg-primary text-primary-foreground scale-110' 
                 : set.completed 
                   ? 'bg-primary/20 text-primary' 
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  : 'bg-muted text-muted-foreground'
             )}
           >
-            {set.completed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
+            {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
           </button>
         ))}
         <button
           onClick={addSet}
-          className="h-8 w-8 rounded-full border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+          className="h-7 w-7 rounded-full border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-3 w-3" />
         </button>
       </div>
 
-      {/* Current set input - BIG and focused */}
+      {/* Current set - tap to select */}
       <div className={cn(
-        'p-4 rounded-xl border-2 transition-colors',
+        'p-4 rounded-xl border transition-colors',
         currentSet.completed ? 'bg-primary/5 border-primary/30' : 'border-border'
       )}>
-        <div className="text-center mb-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            SET {currentSetIndex + 1} of {exercise.sets.length}
-          </span>
+        <div className="text-center text-xs text-muted-foreground mb-3">
+          SET {currentSetIndex + 1}
           {prevSet && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Previous: {prevSet.actualWeight || prevSet.targetWeight}kg × {prevSet.actualReps || prevSet.targetReps}
-            </p>
+            <span className="ml-2">
+              (prev: {prevSet.actualWeight || prevSet.targetWeight}{weightLabel} × {prevSet.actualReps || prevSet.targetReps})
+            </span>
           )}
         </div>
 
-        {/* Weight input */}
-        <div className="mb-3">
-          <label className="text-xs text-muted-foreground mb-1 block text-center">WEIGHT</label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => adjustWeight(-2.5)}
-              className="h-12 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              -2.5
-            </button>
-            <div className="relative flex-1">
-              <Input
-                placeholder={normalizeWeight(weightPlaceholder)}
-                value={currentSet.actualWeight}
-                onChange={(e) => handleSetChange('actualWeight', e.target.value)}
-                onFocus={() => handleTapToFill('actualWeight')}
-                inputMode="decimal"
-                className="h-12 text-xl font-bold text-center pr-10"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{weightLabel}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => adjustWeight(2.5)}
-              className="h-12 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              +2.5
-            </button>
+        {/* Weight selection */}
+        <div className="mb-4">
+          <div className="text-[10px] text-muted-foreground text-center mb-2">WEIGHT ({weightLabel})</div>
+          <div className="flex gap-1.5 justify-center flex-wrap">
+            {weightOptions.map((w) => (
+              <button
+                key={w}
+                onClick={() => handleWeightSelect(w)}
+                className={cn(
+                  'h-10 min-w-[3.5rem] px-3 rounded-full text-sm font-medium transition-colors',
+                  selectedWeight === w
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {w}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Reps input */}
+        {/* Reps selection */}
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block text-center">REPS</label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const current = parseInt(currentSet.actualReps || repsPlaceholder || '0');
-                if (current > 0) handleSetChange('actualReps', (current - 1).toString());
-              }}
-              className="h-12 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              -1
-            </button>
-            <div className="relative flex-1">
-              <Input
-                placeholder={repsPlaceholder}
-                value={currentSet.actualReps}
-                onChange={(e) => handleSetChange('actualReps', e.target.value)}
-                onFocus={() => handleTapToFill('actualReps')}
-                inputMode="numeric"
-                className="h-12 text-xl font-bold text-center pr-10"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">reps</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const current = parseInt(currentSet.actualReps || repsPlaceholder || '0');
-                handleSetChange('actualReps', (current + 1).toString());
-              }}
-              className="h-12 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              +1
-            </button>
+          <div className="text-[10px] text-muted-foreground text-center mb-2">REPS</div>
+          <div className="flex gap-1.5 justify-center">
+            {repOptions.map((r) => (
+              <button
+                key={r}
+                onClick={() => handleRepsSelect(r)}
+                className={cn(
+                  'h-10 w-10 rounded-full text-sm font-medium transition-colors',
+                  selectedReps === r
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                {r}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -434,49 +351,36 @@ export function SetBySetCard({
         {(!isFirstSet || !isFirstExercise) && (
           <button
             onClick={goToPrevSet}
-            className="h-11 px-4 rounded-full border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1"
+            className="h-10 px-4 rounded-full border border-border text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1"
           >
-            <ChevronLeft className="h-4 w-4" />
-            Back
+            <ChevronLeft className="h-3 w-3" />
           </button>
         )}
 
         {!currentSet.completed && (
           <button
             onClick={skipSet}
-            className="h-11 px-3 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            className="h-10 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
           >
-            <SkipForward className="h-4 w-4" />
-            Skip
+            <SkipForward className="h-3 w-3" />
           </button>
         )}
 
         <button
           onClick={completeSet}
           className={cn(
-            "flex-1 h-11 rounded-full text-sm font-bold transition-colors flex items-center justify-center gap-2",
+            "flex-1 h-10 rounded-full text-xs font-bold transition-colors flex items-center justify-center gap-1.5",
             currentSet.completed 
               ? "bg-primary/20 text-primary border border-primary/30"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "bg-primary text-primary-foreground"
           )}
         >
-          {currentSet.completed ? (
-            <>
-              <Check className="h-4 w-4" />
-              {isLastSet && isLastExercise ? 'Finish Workout' : isLastSet ? 'Next Exercise' : 'Next Set'}
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4" />
-              Log Set
-            </>
-          )}
+          <Check className="h-3.5 w-3.5" />
+          {currentSet.completed 
+            ? (isLastSet && isLastExercise ? 'Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
+            : 'Log Set'
+          }
         </button>
-      </div>
-
-      {/* Progress summary */}
-      <div className="text-center text-xs text-muted-foreground">
-        {completedSets}/{exercise.sets.length} sets completed
       </div>
     </div>
   );
