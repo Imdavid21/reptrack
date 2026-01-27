@@ -27,11 +27,7 @@ export default function History() {
           <BackfillDialog />
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Loading workouts...
-          </div>
-        ) : workouts.length === 0 ? (
+        {workouts.length === 0 ? (
           <div className="card-brutalist text-center py-8">
             <Calendar className="h-8 w-8 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No workouts logged yet</p>
