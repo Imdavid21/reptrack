@@ -1,6 +1,6 @@
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, Info, SkipForward } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { haptic } from '@/lib/haptics';
 import {
@@ -14,6 +14,11 @@ interface PersonalRecord {
   maxWeight: number;
   reps: string;
   date: string;
+}
+
+interface LastUsedData {
+  weight: number;
+  reps: number;
 }
 
 interface SetBySetCardProps {
@@ -30,6 +35,7 @@ interface SetBySetCardProps {
   isFirstExercise: boolean;
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
+  lastUsed?: LastUsedData;
 }
 
 export function SetBySetCard({
@@ -46,37 +52,56 @@ export function SetBySetCard({
   isFirstExercise,
   isLastExercise,
   personalRecord,
+  lastUsed,
 }: SetBySetCardProps) {
   const currentSet = exercise.sets[currentSetIndex];
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
   const isFirstSet = currentSetIndex === 0;
   const prevSet = currentSetIndex > 0 ? exercise.sets[currentSetIndex - 1] : null;
 
-  // Get base values for generating options
-  const baseWeight = parseFloat(
-    currentSet.actualWeight || prevSet?.actualWeight || prevSet?.targetWeight || currentSet.targetWeight || '0'
-  );
-  const baseReps = parseInt(
-    currentSet.actualReps || prevSet?.actualReps || prevSet?.targetReps || currentSet.targetReps || '8'
-  );
+  // Priority for base values: prev set actual -> last used from DB -> target
+  const getBaseWeight = (): number => {
+    if (currentSet.actualWeight) return parseFloat(currentSet.actualWeight);
+    if (prevSet?.actualWeight) return parseFloat(prevSet.actualWeight);
+    if (lastUsed?.weight) return lastUsed.weight;
+    if (prevSet?.targetWeight) return parseFloat(prevSet.targetWeight) || 0;
+    return parseFloat(currentSet.targetWeight) || 0;
+  };
 
-  // Generate weight options: base ±5, ±2.5
-  const weightOptions = [
-    baseWeight - 5,
-    baseWeight - 2.5,
-    baseWeight,
-    baseWeight + 2.5,
-    baseWeight + 5,
-  ].filter(w => w > 0);
+  const getBaseReps = (): number => {
+    if (currentSet.actualReps) return parseInt(currentSet.actualReps);
+    if (prevSet?.actualReps) return parseInt(prevSet.actualReps);
+    if (lastUsed?.reps) return lastUsed.reps;
+    if (prevSet?.targetReps) return parseInt(prevSet.targetReps) || 8;
+    return parseInt(currentSet.targetReps) || 8;
+  };
 
-  // Generate rep options around base
-  const repOptions = [
-    baseReps - 2,
-    baseReps - 1,
-    baseReps,
-    baseReps + 1,
-    baseReps + 2,
-  ].filter(r => r > 0);
+  const baseWeight = getBaseWeight();
+  const baseReps = getBaseReps();
+
+  // Generate weight options: wider range with smart increments
+  const generateWeightOptions = (): number[] => {
+    const options = new Set<number>();
+    // Core options around base
+    [-10, -5, -2.5, 0, 2.5, 5, 10].forEach(delta => {
+      const w = baseWeight + delta;
+      if (w > 0) options.add(w);
+    });
+    return Array.from(options).sort((a, b) => a - b);
+  };
+
+  // Generate rep options
+  const generateRepOptions = (): number[] => {
+    const options = new Set<number>();
+    [-3, -2, -1, 0, 1, 2, 3].forEach(delta => {
+      const r = baseReps + delta;
+      if (r > 0 && r <= 30) options.add(r);
+    });
+    return Array.from(options).sort((a, b) => a - b);
+  };
+
+  const weightOptions = generateWeightOptions();
+  const repOptions = generateRepOptions();
 
   const handleWeightSelect = (weight: number) => {
     haptic('light');
@@ -100,9 +125,7 @@ export function SetBySetCard({
     onChange(updated);
   };
 
-  // Complete current set and advance
   const completeSet = () => {
-    // Ensure we have values
     const finalWeight = currentSet.actualWeight || baseWeight.toString();
     const finalReps = currentSet.actualReps || baseReps.toString();
 
@@ -117,16 +140,11 @@ export function SetBySetCard({
     };
     onChange(updated);
 
-    // Auto-advance
     if (isLastSet) {
-      if (isLastExercise) {
-        onComplete();
-      } else {
-        onNextExercise();
-      }
+      if (isLastExercise) onComplete();
+      else onNextExercise();
     } else {
       const nextSetIndex = currentSetIndex + 1;
-      // Pre-fill next set
       updated.sets[nextSetIndex] = {
         ...updated.sets[nextSetIndex],
         actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
@@ -191,7 +209,6 @@ export function SetBySetCard({
   const equipmentType = getEquipmentType(exercise.name);
   const weightLabel = getWeightLabel(equipmentType);
 
-  // Check for new PR
   const currentMaxWeight = Math.max(
     ...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0),
     0
@@ -213,7 +230,7 @@ export function SetBySetCard({
             <div
               key={i}
               className={cn(
-                'h-0.5 flex-1 rounded-full',
+                'h-0.5 flex-1 rounded-full transition-all duration-300',
                 i < exerciseIndex ? 'bg-primary' :
                 i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
               )}
@@ -222,22 +239,22 @@ export function SetBySetCard({
         </div>
       </div>
 
-      {/* Exercise name with PR inline */}
+      {/* Exercise name with PR (weight × reps) */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold truncate">{exercise.name}</h2>
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h2 className="text-base font-bold">{exercise.name}</h2>
             {personalRecord && !isNewPR && (
-              <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                PR {personalRecord.maxWeight}{weightLabel}
+              <span className="text-[10px] text-muted-foreground tabular-nums">
+                PR {personalRecord.maxWeight}{weightLabel}×{personalRecord.reps}
               </span>
             )}
             {isNewPR && (
-              <span className="text-xs text-primary font-medium shrink-0">NEW PR</span>
+              <span className="text-[10px] text-primary font-bold">NEW PR!</span>
             )}
           </div>
           <span className="text-xs text-muted-foreground">
-            {completedSets}/{exercise.sets.length} sets • {exercise.category}
+            {completedSets}/{exercise.sets.length} sets
           </span>
         </div>
         {showVariantSwitch && (
@@ -263,19 +280,19 @@ export function SetBySetCard({
         )}
       </div>
 
-      {/* Set indicator pills */}
+      {/* Set pills */}
       <div className="flex gap-1.5 justify-center">
         {exercise.sets.map((set, idx) => (
           <button
             key={idx}
             onClick={() => onSetIndexChange(idx)}
             className={cn(
-              'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all',
+              'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200',
               idx === currentSetIndex 
-                ? 'bg-primary text-primary-foreground scale-110' 
+                ? 'bg-primary text-primary-foreground scale-110 shadow-sm' 
                 : set.completed 
                   ? 'bg-primary/20 text-primary' 
-                  : 'bg-muted text-muted-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
             {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
@@ -289,36 +306,43 @@ export function SetBySetCard({
         </button>
       </div>
 
-      {/* Current set - tap to select */}
+      {/* Current set card */}
       <div className={cn(
-        'p-4 rounded-xl border transition-colors',
+        'p-4 rounded-xl border transition-all duration-300',
         currentSet.completed ? 'bg-primary/5 border-primary/30' : 'border-border'
       )}>
-        <div className="text-center text-xs text-muted-foreground mb-3">
+        <div className="text-center text-xs text-muted-foreground mb-4">
           SET {currentSetIndex + 1}
+          {lastUsed && !prevSet && (
+            <span className="ml-1 text-primary/70">
+              (last: {lastUsed.weight}{weightLabel}×{lastUsed.reps})
+            </span>
+          )}
           {prevSet && (
-            <span className="ml-2">
-              (prev: {prevSet.actualWeight || prevSet.targetWeight}{weightLabel} × {prevSet.actualReps || prevSet.targetReps})
+            <span className="ml-1">
+              (prev: {prevSet.actualWeight || prevSet.targetWeight}{weightLabel}×{prevSet.actualReps || prevSet.targetReps})
             </span>
           )}
         </div>
 
-        {/* Weight selection */}
+        {/* Weight selection with smooth transitions */}
         <div className="mb-4">
-          <div className="text-[10px] text-muted-foreground text-center mb-2">WEIGHT ({weightLabel})</div>
-          <div className="flex gap-1.5 justify-center flex-wrap">
+          <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            Weight ({weightLabel})
+          </div>
+          <div className="flex gap-1 justify-center flex-wrap">
             {weightOptions.map((w) => (
               <button
                 key={w}
                 onClick={() => handleWeightSelect(w)}
                 className={cn(
-                  'h-10 min-w-[3.5rem] px-3 rounded-full text-sm font-medium transition-colors',
+                  'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
                   selectedWeight === w
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
                 )}
               >
-                {w}
+                {w % 1 === 0 ? w : w.toFixed(1)}
               </button>
             ))}
           </div>
@@ -326,16 +350,18 @@ export function SetBySetCard({
 
         {/* Reps selection */}
         <div>
-          <div className="text-[10px] text-muted-foreground text-center mb-2">REPS</div>
-          <div className="flex gap-1.5 justify-center">
+          <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            Reps
+          </div>
+          <div className="flex gap-1 justify-center flex-wrap">
             {repOptions.map((r) => (
               <button
                 key={r}
                 onClick={() => handleRepsSelect(r)}
                 className={cn(
-                  'h-10 w-10 rounded-full text-sm font-medium transition-colors',
+                  'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
                   selectedReps === r
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
@@ -351,9 +377,9 @@ export function SetBySetCard({
         {(!isFirstSet || !isFirstExercise) && (
           <button
             onClick={goToPrevSet}
-            className="h-10 px-4 rounded-full border border-border text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1"
+            className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
           >
-            <ChevronLeft className="h-3 w-3" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
         )}
 
@@ -369,16 +395,16 @@ export function SetBySetCard({
         <button
           onClick={completeSet}
           className={cn(
-            "flex-1 h-10 rounded-full text-xs font-bold transition-colors flex items-center justify-center gap-1.5",
+            "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
             currentSet.completed 
               ? "bg-primary/20 text-primary border border-primary/30"
-              : "bg-primary text-primary-foreground"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
         >
           <Check className="h-3.5 w-3.5" />
           {currentSet.completed 
             ? (isLastSet && isLastExercise ? 'Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
-            : 'Log Set'
+            : `Log ${selectedWeight}${weightLabel} × ${selectedReps}`
           }
         </button>
       </div>
