@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
+import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
 import {
   DropdownMenu,
@@ -58,6 +60,8 @@ export function SetBySetCard({
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
   const isFirstSet = currentSetIndex === 0;
   const prevSet = currentSetIndex > 0 ? exercise.sets[currentSetIndex - 1] : null;
+  const [showWeightInput, setShowWeightInput] = useState(false);
+  const [showRepsInput, setShowRepsInput] = useState(false);
 
   // Priority for base values: prev set actual -> last used from DB -> target
   const getBaseWeight = (): number => {
@@ -325,50 +329,94 @@ export function SetBySetCard({
           )}
         </div>
 
-        {/* Weight selection with smooth transitions */}
+        {/* Weight selection with manual input option */}
         <div className="mb-4">
           <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
             Weight ({weightLabel})
           </div>
-          <div className="flex gap-1 justify-center flex-wrap">
-            {weightOptions.map((w) => (
+          {showWeightInput ? (
+            <div className="flex justify-center">
+              <Input
+                type="number"
+                inputMode="decimal"
+                autoFocus
+                value={currentSet.actualWeight || ''}
+                onChange={(e) => handleWeightSelect(parseFloat(e.target.value) || 0)}
+                onBlur={() => setShowWeightInput(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setShowWeightInput(false)}
+                className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
+                placeholder={baseWeight.toString()}
+              />
+            </div>
+          ) : (
+            <div className="flex gap-1 justify-center flex-wrap">
+              {weightOptions.map((w) => (
+                <button
+                  key={w}
+                  onClick={() => handleWeightSelect(w)}
+                  className={cn(
+                    'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
+                    selectedWeight === w
+                      ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
+                  )}
+                >
+                  {w % 1 === 0 ? w : w.toFixed(1)}
+                </button>
+              ))}
               <button
-                key={w}
-                onClick={() => handleWeightSelect(w)}
-                className={cn(
-                  'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
-                  selectedWeight === w
-                    ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
-                )}
+                onClick={() => setShowWeightInput(true)}
+                className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
               >
-                {w % 1 === 0 ? w : w.toFixed(1)}
+                ···
               </button>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Reps selection */}
+        {/* Reps selection with manual input option */}
         <div>
           <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
             Reps
           </div>
-          <div className="flex gap-1 justify-center flex-wrap">
-            {repOptions.map((r) => (
+          {showRepsInput ? (
+            <div className="flex justify-center">
+              <Input
+                type="number"
+                inputMode="numeric"
+                autoFocus
+                value={currentSet.actualReps || ''}
+                onChange={(e) => handleRepsSelect(parseInt(e.target.value) || 0)}
+                onBlur={() => setShowRepsInput(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setShowRepsInput(false)}
+                className="w-20 h-9 text-center text-xs rounded-full border-border bg-muted"
+                placeholder={baseReps.toString()}
+              />
+            </div>
+          ) : (
+            <div className="flex gap-1 justify-center flex-wrap">
+              {repOptions.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleRepsSelect(r)}
+                  className={cn(
+                    'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
+                    selectedReps === r
+                      ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {r}
+                </button>
+              ))}
               <button
-                key={r}
-                onClick={() => handleRepsSelect(r)}
-                className={cn(
-                  'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
-                  selectedReps === r
-                    ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
+                onClick={() => setShowRepsInput(true)}
+                className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
               >
-                {r}
+                ···
               </button>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
