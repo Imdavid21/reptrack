@@ -22,7 +22,6 @@ export function PullupAccumulator() {
       return { chartData: [], totalPullups: 0, weeklyAvg: 0 };
     }
 
-    // Group by week
     const weeklyMap = new Map<string, { week: string; pullups: number; cumulative: number }>();
     let runningTotal = 0;
 
@@ -44,7 +43,6 @@ export function PullupAccumulator() {
       runningTotal += d.pullups || 0;
     });
 
-    // Add cumulative totals
     let cumulative = 0;
     const sortedWeeks = Array.from(weeklyMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -64,18 +62,18 @@ export function PullupAccumulator() {
 
   if (isLoading) {
     return (
-      <div className="border border-border p-4 space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-[180px]" />
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Pull-ups</h3>
+        <Skeleton className="h-[160px] rounded-xl" />
       </div>
     );
   }
 
   if (chartData.length === 0 || totalPullups === 0) {
     return (
-      <div className="border border-border p-4">
-        <h3 className="section-header">PULL-UPS</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Pull-ups</h3>
+        <p className="text-sm text-muted-foreground py-8 text-center">
           No pull-up data yet. Log your first workout!
         </p>
       </div>
@@ -86,10 +84,12 @@ export function PullupAccumulator() {
     if (!active || !payload?.length) return null;
 
     return (
-      <div className="border border-border bg-card p-2 text-xs">
+      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
         <p className="font-medium mb-1">Week of {label}</p>
-        <p>{payload[0].value} pull-ups</p>
         <p className="text-muted-foreground">
+          {payload[0].value} pull-ups
+        </p>
+        <p className="text-insight-mint mt-1">
           Cumulative: {payload[0].payload.cumulative}
         </p>
       </div>
@@ -97,19 +97,19 @@ export function PullupAccumulator() {
   };
 
   return (
-    <div className="border border-border p-4">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">PULL-UPS</h3>
+        <h3 className="text-sm font-semibold">Pull-ups</h3>
         <div className="text-2xl font-bold tabular-nums">{totalPullups}</div>
       </div>
 
-      <div className="h-[160px]">
+      <div className="h-[140px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="week"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+              axisLine={false}
               tickLine={false}
             />
             <YAxis
@@ -118,13 +118,13 @@ export function PullupAccumulator() {
               tickLine={false}
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="pullups" fill="hsl(var(--foreground))">
+            <Bar dataKey="pullups" radius={[6, 6, 0, 0]}>
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={index === chartData.length - 1
-                    ? 'hsl(var(--foreground))'
-                    : 'hsl(var(--muted-foreground))'
+                    ? 'hsl(var(--insight-mint))'
+                    : 'hsl(var(--insight-mint) / 0.4)'
                   }
                 />
               ))}
@@ -133,14 +133,14 @@ export function PullupAccumulator() {
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-border">
-        <div>
-          <div className="text-lg font-bold tabular-nums">{weeklyAvg}</div>
-          <div className="text-xs text-muted-foreground">AVG/WEEK</div>
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/30">
+        <div className="bg-insight-mint/10 rounded-xl p-2.5 text-center">
+          <div className="text-base font-bold tabular-nums">{weeklyAvg}</div>
+          <div className="text-xs text-muted-foreground">Avg/Week</div>
         </div>
-        <div>
-          <div className="text-lg font-bold tabular-nums">{chartData.length}</div>
-          <div className="text-xs text-muted-foreground">WEEKS TRACKED</div>
+        <div className="bg-insight-lavender/10 rounded-xl p-2.5 text-center">
+          <div className="text-base font-bold tabular-nums">{chartData.length}</div>
+          <div className="text-xs text-muted-foreground">Weeks Tracked</div>
         </div>
       </div>
     </div>

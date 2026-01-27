@@ -68,6 +68,14 @@ export default {
           3: "hsl(var(--heat-3))",
           4: "hsl(var(--heat-4))",
         },
+        insight: {
+          mint: "hsl(var(--insight-mint))",
+          lavender: "hsl(var(--insight-lavender))",
+          coral: "hsl(var(--insight-coral))",
+          yellow: "hsl(var(--insight-yellow))",
+          pink: "hsl(var(--insight-pink))",
+          blue: "hsl(var(--insight-blue))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

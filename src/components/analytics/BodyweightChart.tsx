@@ -3,9 +3,10 @@ import { useMorningCheckinHistory } from '@/hooks/useMorningCheckin';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, differenceInDays } from 'date-fns';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -21,7 +22,6 @@ export function BodyweightChart() {
   const chartData = useMemo(() => {
     if (!checkins) return [];
     
-    // Filter to date range and only entries with bodyweight
     return checkins
       .filter(c => {
         const date = parseISO(c.date);
@@ -52,18 +52,18 @@ export function BodyweightChart() {
 
   if (isLoading) {
     return (
-      <div className="border border-border p-4 space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-[180px]" />
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Bodyweight</h3>
+        <Skeleton className="h-[180px] rounded-xl" />
       </div>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="border border-border p-4">
-        <h3 className="section-header">BODYWEIGHT</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Bodyweight</h3>
+        <p className="text-sm text-muted-foreground py-8 text-center">
           No bodyweight data yet. Log your weight in morning check-in!
         </p>
       </div>
@@ -75,35 +75,47 @@ export function BodyweightChart() {
   const change = lastWeight - firstWeight;
   const changePercent = ((change / firstWeight) * 100).toFixed(1);
 
+  const TrendIcon = change > 0.5 ? TrendingUp : change < -0.5 ? TrendingDown : Minus;
+  const trendColor = change > 0.5 ? 'text-insight-coral' : change < -0.5 ? 'text-insight-mint' : 'text-muted-foreground';
+
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     
     return (
-      <div className="border border-border bg-card p-2 text-xs">
+      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
         <p className="font-medium">{label}</p>
-        <p>{payload[0].value} kg</p>
+        <p className="text-muted-foreground mt-1">
+          Weight: <span className="font-medium text-foreground">{payload[0].value} kg</span>
+        </p>
       </div>
     );
   };
 
   return (
-    <div className="border border-border p-4">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">BODYWEIGHT</h3>
+        <h3 className="text-sm font-semibold">Bodyweight</h3>
         {chartData.length >= 2 && (
-          <div className={`text-xs font-medium ${change >= 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center gap-1 text-xs font-medium ${trendColor}`}>
+            <TrendIcon className="h-3.5 w-3.5" />
             {change >= 0 ? '+' : ''}{change.toFixed(1)} kg ({change >= 0 ? '+' : ''}{changePercent}%)
           </div>
         )}
       </div>
 
-      <div className="h-[180px]">
+      <div className="h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <XAxis
               dataKey="date"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+              axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
             />
@@ -117,35 +129,36 @@ export function BodyweightChart() {
               <ReferenceLine
                 y={avgWeight}
                 stroke="hsl(var(--muted-foreground))"
-                strokeDasharray="3 3"
-                strokeOpacity={0.5}
+                strokeDasharray="4 4"
+                strokeOpacity={0.4}
               />
             )}
             <Tooltip content={renderTooltip} />
-            <Line
+            <Area
               type="monotone"
               dataKey="weight"
-              stroke="hsl(var(--foreground))"
+              stroke="hsl(var(--insight-lavender))"
               strokeWidth={2}
-              dot={{ r: 3, fill: 'hsl(var(--foreground))' }}
+              fill="url(#weightGradient)"
+              dot={{ r: 3, fill: 'hsl(var(--insight-lavender))' }}
               connectNulls
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
-        <div>
+      <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border/30">
+        <div className="text-center">
           <div className="text-lg font-bold tabular-nums">{firstWeight} kg</div>
-          <div className="text-xs text-muted-foreground">START</div>
+          <div className="text-xs text-muted-foreground">Start</div>
         </div>
-        <div>
+        <div className="text-center">
           <div className="text-lg font-bold tabular-nums">{lastWeight} kg</div>
-          <div className="text-xs text-muted-foreground">CURRENT</div>
+          <div className="text-xs text-muted-foreground">Current</div>
         </div>
-        <div>
+        <div className="text-center">
           <div className="text-lg font-bold tabular-nums">{avgWeight?.toFixed(1)} kg</div>
-          <div className="text-xs text-muted-foreground">AVERAGE</div>
+          <div className="text-xs text-muted-foreground">Average</div>
         </div>
       </div>
     </div>

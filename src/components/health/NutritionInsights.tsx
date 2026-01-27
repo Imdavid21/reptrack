@@ -15,32 +15,28 @@ interface MealWithNutrition {
 export function NutritionInsights() {
   const { meals } = useMeals();
 
-  // Analyze meal patterns
   const mealsWithData = meals.filter(m => m.calories) as MealWithNutrition[];
   
-  // Calculate totals (with fallback estimates based on calories)
   const totals = mealsWithData.reduce((acc, meal) => {
     const cals = meal.calories || 0;
     return {
       calories: acc.calories + cals,
-      protein: acc.protein + (meal.protein || cals * 0.15 / 4), // Estimate 15% protein
-      carbs: acc.carbs + (meal.carbs || cals * 0.45 / 4), // Estimate 45% carbs
-      fat: acc.fat + (meal.fat || cals * 0.35 / 9), // Estimate 35% fat
+      protein: acc.protein + (meal.protein || cals * 0.15 / 4),
+      carbs: acc.carbs + (meal.carbs || cals * 0.45 / 4),
+      fat: acc.fat + (meal.fat || cals * 0.35 / 9),
     };
   }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-  // Recommended daily values
   const targets = {
-    protein: 120, // g
-    carbs: 250, // g
-    fat: 65, // g
+    protein: 120,
+    carbs: 250,
+    fat: 65,
   };
 
   const proteinPercent = Math.min((totals.protein / targets.protein) * 100, 100);
   const carbsPercent = Math.min((totals.carbs / targets.carbs) * 100, 100);
   const fatPercent = Math.min((totals.fat / targets.fat) * 100, 100);
 
-  // Generate insights
   const insights: { type: 'good' | 'warning' | 'info'; message: string }[] = [];
 
   if (totals.protein < targets.protein * 0.5 && mealsWithData.length >= 2) {
@@ -62,7 +58,6 @@ export function NutritionInsights() {
     });
   }
 
-  // Check food quality if available
   const qualityScores = mealsWithData
     .filter(m => m.food_quality)
     .map(m => {
@@ -87,12 +82,14 @@ export function NutritionInsights() {
 
   if (mealsWithData.length === 0) {
     return (
-      <div className="card-brutalist">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Apple className="h-4 w-4" />
-          <h3 className="section-header mb-0">NUTRITION</h3>
+          <div className="p-2 rounded-xl bg-insight-mint/15">
+            <Apple className="h-4 w-4 text-insight-mint" />
+          </div>
+          <h3 className="text-sm font-semibold">Nutrition</h3>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground py-4 text-center">
           Log meals to see nutrition insights
         </p>
       </div>
@@ -100,24 +97,26 @@ export function NutritionInsights() {
   }
 
   return (
-    <div className="card-brutalist">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Apple className="h-4 w-4" />
-        <h3 className="section-header mb-0">NUTRITION</h3>
+        <div className="p-2 rounded-xl bg-insight-mint/15">
+          <Apple className="h-4 w-4 text-insight-mint" />
+        </div>
+        <h3 className="text-sm font-semibold">Nutrition</h3>
       </div>
 
       {/* Macro breakdown */}
-      <div className="space-y-3 mb-4">
+      <div className="space-y-4 mb-4">
         <div>
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-sm mb-1.5">
             <span>Protein</span>
-            <span className="tabular-nums">{Math.round(totals.protein)}g / {targets.protein}g</span>
+            <span className="tabular-nums text-muted-foreground">{Math.round(totals.protein)}g / {targets.protein}g</span>
           </div>
-          <div className="progress-bar h-2">
+          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full transition-all",
-                proteinPercent >= 80 ? "bg-success" : proteinPercent >= 50 ? "bg-primary" : "bg-warning"
+                "h-full rounded-full transition-all duration-500",
+                proteinPercent >= 80 ? "bg-insight-mint" : proteinPercent >= 50 ? "bg-insight-blue" : "bg-insight-coral"
               )}
               style={{ width: `${proteinPercent}%` }}
             />
@@ -125,28 +124,28 @@ export function NutritionInsights() {
         </div>
 
         <div>
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-sm mb-1.5">
             <span>Carbs</span>
-            <span className="tabular-nums">{Math.round(totals.carbs)}g / {targets.carbs}g</span>
+            <span className="tabular-nums text-muted-foreground">{Math.round(totals.carbs)}g / {targets.carbs}g</span>
           </div>
-          <div className="progress-bar h-2">
+          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary transition-all"
+              className="h-full bg-insight-yellow rounded-full transition-all duration-500"
               style={{ width: `${carbsPercent}%` }}
             />
           </div>
         </div>
 
         <div>
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-sm mb-1.5">
             <span>Fat</span>
-            <span className="tabular-nums">{Math.round(totals.fat)}g / {targets.fat}g</span>
+            <span className="tabular-nums text-muted-foreground">{Math.round(totals.fat)}g / {targets.fat}g</span>
           </div>
-          <div className="progress-bar h-2">
+          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full transition-all",
-                fatPercent > 100 ? "bg-warning" : "bg-primary"
+                "h-full rounded-full transition-all duration-500",
+                fatPercent > 100 ? "bg-insight-coral" : "bg-insight-lavender"
               )}
               style={{ width: `${Math.min(fatPercent, 100)}%` }}
             />
@@ -156,19 +155,19 @@ export function NutritionInsights() {
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className="space-y-2 border-t border-border pt-3">
+        <div className="space-y-2 pt-3 border-t border-border/30">
           {insights.map((insight, i) => (
             <div
               key={i}
               className={cn(
-                "flex items-start gap-2 p-2 text-sm",
-                insight.type === 'good' && "bg-success/5 border-l-2 border-success",
-                insight.type === 'warning' && "bg-warning/5 border-l-2 border-warning",
-                insight.type === 'info' && "bg-muted/50 border-l-2 border-muted-foreground"
+                "flex items-start gap-2 p-3 text-sm rounded-xl",
+                insight.type === 'good' && "bg-insight-mint/10",
+                insight.type === 'warning' && "bg-insight-coral/10",
+                insight.type === 'info' && "bg-muted/30"
               )}
             >
-              {insight.type === 'good' && <CheckCircle className="h-4 w-4 text-success shrink-0 mt-0.5" />}
-              {insight.type === 'warning' && <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />}
+              {insight.type === 'good' && <CheckCircle className="h-4 w-4 text-insight-mint shrink-0 mt-0.5" />}
+              {insight.type === 'warning' && <AlertCircle className="h-4 w-4 text-insight-coral shrink-0 mt-0.5" />}
               {insight.type === 'info' && <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
               <span>{insight.message}</span>
             </div>

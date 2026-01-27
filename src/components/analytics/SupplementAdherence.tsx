@@ -3,7 +3,8 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { format, parseISO, eachWeekOfInterval } from 'date-fns';
+import { format, eachWeekOfInterval } from 'date-fns';
+import { Pill } from 'lucide-react';
 
 const SUPPLEMENT_LABELS: Record<string, string> = {
   whey: 'Whey',
@@ -26,7 +27,6 @@ export function SupplementAdherence() {
 
     const supplements = Object.keys(SUPPLEMENT_LABELS);
     
-    // Build date -> supplements map
     const dateMap = new Map<string, Record<string, boolean>>();
     data.dataPoints.forEach(d => {
       if (d.supplements) {
@@ -34,13 +34,11 @@ export function SupplementAdherence() {
       }
     });
 
-    // Generate weeks from date range
     const weeks = eachWeekOfInterval(
       { start: dateRange.from, end: dateRange.to },
       { weekStartsOn: 1 }
     );
 
-    // Build weekly grid for each supplement
     const weeklyGrid = supplements.map(supp => {
       const weekData = weeks.map((weekStart) => {
         let taken = 0;
@@ -76,7 +74,6 @@ export function SupplementAdherence() {
       };
     });
 
-    // Calculate overall adherence stats
     const adherenceStats = supplements.map(supp => ({
       key: supp,
       label: SUPPLEMENT_LABELS[supp],
@@ -88,54 +85,71 @@ export function SupplementAdherence() {
 
   if (isLoading) {
     return (
-      <div className="border border-border p-4 space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-[200px]" />
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Supplement Adherence</h3>
+        <Skeleton className="h-[200px] rounded-xl" />
       </div>
     );
   }
 
   if (adherenceStats.length === 0) {
     return (
-      <div className="border border-border p-4">
-        <h3 className="section-header">SUPPLEMENT ADHERENCE</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="p-2 rounded-xl bg-insight-pink/15">
+            <Pill className="h-4 w-4 text-insight-pink" />
+          </div>
+          <h3 className="text-sm font-semibold">Supplement Adherence</h3>
+        </div>
+        <p className="text-sm text-muted-foreground text-center py-4">
           No supplement data yet. Log your first workout with habits!
         </p>
       </div>
     );
   }
 
-  const getIntensityClass = (percent: number) => {
-    if (percent === 0) return 'bg-[hsl(var(--heat-0))]';
-    if (percent <= 25) return 'bg-[hsl(var(--heat-1))]';
-    if (percent <= 50) return 'bg-[hsl(var(--heat-2))]';
-    if (percent <= 75) return 'bg-[hsl(var(--heat-3))]';
-    return 'bg-[hsl(var(--heat-4))]';
+  const getBarColor = (percent: number) => {
+    if (percent >= 80) return 'bg-insight-mint';
+    if (percent >= 50) return 'bg-insight-blue';
+    if (percent >= 25) return 'bg-insight-yellow';
+    return 'bg-insight-coral';
+  };
+
+  const getCellColor = (percent: number) => {
+    if (percent === 0) return 'bg-muted/30';
+    if (percent <= 25) return 'bg-insight-coral/30';
+    if (percent <= 50) return 'bg-insight-yellow/30';
+    if (percent <= 75) return 'bg-insight-blue/30';
+    return 'bg-insight-mint/30';
   };
 
   return (
-    <div className="border border-border p-4">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">SUPPLEMENT ADHERENCE</h3>
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-insight-pink/15">
+            <Pill className="h-4 w-4 text-insight-pink" />
+          </div>
+          <h3 className="text-sm font-semibold">Supplement Adherence</h3>
+        </div>
         <div className="text-xs text-muted-foreground">{daysWithData} days logged</div>
       </div>
 
       {/* Adherence bars */}
-      <div className="space-y-2 mb-6">
+      <div className="space-y-3 mb-5">
         {adherenceStats.map(({ key, label, percent }) => (
           <div key={key} className="flex items-center gap-3">
-            <div className="w-16 text-xs truncate">{label}</div>
-            <div className="flex-1 h-4 bg-muted border border-border overflow-hidden">
+            <div className="w-14 text-xs truncate text-muted-foreground">{label}</div>
+            <div className="flex-1 h-2.5 bg-muted/30 rounded-full overflow-hidden">
               <div
                 className={cn(
-                  'h-full transition-all',
-                  percent >= 70 ? 'bg-foreground' : 'bg-muted-foreground'
+                  'h-full rounded-full transition-all duration-500',
+                  getBarColor(percent)
                 )}
                 style={{ width: `${percent}%` }}
               />
             </div>
-            <div className="w-10 text-xs text-right tabular-nums">
+            <div className="w-10 text-xs text-right tabular-nums font-medium">
               {percent}%
             </div>
           </div>
@@ -143,40 +157,42 @@ export function SupplementAdherence() {
       </div>
 
       {/* Weekly grid */}
-      <div className="text-xs text-muted-foreground mb-2">WEEKLY BREAKDOWN</div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr>
-              <th className="text-left font-normal text-muted-foreground pb-2 pr-2"></th>
-              {weeklyGrid[0]?.weeks.map((w, i) => (
-                <th key={i} className="text-center font-normal text-muted-foreground pb-2 px-1">
-                  W{i + 1}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {weeklyGrid.map(({ key, label, weeks }) => (
-              <tr key={key}>
-                <td className="py-1 pr-2 whitespace-nowrap">{label}</td>
-                {weeks.map((w, i) => (
-                  <td key={i} className="text-center py-1 px-1">
-                    <div
-                      className={cn(
-                        'w-6 h-6 mx-auto flex items-center justify-center border border-border text-[10px]',
-                        getIntensityClass(w.percent)
-                      )}
-                      title={`${w.weekLabel}: ${w.taken}/${w.total} days`}
-                    >
-                      {w.taken > 0 ? w.taken : ''}
-                    </div>
-                  </td>
+      <div className="pt-4 border-t border-border/30">
+        <div className="text-xs text-muted-foreground mb-3">Weekly Breakdown</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left font-normal text-muted-foreground pb-2 pr-2"></th>
+                {weeklyGrid[0]?.weeks.map((_, i) => (
+                  <th key={i} className="text-center font-normal text-muted-foreground pb-2 px-1">
+                    W{i + 1}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {weeklyGrid.map(({ key, label, weeks }) => (
+                <tr key={key}>
+                  <td className="py-1 pr-2 whitespace-nowrap text-muted-foreground">{label}</td>
+                  {weeks.map((w, i) => (
+                    <td key={i} className="text-center py-1 px-1">
+                      <div
+                        className={cn(
+                          'w-7 h-7 mx-auto flex items-center justify-center rounded-lg text-[10px] font-medium',
+                          getCellColor(w.percent)
+                        )}
+                        title={`${w.weekLabel}: ${w.taken}/${w.total} days`}
+                      >
+                        {w.taken > 0 ? w.taken : ''}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

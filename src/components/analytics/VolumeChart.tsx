@@ -3,13 +3,12 @@ import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 export function VolumeChart() {
@@ -34,18 +33,18 @@ export function VolumeChart() {
 
   if (isLoading) {
     return (
-      <div className="border border-border p-4 space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-[200px]" />
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Weekly Volume</h3>
+        <Skeleton className="h-[200px] rounded-xl" />
       </div>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="border border-border p-4">
-        <h3 className="section-header">WEEKLY VOLUME</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
+        <h3 className="text-sm font-semibold mb-4">Weekly Volume</h3>
+        <p className="text-sm text-muted-foreground py-8 text-center">
           No volume data yet. Complete workouts to track volume!
         </p>
       </div>
@@ -63,13 +62,13 @@ export function VolumeChart() {
     const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
 
     return (
-      <div className="border border-border bg-card p-3 text-xs">
+      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
         <p className="font-medium mb-2">Week of {label}</p>
         <div className="space-y-1">
           {payload.map((p: any) => (
             <div key={p.dataKey} className="flex items-center gap-2">
               <div 
-                className="w-2 h-2" 
+                className="w-2 h-2 rounded-full" 
                 style={{ backgroundColor: p.stroke }}
               />
               <span className="text-muted-foreground">{p.name}:</span>
@@ -77,7 +76,7 @@ export function VolumeChart() {
             </div>
           ))}
         </div>
-        <div className="border-t border-border mt-2 pt-2">
+        <div className="border-t border-border/30 mt-2 pt-2">
           <span className="text-muted-foreground">Total:</span>
           <span className="font-medium ml-2">{formatVolume(total)} kg</span>
         </div>
@@ -85,27 +84,10 @@ export function VolumeChart() {
     );
   };
 
-  const renderLegend = () => (
-    <div className="flex justify-center gap-6 text-xs mt-2">
-      <div className="flex items-center gap-2">
-        <div className="w-3 h-[2px] bg-foreground" />
-        <span>Push</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="w-3 h-[2px] bg-muted-foreground" />
-        <span>Pull</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="w-3 h-[2px] bg-accent" />
-        <span>Legs</span>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="border border-border p-4">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">WEEKLY VOLUME</h3>
+        <h3 className="text-sm font-semibold">Weekly Volume</h3>
         {data?.volumeTotals && (
           <div className="text-xs text-muted-foreground">
             Total: {formatVolume(data.volumeTotals.total)} kg
@@ -113,13 +95,27 @@ export function VolumeChart() {
         )}
       </div>
 
-      <div className="h-[220px]">
+      <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <defs>
+              <linearGradient id="pushGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="pullGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--insight-mint))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--insight-mint))" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="legsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--insight-coral))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--insight-coral))" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <XAxis
               dataKey="week"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+              axisLine={false}
               tickLine={false}
             />
             <YAxis
@@ -129,57 +125,71 @@ export function VolumeChart() {
               tickLine={false}
             />
             <Tooltip content={renderTooltip} />
-            <Line
+            <Area
               type="monotone"
               dataKey="pushVolume"
               name="Push"
-              stroke="hsl(var(--foreground))"
+              stroke="hsl(var(--insight-lavender))"
               strokeWidth={2}
-              dot={{ fill: 'hsl(var(--foreground))', strokeWidth: 0, r: 4 }}
-              activeDot={{ r: 6, fill: 'hsl(var(--foreground))' }}
+              fill="url(#pushGradient)"
+              dot={{ fill: 'hsl(var(--insight-lavender))', strokeWidth: 0, r: 3 }}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="pullVolume"
               name="Pull"
-              stroke="hsl(var(--muted-foreground))"
+              stroke="hsl(var(--insight-mint))"
               strokeWidth={2}
-              dot={{ fill: 'hsl(var(--muted-foreground))', strokeWidth: 0, r: 4 }}
-              activeDot={{ r: 6, fill: 'hsl(var(--muted-foreground))' }}
+              fill="url(#pullGradient)"
+              dot={{ fill: 'hsl(var(--insight-mint))', strokeWidth: 0, r: 3 }}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="legsVolume"
               name="Legs"
-              stroke="hsl(var(--accent))"
+              stroke="hsl(var(--insight-coral))"
               strokeWidth={2}
-              dot={{ fill: 'hsl(var(--accent))', strokeWidth: 0, r: 4 }}
-              activeDot={{ r: 6, fill: 'hsl(var(--accent))' }}
+              fill="url(#legsGradient)"
+              dot={{ fill: 'hsl(var(--insight-coral))', strokeWidth: 0, r: 3 }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      {renderLegend()}
+      {/* Legend */}
+      <div className="flex justify-center gap-6 text-xs mt-3 border-t border-border/30 pt-3">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-insight-lavender" />
+          <span>Push</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-insight-mint" />
+          <span>Pull</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-insight-coral" />
+          <span>Legs</span>
+        </div>
+      </div>
 
       {categoryDistribution && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="text-xs text-muted-foreground mb-2">VOLUME DISTRIBUTION</div>
-          <div className="flex h-3 overflow-hidden border border-border">
+        <div className="mt-4 pt-3 border-t border-border/30">
+          <div className="text-xs text-muted-foreground mb-2">Volume Distribution</div>
+          <div className="flex h-2.5 overflow-hidden rounded-full bg-muted/30">
             <div
-              className="bg-foreground"
+              className="bg-insight-lavender transition-all"
               style={{ width: `${categoryDistribution.push}%` }}
             />
             <div
-              className="bg-muted-foreground"
+              className="bg-insight-mint transition-all"
               style={{ width: `${categoryDistribution.pull}%` }}
             />
             <div
-              className="bg-accent"
+              className="bg-insight-coral transition-all"
               style={{ width: `${categoryDistribution.legs}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs mt-2">
+          <div className="flex justify-between text-xs mt-2 text-muted-foreground">
             <span>Push {categoryDistribution.push}%</span>
             <span>Pull {categoryDistribution.pull}%</span>
             <span>Legs {categoryDistribution.legs}%</span>
