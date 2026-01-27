@@ -23,14 +23,15 @@ export function MuiCard({
   return (
     <Card
       sx={{
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
+        bgcolor: '#f8f9fa',
+        border: '1px solid #e9ecef',
+        borderRadius: 3,
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         ...sx,
       }}
       {...props}
     >
-      <CardContent sx={{ p: noPadding ? 0 : 2.5, '&:last-child': { pb: noPadding ? 0 : 2.5 } }}>
+      <CardContent sx={{ p: noPadding ? 0 : 2, '&:last-child': { pb: noPadding ? 0 : 2 } }}>
         {(title || action) && (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -38,19 +39,18 @@ export function MuiCard({
                 <Box sx={{ 
                   p: 1, 
                   borderRadius: 2, 
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
+                  bgcolor: '#d8f3dc',
+                  color: '#081c15',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  opacity: 0.9,
                 }}>
                   {icon}
                 </Box>
               )}
               <Box>
                 {title && (
-                  <Typography variant="body1" fontWeight={600}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#081c15' }}>
                     {title}
                   </Typography>
                 )}

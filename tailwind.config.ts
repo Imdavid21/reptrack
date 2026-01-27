@@ -17,7 +17,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'SF Mono', 'Consolas', 'Liberation Mono', 'Menlo', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -56,6 +56,7 @@ export default {
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
+          light: "hsl(var(--success-light))",
         },
         warning: {
           DEFAULT: "hsl(var(--warning))",
@@ -69,12 +70,12 @@ export default {
           4: "hsl(var(--heat-4))",
         },
         insight: {
-          mint: "hsl(var(--insight-mint))",
-          lavender: "hsl(var(--insight-lavender))",
-          coral: "hsl(var(--insight-coral))",
-          yellow: "hsl(var(--insight-yellow))",
-          pink: "hsl(var(--insight-pink))",
-          blue: "hsl(var(--insight-blue))",
+          primary: "hsl(var(--insight-primary))",
+          success: "hsl(var(--insight-success))",
+          neutral: "hsl(var(--insight-neutral))",
+          background: "hsl(var(--insight-background))",
+          text: "hsl(var(--insight-text))",
+          warning: "hsl(var(--insight-warning))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -86,20 +87,33 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Direct color references
+        forest: "#081c15",
+        mint: {
+          DEFAULT: "#95d5b2",
+          light: "#d8f3dc",
+        },
+        gray: {
+          50: "#f8f9fa",
+          100: "#e9ecef",
+        },
       },
       spacing: {
-        'unit': '4px',
         'safe-bottom': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "var(--radius)",
-        sm: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
         progress: "var(--progress-radius)",
       },
       fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
+        '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
+      },
+      boxShadow: {
+        'soft': '0 1px 3px rgba(0, 0, 0, 0.04)',
+        'card': '0 2px 8px rgba(0, 0, 0, 0.06)',
       },
       keyframes: {
         "accordion-down": {
