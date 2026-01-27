@@ -1,5 +1,4 @@
 import { Hono } from "npm:hono@4";
-import { McpServer, StreamableHttpTransport } from "npm:mcp-lite@^0.10.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -318,14 +317,10 @@ async function getWeeklyStats(userId: string) {
   };
 }
 
-// Create MCP server factory that uses the authenticated userId
-function createMcpServer(userId: string) {
-  const mcpServer = new McpServer({
-    name: "fitness-tracker",
-    version: "1.0.0",
-  });
-
-  mcpServer.tool("get_workouts", {
+// Tool definitions
+const tools = [
+  {
+    name: "get_workouts",
     description: "Get a list of workouts. Returns workout sessions with date, duration, difficulty, and satisfaction ratings.",
     inputSchema: {
       type: "object",
@@ -333,14 +328,10 @@ function createMcpServer(userId: string) {
         limit: { type: "number", description: "Max number of workouts to return (default 10)" },
         days: { type: "number", description: "Get workouts from the last N days (default 30)" }
       }
-    },
-    handler: async (args: { limit?: number; days?: number }) => {
-      const result = await getWorkouts(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_workout_details", {
+  },
+  {
+    name: "get_workout_details",
     description: "Get detailed information about a specific workout including all exercise sets.",
     inputSchema: {
       type: "object",
@@ -348,22 +339,15 @@ function createMcpServer(userId: string) {
         workout_id: { type: "string", description: "The UUID of the workout" }
       },
       required: ["workout_id"]
-    },
-    handler: async (args: { workout_id: string }) => {
-      const result = await getWorkoutDetails(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_today_summary", {
+  },
+  {
+    name: "get_today_summary",
     description: "Get a summary of today's health metrics: water intake, calories, sleep, energy, and workout status.",
-    handler: async () => {
-      const result = await getTodaySummary(userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-    }
-  });
-
-  mcpServer.tool("get_nutrition", {
+    inputSchema: { type: "object", properties: {} }
+  },
+  {
+    name: "get_nutrition",
     description: "Get nutrition data (meals and macros) for a date range.",
     inputSchema: {
       type: "object",
@@ -371,78 +355,79 @@ function createMcpServer(userId: string) {
         date: { type: "string", description: "Specific date in YYYY-MM-DD format (defaults to today)" },
         days: { type: "number", description: "Get meals from the last N days instead of a specific date" }
       }
-    },
-    handler: async (args: { date?: string; days?: number }) => {
-      const result = await getNutrition(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_water_intake", {
-    description: "Get water intake logs for today or a date range.",
+  },
+  {
+    name: "get_water_intake",
+    description: "Get water intake logs for today or a specific date.",
     inputSchema: {
       type: "object",
       properties: {
         date: { type: "string", description: "Specific date in YYYY-MM-DD format (defaults to today)" }
       }
-    },
-    handler: async (args: { date?: string }) => {
-      const result = await getWaterIntake(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_sleep_energy", {
+  },
+  {
+    name: "get_sleep_energy",
     description: "Get sleep hours and energy levels from morning check-ins.",
     inputSchema: {
       type: "object",
       properties: {
         days: { type: "number", description: "Number of days to look back (default 7)" }
       }
-    },
-    handler: async (args: { days?: number }) => {
-      const result = await getSleepEnergy(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_bodyweight", {
+  },
+  {
+    name: "get_bodyweight",
     description: "Get bodyweight measurements over time.",
     inputSchema: {
       type: "object",
       properties: {
         days: { type: "number", description: "Number of days to look back (default 30)" }
       }
-    },
-    handler: async (args: { days?: number }) => {
-      const result = await getBodyweight(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_personal_records", {
+  },
+  {
+    name: "get_personal_records",
     description: "Get personal records (PRs) for exercises based on estimated 1RM.",
     inputSchema: {
       type: "object",
       properties: {
         exercise_name: { type: "string", description: "Optional: filter by exercise name" }
       }
-    },
-    handler: async (args: { exercise_name?: string }) => {
-      const result = await getPersonalRecords(args, userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
-  });
-
-  mcpServer.tool("get_weekly_stats", {
+  },
+  {
+    name: "get_weekly_stats",
     description: "Get aggregated weekly statistics for workouts, nutrition, and health metrics.",
-    handler: async () => {
-      const result = await getWeeklyStats(userId);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-    }
-  });
+    inputSchema: { type: "object", properties: {} }
+  }
+];
 
-  return mcpServer;
+// Handle tool calls
+async function handleToolCall(name: string, args: Record<string, unknown>, userId: string) {
+  switch (name) {
+    case "get_workouts":
+      return await getWorkouts(args as { limit?: number; days?: number }, userId);
+    case "get_workout_details":
+      return await getWorkoutDetails(args as { workout_id: string }, userId);
+    case "get_today_summary":
+      return await getTodaySummary(userId);
+    case "get_nutrition":
+      return await getNutrition(args as { date?: string; days?: number }, userId);
+    case "get_water_intake":
+      return await getWaterIntake(args as { date?: string }, userId);
+    case "get_sleep_energy":
+      return await getSleepEnergy(args as { days?: number }, userId);
+    case "get_bodyweight":
+      return await getBodyweight(args as { days?: number }, userId);
+    case "get_personal_records":
+      return await getPersonalRecords(args as { exercise_name?: string }, userId);
+    case "get_weekly_stats":
+      return await getWeeklyStats(userId);
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
 }
 
 const app = new Hono();
@@ -452,7 +437,7 @@ app.options("*", (c) => {
   return new Response(null, { headers: corsHeaders });
 });
 
-// Health check endpoint (no auth required) - match all GET requests
+// Health check / server info
 app.get("*", (c) => {
   return c.json({
     status: "ok",
@@ -463,15 +448,14 @@ app.get("*", (c) => {
   }, 200, corsHeaders);
 });
 
-// MCP protocol handler - POST requests require auth
+// MCP JSON-RPC handler
 app.post("/*", async (c) => {
-  // Get API key from header
   const apiKey = c.req.header("x-api-key") || 
                  c.req.header("authorization")?.replace("Bearer ", "");
   
   if (!apiKey) {
     return c.json(
-      { error: "Missing API key. Set X-API-Key header." }, 
+      { jsonrpc: "2.0", error: { code: -32600, message: "Missing API key. Set X-API-Key header." }, id: null }, 
       401, 
       corsHeaders
     );
@@ -479,56 +463,81 @@ app.post("/*", async (c) => {
 
   const userId = await validateApiKey(apiKey);
   if (!userId) {
-    return c.json({ error: "Invalid API key" }, 401, corsHeaders);
+    return c.json(
+      { jsonrpc: "2.0", error: { code: -32600, message: "Invalid API key" }, id: null }, 
+      401, 
+      corsHeaders
+    );
   }
 
-  const mcpServer = createMcpServer(userId);
-  const transport = new StreamableHttpTransport();
-  const httpHandler = transport.bind(mcpServer);
-  
-  const response = await httpHandler(c.req.raw);
-  
-  // Add CORS headers to response
-  const headers = new Headers(response.headers);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    headers.set(key, value);
-  });
-  
-  return new Response(response.body, {
-    status: response.status,
-    headers
-  });
-});
+  try {
+    const body = await c.req.json();
+    const { method, params, id } = body;
 
-// Handle DELETE for session termination (MCP protocol)
-app.delete("/*", async (c) => {
-  const apiKey = c.req.header("x-api-key") || 
-                 c.req.header("authorization")?.replace("Bearer ", "");
-  
-  if (!apiKey) {
-    return c.json({ error: "Missing API key" }, 401, corsHeaders);
+    console.log(`MCP request: method=${method}, id=${id}`);
+
+    // Handle MCP protocol methods
+    switch (method) {
+      case "initialize":
+        return c.json({
+          jsonrpc: "2.0",
+          result: {
+            protocolVersion: "2024-11-05",
+            capabilities: {
+              tools: {}
+            },
+            serverInfo: {
+              name: "fitness-tracker",
+              version: "1.0.0"
+            }
+          },
+          id
+        }, 200, corsHeaders);
+
+      case "notifications/initialized":
+        return c.json({ jsonrpc: "2.0", result: null, id }, 200, corsHeaders);
+
+      case "tools/list":
+        return c.json({
+          jsonrpc: "2.0",
+          result: { tools },
+          id
+        }, 200, corsHeaders);
+
+      case "tools/call":
+        try {
+          const { name, arguments: args } = params;
+          const result = await handleToolCall(name, args || {}, userId);
+          return c.json({
+            jsonrpc: "2.0",
+            result: {
+              content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+            },
+            id
+          }, 200, corsHeaders);
+        } catch (err) {
+          return c.json({
+            jsonrpc: "2.0",
+            error: { code: -32603, message: err instanceof Error ? err.message : "Tool execution failed" },
+            id
+          }, 200, corsHeaders);
+        }
+
+      default:
+        return c.json({
+          jsonrpc: "2.0",
+          error: { code: -32601, message: `Method not found: ${method}` },
+          id
+        }, 200, corsHeaders);
+    }
+  } catch (err) {
+    console.error("MCP error:", err);
+    return c.json({
+      jsonrpc: "2.0",
+      error: { code: -32700, message: "Parse error" },
+      id: null
+    }, 400, corsHeaders);
   }
-
-  const userId = await validateApiKey(apiKey);
-  if (!userId) {
-    return c.json({ error: "Invalid API key" }, 401, corsHeaders);
-  }
-
-  const mcpServer = createMcpServer(userId);
-  const transport = new StreamableHttpTransport();
-  const httpHandler = transport.bind(mcpServer);
-  
-  const response = await httpHandler(c.req.raw);
-  
-  const headers = new Headers(response.headers);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    headers.set(key, value);
-  });
-  
-  return new Response(response.body, {
-    status: response.status,
-    headers
-  });
 });
 
 Deno.serve(app.fetch);
