@@ -9,21 +9,21 @@ interface AnimatedPageProps {
 const pageVariants: Variants = {
   initial: {
     opacity: 0,
-    y: 8,
+    y: 6,
   },
   enter: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.3,
+      duration: 0.25,
       ease: 'easeOut',
     },
   },
   exit: {
     opacity: 0,
-    y: -8,
+    y: -6,
     transition: {
-      duration: 0.2,
+      duration: 0.15,
       ease: 'easeIn',
     },
   },
@@ -49,27 +49,34 @@ export const staggerContainer: Variants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
 
 export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 12 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.25,
+      ease: 'easeOut',
+    },
+  },
 };
 
 // Tab content animation
 export const tabContentVariants: Variants = {
-  hidden: { opacity: 0, x: 20 },
+  hidden: { opacity: 0, x: 15 },
   visible: { 
     opacity: 1, 
     x: 0,
-    transition: { duration: 0.3, ease: 'easeOut' }
+    transition: { duration: 0.25, ease: 'easeOut' }
   },
   exit: { 
     opacity: 0, 
-    x: -20,
-    transition: { duration: 0.2, ease: 'easeIn' }
+    x: -15,
+    transition: { duration: 0.15, ease: 'easeIn' }
   },
 };

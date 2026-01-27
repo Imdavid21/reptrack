@@ -1,47 +1,64 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-// Minimal pastel palette - refined and subtle
+// Refined palette based on user colors
+// #081c15 - Dark forest green (primary text, dark accents)
+// #95d5b2 - Medium mint (primary accent, charts)
+// #d8f3dc - Light mint (success backgrounds)
+// #e9ecef - Light gray (borders, card backgrounds)
+// #f8f9fa - Near white (page background)
 const palette = {
-  // Primary colors - mint for positive/success
+  forest: {
+    main: '#081c15', // Primary text, headers
+    light: '#1a3a2a',
+    dark: '#040e0a',
+  },
   mint: {
-    main: 'hsl(158, 64%, 52%)',
-    light: 'hsl(158, 64%, 72%)',
-    dark: 'hsl(158, 64%, 42%)',
+    main: '#95d5b2', // Primary accent, charts, positive
+    light: '#d8f3dc', // Success backgrounds
+    dark: '#74c69d',
   },
-  // Secondary - lavender for performance/workout
-  lavender: {
-    main: 'hsl(263, 70%, 76%)',
-    light: 'hsl(263, 70%, 86%)',
-    dark: 'hsl(263, 60%, 60%)',
+  gray: {
+    50: '#f8f9fa', // Page background
+    100: '#e9ecef', // Card borders, dividers
+    200: '#dee2e6',
+    300: '#ced4da',
+    400: '#adb5bd',
+    500: '#6c757d', // Secondary text
   },
-  // Accent - coral for energy/calories
-  coral: {
-    main: 'hsl(15, 80%, 68%)',
-    light: 'hsl(15, 80%, 78%)',
-    dark: 'hsl(15, 75%, 55%)',
+  warning: {
+    main: '#ff8a65', // Warnings, negative trends
+    light: 'rgba(255, 138, 101, 0.15)',
   },
 };
 
 const baseTheme: ThemeOptions = {
   typography: {
-    fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace',
+    fontFamily: '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
-      fontSize: '2rem',
+      fontSize: '1.75rem',
       fontWeight: 700,
       letterSpacing: '-0.02em',
     },
     h2: {
-      fontSize: '1.5rem',
+      fontSize: '1.25rem',
       fontWeight: 700,
       letterSpacing: '-0.01em',
     },
     h3: {
-      fontSize: '1.25rem',
+      fontSize: '1rem',
       fontWeight: 600,
     },
     h4: {
-      fontSize: '1rem',
+      fontSize: '0.875rem',
       fontWeight: 600,
+    },
+    h5: {
+      fontSize: '0.75rem',
+      fontWeight: 600,
+    },
+    h6: {
+      fontSize: '1.5rem',
+      fontWeight: 700,
     },
     body1: {
       fontSize: '0.875rem',
@@ -52,11 +69,12 @@ const baseTheme: ThemeOptions = {
     caption: {
       fontSize: '0.625rem',
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.1em',
+      letterSpacing: '0.08em',
+      fontWeight: 500,
     },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 12,
   },
   components: {
     MuiButton: {
@@ -64,23 +82,27 @@ const baseTheme: ThemeOptions = {
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: 24,
-          padding: '8px 20px',
+          borderRadius: 10,
+          padding: '10px 20px',
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 20,
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
+          borderRadius: 16,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
+          borderRadius: 12,
         },
       },
     },
@@ -89,8 +111,9 @@ const baseTheme: ThemeOptions = {
         root: {
           textTransform: 'none',
           fontWeight: 500,
-          borderRadius: 20,
-          minHeight: 40,
+          borderRadius: 10,
+          minHeight: 36,
+          fontSize: '0.75rem',
         },
       },
     },
@@ -105,6 +128,18 @@ const baseTheme: ThemeOptions = {
       styleOverrides: {
         root: {
           fontWeight: 500,
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          height: 6,
+        },
+        bar: {
+          borderRadius: 4,
         },
       },
     },
@@ -117,7 +152,7 @@ const baseTheme: ThemeOptions = {
           borderRadius: 12,
         },
         thumb: {
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
         },
       },
     },
@@ -129,27 +164,36 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
+      main: palette.forest.main,
+      light: palette.forest.light,
+      dark: palette.forest.dark,
+      contrastText: '#ffffff',
+    },
+    secondary: {
       main: palette.mint.main,
       light: palette.mint.light,
       dark: palette.mint.dark,
     },
-    secondary: {
-      main: palette.lavender.main,
-      light: palette.lavender.light,
-      dark: palette.lavender.dark,
-    },
     error: {
-      main: palette.coral.main,
+      main: palette.warning.main,
+    },
+    success: {
+      main: palette.mint.main,
+      light: palette.mint.light,
     },
     background: {
-      default: 'hsl(0, 0%, 98%)',
-      paper: 'hsl(0, 0%, 100%)',
+      default: palette.gray[50],
+      paper: '#ffffff',
     },
     text: {
-      primary: 'hsl(0, 0%, 10%)',
-      secondary: 'hsl(240, 4%, 46%)',
+      primary: palette.forest.main,
+      secondary: palette.gray[500],
     },
-    divider: 'hsl(240, 5%, 90%)',
+    divider: palette.gray[100],
+    action: {
+      hover: 'rgba(149, 213, 178, 0.08)',
+      selected: 'rgba(149, 213, 178, 0.12)',
+    },
   },
 });
 
@@ -163,22 +207,30 @@ export const darkTheme = createTheme({
       dark: palette.mint.dark,
     },
     secondary: {
-      main: palette.lavender.main,
-      light: palette.lavender.light,
-      dark: palette.lavender.dark,
+      main: palette.mint.main,
+      light: palette.mint.light,
+      dark: palette.mint.dark,
     },
     error: {
-      main: palette.coral.main,
+      main: palette.warning.main,
+    },
+    success: {
+      main: palette.mint.main,
+      light: 'rgba(149, 213, 178, 0.2)',
     },
     background: {
-      default: 'hsl(0, 0%, 4%)',
-      paper: 'hsl(0, 0%, 8%)',
+      default: palette.forest.main,
+      paper: palette.forest.light,
     },
     text: {
-      primary: 'hsl(0, 0%, 100%)',
-      secondary: 'hsl(240, 5%, 55%)',
+      primary: palette.gray[50],
+      secondary: palette.gray[400],
     },
-    divider: 'hsl(240, 4%, 20%)',
+    divider: 'rgba(255, 255, 255, 0.1)',
+    action: {
+      hover: 'rgba(149, 213, 178, 0.08)',
+      selected: 'rgba(149, 213, 178, 0.12)',
+    },
   },
 });
 

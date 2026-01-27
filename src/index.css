@@ -2,129 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BRUTALIST FITNESS TRACKER DESIGN SYSTEM
-   Monospace, sharp corners, high contrast, terminal aesthetic */
+/* Modern Fitness Analytics Design System
+   Clean, data-driven, soft greens with professional grays */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* Core palette - Terminal dark */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    /* Core palette - Professional greens and grays */
+    --background: 210 17% 98%; /* #f8f9fa */
+    --foreground: 150 75% 6%; /* #081c15 */
 
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 75% 6%;
 
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 75% 6%;
 
-    /* Zinc accent system */
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
+    /* Primary - Dark forest green */
+    --primary: 150 75% 6%; /* #081c15 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 12%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary - Light gray */
+    --secondary: 210 14% 93%; /* #e9ecef */
+    --secondary-foreground: 150 75% 6%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 55%;
+    --muted: 210 14% 93%; /* #e9ecef */
+    --muted-foreground: 210 10% 50%;
 
-    --accent: 240 5% 12%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 141 43% 71%; /* #95d5b2 */
+    --accent-foreground: 150 75% 6%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 15 80% 68%;
     --destructive-foreground: 0 0% 100%;
 
     /* Status colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 141 43% 71%; /* #95d5b2 */
+    --success-foreground: 150 75% 6%;
+    --success-light: 141 47% 91%; /* #d8f3dc */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
     /* Borders and inputs */
-    --border: 240 4% 20%;
-    --input: 240 4% 20%;
-    --ring: 0 0% 100%;
+    --border: 210 14% 93%; /* #e9ecef */
+    --input: 210 14% 93%;
+    --ring: 141 43% 71%;
 
-    /* No radius except progress bars */
-    --radius: 0px;
+    /* Radius - Modern rounded */
+    --radius: 12px;
 
     /* Sidebar */
-    --sidebar-background: 0 0% 2%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 240 5% 12%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 4% 20%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 150 75% 6%;
+    --sidebar-primary: 141 43% 71%;
+    --sidebar-primary-foreground: 150 75% 6%;
+    --sidebar-accent: 210 17% 98%;
+    --sidebar-accent-foreground: 150 75% 6%;
+    --sidebar-border: 210 14% 93%;
+    --sidebar-ring: 141 43% 71%;
 
     /* Heatmap intensity levels */
-    --heat-0: 0 0% 8%;
-    --heat-1: 0 0% 25%;
-    --heat-2: 0 0% 45%;
-    --heat-3: 0 0% 70%;
-    --heat-4: 0 0% 100%;
+    --heat-0: 210 14% 93%;
+    --heat-1: 141 47% 91%;
+    --heat-2: 141 43% 81%;
+    --heat-3: 141 43% 71%;
+    --heat-4: 150 75% 6%;
 
-    /* Progress bar - exception for rounded corners */
-    --progress-radius: 2px;
+    /* Progress bar */
+    --progress-radius: 6px;
 
-    /* Insight page soft color palette */
-    --insight-mint: 158 64% 52%;
-    --insight-lavender: 263 70% 76%;
-    --insight-coral: 15 80% 68%;
-    --insight-yellow: 48 95% 76%;
-    --insight-pink: 330 70% 76%;
-    --insight-blue: 210 80% 70%;
+    /* Analytics palette - refined greens */
+    --insight-primary: 141 43% 71%; /* #95d5b2 - main accent */
+    --insight-success: 141 47% 91%; /* #d8f3dc - success bg */
+    --insight-neutral: 210 14% 93%; /* #e9ecef - neutral */
+    --insight-background: 210 17% 98%; /* #f8f9fa - light bg */
+    --insight-text: 150 75% 6%; /* #081c15 - dark text */
+    --insight-warning: 15 80% 68%; /* coral - warnings */
   }
 
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+  .dark {
+    --background: 150 75% 6%; /* #081c15 inverted */
+    --foreground: 210 17% 98%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 0%;
+    --card: 150 50% 10%;
+    --card-foreground: 210 17% 98%;
 
-    --popover: 0 0% 98%;
-    --popover-foreground: 0 0% 0%;
+    --popover: 150 50% 10%;
+    --popover-foreground: 210 17% 98%;
 
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 141 43% 71%; /* #95d5b2 */
+    --primary-foreground: 150 75% 6%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 150 30% 15%;
+    --secondary-foreground: 210 17% 98%;
 
-    --muted: 240 5% 92%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 150 30% 18%;
+    --muted-foreground: 210 10% 60%;
 
-    --accent: 240 5% 96%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 141 43% 71%;
+    --accent-foreground: 150 75% 6%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 15 80% 68%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 141 43% 71%;
+    --success-foreground: 150 75% 6%;
+    --success-light: 141 30% 25%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 240 5% 84%;
-    --input: 240 5% 84%;
-    --ring: 0 0% 0%;
+    --border: 150 30% 18%;
+    --input: 150 30% 18%;
+    --ring: 141 43% 71%;
 
-    --heat-0: 0 0% 92%;
-    --heat-1: 0 0% 75%;
-    --heat-2: 0 0% 55%;
-    --heat-3: 0 0% 35%;
-    --heat-4: 0 0% 0%;
+    --heat-0: 150 30% 15%;
+    --heat-1: 141 30% 25%;
+    --heat-2: 141 35% 40%;
+    --heat-3: 141 40% 55%;
+    --heat-4: 141 43% 71%;
 
-    /* Insight page soft color palette - light mode */
-    --insight-mint: 158 64% 42%;
-    --insight-lavender: 263 60% 60%;
-    --insight-coral: 15 75% 55%;
-    --insight-yellow: 48 90% 55%;
-    --insight-pink: 330 65% 60%;
-    --insight-blue: 210 75% 55%;
+    --insight-primary: 141 43% 71%;
+    --insight-success: 141 30% 25%;
+    --insight-neutral: 150 30% 18%;
+    --insight-background: 150 50% 10%;
+    --insight-text: 210 17% 98%;
+    --insight-warning: 15 80% 68%;
   }
 }
 
@@ -134,7 +136,7 @@
   }
 
   html {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -154,8 +156,8 @@
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
@@ -164,7 +166,7 @@
 
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border: 1px solid hsl(var(--border));
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -173,71 +175,59 @@
 }
 
 @layer components {
-  /* Compact rounded button styles */
-  .btn-brutalist {
-    @apply rounded-full px-4 py-2 text-xs font-medium transition-all duration-100;
-    @apply hover:bg-primary hover:text-primary-foreground;
-    @apply active:scale-[0.98];
+  /* Modern button styles */
+  .btn-modern {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200;
+    @apply hover:shadow-md active:scale-[0.98];
   }
 
   .btn-primary {
     @apply bg-primary text-primary-foreground;
-    @apply hover:bg-primary/90;
+    @apply hover:opacity-90;
   }
 
-  /* Terminal-style input */
-  .input-terminal {
-    @apply bg-background border border-border px-4 py-3;
-    @apply focus:outline-none focus:ring-1 focus:ring-ring;
+  .btn-accent {
+    @apply bg-accent text-accent-foreground;
+    @apply hover:opacity-90;
+  }
+
+  /* Modern input */
+  .input-modern {
+    @apply bg-background border border-border rounded-xl px-4 py-3;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
     @apply placeholder:text-muted-foreground;
   }
 
   /* Card styles */
-  .card-brutalist {
-    @apply border border-border bg-card p-6;
-  }
-
-  /* Heatmap cells */
-  .heat-cell {
-    @apply w-3 h-3 border border-border;
-  }
-
-  /* Progress bar with exception for rounded corners */
-  .progress-bar {
-    @apply h-2 bg-muted overflow-hidden;
-    border-radius: var(--progress-radius);
-  }
-
-  .progress-bar-fill {
-    @apply h-full bg-primary transition-all duration-300;
-    border-radius: var(--progress-radius);
+  .card-modern {
+    @apply border border-border bg-card rounded-2xl p-5 shadow-sm;
   }
 
   /* Stat block */
   .stat-block {
-    @apply border border-border p-4;
+    @apply bg-card border border-border rounded-xl p-4;
   }
 
   .stat-value {
-    @apply text-3xl font-bold tracking-tight;
+    @apply text-2xl font-bold tracking-tight;
   }
 
   .stat-label {
-    @apply text-xs text-muted-foreground uppercase tracking-widest mt-1;
+    @apply text-xs text-muted-foreground uppercase tracking-wide mt-1;
   }
 
-  /* Exercise row */
-  .exercise-row {
-    @apply border border-border p-4 transition-colors;
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-muted overflow-hidden rounded-full;
   }
 
-  .exercise-row-completed {
-    @apply bg-muted/50;
+  .progress-bar-fill {
+    @apply h-full bg-accent transition-all duration-300 rounded-full;
   }
 
   /* Tab bar */
   .tab-bar {
-    @apply fixed bottom-0 left-0 right-0 bg-background border-t border-border;
+    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -247,63 +237,45 @@
   }
 
   .tab-item-active {
-    @apply text-foreground;
+    @apply text-primary;
   }
 
   /* Section header */
   .section-header {
-    @apply text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4;
+    @apply text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3;
   }
 
   /* Badge */
-  .badge-brutalist {
-    @apply inline-flex items-center px-2 py-1 text-xs font-medium border border-border;
+  .badge-modern {
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+    @apply bg-accent/20 text-accent-foreground;
   }
 
-  /* Checkbox styling */
-  .checkbox-brutalist {
-    @apply w-5 h-5 border border-border bg-background;
-    @apply data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground;
+  /* Analytics card with accent bar */
+  .analytics-card {
+    @apply bg-card border border-border rounded-2xl p-4 relative overflow-hidden;
+  }
+
+  .analytics-card::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-accent;
   }
 }
 
 @layer utilities {
-  /* Spacing based on 4px */
-  .gap-unit {
-    gap: 4px;
-  }
-
-  .p-unit {
-    padding: 4px;
-  }
-
-  .m-unit {
-    margin: 4px;
-  }
-
-  /* Terminal cursor blink */
-  .cursor-blink {
-    animation: blink 1s step-end infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
   /* Fade in animation */
   .animate-fade-in {
-    animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.3s ease-out;
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
   /* Slide up animation */
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.4s ease-out;
   }
 
   @keyframes slideUp {

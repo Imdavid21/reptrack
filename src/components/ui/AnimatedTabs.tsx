@@ -1,4 +1,4 @@
-import { Tabs, Tab, Box, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactNode, useState } from 'react';
 
@@ -19,7 +19,7 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
   const theme = useTheme();
   const [direction, setDirection] = useState(0);
 
-  const handleChange = (_: React.SyntheticEvent, newValue: string) => {
+  const handleChange = (newValue: string) => {
     const oldIndex = tabs.findIndex(t => t.value === value);
     const newIndex = tabs.findIndex(t => t.value === newValue);
     setDirection(newIndex > oldIndex ? 1 : -1);
@@ -34,41 +34,41 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
           display: 'flex',
           gap: 0.5,
           p: 0.5,
-          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-          borderRadius: 3,
+          bgcolor: '#e9ecef',
+          borderRadius: 2.5,
           mb: 3,
         }}
       >
         {tabs.map((tab) => (
           <Box
             key={tab.value}
-            onClick={(e) => handleChange(e, tab.value)}
+            onClick={() => handleChange(tab.value)}
             sx={{
               flex: 1,
               py: 1,
-              px: 2,
+              px: 1.5,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 0.75,
+              gap: 0.5,
               cursor: 'pointer',
-              borderRadius: 2.5,
-              fontSize: '0.75rem',
+              borderRadius: 2,
+              fontSize: '0.7rem',
               fontWeight: 600,
               transition: 'all 0.2s ease',
               bgcolor: value === tab.value 
-                ? 'background.paper' 
+                ? '#ffffff' 
                 : 'transparent',
               color: value === tab.value 
-                ? 'text.primary' 
-                : 'text.secondary',
+                ? '#081c15' 
+                : '#6c757d',
               boxShadow: value === tab.value 
-                ? '0 2px 8px rgba(0,0,0,0.08)' 
+                ? '0 1px 3px rgba(0,0,0,0.08)' 
                 : 'none',
               '&:hover': {
                 bgcolor: value === tab.value 
-                  ? 'background.paper' 
-                  : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                  ? '#ffffff' 
+                  : 'rgba(255,255,255,0.5)',
               },
             }}
           >
@@ -82,10 +82,10 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={value}
-          initial={{ opacity: 0, x: direction * 20 }}
+          initial={{ opacity: 0, x: direction * 15 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: direction * -20 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
+          exit={{ opacity: 0, x: direction * -15 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
           {children}
         </motion.div>
