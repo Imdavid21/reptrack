@@ -2,12 +2,32 @@ import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
 import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { Droplets, Flame, Footprints, Dumbbell, Check } from 'lucide-react';
-import { format } from 'date-fns';
+import { Droplets, Flame, Footprints, Dumbbell } from 'lucide-react';
+import { differenceInMinutes, format } from 'date-fns';
 
 const WATER_GOAL = 3.5;
 const CALORIE_GOAL = 2000;
 const STEP_GOAL = 10000;
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${m}m` : `${h}h`;
+}
+
+function getWorkoutMinutes(workout: { workout_duration_minutes?: number | null; started_at?: string | null; completed_at?: string | null; }): number {
+  if (typeof workout.workout_duration_minutes === 'number' && workout.workout_duration_minutes > 0) {
+    return workout.workout_duration_minutes;
+  }
+
+  if (workout.started_at && workout.completed_at) {
+    const mins = differenceInMinutes(new Date(workout.completed_at), new Date(workout.started_at));
+    return mins > 0 ? mins : 0;
+  }
+
+  return 0;
+}
 
 export function TodayStats() {
   const { totalToday: waterTotal } = useWaterLogs();
@@ -16,7 +36,11 @@ export function TodayStats() {
   const { workouts } = useWorkouts();
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const hasWorkoutToday = workouts.some(w => w.date === todayStr);
+  const totalWorkoutMinutes = workouts
+    .filter(w => w.date === todayStr)
+    .reduce((sum, w) => sum + getWorkoutMinutes(w), 0);
+
+  const hasWorkoutToday = totalWorkoutMinutes > 0;
   const steps = nightCheckin?.steps || 0;
 
   const stats = [
@@ -42,8 +66,8 @@ export function TodayStats() {
       label: 'Steps',
     },
     {
-      icon: hasWorkoutToday ? Check : Dumbbell,
-      value: hasWorkoutToday ? '✓' : '-',
+      icon: Dumbbell,
+      value: hasWorkoutToday ? formatDuration(totalWorkoutMinutes) : '-',
       goal: 1,
       current: hasWorkoutToday ? 1 : 0,
       label: 'Workout',
