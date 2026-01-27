@@ -1,73 +1,97 @@
 import { Link } from 'react-router-dom';
+import { Box, Fab } from '@mui/material';
+import { Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { DailyRitualCard } from '@/components/dashboard/DailyRitualCard';
 import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 import { TodayStats } from '@/components/dashboard/TodayStats';
-
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { Heatmap } from '@/components/dashboard/Heatmap';
-
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
   const [showMore, setShowMore] = useState(false);
 
   return (
     <MainLayout>
-      <div className="space-y-4 animate-fade-in pb-20">
-        {/* Progress Overview */}
-        <ProgressHeader />
+      <AnimatedPage>
+        <motion.div 
+          variants={staggerContainer} 
+          initial="hidden" 
+          animate="show"
+          className="pb-20"
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Progress Overview */}
+            <motion.div variants={staggerItem}>
+              <ProgressHeader />
+            </motion.div>
 
-        {/* Quick Actions Bar */}
-        <QuickActionsBar />
+            {/* Quick Actions Bar */}
+            <motion.div variants={staggerItem}>
+              <QuickActionsBar />
+            </motion.div>
 
-        {/* Today's Stats (horizontal scroll) */}
-        <TodayStats />
+            {/* Today's Stats (horizontal scroll) */}
+            <motion.div variants={staggerItem}>
+              <TodayStats />
+            </motion.div>
 
-        {/* Time-Aware Daily Ritual Card */}
-        <DailyRitualCard />
+            {/* Time-Aware Daily Ritual Card */}
+            <motion.div variants={staggerItem}>
+              <DailyRitualCard />
+            </motion.div>
 
-        {/* Core Trackers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <WaterTracker />
-          <CalorieTrackerCompact />
-        </div>
+            {/* Core Trackers */}
+            <motion.div variants={staggerItem}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <WaterTracker />
+                <CalorieTrackerCompact />
+              </Box>
+            </motion.div>
 
-        {/* Collapsible More Section */}
-        <Collapsible open={showMore} onOpenChange={setShowMore}>
-          <CollapsibleTrigger className="flex items-center justify-center gap-2 w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border bg-card">
-            <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
-            {showMore ? 'SHOW LESS' : 'MORE'}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 mt-4 animate-accordion-down">
-            {/* Personal Records */}
-            <PersonalRecords />
-
-            {/* Recent Activity */}
-            <RecentActivity />
-
-            {/* Activity Heatmap */}
-            <Heatmap />
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
+            {/* Collapsible More Section */}
+            <motion.div variants={staggerItem}>
+              <Collapsible open={showMore} onOpenChange={setShowMore}>
+                <CollapsibleTrigger className="flex items-center justify-center gap-2 w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border bg-card rounded-2xl">
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
+                  {showMore ? 'SHOW LESS' : 'MORE'}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 mt-4">
+                  <PersonalRecords />
+                  <RecentActivity />
+                  <Heatmap />
+                </CollapsibleContent>
+              </Collapsible>
+            </motion.div>
+          </Box>
+        </motion.div>
+      </AnimatedPage>
 
       {/* Floating Action Button */}
-      <Link
+      <Fab
+        component={Link}
         to="/log"
-        className="fixed bottom-20 right-4 z-40 w-14 h-14 bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+        color="primary"
         aria-label="Log workout"
+        sx={{
+          position: 'fixed',
+          bottom: 88,
+          right: 16,
+          zIndex: 40,
+        }}
       >
-        <Plus className="h-6 w-6" />
-      </Link>
+        <Plus size={24} />
+      </Fab>
     </MainLayout>
   );
 }

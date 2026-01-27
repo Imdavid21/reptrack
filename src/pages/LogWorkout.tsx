@@ -1,5 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Box, Typography, Button, IconButton, LinearProgress, Chip } from '@mui/material';
+import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
@@ -14,7 +17,6 @@ import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 type Step = 'select-day' | 'exercises' | 'post-checkin' | 'habits';
 type ExerciseViewMode = 'single' | 'overview';
@@ -37,7 +39,6 @@ const defaultHabits: Habits = {
   },
 };
 
-
 const defaultPostCheckin: PostWorkoutData = {
   difficulty: 5,
   satisfaction: 7,
@@ -45,16 +46,14 @@ const defaultPostCheckin: PostWorkoutData = {
   notes: undefined,
 };
 
-// Parse target reps like "4x8-10" into number of sets and rep range
 function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   const match = targetReps.match(/^(\d+)x(.+)$/);
   if (match) {
     return { sets: parseInt(match[1], 10), reps: match[2] };
   }
-  return { sets: 3, reps: targetReps }; // Default to 3 sets
+  return { sets: 3, reps: targetReps };
 }
 
-// Determine day type from day name
 function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   if (dayName.includes('Push')) return 'Push';
   if (dayName.includes('Pull')) return 'Pull';
@@ -77,17 +76,14 @@ export default function LogWorkout() {
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [habits, setHabits] = useState<Habits>(defaultHabits);
-  
   const [postCheckin, setPostCheckin] = useState<PostWorkoutData>(defaultPostCheckin);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
-  
-  // Set-by-set mode state
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
-  // Restore from draft if available
+  // Restore from draft
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
       setSelectedDay(draft.day);
@@ -95,7 +91,6 @@ export default function LogWorkout() {
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       setHabits(draft.habits);
-      // Handle old drafts - map old step values to new ones
       let validStep: Step = 'exercises';
       if (draft.step === 'select-day') validStep = 'select-day';
       else if (draft.step === 'exercises') validStep = 'exercises';
@@ -104,7 +99,6 @@ export default function LogWorkout() {
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
-      
       if (draft.postCheckin) setPostCheckin(draft.postCheckin);
       if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
       setDraftRestored(true);
@@ -112,10 +106,9 @@ export default function LogWorkout() {
     }
   }, [loaded, draft, draftRestored]);
 
-  // Auto-save when state changes (debounced)
+  // Auto-save
   useEffect(() => {
     if (step === 'select-day' || !selectedDay) return;
-    
     const timeoutId = setTimeout(() => {
       saveDraft({
         day: selectedDay,
@@ -131,7 +124,6 @@ export default function LogWorkout() {
         workoutStartTime: workoutStartTime?.toISOString(),
       });
     }, 500);
-    
     return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
 
@@ -139,14 +131,11 @@ export default function LogWorkout() {
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
-    
-    // Load exercises from routine with individual sets
     const dayData = defaultRoutine.days[day];
     if (dayData) {
       setExercises(
         dayData.exercises.map((ex, idx) => {
           const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
-          
           const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
             setNumber: i + 1,
             targetWeight: ex.targetWeight,
@@ -155,7 +144,6 @@ export default function LogWorkout() {
             actualReps: '',
             completed: false,
           }));
-
           return {
             name: ex.name,
             category: ex.category,
@@ -165,7 +153,6 @@ export default function LogWorkout() {
         })
       );
     }
-    
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
     setWorkoutStartTime(new Date());
@@ -196,14 +183,13 @@ export default function LogWorkout() {
   const handleNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
-      setCurrentSetIndex(0); // Reset to first set of new exercise
+      setCurrentSetIndex(0);
     }
   };
 
   const handlePrevExercise = () => {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(prev => prev - 1);
-      // Go to last set of previous exercise
       const prevExercise = exercises[currentExerciseIndex - 1];
       setCurrentSetIndex(prevExercise.sets.length - 1);
     }
@@ -227,14 +213,11 @@ export default function LogWorkout() {
       toast.error('Complete at least one set');
       return;
     }
-    
-    // Auto-calculate duration if we have start time
     if (workoutStartTime && !postCheckin.durationMinutes) {
       const durationMs = Date.now() - workoutStartTime.getTime();
       const durationMins = Math.round(durationMs / 60000);
       setPostCheckin(prev => ({ ...prev, durationMinutes: durationMins }));
     }
-    
     setStep('post-checkin');
   };
 
@@ -251,7 +234,6 @@ export default function LogWorkout() {
       toast.error('Complete at least one set');
       return;
     }
-
     try {
       await createWorkout({
         day: selectedDay,
@@ -264,7 +246,6 @@ export default function LogWorkout() {
         startedAt: workoutStartTime || undefined,
         completedAt: new Date(),
       });
-      
       clearDraft();
       toast.success('Workout logged! 💪');
       navigate('/');
@@ -305,162 +286,188 @@ export default function LogWorkout() {
 
   const dayType = selectedDay ? getDayType(defaultRoutine.days[selectedDay]?.name || '') : undefined;
   const currentExercise = exercises[currentExerciseIndex];
+  const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
 
   return (
     <MainLayout title="LOG WORKOUT">
-      <div className="space-y-6 animate-fade-in pb-20">
-        {/* Back Button */}
-        {step !== 'select-day' && (
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            BACK
-          </button>
-        )}
+      <AnimatedPage>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
+          {/* Back Button */}
+          {step !== 'select-day' && (
+            <Button
+              startIcon={<ChevronLeft size={16} />}
+              onClick={handleBack}
+              sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
+            >
+              Back
+            </Button>
+          )}
 
-        {/* Progress indicator */}
-        <div className="flex gap-1">
-          {STEPS.map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 transition-colors ${
-                i <= STEPS.indexOf(step) ? 'bg-primary' : 'bg-muted'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Weekly Progress - show during day selection and exercises */}
-        {(step === 'select-day' || step === 'exercises') && <WeeklyProgress />}
-
-        {/* Step Content */}
-        {step === 'select-day' && (
-          <DaySelectorWithCheckin 
-            selectedDay={selectedDay} 
-            onSelect={handleDaySelect}
-            onQuickLog={selectedDay ? handleQuickLog : undefined}
+          {/* Progress indicator */}
+          <LinearProgress 
+            variant="determinate" 
+            value={progress}
+            sx={{ 
+              height: 4, 
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 2,
+              },
+            }}
           />
-        )}
 
-        {step === 'exercises' && (
-          <>
-            {/* Header with view toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-bold">{defaultRoutine.days[selectedDay]?.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Week {weekNumber} • {defaultRoutine.days[selectedDay]?.focus}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-right mr-2">
-                  <div className="text-xl font-bold tabular-nums">
-                    {completedSets}/{totalSets}
-                  </div>
-                  <div className="text-xs text-muted-foreground">SETS</div>
-                </div>
-                <Button
-                  variant={exerciseViewMode === 'single' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setExerciseViewMode('single')}
-                  title="Set-by-set view"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={exerciseViewMode === 'overview' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setExerciseViewMode('overview')}
-                  title="Overview"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+          {/* Weekly Progress */}
+          {(step === 'select-day' || step === 'exercises') && (
+            <motion.div variants={staggerItem}>
+              <WeeklyProgress />
+            </motion.div>
+          )}
 
-            {/* Exercise content based on view mode */}
-            {exerciseViewMode === 'single' && currentExercise && (
-              <SetBySetCard
-                exercise={currentExercise}
-                exerciseIndex={currentExerciseIndex}
-                totalExercises={exercises.length}
-                currentSetIndex={currentSetIndex}
-                onChange={handleExerciseChange}
-                onSetIndexChange={setCurrentSetIndex}
-                onNextExercise={handleNextExercise}
-                onPrevExercise={handlePrevExercise}
-                onSkipExercise={handleSkipExercise}
-                onComplete={handleExercisesDone}
-                isFirstExercise={currentExerciseIndex === 0}
-                isLastExercise={currentExerciseIndex === exercises.length - 1}
-                personalRecord={getPRForExercise(currentExercise.name)}
-                lastUsed={getLastUsed(currentExercise.name)}
-              />
-            )}
-
-            {exerciseViewMode === 'overview' && (
-              <>
-                <ExerciseOverview
-                  exercises={exercises}
-                  currentIndex={currentExerciseIndex}
-                  onSelectExercise={(idx) => {
-                    setCurrentExerciseIndex(idx);
-                    setCurrentSetIndex(0);
-                    setExerciseViewMode('single');
-                  }}
-                  onAddExercise={handleAddExercise}
-                  dayType={dayType}
-                />
-
-                <button
-                  onClick={handleExercisesDone}
-                  disabled={completedSets === 0}
-                  className="btn-brutalist btn-primary w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  FINISH EXERCISES
-                </button>
-              </>
-            )}
-          </>
-        )}
-
-        {step === 'post-checkin' && (
-          <>
-            <PostWorkoutSimple 
-              data={postCheckin} 
-              onChange={setPostCheckin}
-              autoCalculatedDuration={
-                workoutStartTime 
-                  ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
-                  : undefined
-              }
+          {/* Step Content */}
+          {step === 'select-day' && (
+            <DaySelectorWithCheckin 
+              selectedDay={selectedDay} 
+              onSelect={handleDaySelect}
+              onQuickLog={selectedDay ? handleQuickLog : undefined}
             />
-            
-            <button
-              onClick={handlePostCheckinDone}
-              className="btn-brutalist btn-primary w-full py-4"
-            >
-              CONTINUE TO HABITS
-            </button>
-          </>
-        )}
+          )}
 
-        {step === 'habits' && (
-          <>
-            <HabitsForm habits={habits} onChange={setHabits} />
+          {step === 'exercises' && (
+            <>
+              {/* Header with view toggle */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700}>
+                    {defaultRoutine.days[selectedDay]?.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Week {weekNumber} • {defaultRoutine.days[selectedDay]?.focus}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ textAlign: 'right', mr: 1 }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {completedSets}/{totalSets}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">SETS</Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => setExerciseViewMode('single')}
+                    sx={{
+                      bgcolor: exerciseViewMode === 'single' ? 'primary.main' : 'action.hover',
+                      color: exerciseViewMode === 'single' ? 'primary.contrastText' : 'text.primary',
+                      '&:hover': {
+                        bgcolor: exerciseViewMode === 'single' ? 'primary.dark' : 'action.selected',
+                      },
+                    }}
+                  >
+                    <LayoutGrid size={18} />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => setExerciseViewMode('overview')}
+                    sx={{
+                      bgcolor: exerciseViewMode === 'overview' ? 'primary.main' : 'action.hover',
+                      color: exerciseViewMode === 'overview' ? 'primary.contrastText' : 'text.primary',
+                      '&:hover': {
+                        bgcolor: exerciseViewMode === 'overview' ? 'primary.dark' : 'action.selected',
+                      },
+                    }}
+                  >
+                    <List size={18} />
+                  </IconButton>
+                </Box>
+              </Box>
 
-            <button
-              onClick={handleSubmit}
-              disabled={isCreating}
-              className="btn-brutalist btn-primary w-full py-4"
-            >
-              {isCreating ? 'SAVING...' : 'COMPLETE WORKOUT'}
-            </button>
-          </>
-        )}
-      </div>
+              {exerciseViewMode === 'single' && currentExercise && (
+                <SetBySetCard
+                  exercise={currentExercise}
+                  exerciseIndex={currentExerciseIndex}
+                  totalExercises={exercises.length}
+                  currentSetIndex={currentSetIndex}
+                  onChange={handleExerciseChange}
+                  onSetIndexChange={setCurrentSetIndex}
+                  onNextExercise={handleNextExercise}
+                  onPrevExercise={handlePrevExercise}
+                  onSkipExercise={handleSkipExercise}
+                  onComplete={handleExercisesDone}
+                  isFirstExercise={currentExerciseIndex === 0}
+                  isLastExercise={currentExerciseIndex === exercises.length - 1}
+                  personalRecord={getPRForExercise(currentExercise.name)}
+                  lastUsed={getLastUsed(currentExercise.name)}
+                />
+              )}
+
+              {exerciseViewMode === 'overview' && (
+                <>
+                  <ExerciseOverview
+                    exercises={exercises}
+                    currentIndex={currentExerciseIndex}
+                    onSelectExercise={(idx) => {
+                      setCurrentExerciseIndex(idx);
+                      setCurrentSetIndex(0);
+                      setExerciseViewMode('single');
+                    }}
+                    onAddExercise={handleAddExercise}
+                    dayType={dayType}
+                  />
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    onClick={handleExercisesDone}
+                    disabled={completedSets === 0}
+                    sx={{ py: 1.5, borderRadius: 3 }}
+                  >
+                    Finish Exercises
+                  </Button>
+                </>
+              )}
+            </>
+          )}
+
+          {step === 'post-checkin' && (
+            <>
+              <PostWorkoutSimple 
+                data={postCheckin} 
+                onChange={setPostCheckin}
+                autoCalculatedDuration={
+                  workoutStartTime 
+                    ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
+                    : undefined
+                }
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                onClick={handlePostCheckinDone}
+                sx={{ py: 1.5, borderRadius: 3 }}
+              >
+                Continue to Habits
+              </Button>
+            </>
+          )}
+
+          {step === 'habits' && (
+            <>
+              <HabitsForm habits={habits} onChange={setHabits} />
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                onClick={handleSubmit}
+                disabled={isCreating}
+                sx={{ py: 1.5, borderRadius: 3 }}
+              >
+                {isCreating ? 'Saving...' : 'Complete Workout'}
+              </Button>
+            </>
+          )}
+        </Box>
+      </AnimatedPage>
     </MainLayout>
   );
 }
