@@ -7,7 +7,6 @@ import { TodayStats } from '@/components/dashboard/TodayStats';
 
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
-import { SupplementCard } from '@/components/dashboard/SupplementCard';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { Heatmap } from '@/components/dashboard/Heatmap';
@@ -41,9 +40,6 @@ export default function Dashboard() {
           <WaterTracker />
           <CalorieTrackerCompact />
         </div>
-
-        {/* Supplements - Standalone Card */}
-        <SupplementCard />
 
         {/* Collapsible More Section */}
         <Collapsible open={showMore} onOpenChange={setShowMore}>
