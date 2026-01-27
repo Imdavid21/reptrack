@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
-import { SingleExerciseCard } from '@/components/workout/SingleExerciseCard';
+import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
 import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWorkoutSimple';
@@ -80,9 +80,10 @@ export default function LogWorkout() {
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   
-  // Single exercise mode state
+  // Set-by-set mode state
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
   // Restore from draft if available
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function LogWorkout() {
       else if (draft.step === 'habits') validStep = 'habits';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
+      setCurrentSetIndex(draft.currentSetIndex ?? 0);
       
       if (draft.postCheckin) setPostCheckin(draft.postCheckin);
       if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
@@ -108,7 +110,7 @@ export default function LogWorkout() {
     }
   }, [loaded, draft, draftRestored]);
 
-  // Auto-save when state changes (debounced to prevent rapid updates)
+  // Auto-save when state changes (debounced)
   useEffect(() => {
     if (step === 'select-day' || !selectedDay || exercises.length === 0) return;
     
@@ -121,6 +123,7 @@ export default function LogWorkout() {
         exercises,
         habits,
         currentExerciseIndex,
+        currentSetIndex,
         step,
         postCheckin,
         workoutStartTime: workoutStartTime?.toISOString(),
@@ -128,7 +131,7 @@ export default function LogWorkout() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [exercises, habits, step, currentExerciseIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
+  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -162,12 +165,12 @@ export default function LogWorkout() {
     }
     
     setCurrentExerciseIndex(0);
+    setCurrentSetIndex(0);
     setWorkoutStartTime(new Date());
     setStep('exercises');
   };
 
   const handleQuickLog = () => {
-    // Quick log - skip exercises, just log that workout happened
     if (!selectedDay) {
       toast.error('Please select a workout day first');
       return;
@@ -191,20 +194,24 @@ export default function LogWorkout() {
   const handleNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
+      setCurrentSetIndex(0); // Reset to first set of new exercise
     }
   };
 
   const handlePrevExercise = () => {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(prev => prev - 1);
+      // Go to last set of previous exercise
+      const prevExercise = exercises[currentExerciseIndex - 1];
+      setCurrentSetIndex(prevExercise.sets.length - 1);
     }
   };
 
   const handleSkipExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
+      setCurrentSetIndex(0);
     } else {
-      // If last exercise, show overview
       setExerciseViewMode('overview');
     }
   };
@@ -256,7 +263,6 @@ export default function LogWorkout() {
         completedAt: new Date(),
       });
       
-      // Clear draft after successful save
       clearDraft();
       toast.success('Workout logged! 💪');
       navigate('/');
@@ -268,8 +274,16 @@ export default function LogWorkout() {
   const handleBack = () => {
     const currentIndex = STEPS.indexOf(step);
     if (step === 'exercises') {
-      if (exerciseViewMode === 'single' && currentExerciseIndex > 0) {
-        setCurrentExerciseIndex(prev => prev - 1);
+      if (exerciseViewMode === 'single') {
+        if (currentSetIndex > 0) {
+          setCurrentSetIndex(prev => prev - 1);
+        } else if (currentExerciseIndex > 0) {
+          setCurrentExerciseIndex(prev => prev - 1);
+          const prevEx = exercises[currentExerciseIndex - 1];
+          setCurrentSetIndex(prevEx.sets.length - 1);
+        } else {
+          setStep('select-day');
+        }
       } else {
         setStep('select-day');
       }
@@ -289,7 +303,6 @@ export default function LogWorkout() {
 
   const dayType = selectedDay ? getDayType(defaultRoutine.days[selectedDay]?.name || '') : undefined;
   const currentExercise = exercises[currentExerciseIndex];
-  const stepProgress = STEPS.indexOf(step) / (STEPS.length - 1);
 
   return (
     <MainLayout title="LOG WORKOUT">
@@ -311,9 +324,7 @@ export default function LogWorkout() {
             <div
               key={s}
               className={`h-1 flex-1 transition-colors ${
-                i <= STEPS.indexOf(step)
-                  ? 'bg-primary'
-                  : 'bg-muted'
+                i <= STEPS.indexOf(step) ? 'bg-primary' : 'bg-muted'
               }`}
             />
           ))}
@@ -352,7 +363,7 @@ export default function LogWorkout() {
                   variant={exerciseViewMode === 'single' ? 'default' : 'outline'}
                   size="icon"
                   onClick={() => setExerciseViewMode('single')}
-                  title="Single exercise view"
+                  title="Set-by-set view"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -369,17 +380,19 @@ export default function LogWorkout() {
 
             {/* Exercise content based on view mode */}
             {exerciseViewMode === 'single' && currentExercise && (
-              <SingleExerciseCard
+              <SetBySetCard
                 exercise={currentExercise}
                 exerciseIndex={currentExerciseIndex}
                 totalExercises={exercises.length}
+                currentSetIndex={currentSetIndex}
                 onChange={handleExerciseChange}
-                onNext={handleNextExercise}
-                onPrev={handlePrevExercise}
-                onSkip={handleSkipExercise}
+                onSetIndexChange={setCurrentSetIndex}
+                onNextExercise={handleNextExercise}
+                onPrevExercise={handlePrevExercise}
+                onSkipExercise={handleSkipExercise}
                 onComplete={handleExercisesDone}
-                isFirst={currentExerciseIndex === 0}
-                isLast={currentExerciseIndex === exercises.length - 1}
+                isFirstExercise={currentExerciseIndex === 0}
+                isLastExercise={currentExerciseIndex === exercises.length - 1}
                 personalRecord={getPRForExercise(currentExercise.name)}
               />
             )}
@@ -391,6 +404,7 @@ export default function LogWorkout() {
                   currentIndex={currentExerciseIndex}
                   onSelectExercise={(idx) => {
                     setCurrentExerciseIndex(idx);
+                    setCurrentSetIndex(0);
                     setExerciseViewMode('single');
                   }}
                   onAddExercise={handleAddExercise}

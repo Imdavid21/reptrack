@@ -2,44 +2,32 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { SplashScreen } from '@/components/splash/SplashScreen';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import Dashboard from './Dashboard';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
-  const { needsOnboarding, isLoading: prefsLoading, preferences } = useUserPreferences();
-  const [showSplash, setShowSplash] = useState(true);
+  const { needsOnboarding, isLoading: prefsLoading } = useUserPreferences();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
-  // Show splash on initial load
+  // Hide HTML splash once React is ready (backup - MutationObserver in index.html handles this)
   useEffect(() => {
-    const hasSeenSplash = sessionStorage.getItem('splashShown');
-    if (hasSeenSplash) {
-      setShowSplash(false);
+    const splash = document.getElementById('splash');
+    if (splash) {
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        try { splash.remove(); } catch (e) {}
+      }, 300);
     }
   }, []);
 
-  const handleSplashComplete = () => {
-    sessionStorage.setItem('splashShown', 'true');
-    setShowSplash(false);
-  };
-
-  // Splash screen
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
-
-  // Loading state
+  // Loading state - show minimal loader while auth resolves
   if (authLoading || (user && prefsLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-2xl font-bold tracking-widest animate-pulse">
             HEALTH<span className="text-muted-foreground">/</span>OS
-          </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Loading...
           </div>
         </div>
       </div>
@@ -51,10 +39,7 @@ const Index = () => {
     return <AuthForm />;
   }
 
-  // Onboarding flow - only show if:
-  // 1. User needs onboarding (no preferences or onboarding_completed is false)
-  // 2. User hasn't dismissed it this session
-  // 3. Preferences have loaded (not just null from initial state)
+  // Onboarding flow
   const shouldShowOnboarding = needsOnboarding && !onboardingDismissed && !prefsLoading;
   
   if (shouldShowOnboarding) {
