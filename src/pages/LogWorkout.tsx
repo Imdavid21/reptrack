@@ -10,6 +10,7 @@ import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
+import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
@@ -68,6 +69,7 @@ export default function LogWorkout() {
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
+  const { getLastUsed } = useLastUsedWeights();
   
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -394,6 +396,7 @@ export default function LogWorkout() {
                 isFirstExercise={currentExerciseIndex === 0}
                 isLastExercise={currentExerciseIndex === exercises.length - 1}
                 personalRecord={getPRForExercise(currentExercise.name)}
+                lastUsed={getLastUsed(currentExercise.name)}
               />
             )}
 
