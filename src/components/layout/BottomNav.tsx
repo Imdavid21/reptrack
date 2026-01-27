@@ -42,7 +42,7 @@ export function BottomNav() {
   
   // Show active elapsed time, or completed duration
   const durationLabel = elapsed ? formatDuration(elapsed) : (completedDuration ? formatDuration(completedDuration) : null);
-  const isActive = !!elapsed;
+  const isWorkoutActive = !!elapsed;
 
   const navItems = [
     { to: '/', icon: Home, label: 'Today' },
@@ -67,7 +67,7 @@ export function BottomNav() {
             <span className={cn(
               "text-2xs mt-1 tabular-nums",
               to === '/log' && durationLabel && "text-primary font-medium",
-              to === '/log' && isActive && "animate-pulse"
+              to === '/log' && isWorkoutActive && "animate-pulse"
             )}>
               {label}
             </span>
