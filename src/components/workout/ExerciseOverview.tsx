@@ -52,7 +52,7 @@ export function ExerciseOverview({
                     className={cn(
                       'w-full text-left p-4 rounded border transition-all',
                       status === 'complete' && 'bg-primary/5 border-primary/30',
-                      status === 'partial' && 'bg-yellow-500/5 border-yellow-500/30',
+                      status === 'partial' && 'bg-warning/5 border-warning/30',
                       status === 'pending' && 'border-border hover:bg-muted/50',
                       isActive && 'ring-2 ring-primary ring-offset-2'
                     )}
@@ -61,7 +61,7 @@ export function ExerciseOverview({
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center shrink-0',
                         status === 'complete' ? 'bg-primary text-primary-foreground' :
-                        status === 'partial' ? 'bg-yellow-500/20 text-yellow-600' :
+                        status === 'partial' ? 'bg-warning/20 text-warning' :
                         'bg-muted text-muted-foreground'
                       )}>
                         {status === 'complete' ? (
