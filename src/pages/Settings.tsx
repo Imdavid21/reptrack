@@ -54,6 +54,9 @@ export default function Settings() {
       setReminderInterval(config.frequency_minutes?.toString() || '60');
       setStartHour(config.start_time || '08:00');
       setEndHour(config.end_time || '22:00');
+      setWaterLogging(config.water_logging ?? true);
+      setMealLogging(config.meal_logging ?? false);
+      setWeightLogging(config.weight_logging ?? false);
     }
   }, [config]);
 
@@ -81,6 +84,9 @@ export default function Settings() {
         start_time: startHour,
         end_time: endHour,
         is_active: true,
+        water_logging: waterLogging,
+        meal_logging: mealLogging,
+        weight_logging: weightLogging,
       });
       toast.success('Telegram automation activated!');
     } catch (error) {
@@ -94,6 +100,35 @@ export default function Settings() {
       toast.success('Telegram automation deactivated');
     } catch (error) {
       toast.error('Failed to deactivate');
+    }
+  };
+
+  const handleLoggingToggle = async (field: 'water_logging' | 'meal_logging' | 'weight_logging', value: boolean) => {
+    // Update local state immediately
+    if (field === 'water_logging') setWaterLogging(value);
+    if (field === 'meal_logging') setMealLogging(value);
+    if (field === 'weight_logging') setWeightLogging(value);
+
+    // Only save if config exists (user has set up automation)
+    if (config) {
+      try {
+        await saveConfig({
+          telegram_username: config.telegram_username,
+          frequency_minutes: config.frequency_minutes,
+          start_time: config.start_time,
+          end_time: config.end_time,
+          is_active: config.is_active,
+          water_logging: field === 'water_logging' ? value : waterLogging,
+          meal_logging: field === 'meal_logging' ? value : mealLogging,
+          weight_logging: field === 'weight_logging' ? value : weightLogging,
+        });
+      } catch (error) {
+        toast.error('Failed to save setting');
+        // Revert on error
+        if (field === 'water_logging') setWaterLogging(!value);
+        if (field === 'meal_logging') setMealLogging(!value);
+        if (field === 'weight_logging') setWeightLogging(!value);
+      }
     }
   };
 
@@ -211,7 +246,10 @@ export default function Settings() {
                         <div className="text-xs text-muted-foreground">Get reminded to drink water</div>
                       </div>
                     </div>
-                    <Switch checked={waterLogging} onCheckedChange={setWaterLogging} />
+                    <Switch 
+                      checked={waterLogging} 
+                      onCheckedChange={(v) => handleLoggingToggle('water_logging', v)} 
+                    />
                   </div>
 
                   {/* Meal Logging */}
@@ -223,7 +261,10 @@ export default function Settings() {
                         <div className="text-xs text-muted-foreground">Log meals via photo or text</div>
                       </div>
                     </div>
-                    <Switch checked={mealLogging} onCheckedChange={setMealLogging} />
+                    <Switch 
+                      checked={mealLogging} 
+                      onCheckedChange={(v) => handleLoggingToggle('meal_logging', v)} 
+                    />
                   </div>
 
                   {/* Weight Logging */}
@@ -235,7 +276,10 @@ export default function Settings() {
                         <div className="text-xs text-muted-foreground">Log weight via Telegram</div>
                       </div>
                     </div>
-                    <Switch checked={weightLogging} onCheckedChange={setWeightLogging} />
+                    <Switch 
+                      checked={weightLogging} 
+                      onCheckedChange={(v) => handleLoggingToggle('weight_logging', v)} 
+                    />
                   </div>
 
                   <div className="text-xs text-muted-foreground border border-dashed border-border p-3">
