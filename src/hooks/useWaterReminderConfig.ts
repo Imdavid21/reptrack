@@ -11,6 +11,9 @@ export interface WaterReminderConfig {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  water_logging: boolean;
+  meal_logging: boolean;
+  weight_logging: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +46,9 @@ export function useWaterReminderConfig() {
       start_time: string;
       end_time: string;
       is_active: boolean;
+      water_logging?: boolean;
+      meal_logging?: boolean;
+      weight_logging?: boolean;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
