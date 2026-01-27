@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { WorkoutExercise, Habits, PostCheckin } from './useWorkouts';
 import { useAuth } from './useAuth';
 
@@ -10,6 +10,7 @@ export interface DraftWorkout {
   exercises: WorkoutExercise[];
   habits: Habits;
   currentExerciseIndex: number;
+  currentSetIndex: number;
   step: 'select-day' | 'exercises' | 'post-checkin' | 'habits';
   lastSavedAt: string;
   postCheckin?: PostCheckin;
@@ -22,6 +23,12 @@ export function useDraftWorkout() {
   const { user } = useAuth();
   const [draft, setDraft] = useState<DraftWorkout | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const pendingSaveRef = useRef<DraftWorkout | null>(null);
+
+  // Get storage key for current user
+  const getKey = useCallback(() => {
+    return user ? `${DRAFT_KEY}_${user.id}` : null;
+  }, [user]);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -30,7 +37,9 @@ export function useDraftWorkout() {
       return;
     }
 
-    const key = `${DRAFT_KEY}_${user.id}`;
+    const key = getKey();
+    if (!key) return;
+
     const saved = localStorage.getItem(key);
     if (saved) {
       try {
@@ -50,29 +59,77 @@ export function useDraftWorkout() {
       }
     }
     setLoaded(true);
-  }, [user]);
+  }, [user, getKey]);
 
-  // Save draft to localStorage - use ref to avoid dependency loop
+  // iOS visibility handler - save immediately when app is backgrounded
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && pendingSaveRef.current) {
+        const key = getKey();
+        if (key) {
+          // Synchronous save - critical for iOS which may kill the app
+          try {
+            localStorage.setItem(key, JSON.stringify(pendingSaveRef.current));
+          } catch (e) {
+            console.error('Failed to save draft on visibility change:', e);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also handle pagehide for iOS Safari
+    const handlePageHide = () => {
+      if (pendingSaveRef.current) {
+        const key = getKey();
+        if (key) {
+          try {
+            localStorage.setItem(key, JSON.stringify(pendingSaveRef.current));
+          } catch (e) {
+            console.error('Failed to save draft on pagehide:', e);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [getKey]);
+
+  // Save draft to localStorage
   const saveDraft = useCallback((draftData: Omit<DraftWorkout, 'lastSavedAt'>) => {
     if (!user) return;
 
-    const key = `${DRAFT_KEY}_${user.id}`;
+    const key = getKey();
+    if (!key) return;
+
     const newDraft: DraftWorkout = {
       ...draftData,
+      currentSetIndex: draftData.currentSetIndex ?? 0,
       lastSavedAt: new Date().toISOString(),
     };
 
+    // Keep ref updated for visibility handler
+    pendingSaveRef.current = newDraft;
     setDraft(newDraft);
     localStorage.setItem(key, JSON.stringify(newDraft));
-  }, [user]);
+  }, [user, getKey]);
 
   // Clear draft after successful submission
   const clearDraft = useCallback(() => {
     if (!user) return;
-    const key = `${DRAFT_KEY}_${user.id}`;
+    const key = getKey();
+    if (!key) return;
+    
     localStorage.removeItem(key);
     setDraft(null);
-  }, [user]);
+    pendingSaveRef.current = null;
+  }, [user, getKey]);
 
   // Check if there are any completed sets in draft
   const hasProgress = draft?.exercises?.some(ex => 
