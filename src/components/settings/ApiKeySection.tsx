@@ -234,14 +234,15 @@ export function ApiKeySection() {
       "args": [
         "-y", 
         "mcp-remote", 
-        "${mcpUrl}",
-        "--header",
-        "X-API-Key:${showKey && apiKey?.api_key ? apiKey.api_key : 'your_api_key'}"
+        "${mcpUrl}/sse?api_key=${showKey && apiKey?.api_key ? apiKey.api_key : 'YOUR_API_KEY'}"
       ]
     }
   }
 }`}
         </pre>
+        <div className="text-2xs text-muted-foreground">
+          The SSE endpoint at <code className="bg-muted px-1">/sse</code> is required for Claude Desktop compatibility.
+        </div>
       </div>
     </div>
   );

@@ -3,9 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, mcp-session-id",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Expose-Headers": "mcp-session-id",
 };
+
+// Session store for SSE connections
+const sessions = new Map<string, { userId: string; messageEndpoint: string }>();
 
 // Validate API key and return user_id
 async function validateApiKey(apiKey: string): Promise<string | null> {
@@ -430,6 +434,56 @@ async function handleToolCall(name: string, args: Record<string, unknown>, userI
   }
 }
 
+// Process JSON-RPC request and return response
+async function handleJsonRpc(body: { method: string; params?: Record<string, unknown>; id?: number | string }, userId: string) {
+  const { method, params, id } = body;
+
+  console.log(`MCP request: method=${method}, id=${id}`);
+
+  switch (method) {
+    case "initialize":
+      return {
+        jsonrpc: "2.0",
+        result: {
+          protocolVersion: "2024-11-05",
+          capabilities: { tools: {} },
+          serverInfo: { name: "fitness-tracker", version: "1.0.0" }
+        },
+        id
+      };
+
+    case "notifications/initialized":
+      return { jsonrpc: "2.0", result: {}, id };
+
+    case "tools/list":
+      return { jsonrpc: "2.0", result: { tools }, id };
+
+    case "tools/call":
+      try {
+        const { name, arguments: args } = params as { name: string; arguments?: Record<string, unknown> };
+        const result = await handleToolCall(name, args || {}, userId);
+        return {
+          jsonrpc: "2.0",
+          result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] },
+          id
+        };
+      } catch (err) {
+        return {
+          jsonrpc: "2.0",
+          error: { code: -32603, message: err instanceof Error ? err.message : "Tool execution failed" },
+          id
+        };
+      }
+
+    default:
+      return {
+        jsonrpc: "2.0",
+        error: { code: -32601, message: `Method not found: ${method}` },
+        id
+      };
+  }
+}
+
 const app = new Hono();
 
 // Handle CORS preflight
@@ -437,25 +491,141 @@ app.options("*", (c) => {
   return new Response(null, { headers: corsHeaders });
 });
 
-// Health check / server info
-app.get("*", (c) => {
+// SSE endpoint for mcp-remote compatibility
+app.get("/sse", async (c) => {
+  const apiKey = c.req.header("x-api-key") || 
+                 c.req.query("api_key") ||
+                 c.req.header("authorization")?.replace("Bearer ", "");
+  
+  if (!apiKey) {
+    return c.json({ error: "Missing API key" }, 401, corsHeaders);
+  }
+
+  const userId = await validateApiKey(apiKey);
+  if (!userId) {
+    return c.json({ error: "Invalid API key" }, 401, corsHeaders);
+  }
+
+  // Generate session ID
+  const sessionId = crypto.randomUUID();
+  const baseUrl = new URL(c.req.url);
+  const messageEndpoint = `${baseUrl.protocol}//${baseUrl.host}/mcp/message?sessionId=${sessionId}`;
+  
+  // Store session
+  sessions.set(sessionId, { userId, messageEndpoint });
+
+  // Create SSE stream
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send endpoint event (required by SSE transport spec)
+      const endpointEvent = `event: endpoint\ndata: ${messageEndpoint}\n\n`;
+      controller.enqueue(new TextEncoder().encode(endpointEvent));
+      
+      // Keep connection alive with periodic pings
+      const interval = setInterval(() => {
+        try {
+          controller.enqueue(new TextEncoder().encode(": ping\n\n"));
+        } catch {
+          clearInterval(interval);
+        }
+      }, 15000);
+
+      // Clean up after 5 minutes (edge function timeout)
+      setTimeout(() => {
+        clearInterval(interval);
+        sessions.delete(sessionId);
+        try {
+          controller.close();
+        } catch {
+          // Already closed
+        }
+      }, 290000);
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "mcp-session-id": sessionId,
+    }
+  });
+});
+
+// Message endpoint for SSE transport
+app.post("/message", async (c) => {
+  const sessionId = c.req.query("sessionId");
+  
+  if (!sessionId) {
+    return c.json({ error: "Missing sessionId" }, 400, corsHeaders);
+  }
+
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return c.json({ error: "Invalid or expired session" }, 401, corsHeaders);
+  }
+
+  try {
+    const body = await c.req.json();
+    const response = await handleJsonRpc(body, session.userId);
+    return c.json(response, 200, corsHeaders);
+  } catch (err) {
+    console.error("Message error:", err);
+    return c.json({
+      jsonrpc: "2.0",
+      error: { code: -32700, message: "Parse error" },
+      id: null
+    }, 400, corsHeaders);
+  }
+});
+
+// Health check / server info (root path)
+app.get("/", (c) => {
   return c.json({
     status: "ok",
     server: "fitness-tracker-mcp",
     version: "1.0.0",
     description: "MCP server for fitness tracker data. Use with Claude Desktop or other MCP clients.",
-    usage: "Configure with mcp-remote: npx -y mcp-remote <url> --header 'X-API-Key:your_key'",
+    endpoints: {
+      sse: "/mcp/sse",
+      message: "/mcp/message"
+    },
+    usage: "npx -y mcp-remote https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/mcp/sse --header 'X-API-Key:YOUR_KEY'",
   }, 200, corsHeaders);
 });
 
-// MCP JSON-RPC handler
+// Also handle /mcp root for info
+app.get("/*", (c) => {
+  // Don't match /sse or /message
+  if (c.req.path.includes("/sse") || c.req.path.includes("/message")) {
+    return c.notFound();
+  }
+  return c.json({
+    status: "ok",
+    server: "fitness-tracker-mcp",
+    version: "1.0.0",
+    endpoints: {
+      sse: "/mcp/sse",
+      message: "/mcp/message"
+    },
+  }, 200, corsHeaders);
+});
+
+// Streamable HTTP transport (POST to root for direct JSON-RPC)
 app.post("/*", async (c) => {
+  // Skip if it's the message endpoint
+  if (c.req.path.includes("/message")) {
+    return c.notFound();
+  }
+
   const apiKey = c.req.header("x-api-key") || 
                  c.req.header("authorization")?.replace("Bearer ", "");
   
   if (!apiKey) {
     return c.json(
-      { jsonrpc: "2.0", error: { code: -32600, message: "Missing API key. Set X-API-Key header." }, id: null }, 
+      { jsonrpc: "2.0", error: { code: -32600, message: "Missing API key" }, id: null }, 
       401, 
       corsHeaders
     );
@@ -472,64 +642,8 @@ app.post("/*", async (c) => {
 
   try {
     const body = await c.req.json();
-    const { method, params, id } = body;
-
-    console.log(`MCP request: method=${method}, id=${id}`);
-
-    // Handle MCP protocol methods
-    switch (method) {
-      case "initialize":
-        return c.json({
-          jsonrpc: "2.0",
-          result: {
-            protocolVersion: "2024-11-05",
-            capabilities: {
-              tools: {}
-            },
-            serverInfo: {
-              name: "fitness-tracker",
-              version: "1.0.0"
-            }
-          },
-          id
-        }, 200, corsHeaders);
-
-      case "notifications/initialized":
-        return c.json({ jsonrpc: "2.0", result: null, id }, 200, corsHeaders);
-
-      case "tools/list":
-        return c.json({
-          jsonrpc: "2.0",
-          result: { tools },
-          id
-        }, 200, corsHeaders);
-
-      case "tools/call":
-        try {
-          const { name, arguments: args } = params;
-          const result = await handleToolCall(name, args || {}, userId);
-          return c.json({
-            jsonrpc: "2.0",
-            result: {
-              content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
-            },
-            id
-          }, 200, corsHeaders);
-        } catch (err) {
-          return c.json({
-            jsonrpc: "2.0",
-            error: { code: -32603, message: err instanceof Error ? err.message : "Tool execution failed" },
-            id
-          }, 200, corsHeaders);
-        }
-
-      default:
-        return c.json({
-          jsonrpc: "2.0",
-          error: { code: -32601, message: `Method not found: ${method}` },
-          id
-        }, 200, corsHeaders);
-    }
+    const response = await handleJsonRpc(body, userId);
+    return c.json(response, 200, corsHeaders);
   } catch (err) {
     console.error("MCP error:", err);
     return c.json({
