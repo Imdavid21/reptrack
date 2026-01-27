@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Box, Typography, Chip, LinearProgress, Skeleton, useTheme, IconButton, Button } from '@mui/material';
+import { Box, Typography, Chip, LinearProgress, Skeleton, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -14,7 +13,6 @@ import {
   BarChart3,
   Calendar,
   Brain,
-  Settings,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedTabs } from '@/components/ui/AnimatedTabs';
@@ -36,14 +34,12 @@ import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 import { WeeklySummaryCard } from '@/components/analytics/WeeklySummaryCard';
 import { MonthlySummaryCard } from '@/components/analytics/MonthlySummaryCard';
 import { RealCorrelationCard } from '@/components/analytics/RealCorrelationCard';
-import { BodyVisualization2D } from '@/components/insights/BodyVisualization2D';
-import { GoalsEditor } from '@/components/insights/GoalsEditor';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
 import { useVolumeData } from '@/hooks/useVolumeData';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
-import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -132,11 +128,9 @@ function SummaryStats() {
   const { dateRange } = useDateRange();
   const { data: metrics, isLoading: metricsLoading } = useDailyMetrics(dateRange);
   const { data: volumeData } = useVolumeData(60);
-  const { preferences } = useUserPreferences();
 
   const totalSessions = workouts.length;
-  const weeklyGoal = preferences?.weekly_workout_goal || 4;
-  const progressPercent = Math.round((totalSessions / (weeklyGoal * 12)) * 100);
+  const progressPercent = Math.round((totalSessions / 72) * 100);
   
   const totalVolume = volumeData?.totals?.totalVolume || 0;
   const avgSleep = metrics?.totals?.avgSleep?.toFixed(1) || '—';
@@ -172,13 +166,12 @@ function SummaryStats() {
           icon={<Moon size={16} />}
           label="Avg Sleep"
           value={`${avgSleep}h`}
-          description={preferences?.sleep_goal ? `Goal: ${preferences.sleep_goal}h` : undefined}
           loading={metricsLoading}
         />
         <StatCard
           icon={<Target size={16} />}
           label="Progress"
-          value={`${Math.min(progressPercent, 100)}%`}
+          value={`${progressPercent}%`}
           description="of 12-week program"
           loading={isLoading}
         />
@@ -193,18 +186,13 @@ function OverviewTab() {
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        {/* Body Muscle Map */}
-        <motion.div variants={staggerItem}>
-          <BodyVisualization2D />
-        </motion.div>
-
         {/* Monthly Summary */}
         <motion.div variants={staggerItem}>
-          <Typography variant="caption" sx={{ color: '#6c757d', mb: 1, display: 'block', letterSpacing: '0.1em' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
             MONTHLY OVERVIEW
           </Typography>
           {isLoading ? (
-            <Skeleton variant="rounded" height={200} sx={{ borderRadius: 2, bgcolor: '#e9ecef' }} />
+            <Skeleton variant="rounded" height={200} sx={{ borderRadius: 2 }} />
           ) : data?.monthlySummary ? (
             <MonthlySummaryCard summary={data.monthlySummary} />
           ) : null}
@@ -212,14 +200,14 @@ function OverviewTab() {
 
         {/* Weekly Summaries */}
         <motion.div variants={staggerItem}>
-          <Typography variant="caption" sx={{ color: '#6c757d', mb: 1, display: 'block', letterSpacing: '0.1em' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
             WEEKLY BREAKDOWN
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {isLoading ? (
               <>
-                <Skeleton variant="rounded" height={140} sx={{ borderRadius: 2, bgcolor: '#e9ecef' }} />
-                <Skeleton variant="rounded" height={140} sx={{ borderRadius: 2, bgcolor: '#e9ecef' }} />
+                <Skeleton variant="rounded" height={140} sx={{ borderRadius: 2 }} />
+                <Skeleton variant="rounded" height={140} sx={{ borderRadius: 2 }} />
               </>
             ) : (
               data?.weeklySummaries.slice(0, 2).map((summary, i) => (
@@ -235,16 +223,16 @@ function OverviewTab() {
 
         {/* Key Correlations Preview */}
         <motion.div variants={staggerItem}>
-          <Typography variant="caption" sx={{ color: '#6c757d', mb: 1, display: 'block', letterSpacing: '0.1em' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
             KEY INSIGHTS
           </Typography>
           {isLoading ? (
-            <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2, bgcolor: '#e9ecef' }} />
+            <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2 }} />
           ) : data?.correlations.length ? (
             <RealCorrelationCard correlation={data.correlations[0]} />
           ) : (
             <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
-              <Typography variant="body2" sx={{ color: '#6c757d', textAlign: 'center', py: 2 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 2 }}>
                 Log more data to unlock insights
               </Typography>
             </MuiCard>
@@ -497,7 +485,6 @@ function InsightsContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [goalsOpen, setGoalsOpen] = useState(false);
   
   const tabs = [
     { label: 'Overview', value: 'overview', icon: <BarChart3 size={12} /> },
@@ -523,22 +510,9 @@ function InsightsContent() {
           gap: 2,
           mb: 1,
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography variant="h2" sx={{ color: '#081c15', fontWeight: 700 }}>
-              Analytics
-            </Typography>
-            <IconButton 
-              size="small" 
-              onClick={() => setGoalsOpen(true)}
-              sx={{ 
-                bgcolor: '#f8f9fa', 
-                border: '1px solid #e9ecef',
-                '&:hover': { bgcolor: '#e9ecef' },
-              }}
-            >
-              <Settings size={16} style={{ color: '#6c757d' }} />
-            </IconButton>
-          </Box>
+          <Typography variant="h2" sx={{ color: '#081c15', fontWeight: 700 }}>
+            Analytics
+          </Typography>
           <DateRangeSelector />
         </Box>
         
@@ -553,9 +527,6 @@ function InsightsContent() {
           {activeTab === 'insights' && <CorrelationsTab />}
         </AnimatedTabs>
       </Box>
-      
-      {/* Goals Editor Modal */}
-      <GoalsEditor open={goalsOpen} onClose={() => setGoalsOpen(false)} />
     </AnimatedPage>
   );
 }
