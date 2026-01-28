@@ -31,6 +31,7 @@ import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
+import { GoalsSection } from '@/components/settings/GoalsSection';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -63,6 +64,12 @@ export default function Settings() {
           <ProfileSection 
             isExpanded={expandedSections.profile || false}
             onToggle={() => toggleSection('profile')}
+          />
+
+          {/* Goals Section */}
+          <GoalsSection
+            isExpanded={expandedSections.goals || false}
+            onToggle={() => toggleSection('goals')}
           />
           
           {/* Account */}

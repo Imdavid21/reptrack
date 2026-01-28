@@ -1,4 +1,5 @@
-import { Box, useTheme } from '@mui/material';
+import { Box } from '@mui/material';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactNode, useState } from 'react';
 
@@ -16,7 +17,8 @@ interface AnimatedTabsProps {
 }
 
 export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsProps) {
-  const theme = useTheme();
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [direction, setDirection] = useState(0);
 
   const handleChange = (newValue: string) => {
@@ -34,7 +36,7 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
           display: 'flex',
           gap: 0.5,
           p: 0.5,
-          bgcolor: '#e9ecef',
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#e9ecef',
           borderRadius: 2.5,
           mb: 3,
         }}
@@ -57,18 +59,18 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
               fontWeight: 600,
               transition: 'all 0.2s ease',
               bgcolor: value === tab.value 
-                ? '#ffffff' 
+                ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#ffffff')
                 : 'transparent',
               color: value === tab.value 
-                ? '#081c15' 
-                : '#6c757d',
+                ? (isDark ? '#95d5b2' : '#081c15')
+                : (isDark ? 'rgba(255,255,255,0.6)' : '#6c757d'),
               boxShadow: value === tab.value 
-                ? '0 1px 3px rgba(0,0,0,0.08)' 
+                ? (isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.08)')
                 : 'none',
               '&:hover': {
                 bgcolor: value === tab.value 
-                  ? '#ffffff' 
-                  : 'rgba(255,255,255,0.5)',
+                  ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#ffffff')
+                  : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.5)'),
               },
             }}
           >
