@@ -115,12 +115,35 @@ export function useDataExport() {
         const table = options.tables[i];
         setProgress({ current: i + 1, total: options.tables.length, table });
         
-        // Build query - cast to any to avoid complex type inference issues
-        const query = (supabase.from(table) as any).select('*').eq('user_id', user.id);
-        const { data, error } = await query.order('created_at', { ascending: true }) as { 
-          data: Record<string, any>[] | null; 
-          error: any;
-        };
+        let data: Record<string, any>[] | null = null;
+        let error: any = null;
+        
+        // Handle tables that don't have direct user_id (they link via workout_id)
+        if (table === 'exercise_sets') {
+          // Get all workout IDs for this user first
+          const { data: workouts } = await supabase
+            .from('workouts')
+            .select('id')
+            .eq('user_id', user.id);
+          
+          if (workouts && workouts.length > 0) {
+            const workoutIds = workouts.map(w => w.id);
+            const result = await (supabase.from(table) as any)
+              .select('*')
+              .in('workout_id', workoutIds)
+              .order('created_at', { ascending: true });
+            data = result.data;
+            error = result.error;
+          }
+        } else {
+          // Standard query for tables with user_id
+          const result = await (supabase.from(table) as any)
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true });
+          data = result.data;
+          error = result.error;
+        }
         
         if (error) throw error;
         
