@@ -250,8 +250,12 @@ export function VolumeSankeyChart() {
   const renderTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     
-    const data = payload[0].payload;
-    const node = data.payload;
+    const item = payload[0];
+    if (!item) return null;
+    
+    // Sankey can return different payload structures for nodes vs links
+    const name = item.name || item.payload?.name || item.payload?.payload?.name || 'Volume';
+    const value = item.value ?? item.payload?.value ?? 0;
     
     return (
       <Box sx={{
@@ -264,10 +268,10 @@ export function VolumeSankeyChart() {
         minWidth: 120,
       }}>
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {node?.name || 'Volume'}
+          {name}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {formatVolume(data.value)} kg
+          {formatVolume(value)} kg
         </Typography>
       </Box>
     );
