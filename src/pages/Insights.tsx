@@ -19,6 +19,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { StrengthOverviewChart } from '@/components/analytics/StrengthOverviewChart';
+import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
 import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
 import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
@@ -31,7 +32,6 @@ import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 import { WeeklySummaryCard } from '@/components/analytics/WeeklySummaryCard';
 import { MonthlySummaryCard } from '@/components/analytics/MonthlySummaryCard';
 import { RealCorrelationCard } from '@/components/analytics/RealCorrelationCard';
-import { VolumeChart } from '@/components/analytics/VolumeChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { BodyPartsSpline } from '@/components/analytics/BodyPartsSpline';
 import { useWorkouts } from '@/hooks/useWorkouts';
@@ -251,7 +251,7 @@ function PerformanceTab() {
           <StrengthOverviewChart />
         </motion.div>
         <motion.div variants={staggerItem}>
-          <VolumeChart />
+          <VolumeSankeyChart />
         </motion.div>
         <motion.div variants={staggerItem}>
           <PullupAccumulator />
