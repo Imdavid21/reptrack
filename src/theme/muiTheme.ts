@@ -182,7 +182,7 @@ export const lightTheme = createTheme({
       light: palette.mint.light,
     },
     background: {
-      default: palette.gray[50],
+      default: '#f8f9fa',  // Pure near-white, not green
       paper: '#ffffff',
     },
     text: {

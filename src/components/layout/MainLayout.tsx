@@ -10,7 +10,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, title, hideHeader }: MainLayoutProps) {
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fa', pb: 10 }}>
       {!hideHeader && (
         <AppBar 
           position="sticky" 
