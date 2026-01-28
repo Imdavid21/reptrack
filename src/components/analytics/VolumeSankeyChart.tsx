@@ -20,7 +20,7 @@ export function VolumeSankeyChart() {
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Solid dark colors - no gradients
   const CATEGORY_FILLS = useMemo(() => ({
@@ -111,18 +111,13 @@ export function VolumeSankeyChart() {
     return value.toLocaleString();
   };
 
-  const hoveredData = useMemo(() => {
-    if (!hoveredCategory) return null;
-    return categories.find(c => c.name.toLowerCase() === hoveredCategory.toLowerCase());
-  }, [hoveredCategory, categories]);
+  const selectedData = useMemo(() => {
+    if (!selectedCategory) return null;
+    return categories.find(c => c.name.toLowerCase() === selectedCategory.toLowerCase());
+  }, [selectedCategory, categories]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    
-    const data = payload[0].payload;
-    setHoveredCategory(data.name);
-    
-    return null; // We'll show exercises in a separate panel
+  const toggleCategory = (name: string) => {
+    setSelectedCategory(prev => prev === name ? null : name);
   };
 
   if (isLoading) {
@@ -189,8 +184,7 @@ export function VolumeSankeyChart() {
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
         {/* Radial Chart */}
         <Box 
-          sx={{ width: 180, height: 180, flexShrink: 0 }}
-          onMouseLeave={() => setHoveredCategory(null)}
+          sx={{ width: 180, height: 180, flexShrink: 0, position: 'relative' }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <RadialBarChart 
@@ -206,12 +200,11 @@ export function VolumeSankeyChart() {
                 dataKey="value"
                 cornerRadius={4}
                 background={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
-                onMouseEnter={(_, index) => {
-                  const item = radialData[index];
-                  if (item) setHoveredCategory(item.name);
+                onClick={(data) => {
+                  if (data?.name) toggleCategory(data.name);
                 }}
+                style={{ cursor: 'pointer' }}
               />
-              <Tooltip content={<CustomTooltip />} />
             </RadialBarChart>
           </ResponsiveContainer>
           
@@ -240,9 +233,8 @@ export function VolumeSankeyChart() {
             {categories.map((cat) => (
               <motion.div
                 key={cat.name}
-                onMouseEnter={() => setHoveredCategory(cat.name)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                whileHover={{ x: 2 }}
+                onClick={() => toggleCategory(cat.name)}
+                whileTap={{ scale: 0.98 }}
               >
                 <Box
                   sx={{
@@ -253,10 +245,12 @@ export function VolumeSankeyChart() {
                     px: 1,
                     borderRadius: 1,
                     cursor: 'pointer',
-                    bgcolor: hoveredCategory === cat.name 
-                      ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                    bgcolor: selectedCategory === cat.name 
+                      ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
                       : 'transparent',
-                    transition: 'background 0.2s',
+                    border: 1,
+                    borderColor: selectedCategory === cat.name ? 'divider' : 'transparent',
+                    transition: 'all 0.2s',
                   }}
                 >
                   <Box
@@ -272,7 +266,7 @@ export function VolumeSankeyChart() {
                     sx={{ 
                       flex: 1, 
                       textTransform: 'capitalize',
-                      fontWeight: hoveredCategory === cat.name ? 600 : 400,
+                      fontWeight: selectedCategory === cat.name ? 600 : 400,
                     }}
                   >
                     {cat.name}
@@ -291,11 +285,11 @@ export function VolumeSankeyChart() {
             ))}
           </Box>
 
-          {/* Exercise Breakdown on Hover */}
+          {/* Exercise Breakdown on Select */}
           <AnimatePresence mode="wait">
-            {hoveredData && (
+            {selectedData && (
               <motion.div
-                key={hoveredData.name}
+                key={selectedData.name}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -5 }}
@@ -317,10 +311,10 @@ export function VolumeSankeyChart() {
                       display: 'block',
                     }}
                   >
-                    {hoveredData.name} Exercises
+                    {selectedData.name} Exercises
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {hoveredData.exercises.slice(0, 4).map((ex) => (
+                    {selectedData.exercises.slice(0, 4).map((ex) => (
                       <Box 
                         key={ex.name}
                         sx={{ 
@@ -344,7 +338,7 @@ export function VolumeSankeyChart() {
                             transition={{ duration: 0.3 }}
                             style={{
                               height: '100%',
-                              backgroundColor: hoveredData.fill,
+                              backgroundColor: selectedData.fill,
                             }}
                           />
                         </Box>
@@ -361,7 +355,7 @@ export function VolumeSankeyChart() {
                         </Typography>
                       </Box>
                     ))}
-                    {hoveredData.exercises.length > 4 && (
+                    {selectedData.exercises.length > 4 && (
                       <Typography 
                         variant="caption" 
                         sx={{ 
@@ -370,7 +364,7 @@ export function VolumeSankeyChart() {
                           textAlign: 'right',
                         }}
                       >
-                        +{hoveredData.exercises.length - 4} more
+                        +{selectedData.exercises.length - 4} more
                       </Typography>
                     )}
                   </Box>
@@ -379,7 +373,7 @@ export function VolumeSankeyChart() {
             )}
           </AnimatePresence>
 
-          {!hoveredData && (
+          {!selectedData && (
             <Typography 
               variant="caption" 
               sx={{ 
@@ -388,7 +382,7 @@ export function VolumeSankeyChart() {
                 display: 'block',
               }}
             >
-              Hover on chart or legend to see exercises
+              Tap a category to see exercises
             </Typography>
           )}
         </Box>
