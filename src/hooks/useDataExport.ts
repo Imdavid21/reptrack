@@ -28,7 +28,7 @@ export interface LastExportFile {
 // Column mappings for each table
 const TABLE_COLUMNS: Record<DataTable, string[]> = {
   workouts: [
-    'id', 'date', 'day', 'day_name', 'week_number',
+    'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
     'started_at', 'completed_at', 'workout_duration_minutes',
     'pre_energy', 'pre_motivation', 'pre_soreness',
     'post_difficulty', 'post_satisfaction', 'created_at'
@@ -40,27 +40,59 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'completed', 'created_at'
   ],
   daily_metrics: [
-    'id', 'date', 'sleep_hours', 'energy_level', 'bodyweight',
-    'pullups', 'supplements', 'is_rest_day', 'notes', 'created_at'
+    'id', 'user_id', 'date', 'sleep_hours', 'energy_level', 'bodyweight',
+    'pullups', 'supplements', 'is_rest_day', 'notes', 'created_at', 'updated_at'
   ],
   morning_checkins: [
-    'id', 'date', 'sleep_time', 'wake_time', 'sleep_hours',
+    'id', 'user_id', 'date', 'sleep_time', 'wake_time', 'sleep_hours',
     'energy_level', 'heart_rate', 'oxygen_level', 'bodyweight',
-    'notes', 'created_at'
+    'notes', 'created_at', 'updated_at'
   ],
   night_checkins: [
-    'id', 'date', 'performance_score', 'energy_score', 'steps',
+    'id', 'user_id', 'date', 'performance_score', 'energy_score', 'steps',
     'bodyweight', 'is_rest_day', 'notes', 'created_at'
+    , 'updated_at'
   ],
   water_logs: [
-    'id', 'timestamp', 'amount', 'method'
+    'id', 'user_id', 'timestamp', 'amount', 'method'
   ],
   meals: [
-    'id', 'date', 'meal_type', 'food_name', 'calories',
+    'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
     'protein', 'carbs', 'fat', 'fiber', 'food_quality',
-    'ai_detected_food', 'ai_confidence', 'notes', 'created_at'
+    'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed', 'notes', 'created_at'
   ],
 };
+
+// Some tables don't have created_at; also prefer ordering by the domain date/time column.
+const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
+  workouts: { column: 'date', ascending: true },
+  exercise_sets: { column: 'created_at', ascending: true },
+  daily_metrics: { column: 'date', ascending: true },
+  morning_checkins: { column: 'date', ascending: true },
+  night_checkins: { column: 'date', ascending: true },
+  water_logs: { column: 'timestamp', ascending: true },
+  meals: { column: 'date', ascending: true },
+};
+
+const PAGE_SIZE = 1000;
+
+async function fetchAllPaged<T>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await fetchPage(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return all;
+}
 
 function escapeCSV(value: any): string {
   if (value === null || value === undefined) return '';
@@ -153,28 +185,47 @@ export function useDataExport() {
         // Handle tables that don't have direct user_id (they link via workout_id)
         if (table === 'exercise_sets') {
           // Get all workout IDs for this user first
-          const { data: workouts } = await supabase
-            .from('workouts')
-            .select('id')
-            .eq('user_id', user.id);
-          
-          if (workouts && workouts.length > 0) {
+          const workouts = await fetchAllPaged<{ id: string }>(async (from, to) => {
+            const result = await supabase
+              .from('workouts')
+              .select('id')
+              .eq('user_id', user.id)
+              .order('date', { ascending: true })
+              .range(from, to);
+            return { data: result.data ?? null, error: result.error };
+          });
+
+          if (workouts.length > 0) {
             const workoutIds = workouts.map(w => w.id);
-            const result = await (supabase.from(table) as any)
-              .select('*')
-              .in('workout_id', workoutIds)
-              .order('created_at', { ascending: true });
-            data = result.data;
-            error = result.error;
+            // Chunk to avoid very long URLs / request size limits
+            const chunkSize = 100;
+            const allSets: Record<string, any>[] = [];
+
+            for (let c = 0; c < workoutIds.length; c += chunkSize) {
+              const chunk = workoutIds.slice(c, c + chunkSize);
+              const orderBy = TABLE_ORDER_BY[table];
+
+              const setsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
+                let q = (supabase.from(table) as any).select('*').in('workout_id', chunk);
+                if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
+                const result = await q.range(from, to);
+                return { data: result.data ?? null, error: result.error };
+              });
+
+              allSets.push(...setsForChunk);
+            }
+
+            data = allSets;
           }
         } else {
           // Standard query for tables with user_id
-          const result = await (supabase.from(table) as any)
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: true });
-          data = result.data;
-          error = result.error;
+          const orderBy = TABLE_ORDER_BY[table];
+          data = await fetchAllPaged<Record<string, any>>(async (from, to) => {
+            let q = (supabase.from(table) as any).select('*').eq('user_id', user.id);
+            if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
+            const result = await q.range(from, to);
+            return { data: result.data ?? null, error: result.error };
+          });
         }
         
         if (error) throw error;
