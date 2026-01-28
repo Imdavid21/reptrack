@@ -79,8 +79,8 @@ export function TotalStrengthChart() {
 
   const accentColor = theme.palette.secondary.main;
   const mutedColor = theme.palette.text.secondary;
-  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
-  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const positiveBg = theme.palette.action.selected;
+  const negativeBg = theme.palette.action.hover;
   const errorColor = theme.palette.error.main;
 
   const renderTooltip = ({ active, payload, label }: any) => {
@@ -114,15 +114,15 @@ export function TotalStrengthChart() {
           </Typography>
         </Box>
         {growth !== 0 && (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 0.5, 
-            bgcolor: growth > 0 ? successLight : errorLight, 
-            px: 1.5, 
-            py: 0.5, 
-            borderRadius: 2 
-          }}>
+            <Box sx={{ 
+				  display: 'flex', 
+				  alignItems: 'center', 
+				  gap: 0.5, 
+				  bgcolor: growth > 0 ? positiveBg : negativeBg, 
+				  px: 1.5, 
+				  py: 0.5, 
+				  borderRadius: 2 
+				}}>
             <TrendingUp size={12} style={{ color: growth > 0 ? theme.palette.text.primary : errorColor }} />
             <Typography variant="caption" sx={{ color: growth > 0 ? 'text.primary' : 'error.main', fontWeight: 600 }}>
               {growth > 0 ? '+' : ''}{growth}%
@@ -142,9 +142,9 @@ export function TotalStrengthChart() {
               <XAxis dataKey="week" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <Tooltip content={renderTooltip} />
-              <ReferenceLine 
+               <ReferenceLine 
                 y={lastStrength} 
-                stroke={successLight} 
+                 stroke={positiveBg} 
                 strokeDasharray="3 3"
               />
               <Line

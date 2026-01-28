@@ -32,8 +32,8 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
   const monthlyGoal = 16;
   const goalProgress = Math.min((summary.workouts / monthlyGoal) * 100, 100);
 
-  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
-  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const positiveBg = theme.palette.action.selected;
+  const negativeBg = theme.palette.action.hover;
   const accentColor = theme.palette.secondary.main;
 
   return (
@@ -74,7 +74,7 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
               gap: 0.5,
               px: 1.5,
               py: 0.5,
-              bgcolor: workoutChangePercent >= 0 ? successLight : errorLight,
+              bgcolor: workoutChangePercent >= 0 ? positiveBg : negativeBg,
               borderRadius: 2,
             }}>
               {workoutChangePercent >= 0 ? (

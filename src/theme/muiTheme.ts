@@ -177,7 +177,7 @@ export const lightTheme = createTheme({
       dark: palette.gray[600],
     },
     error: {
-      main: '#dc2626',
+      main: palette.gray[700],
     },
     success: {
       main: palette.gray[600],
@@ -214,7 +214,7 @@ export const darkTheme = createTheme({
       dark: palette.gray[600],
     },
     error: {
-      main: '#ef4444',
+      main: palette.gray[400],
     },
     success: {
       main: palette.gray[400],

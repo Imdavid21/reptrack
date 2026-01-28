@@ -104,7 +104,7 @@ export function ProgressCelebration({
             key={milestone}
             className={cn(
               "absolute w-0.5 h-3 -top-0.5 transition-colors",
-              progress >= milestone ? "bg-primary-foreground/50" : "bg-muted-foreground/30"
+              progress >= milestone ? "bg-foreground/50" : "bg-muted-foreground/30"
             )}
             style={{ left: `${milestone}%` }}
           />

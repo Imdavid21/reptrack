@@ -69,8 +69,8 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
     );
   }
 
-  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
-  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const positiveBg = theme.palette.action.selected;
+  const negativeBg = theme.palette.action.hover;
 
   return (
     <motion.div variants={staggerItem}>
@@ -93,7 +93,7 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
               sx={{
                 height: 20,
                 fontSize: '0.6rem',
-                bgcolor: trend > 0 ? successLight : errorLight,
+                bgcolor: trend > 0 ? positiveBg : negativeBg,
                 color: trend > 0 ? 'text.primary' : 'error.main',
                 '& .MuiChip-icon': {
                   color: 'inherit',
