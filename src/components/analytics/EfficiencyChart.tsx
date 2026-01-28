@@ -52,10 +52,10 @@ export function EfficiencyChart() {
     );
   };
 
-  // Use theme-aware darker colors
-  const barColor = isDark ? 'hsl(0, 0%, 80%)' : 'hsl(0, 0%, 15%)';
-  const lineColor = isDark ? 'hsl(0, 0%, 95%)' : 'hsl(0, 0%, 8%)';
-  const mutedColor = theme.palette.text.secondary;
+  // High contrast black/white only
+  const barColor = isDark ? '#FFFFFF' : '#000000';
+  const lineColor = isDark ? '#FFFFFF' : '#000000';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
 
   return (
     <MuiCard>

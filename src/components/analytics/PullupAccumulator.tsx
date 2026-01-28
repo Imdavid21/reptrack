@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
+import { Trophy } from 'lucide-react';
+import { MuiCard } from '@/components/ui/MuiCard';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, startOfWeek } from 'date-fns';
 import {
   BarChart,
@@ -14,8 +16,15 @@ import {
 } from 'recharts';
 
 export function PullupAccumulator() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
+
+  // High contrast black/white
+  const primaryColor = isDark ? '#FFFFFF' : '#000000';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+  const lightFill = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
 
   const { chartData, totalPullups, weeklyAvg } = useMemo(() => {
     if (!data?.dataPoints) {
@@ -62,21 +71,27 @@ export function PullupAccumulator() {
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-        <h3 className="text-sm font-semibold mb-4">Pull-ups</h3>
-        <Skeleton className="h-[160px] rounded-xl" />
-      </div>
+      <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Trophy size={14} />
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Pull-ups</Typography>
+        </Box>
+        <Skeleton variant="rounded" height={160} />
+      </MuiCard>
     );
   }
 
   if (chartData.length === 0 || totalPullups === 0) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-        <h3 className="text-sm font-semibold mb-4">Pull-ups</h3>
-        <p className="text-sm text-muted-foreground py-8 text-center">
+      <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Trophy size={14} />
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Pull-ups</Typography>
+        </Box>
+        <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
           No pull-up data yet. Log your first workout!
-        </p>
-      </div>
+        </Typography>
+      </MuiCard>
     );
   }
 
@@ -84,65 +99,94 @@ export function PullupAccumulator() {
     if (!active || !payload?.length) return null;
 
     return (
-      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
-        <p className="font-medium mb-1">Week of {label}</p>
-        <p className="text-muted-foreground">
+      <Box sx={{
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        boxShadow: 2,
+        border: 1,
+        borderColor: 'divider',
+        p: 1.5,
+      }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Week of {label}</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
           {payload[0].value} pull-ups
-        </p>
-        <p className="text-foreground font-medium mt-1">
+        </Typography>
+        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mt: 0.5 }}>
           Cumulative: {payload[0].payload.cumulative}
-        </p>
-      </div>
+        </Typography>
+      </Box>
     );
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Pull-ups</h3>
-        <div className="text-2xl font-bold tabular-nums">{totalPullups}</div>
-      </div>
+    <MuiCard>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
+            <Trophy size={14} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Pull-ups</Typography>
+        </Box>
+        <Typography variant="h5" sx={{ fontWeight: 800 }}>{totalPullups}</Typography>
+      </Box>
 
-      <div className="h-[140px]">
+      <Box sx={{ height: 140 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="week"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="pullups" radius={[6, 6, 0, 0]}>
+            <Bar dataKey="pullups" radius={[4, 4, 0, 0]}>
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={index === chartData.length - 1
-                    ? 'hsl(var(--chart-1))'
-                    : 'hsl(var(--chart-3))'
-                  }
+                  fill={index === chartData.length - 1 ? primaryColor : lightFill}
                 />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </Box>
 
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/30">
-        <div className="bg-[hsl(var(--chart-1)/0.1)] rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold tabular-nums">{weeklyAvg}</div>
-          <div className="text-xs text-muted-foreground">Avg/Week</div>
-        </div>
-        <div className="bg-[hsl(var(--chart-2)/0.1)] rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold tabular-nums">{chartData.length}</div>
-          <div className="text-xs text-muted-foreground">Weeks Tracked</div>
-        </div>
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', gap: 2, mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Box sx={{ 
+          flex: 1, 
+          p: 1.5, 
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+          borderRadius: 2,
+          textAlign: 'center',
+          border: 1,
+          borderColor: 'divider',
+        }}>
+          <Typography variant="body1" sx={{ fontWeight: 700 }}>{weeklyAvg}</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Avg/Week</Typography>
+        </Box>
+        <Box sx={{ 
+          flex: 1, 
+          p: 1.5, 
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+          borderRadius: 2,
+          textAlign: 'center',
+          border: 1,
+          borderColor: 'divider',
+        }}>
+          <Typography variant="body1" sx={{ fontWeight: 700 }}>{chartData.length}</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Weeks Tracked</Typography>
+        </Box>
+      </Box>
+    </MuiCard>
   );
 }

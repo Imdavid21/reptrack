@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
+import { Moon, Zap } from 'lucide-react';
+import { MuiCard } from '@/components/ui/MuiCard';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import {
   AreaChart,
@@ -13,8 +15,15 @@ import {
 } from 'recharts';
 
 export function SleepEnergyChart() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
+
+  // High contrast black/white colors
+  const primaryColor = isDark ? '#FFFFFF' : '#000000';
+  const secondaryColor = isDark ? '#FFFFFF' : '#000000';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
 
   const chartData = useMemo(() => {
     if (!data?.dataPoints) return [];
@@ -30,21 +39,27 @@ export function SleepEnergyChart() {
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-        <h3 className="text-sm font-semibold mb-4">Sleep & Energy</h3>
-        <Skeleton className="h-[200px] rounded-xl" />
-      </div>
+      <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Moon size={14} />
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Sleep & Energy</Typography>
+        </Box>
+        <Skeleton variant="rounded" height={200} />
+      </MuiCard>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-        <h3 className="text-sm font-semibold mb-4">Sleep & Energy</h3>
-        <p className="text-sm text-muted-foreground py-8 text-center">
+      <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Moon size={14} />
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Sleep & Energy</Typography>
+        </Box>
+        <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
           No sleep/energy data yet. Log your morning check-in!
-        </p>
-      </div>
+        </Typography>
+      </MuiCard>
     );
   }
 
@@ -52,46 +67,61 @@ export function SleepEnergyChart() {
     if (!active || !payload?.length) return null;
     
     return (
-      <div className="bg-card rounded-xl shadow-lg border border-border/50 p-3 text-xs">
-        <p className="font-medium mb-2">{label}</p>
+      <Box sx={{
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        boxShadow: 2,
+        border: 1,
+        borderColor: 'divider',
+        p: 1.5,
+      }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>{label}</Typography>
         {payload.map((p: any) => (
-          <p key={p.dataKey} className="flex items-center gap-2">
-            <span 
-              className="w-2 h-2 rounded-full" 
-              style={{ backgroundColor: p.stroke }}
-            />
-            <span className="text-muted-foreground">{p.name}:</span>
-            <span className="font-medium">
+          <Box key={p.dataKey} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.stroke }} />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              {p.name}:
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
               {p.value}{p.dataKey === 'sleep' ? 'h' : '/10'}
-            </span>
-          </p>
+            </Typography>
+          </Box>
         ))}
-      </div>
+      </Box>
     );
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Sleep & Energy</h3>
-        <div className="flex items-center gap-4 text-xs">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[hsl(var(--chart-1))]" />
-            Sleep
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[hsl(var(--chart-3))]" />
-            Energy
-          </span>
-        </div>
-      </div>
+    <MuiCard>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
+            <Moon size={14} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Sleep & Energy</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: primaryColor }} />
+            <Typography variant="caption">Sleep</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 10, height: 2, bgcolor: primaryColor }} />
+            <Typography variant="caption">Energy</Typography>
+          </Box>
+        </Box>
+      </Box>
 
-      <div className="h-[180px]">
+      <Box sx={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="date"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
@@ -99,7 +129,7 @@ export function SleepEnergyChart() {
             <YAxis
               yAxisId="left"
               domain={[0, 12]}
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
             />
@@ -107,7 +137,7 @@ export function SleepEnergyChart() {
               yAxisId="right"
               orientation="right"
               domain={[0, 10]}
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               hide
@@ -118,10 +148,10 @@ export function SleepEnergyChart() {
               type="monotone"
               dataKey="sleep"
               name="Sleep"
-              stroke="hsl(var(--chart-1))"
+              stroke={primaryColor}
               strokeWidth={2}
-              fill="hsl(var(--chart-1) / 0.15)"
-              dot={{ r: 3, fill: 'hsl(var(--chart-1))' }}
+              fill={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}
+              dot={{ r: 3, fill: primaryColor }}
               connectNulls
             />
             <Area
@@ -129,32 +159,53 @@ export function SleepEnergyChart() {
               type="monotone"
               dataKey="energy"
               name="Energy"
-              stroke="hsl(var(--chart-3))"
+              stroke={secondaryColor}
               strokeWidth={2}
-              fill="hsl(var(--chart-3) / 0.15)"
-              dot={{ r: 3, fill: 'hsl(var(--chart-3))' }}
+              strokeDasharray="4 2"
+              fill="transparent"
+              dot={{ r: 3, fill: secondaryColor, strokeWidth: 2, stroke: isDark ? '#000' : '#fff' }}
               connectNulls
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </Box>
 
       {data?.totals && (
-        <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-border/30">
-          <div className="bg-[hsl(var(--chart-1)/0.1)] rounded-xl p-3 text-center">
-            <div className="text-lg font-bold tabular-nums">
+        <Box sx={{ display: 'flex', gap: 2, mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ 
+            flex: 1, 
+            p: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+            borderRadius: 2,
+            textAlign: 'center',
+            border: 1,
+            borderColor: 'divider',
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {data.totals.avgSleep?.toFixed(1) ?? '—'}h
-            </div>
-            <div className="text-xs text-muted-foreground">Avg Sleep</div>
-          </div>
-          <div className="bg-[hsl(var(--chart-3)/0.1)] rounded-xl p-3 text-center">
-            <div className="text-lg font-bold tabular-nums">
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Avg Sleep
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            flex: 1, 
+            p: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+            borderRadius: 2,
+            textAlign: 'center',
+            border: 1,
+            borderColor: 'divider',
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {data.totals.avgEnergy?.toFixed(1) ?? '—'}/10
-            </div>
-            <div className="text-xs text-muted-foreground">Avg Energy</div>
-          </div>
-        </div>
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Avg Energy
+            </Typography>
+          </Box>
+        </Box>
       )}
-    </div>
+    </MuiCard>
   );
 }

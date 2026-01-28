@@ -16,13 +16,13 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
 import { motion } from 'framer-motion';
 
-// Darker grayscale palette for exercises
+// High contrast black/white palette for exercises
 const EXERCISE_COLORS = [
-  { stroke: 'hsl(0 0% 8%)', fill: 'hsl(0 0% 8% / 0.5)' },
-  { stroke: 'hsl(0 0% 20%)', fill: 'hsl(0 0% 20% / 0.5)' },
-  { stroke: 'hsl(0 0% 35%)', fill: 'hsl(0 0% 35% / 0.5)' },
-  { stroke: 'hsl(0 0% 50%)', fill: 'hsl(0 0% 50% / 0.5)' },
-  { stroke: 'hsl(0 0% 65%)', fill: 'hsl(0 0% 65% / 0.5)' },
+  { stroke: '#000000', fill: 'rgba(0,0,0,0.4)' },
+  { stroke: '#000000', fill: 'rgba(0,0,0,0.3)' },
+  { stroke: '#000000', fill: 'rgba(0,0,0,0.2)' },
+  { stroke: '#000000', fill: 'rgba(0,0,0,0.15)' },
+  { stroke: '#000000', fill: 'rgba(0,0,0,0.1)' },
 ];
 
 export function StrengthOverviewChart() {
@@ -119,13 +119,13 @@ export function StrengthOverviewChart() {
     const activeList = Array.from(activeExercises);
     const index = activeList.indexOf(exerciseName);
     if (isDark) {
-      // Brighter for dark mode
+      // High contrast white for dark mode
       const darkColors = [
-        { stroke: 'hsl(0 0% 95%)', fill: 'hsl(0 0% 95% / 0.4)' },
-        { stroke: 'hsl(0 0% 80%)', fill: 'hsl(0 0% 80% / 0.4)' },
-        { stroke: 'hsl(0 0% 65%)', fill: 'hsl(0 0% 65% / 0.4)' },
-        { stroke: 'hsl(0 0% 50%)', fill: 'hsl(0 0% 50% / 0.4)' },
-        { stroke: 'hsl(0 0% 35%)', fill: 'hsl(0 0% 35% / 0.4)' },
+        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.4)' },
+        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.3)' },
+        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.2)' },
+        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.15)' },
+        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.1)' },
       ];
       return darkColors[index % darkColors.length];
     }

@@ -23,11 +23,11 @@ export function VolumeSankeyChart() {
   const { data, isLoading } = useExerciseSets(dateRange);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Solid dark colors - no gradients
+  // High contrast black/white only
   const CATEGORY_FILLS = useMemo(() => ({
-    push: isDark ? 'hsl(0, 0%, 85%)' : 'hsl(0, 0%, 15%)',
-    pull: isDark ? 'hsl(0, 0%, 65%)' : 'hsl(0, 0%, 35%)',
-    legs: isDark ? 'hsl(0, 0%, 45%)' : 'hsl(0, 0%, 55%)',
+    push: isDark ? '#FFFFFF' : '#000000',
+    pull: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+    legs: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
   }), [isDark]);
 
   const { categories, totalVolume, radialData } = useMemo(() => {
