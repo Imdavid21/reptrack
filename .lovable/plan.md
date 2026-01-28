@@ -1,207 +1,183 @@
 
-# Insights Page Visual Redesign
 
-## Overview
-Transform the Insights page from the current brutalist/terminal aesthetic to a modern, soft, and visually rich analytics dashboard inspired by the reference designs.
+## Strength Overview Chart Redesign
 
----
+### Current Problems (as seen in screenshot)
+- 30+ exercise toggle chips create visual clutter
+- Stacked area chart becomes hard to read with many overlapping layers
+- All areas use similar gray opacity, making them indistinguishable
+- Legend duplicates information already in the chips
+- Difficult to identify which exercises contribute most to strength gains
 
-## Design Direction
+### Alternative Visualization Options
 
-### Color Palette (Soft Pastels)
-New CSS variables for the insights page:
-- **Mint/Teal**: `hsl(158, 64%, 52%)` - for positive trends, growth metrics
-- **Lavender**: `hsl(263, 70%, 76%)` - for workout/performance data
-- **Coral/Peach**: `hsl(15, 80%, 68%)` - for calories, energy burn
-- **Soft Yellow**: `hsl(48, 95%, 76%)` - for sleep, recovery
-- **Soft Pink**: `hsl(330, 70%, 76%)` - for heart rate, vitals
-- **Card backgrounds**: Slightly elevated with soft shadows
-
-### Card Styling
-- Replace sharp corners with `rounded-2xl` or `rounded-xl`
-- Add subtle box shadows (`shadow-sm` or custom soft shadow)
-- Lighter background with gradient overlays
-- Soft border or borderless cards with shadows
-
-### Charts
-- Use gradient fills with transparency (Area charts instead of Line where appropriate)
-- Rounded bar corners
-- Softer grid lines (nearly invisible)
-- Pastel color schemes for data series
+I recommend a **two-tier approach**: a clean aggregate view by default, with drill-down capability for individual exercises.
 
 ---
 
-## Technical Changes
+### Option A: Category-Based Sparkline Grid (Recommended)
 
-### 1. New CSS Variables (src/index.css)
-Add soft color palette tokens for insights:
+Instead of showing all 30+ exercises at once, group them by **muscle group** (Chest, Back, Shoulders, Biceps, Triceps, Quads, Hamstrings) and show a mini sparkline for each:
 
 ```text
---insight-mint: 158 64% 52%
---insight-lavender: 263 70% 76%
---insight-coral: 15 80% 68%
---insight-yellow: 48 95% 76%
---insight-pink: 330 70% 76%
---insight-blue: 210 80% 70%
---card-shadow: 0 4px 24px rgba(0, 0, 0, 0.06)
++--------------------------------------------------+
+| Strength Overview                         +28%   |
++--------------------------------------------------+
+|  [Chest]        [Back]         [Shoulders]       |
+|  32kg → 40kg    45kg → 52kg    28kg → 35kg       |
+|  ~~~^~~~        ~~~^~~~        ~~~^~~~           |
+|  +25%           +15%           +25%              |
++--------------------------------------------------+
+|  [Biceps]       [Triceps]      [Quads]           |
+|  12kg → 15kg    25kg → 30kg    80kg → 95kg       |
+|  ~~~^~~~        ~~~^~~~        ~~~^~~~           |
+|  +25%           +20%           +18%              |
++--------------------------------------------------+
+| STRENGTH INDEX: 328.5 kg                         |
++--------------------------------------------------+
 ```
 
-### 2. Insights Page Layout (src/pages/Insights.tsx)
-Restructure to include:
-- **Summary Stats Row**: 4 horizontal stat cards at top with icons, values, and trend percentages
-- **Tab navigation**: Softer pill-style tabs with rounded corners
-- **Grid layout**: 2-column responsive grid for chart cards
-
-### 3. New InsightStatCard Component
-Create a reusable stat card with:
-- Icon with soft colored background circle
-- Large stat value
-- Label and description
-- Trend indicator with percentage change
-- Optional mini sparkline
-
-### 4. Updated Chart Components
-Modify each chart component:
-
-**StrengthProgressionChart**:
-- Use Area chart with gradient fill
-- Soft lavender/purple color scheme
-- Rounded card container with shadow
-
-**VolumeChart**:
-- Stacked area chart with pastel colors
-- Mint, lavender, coral for push/pull/legs
-- Semi-circular progress ring for distribution
-
-**EnergyBalanceCard**:
-- Horizontal bar comparison (intake vs burn)
-- Coral for intake, mint for burn
-- Clean percentage-based visualization
-
-**SleepEnergyChart**:
-- Dual-axis area chart with yellow (sleep) and blue (energy)
-- Gradient fills with transparency
-
-**BodyweightChart**:
-- Smooth area chart with subtle gradient
-- Trend line with soft shadow
-
-**HydrationChart**:
-- Soft blue bar chart with rounded bars
-- Progress indicator for daily goal
-
-**VitalsTab Charts**:
-- Heart rate: Soft pink area chart
-- Steps: Mint gradient area chart
-
-### 5. Tab Styling Update
-- Pill-shaped tabs with rounded corners
-- Soft hover states
-- Active state with subtle shadow/elevation
+**Benefits**:
+- 6-8 sparklines vs 30+ toggles
+- Each category shows progression clearly
+- Tap a category to drill into individual exercises
+- Keeps the "Strength Index" summary
 
 ---
 
-## Component-by-Component Changes
+### Option B: Top Exercises Only + Simplified Line Chart
 
-### InsightsContent
+Show only the **Top 5 exercises by weight** with simple overlapping lines (no stacked areas):
+
 ```text
-- Add summary stat cards at top (4 cards: Sessions, Volume, Streak, Progress)
-- Update tab styling to rounded pills
-- Add subtle page background gradient
++--------------------------------------------------+
+| Strength Overview                         +28%   |
++--------------------------------------------------+
+|  ● Deadlift  ● Squat  ● Bench  ● Row  ● Press    |
++--------------------------------------------------+
+|      /-------●                                   |
+|     /    /---●                                   |
+|    /  __/  --●                                   |
+|   /__/   /---●                                   |
+|  /------●                                        |
+|  Jan 5    Jan 12    Jan 19    Jan 26             |
++--------------------------------------------------+
+| 328.5 kg STRENGTH INDEX                          |
++--------------------------------------------------+
 ```
 
-### PerformanceTab
-```text
-- Redesign stat blocks as modern stat cards with icons
-- Add trend indicators (+X% from last period)
-- Update AICoachInsights card styling
-```
-
-### BodyTab
-```text
-- Grid layout for cards (2 columns on desktop)
-- EnergyBalanceCard with donut or bar visualization
-- Soft colored macro progress bars
-```
-
-### VitalsTab
-```text
-- Heart rate card with pink gradient area chart
-- Steps card with mint bar chart
-- Oxygen level as circular gauge
-```
-
-### AITab
-```text
-- Clean insight cards with colored left borders
-- Softer background colors for insight types
-```
+**Benefits**:
+- Clean, readable lines
+- Focus on compound lifts that matter most
+- Dropdown/button to "View all exercises" opens a modal with full list
 
 ---
 
-## Files to Modify
+### Option C: Bar Chart + Trend (Simplest)
 
-1. **src/index.css** - Add soft color palette and card shadow utilities
-2. **src/pages/Insights.tsx** - Restructure layout, add summary cards, update tabs
-3. **src/components/analytics/StrengthProgressionChart.tsx** - Gradient area chart, soft colors
-4. **src/components/analytics/VolumeChart.tsx** - Soft stacked area, pastel palette
-5. **src/components/analytics/SleepEnergyChart.tsx** - Gradient fills, yellow/blue scheme
-6. **src/components/analytics/BodyweightChart.tsx** - Area chart with shadow, trend display
-7. **src/components/analytics/HydrationChart.tsx** - Soft blue bars, rounded corners
-8. **src/components/analytics/PullupAccumulator.tsx** - Modern bar styling
-9. **src/components/analytics/AICoachInsights.tsx** - Softer card styling
-10. **src/components/health/EnergyBalanceCard.tsx** - Horizontal bar visualization
-11. **src/components/health/NutritionInsights.tsx** - Gradient progress bars
-12. **src/components/health/HealthInsightsCard.tsx** - Soft colored insight cards
+Show aggregated weekly strength as bars with a trend line:
+
+```text
++--------------------------------------------------+
+| Strength Overview                         +28%   |
++--------------------------------------------------+
+|    █ Weekly Total                                |
+|    ▬ Trend                                       |
++--------------------------------------------------+
+|        ████                                      |
+|    ███ ████ ████                                 |
+|  █████ ████ ████ █████                           |
+|  █████ ████ ████ █████ ─────●                    |
+|  Jan 5    12    19    26                         |
++--------------------------------------------------+
+| Top Gainers: Deadlift +10kg, Squat +5kg          |
+| STRENGTH INDEX: 328.5 kg                         |
++--------------------------------------------------+
+```
+
+**Benefits**:
+- Single data series - no clutter
+- Highlight "Top Gainers" as text chips below
+- Fastest to read
 
 ---
 
-## New Component
+### Recommendation: Option A (Sparkline Grid)
 
-### InsightStatCard (src/components/analytics/InsightStatCard.tsx)
+This provides the best balance of:
+1. **Information density** - see all muscle groups at a glance
+2. **Progressive disclosure** - tap to drill into exercises
+3. **Minimal UI** - no 30+ toggles
+4. **Actionable insights** - clear growth % per category
+
+---
+
+### Implementation Details
+
+#### Files to Modify
+1. **`src/components/analytics/StrengthOverviewChart.tsx`** - Complete rewrite with new visualization
+
+#### Data Transformation
+- Group exercises by `muscleGroup` from exercise library
+- Calculate weekly max weight per muscle group
+- Compute growth percentage per group
+- Keep total "Strength Index" calculation
+
+#### Component Structure
 ```text
-Props:
-- icon: Lucide icon component
-- label: string
-- value: string | number
-- trend?: number (percentage change)
-- color: 'mint' | 'lavender' | 'coral' | 'yellow' | 'pink' | 'blue'
-- sparkData?: number[] (optional mini chart data)
+<MuiCard>
+  <Header: "Strength Overview" + Growth Badge />
+  <Grid cols=3 gap=1.5>
+    {muscleGroups.map(group => (
+      <SparklineCard
+        key={group}
+        label={group.name}
+        data={group.weeklyMaxWeights}
+        currentWeight={group.latestMax}
+        growth={group.growthPercent}
+        onClick={() => setSelectedGroup(group)}
+      />
+    ))}
+  </Grid>
+  <StrengthIndexBox value={totalStrength} />
+</MuiCard>
 
-Features:
-- Rounded corners with soft shadow
-- Colored icon background circle
-- Large bold value
-- Trend arrow with percentage (green up, red down)
-- Optional mini sparkline in corner
+{/* Optional drill-down dialog */}
+<ExerciseBreakdownDialog
+  open={!!selectedGroup}
+  group={selectedGroup}
+  onClose={() => setSelectedGroup(null)}
+/>
+```
+
+#### Sparkline Implementation
+Use Recharts `<AreaChart>` with minimal styling:
+- No axes
+- 40-60px height
+- Solid black/white fill with transparency
+- No grid lines
+- Touch target for drill-down
+
+#### Muscle Group Mapping
+```typescript
+const MUSCLE_GROUPS = [
+  { key: 'chest', label: 'Chest', patterns: ['chest', 'bench', 'fly'] },
+  { key: 'back', label: 'Back', patterns: ['row', 'pulldown', 'deadlift'] },
+  { key: 'shoulders', label: 'Shoulders', patterns: ['shoulder', 'press', 'raise', 'delt'] },
+  { key: 'arms', label: 'Arms', patterns: ['curl', 'tricep', 'bicep', 'pushdown'] },
+  { key: 'legs', label: 'Legs', patterns: ['squat', 'leg', 'lunge', 'calf', 'thrust'] },
+];
 ```
 
 ---
 
-## Visual Summary
+### Summary
 
-```text
-┌─────────────────────────────────────────────────────┐
-│  Date Range: [Last 30 Days ▼]                       │
-├─────────────────────────────────────────────────────┤
-│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐            │
-│  │ 24   │  │ 45k  │  │ 7.2h │  │ 85%  │  ← Summary │
-│  │ SESS │  │ VOL  │  │ SLEEP│  │ PROG │    Cards   │
-│  │ +12% │  │ +8%  │  │ +0.5 │  │ ──   │            │
-│  └──────┘  └──────┘  └──────┘  └──────┘            │
-├─────────────────────────────────────────────────────┤
-│  ┌─PERF─┐ ┌─BODY─┐ ┌─VITALS┐ ┌──AI──┐  ← Pill Tabs │
-├─────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐          │
-│  │  Strength Prog  │  │  Weekly Volume  │  ← Grid  │
-│  │  ~~~~~~~~~~~~   │  │  ▓▓▓▓▓▓▓▓▓▓▓   │    Layout │
-│  │  gradient area  │  │  stacked bars   │          │
-│  └─────────────────┘  └─────────────────┘          │
-│  ┌─────────────────────────────────────┐           │
-│  │  AI Coach Insights                   │          │
-│  │  → Personalized recommendations...   │          │
-│  └─────────────────────────────────────┘           │
-└─────────────────────────────────────────────────────┘
-```
+| Aspect | Current | Proposed (Option A) |
+|--------|---------|---------------------|
+| Toggles | 30+ chips | 0 chips |
+| Chart elements | 5+ stacked areas | 5-6 sparklines |
+| Visual clarity | Low (overlapping) | High (isolated) |
+| Drill-down | None | Tap category |
+| Legend | Redundant | Integrated |
 
-This redesign maintains all existing functionality while transforming the visual presentation to be modern, soft, and visually engaging with the soft pastel color palette requested.
