@@ -73,8 +73,8 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
   const negativeBg = theme.palette.action.hover;
 
   return (
-    <motion.div variants={staggerItem}>
-      <MuiCard>
+    <motion.div variants={staggerItem} style={{ height: '100%' }}>
+      <MuiCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
           <Box sx={{ 
             p: 1, 
@@ -103,17 +103,19 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
             />
           )}
         </Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
-          {value}
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.6rem' }}>
-          {label}
-        </Typography>
-        {description && (
-          <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.7, color: 'text.secondary', fontSize: '0.55rem' }}>
-            {description}
+        <Box sx={{ mt: 'auto' }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
+            {value}
           </Typography>
-        )}
+          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.6rem' }}>
+            {label}
+          </Typography>
+          {description && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.7, color: 'text.secondary', fontSize: '0.55rem' }}>
+              {description}
+            </Typography>
+          )}
+        </Box>
       </MuiCard>
     </motion.div>
   );
