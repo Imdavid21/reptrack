@@ -76,11 +76,11 @@ export function SleepEnergyChart() {
         <h3 className="text-sm font-semibold">Sleep & Energy</h3>
         <div className="flex items-center gap-4 text-xs">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-insight-yellow" />
+            <span className="w-3 h-3 rounded-full bg-[hsl(var(--chart-1))]" />
             Sleep
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-insight-blue" />
+            <span className="w-3 h-3 rounded-full bg-[hsl(var(--chart-3))]" />
             Energy
           </span>
         </div>
@@ -91,12 +91,12 @@ export function SleepEnergyChart() {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="sleepGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-yellow))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-yellow))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-blue))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-blue))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -128,10 +128,10 @@ export function SleepEnergyChart() {
               type="monotone"
               dataKey="sleep"
               name="Sleep"
-              stroke="hsl(var(--insight-yellow))"
+              stroke="hsl(var(--chart-1))"
               strokeWidth={2}
               fill="url(#sleepGradient)"
-              dot={{ r: 3, fill: 'hsl(var(--insight-yellow))' }}
+              dot={{ r: 3, fill: 'hsl(var(--chart-1))' }}
               connectNulls
             />
             <Area
@@ -139,10 +139,10 @@ export function SleepEnergyChart() {
               type="monotone"
               dataKey="energy"
               name="Energy"
-              stroke="hsl(var(--insight-blue))"
+              stroke="hsl(var(--chart-3))"
               strokeWidth={2}
               fill="url(#energyGradient)"
-              dot={{ r: 3, fill: 'hsl(var(--insight-blue))' }}
+              dot={{ r: 3, fill: 'hsl(var(--chart-3))' }}
               connectNulls
             />
           </AreaChart>
@@ -151,13 +151,13 @@ export function SleepEnergyChart() {
 
       {data?.totals && (
         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-border/30">
-          <div className="bg-insight-yellow/10 rounded-xl p-3 text-center">
+          <div className="bg-[hsl(var(--chart-1)/0.1)] rounded-xl p-3 text-center">
             <div className="text-lg font-bold tabular-nums">
               {data.totals.avgSleep?.toFixed(1) ?? '—'}h
             </div>
             <div className="text-xs text-muted-foreground">Avg Sleep</div>
           </div>
-          <div className="bg-insight-blue/10 rounded-xl p-3 text-center">
+          <div className="bg-[hsl(var(--chart-3)/0.1)] rounded-xl p-3 text-center">
             <div className="text-lg font-bold tabular-nums">
               {data.totals.avgEnergy?.toFixed(1) ?? '—'}/10
             </div>

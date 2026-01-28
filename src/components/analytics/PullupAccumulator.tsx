@@ -89,7 +89,7 @@ export function PullupAccumulator() {
         <p className="text-muted-foreground">
           {payload[0].value} pull-ups
         </p>
-        <p className="text-insight-mint mt-1">
+        <p className="text-foreground font-medium mt-1">
           Cumulative: {payload[0].payload.cumulative}
         </p>
       </div>
@@ -123,8 +123,8 @@ export function PullupAccumulator() {
                 <Cell
                   key={`cell-${index}`}
                   fill={index === chartData.length - 1
-                    ? 'hsl(var(--insight-mint))'
-                    : 'hsl(var(--insight-mint) / 0.4)'
+                    ? 'hsl(var(--chart-1))'
+                    : 'hsl(var(--chart-3))'
                   }
                 />
               ))}
@@ -134,11 +134,11 @@ export function PullupAccumulator() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/30">
-        <div className="bg-insight-mint/10 rounded-xl p-2.5 text-center">
+        <div className="bg-[hsl(var(--chart-1)/0.1)] rounded-xl p-2.5 text-center">
           <div className="text-base font-bold tabular-nums">{weeklyAvg}</div>
           <div className="text-xs text-muted-foreground">Avg/Week</div>
         </div>
-        <div className="bg-insight-lavender/10 rounded-xl p-2.5 text-center">
+        <div className="bg-[hsl(var(--chart-2)/0.1)] rounded-xl p-2.5 text-center">
           <div className="text-base font-bold tabular-nums">{chartData.length}</div>
           <div className="text-xs text-muted-foreground">Weeks Tracked</div>
         </div>

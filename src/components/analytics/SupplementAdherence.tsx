@@ -96,8 +96,8 @@ export function SupplementAdherence() {
     return (
       <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
         <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 rounded-xl bg-insight-pink/15">
-            <Pill className="h-4 w-4 text-insight-pink" />
+          <div className="p-2 rounded-xl bg-[hsl(var(--chart-1)/0.15)]">
+            <Pill className="h-4 w-4 text-[hsl(var(--chart-1))]" />
           </div>
           <h3 className="text-sm font-semibold">Supplement Adherence</h3>
         </div>
@@ -109,26 +109,26 @@ export function SupplementAdherence() {
   }
 
   const getBarColor = (percent: number) => {
-    if (percent >= 80) return 'bg-insight-mint';
-    if (percent >= 50) return 'bg-insight-blue';
-    if (percent >= 25) return 'bg-insight-yellow';
-    return 'bg-insight-coral';
+    if (percent >= 80) return 'bg-[hsl(var(--chart-1))]';
+    if (percent >= 50) return 'bg-[hsl(var(--chart-2))]';
+    if (percent >= 25) return 'bg-[hsl(var(--chart-3))]';
+    return 'bg-[hsl(var(--chart-4))]';
   };
 
   const getCellColor = (percent: number) => {
     if (percent === 0) return 'bg-muted/30';
-    if (percent <= 25) return 'bg-insight-coral/30';
-    if (percent <= 50) return 'bg-insight-yellow/30';
-    if (percent <= 75) return 'bg-insight-blue/30';
-    return 'bg-insight-mint/30';
+    if (percent <= 25) return 'bg-[hsl(var(--chart-4)/0.3)]';
+    if (percent <= 50) return 'bg-[hsl(var(--chart-3)/0.3)]';
+    if (percent <= 75) return 'bg-[hsl(var(--chart-2)/0.3)]';
+    return 'bg-[hsl(var(--chart-1)/0.3)]';
   };
 
   return (
     <div className="bg-card rounded-2xl shadow-sm border border-border/50 p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-insight-pink/15">
-            <Pill className="h-4 w-4 text-insight-pink" />
+          <div className="p-2 rounded-xl bg-[hsl(var(--chart-1)/0.15)]">
+            <Pill className="h-4 w-4 text-[hsl(var(--chart-1))]" />
           </div>
           <h3 className="text-sm font-semibold">Supplement Adherence</h3>
         </div>

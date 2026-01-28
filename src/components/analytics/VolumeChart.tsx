@@ -100,16 +100,16 @@ export function VolumeChart() {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="pushGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="pullGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-mint))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-mint))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="legsGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-coral))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-coral))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -129,28 +129,28 @@ export function VolumeChart() {
               type="monotone"
               dataKey="pushVolume"
               name="Push"
-              stroke="hsl(var(--insight-lavender))"
+              stroke="hsl(var(--chart-1))"
               strokeWidth={2}
               fill="url(#pushGradient)"
-              dot={{ fill: 'hsl(var(--insight-lavender))', strokeWidth: 0, r: 3 }}
+              dot={{ fill: 'hsl(var(--chart-1))', strokeWidth: 0, r: 3 }}
             />
             <Area
               type="monotone"
               dataKey="pullVolume"
               name="Pull"
-              stroke="hsl(var(--insight-mint))"
+              stroke="hsl(var(--chart-2))"
               strokeWidth={2}
               fill="url(#pullGradient)"
-              dot={{ fill: 'hsl(var(--insight-mint))', strokeWidth: 0, r: 3 }}
+              dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 0, r: 3 }}
             />
             <Area
               type="monotone"
               dataKey="legsVolume"
               name="Legs"
-              stroke="hsl(var(--insight-coral))"
+              stroke="hsl(var(--chart-3))"
               strokeWidth={2}
               fill="url(#legsGradient)"
-              dot={{ fill: 'hsl(var(--insight-coral))', strokeWidth: 0, r: 3 }}
+              dot={{ fill: 'hsl(var(--chart-3))', strokeWidth: 0, r: 3 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -159,15 +159,15 @@ export function VolumeChart() {
       {/* Legend */}
       <div className="flex justify-center gap-6 text-xs mt-3 border-t border-border/30 pt-3">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-insight-lavender" />
+          <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-1))]" />
           <span>Push</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-insight-mint" />
+          <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-2))]" />
           <span>Pull</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-insight-coral" />
+          <div className="w-3 h-3 rounded-full bg-[hsl(var(--chart-3))]" />
           <span>Legs</span>
         </div>
       </div>
@@ -177,15 +177,15 @@ export function VolumeChart() {
           <div className="text-xs text-muted-foreground mb-2">Volume Distribution</div>
           <div className="flex h-2.5 overflow-hidden rounded-full bg-muted/30">
             <div
-              className="bg-insight-lavender transition-all"
+              className="bg-[hsl(var(--chart-1))] transition-all"
               style={{ width: `${categoryDistribution.push}%` }}
             />
             <div
-              className="bg-insight-mint transition-all"
+              className="bg-[hsl(var(--chart-2))] transition-all"
               style={{ width: `${categoryDistribution.pull}%` }}
             />
             <div
-              className="bg-insight-coral transition-all"
+              className="bg-[hsl(var(--chart-3))] transition-all"
               style={{ width: `${categoryDistribution.legs}%` }}
             />
           </div>

@@ -1,24 +1,23 @@
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type InsightColor = 'mint' | 'lavender' | 'coral' | 'yellow' | 'pink' | 'blue';
+type InsightColor = 1 | 2 | 3 | 4 | 5;
 
 interface InsightStatCardProps {
   icon: LucideIcon;
   label: string;
   value: string | number;
   trend?: number;
-  color: InsightColor;
+  color?: InsightColor;
   description?: string;
 }
 
 const colorClasses: Record<InsightColor, { bg: string; icon: string }> = {
-  mint: { bg: 'bg-insight-mint/15', icon: 'text-insight-mint' },
-  lavender: { bg: 'bg-insight-lavender/15', icon: 'text-insight-lavender' },
-  coral: { bg: 'bg-insight-coral/15', icon: 'text-insight-coral' },
-  yellow: { bg: 'bg-insight-yellow/15', icon: 'text-insight-yellow' },
-  pink: { bg: 'bg-insight-pink/15', icon: 'text-insight-pink' },
-  blue: { bg: 'bg-insight-blue/15', icon: 'text-insight-blue' },
+  1: { bg: 'bg-[hsl(var(--chart-1)/0.15)]', icon: 'text-[hsl(var(--chart-1))]' },
+  2: { bg: 'bg-[hsl(var(--chart-2)/0.15)]', icon: 'text-[hsl(var(--chart-2))]' },
+  3: { bg: 'bg-[hsl(var(--chart-3)/0.15)]', icon: 'text-[hsl(var(--chart-3))]' },
+  4: { bg: 'bg-[hsl(var(--chart-4)/0.15)]', icon: 'text-[hsl(var(--chart-4))]' },
+  5: { bg: 'bg-[hsl(var(--chart-5)/0.15)]', icon: 'text-[hsl(var(--chart-5))]' },
 };
 
 export function InsightStatCard({
@@ -26,7 +25,7 @@ export function InsightStatCard({
   label,
   value,
   trend,
-  color,
+  color = 1,
   description,
 }: InsightStatCardProps) {
   const { bg, icon } = colorClasses[color];
@@ -41,7 +40,9 @@ export function InsightStatCard({
           <div
             className={cn(
               'flex items-center gap-0.5 text-xs font-medium px-2 py-1 rounded-full',
-              trend > 0 ? 'bg-insight-mint/15 text-insight-mint' : 'bg-insight-coral/15 text-insight-coral'
+              trend > 0 
+                ? 'bg-[hsl(var(--chart-1)/0.15)] text-foreground' 
+                : 'bg-[hsl(var(--chart-4)/0.15)] text-foreground'
             )}
           >
             {trend > 0 ? (
