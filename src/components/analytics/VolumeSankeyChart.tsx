@@ -125,6 +125,12 @@ export function VolumeSankeyChart() {
   if (isLoading) {
     return (
       <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+            <Layers size={14} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
+        </Box>
         <Skeleton variant="circular" width={200} height={200} sx={{ mx: 'auto' }} />
       </MuiCard>
     );
@@ -133,6 +139,12 @@ export function VolumeSankeyChart() {
   if (categories.length === 0) {
     return (
       <MuiCard>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+            <Layers size={14} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
+        </Box>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
           Complete workouts with weights to see volume distribution
         </Typography>
