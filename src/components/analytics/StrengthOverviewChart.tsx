@@ -14,15 +14,15 @@ import {
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
+import { motion } from 'framer-motion';
 
-// Grayscale palette for exercises
+// Darker grayscale palette for exercises
 const EXERCISE_COLORS = [
-  { stroke: 'hsl(0 0% 25%)', fill: 'hsl(0 0% 25% / 0.6)' },
-  { stroke: 'hsl(0 0% 40%)', fill: 'hsl(0 0% 40% / 0.6)' },
-  { stroke: 'hsl(0 0% 55%)', fill: 'hsl(0 0% 55% / 0.6)' },
-  { stroke: 'hsl(0 0% 70%)', fill: 'hsl(0 0% 70% / 0.6)' },
-  { stroke: 'hsl(0 0% 80%)', fill: 'hsl(0 0% 80% / 0.6)' },
-  { stroke: 'hsl(0 0% 90%)', fill: 'hsl(0 0% 90% / 0.6)' },
+  { stroke: 'hsl(0 0% 8%)', fill: 'hsl(0 0% 8% / 0.5)' },
+  { stroke: 'hsl(0 0% 20%)', fill: 'hsl(0 0% 20% / 0.5)' },
+  { stroke: 'hsl(0 0% 35%)', fill: 'hsl(0 0% 35% / 0.5)' },
+  { stroke: 'hsl(0 0% 50%)', fill: 'hsl(0 0% 50% / 0.5)' },
+  { stroke: 'hsl(0 0% 65%)', fill: 'hsl(0 0% 65% / 0.5)' },
 ];
 
 export function StrengthOverviewChart() {
@@ -119,14 +119,13 @@ export function StrengthOverviewChart() {
     const activeList = Array.from(activeExercises);
     const index = activeList.indexOf(exerciseName);
     if (isDark) {
-      // Invert for dark mode
+      // Brighter for dark mode
       const darkColors = [
-        { stroke: 'hsl(0 0% 85%)', fill: 'hsl(0 0% 85% / 0.5)' },
-        { stroke: 'hsl(0 0% 70%)', fill: 'hsl(0 0% 70% / 0.5)' },
-        { stroke: 'hsl(0 0% 55%)', fill: 'hsl(0 0% 55% / 0.5)' },
-        { stroke: 'hsl(0 0% 45%)', fill: 'hsl(0 0% 45% / 0.5)' },
-        { stroke: 'hsl(0 0% 35%)', fill: 'hsl(0 0% 35% / 0.5)' },
-        { stroke: 'hsl(0 0% 25%)', fill: 'hsl(0 0% 25% / 0.5)' },
+        { stroke: 'hsl(0 0% 95%)', fill: 'hsl(0 0% 95% / 0.4)' },
+        { stroke: 'hsl(0 0% 80%)', fill: 'hsl(0 0% 80% / 0.4)' },
+        { stroke: 'hsl(0 0% 65%)', fill: 'hsl(0 0% 65% / 0.4)' },
+        { stroke: 'hsl(0 0% 50%)', fill: 'hsl(0 0% 50% / 0.4)' },
+        { stroke: 'hsl(0 0% 35%)', fill: 'hsl(0 0% 35% / 0.4)' },
       ];
       return darkColors[index % darkColors.length];
     }
@@ -171,7 +170,11 @@ export function StrengthOverviewChart() {
     return (
       <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
             <Trophy size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -229,7 +232,11 @@ export function StrengthOverviewChart() {
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
             <Trophy size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -348,20 +355,32 @@ export function StrengthOverviewChart() {
 
       {/* Current strength index */}
       {filteredCurrentStrength > 0 && (
-        <Box sx={{
-          mt: 2,
-          p: 2,
-          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100',
-          borderRadius: 2,
-          textAlign: 'center',
-        }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            {filteredCurrentStrength.toLocaleString()} kg
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.05em' }}>
-            STRENGTH INDEX
-          </Typography>
-        </Box>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Box sx={{
+            mt: 2,
+            p: 2.5,
+            bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+            borderRadius: 3,
+            textAlign: 'center',
+            border: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+              {filteredCurrentStrength.toLocaleString()} kg
+            </Typography>
+            <Typography variant="caption" sx={{ 
+              color: 'text.secondary', 
+              letterSpacing: '0.1em',
+              fontWeight: 500,
+            }}>
+              STRENGTH INDEX
+            </Typography>
+          </Box>
+        </motion.div>
       )}
 
       {/* Legend */}

@@ -52,24 +52,35 @@ export function EfficiencyChart() {
     );
   };
 
-  // Use theme-aware colors
-  const accentColor = isDark ? theme.palette.secondary.main : theme.palette.secondary.main;
-  const textColor = theme.palette.text.primary;
+  // Use theme-aware darker colors
+  const barColor = isDark ? 'hsl(0, 0%, 80%)' : 'hsl(0, 0%, 15%)';
+  const lineColor = isDark ? 'hsl(0, 0%, 95%)' : 'hsl(0, 0%, 8%)';
   const mutedColor = theme.palette.text.secondary;
-  const surfaceColor = isDark ? 'rgba(255,255,255,0.05)' : theme.palette.grey[200];
 
   return (
     <MuiCard>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
             <Zap size={14} style={{ color: theme.palette.text.primary }} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Workout Efficiency
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'success.light', px: 1.5, py: 0.5, borderRadius: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 0.5, 
+          bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', 
+          px: 1.5, 
+          py: 0.5, 
+          borderRadius: 2 
+        }}>
           <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
             {avgEfficiency} kg/min avg
           </Typography>
@@ -86,8 +97,8 @@ export function EfficiencyChart() {
             <ComposedChart data={chartData}>
               <defs>
                 <linearGradient id="efficiencyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={accentColor} stopOpacity={0.8} />
-                  <stop offset="95%" stopColor={accentColor} stopOpacity={0.2} />
+                  <stop offset="5%" stopColor={barColor} stopOpacity={0.9} />
+                  <stop offset="95%" stopColor={barColor} stopOpacity={0.3} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
@@ -105,7 +116,7 @@ export function EfficiencyChart() {
                 yAxisId="right"
                 type="monotone" 
                 dataKey="efficiency" 
-                stroke={textColor} 
+                stroke={lineColor} 
                 strokeWidth={2}
                 dot={false}
                 name="Efficiency"
@@ -121,7 +132,13 @@ export function EfficiencyChart() {
       )}
 
       <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <Box sx={{ flex: 1, p: 1.5, bgcolor: surfaceColor, borderRadius: 2, textAlign: 'center' }}>
+        <Box sx={{ 
+          flex: 1, 
+          p: 1.5, 
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', 
+          borderRadius: 2, 
+          textAlign: 'center' 
+        }}>
           <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
             {data?.today.avgDuration || '—'}m
@@ -130,7 +147,13 @@ export function EfficiencyChart() {
             AVG DURATION
           </Typography>
         </Box>
-        <Box sx={{ flex: 1, p: 1.5, bgcolor: surfaceColor, borderRadius: 2, textAlign: 'center' }}>
+        <Box sx={{ 
+          flex: 1, 
+          p: 1.5, 
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', 
+          borderRadius: 2, 
+          textAlign: 'center' 
+        }}>
           <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
             {data?.today.totalVolume ? `${(data.today.totalVolume / 1000).toFixed(1)}k` : '—'}
