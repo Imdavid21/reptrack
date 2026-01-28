@@ -1,5 +1,6 @@
-import { Box, Typography, Chip, LinearProgress, Skeleton, useTheme } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Box, Typography, Chip, Skeleton } from '@mui/material';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -8,11 +9,9 @@ import {
   Moon, 
   Flame,
   Target,
-  Zap,
-  Heart,
-  BarChart3,
-  Calendar,
   Brain,
+  BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedTabs } from '@/components/ui/AnimatedTabs';
@@ -34,16 +33,16 @@ import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 import { WeeklySummaryCard } from '@/components/analytics/WeeklySummaryCard';
 import { MonthlySummaryCard } from '@/components/analytics/MonthlySummaryCard';
 import { RealCorrelationCard } from '@/components/analytics/RealCorrelationCard';
+import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
+import { TotalStrengthChart } from '@/components/analytics/TotalStrengthChart';
+import { BodyPartsSpline } from '@/components/analytics/BodyPartsSpline';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { useHealthAnalytics } from '@/hooks/useHealthAnalytics';
 import { useVolumeData } from '@/hooks/useVolumeData';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { format, differenceInDays } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis } from 'recharts';
+import { differenceInDays } from 'date-fns';
 
 // Stat card component for the summary row
 interface StatCardProps {
@@ -56,14 +55,13 @@ interface StatCardProps {
 }
 
 function StatCard({ icon, label, value, trend, description, loading }: StatCardProps) {
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   if (loading) {
     return (
       <motion.div variants={staggerItem}>
-        <MuiCard sx={{ 
-          minWidth: 130,
-          bgcolor: '#f8f9fa',
-          border: '1px solid #e9ecef',
-        }}>
+        <MuiCard>
           <Skeleton variant="circular" width={36} height={36} sx={{ mb: 1.5 }} />
           <Skeleton variant="text" width={60} height={32} />
           <Skeleton variant="text" width={80} height={16} />
@@ -74,17 +72,13 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
 
   return (
     <motion.div variants={staggerItem}>
-      <MuiCard sx={{ 
-        minWidth: 130,
-        bgcolor: '#f8f9fa',
-        border: '1px solid #e9ecef',
-      }}>
+      <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
           <Box sx={{ 
             p: 1, 
             borderRadius: 2, 
-            bgcolor: '#d8f3dc',
-            color: '#081c15',
+            bgcolor: isDark ? 'rgba(149, 213, 178, 0.15)' : '#d8f3dc',
+            color: isDark ? '#95d5b2' : '#081c15',
             display: 'flex',
           }}>
             {icon}
@@ -97,8 +91,12 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
               sx={{
                 height: 20,
                 fontSize: '0.6rem',
-                bgcolor: trend > 0 ? '#d8f3dc' : 'rgba(255, 138, 101, 0.15)',
-                color: trend > 0 ? '#081c15' : '#ff8a65',
+                bgcolor: trend > 0 
+                  ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#d8f3dc')
+                  : 'rgba(255, 138, 101, 0.15)',
+                color: trend > 0 
+                  ? (isDark ? '#95d5b2' : '#081c15')
+                  : '#ff8a65',
                 '& .MuiChip-icon': {
                   color: 'inherit',
                   fontSize: 10,
@@ -107,7 +105,7 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
             />
           )}
         </Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#081c15', fontVariantNumeric: 'tabular-nums' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
           {value}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.6rem' }}>
@@ -182,6 +180,8 @@ function SummaryStats() {
 
 function OverviewTab() {
   const { data, isLoading } = useCorrelationAnalysis(60);
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
@@ -231,7 +231,7 @@ function OverviewTab() {
           ) : data?.correlations.length ? (
             <RealCorrelationCard correlation={data.correlations[0]} />
           ) : (
-            <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+            <MuiCard>
               <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 2 }}>
                 Log more data to unlock insights
               </Typography>
@@ -247,6 +247,12 @@ function PerformanceTab() {
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <motion.div variants={staggerItem}>
+          <EfficiencyChart />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <TotalStrengthChart />
+        </motion.div>
         <motion.div variants={staggerItem}>
           <StrengthProgressionChart />
         </motion.div>
@@ -266,6 +272,9 @@ function BodyTab() {
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <motion.div variants={staggerItem}>
+          <BodyPartsSpline />
+        </motion.div>
+        <motion.div variants={staggerItem}>
           <EnergyBalanceCard />
         </motion.div>
         <motion.div variants={staggerItem}>
@@ -282,181 +291,6 @@ function BodyTab() {
         </motion.div>
         <motion.div variants={staggerItem}>
           <SupplementAdherence />
-        </motion.div>
-      </Box>
-    </motion.div>
-  );
-}
-
-function VitalsTab() {
-  const { dateRange } = useDateRange();
-  const days = differenceInDays(dateRange.to, dateRange.from) || 30;
-  const { vitals } = useHealthAnalytics(days);
-
-  const heartRateData = vitals
-    .filter(v => v.heartRate !== null || v.oxygenLevel !== null)
-    .map(v => ({
-      date: format(new Date(v.date), 'MMM d'),
-      heartRate: v.heartRate,
-      oxygen: v.oxygenLevel,
-    }));
-
-  const stepsData = vitals
-    .filter(v => v.steps !== null && v.steps > 0)
-    .map(v => ({
-      date: format(new Date(v.date), 'MMM d'),
-      steps: v.steps,
-    }));
-
-  const renderTooltip = () => ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <Box sx={{ 
-        bgcolor: 'background.paper', 
-        borderRadius: 2, 
-        boxShadow: 2, 
-        border: '1px solid #e9ecef',
-        p: 1.5,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>{label}</Typography>
-        {payload.map((p: any, i: number) => (
-          <Typography key={i} variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            {p.name}: <strong style={{ color: '#081c15' }}>{p.value}</strong>
-          </Typography>
-        ))}
-      </Box>
-    );
-  };
-
-  return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show">
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {/* Heart Rate Chart */}
-        <motion.div variants={staggerItem}>
-          <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#d8f3dc' }}>
-                <Heart size={14} style={{ color: '#081c15' }} />
-              </Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
-                Heart Rate & SpO2
-              </Typography>
-            </Box>
-            {heartRateData.length > 0 ? (
-              <Box sx={{ height: 180 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={heartRateData}>
-                    <defs>
-                      <linearGradient id="heartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#95d5b2" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#95d5b2" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[50, 120]} tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-                    <Tooltip content={renderTooltip()} />
-                    <Area
-                      type="monotone"
-                      dataKey="heartRate"
-                      stroke="#95d5b2"
-                      strokeWidth={2}
-                      fill="url(#heartGradient)"
-                      name="Heart Rate"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Box>
-            ) : (
-              <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
-                No heart rate data yet
-              </Typography>
-            )}
-          </MuiCard>
-        </motion.div>
-
-        {/* Steps Chart */}
-        <motion.div variants={staggerItem}>
-          <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#d8f3dc' }}>
-                <Activity size={14} style={{ color: '#081c15' }} />
-              </Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
-                Daily Steps
-              </Typography>
-            </Box>
-            {stepsData.length > 0 ? (
-              <Box sx={{ height: 180 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stepsData}>
-                    <defs>
-                      <linearGradient id="stepsGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#95d5b2" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#95d5b2" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-                    <Tooltip content={renderTooltip()} />
-                    <Area
-                      type="monotone"
-                      dataKey="steps"
-                      stroke="#95d5b2"
-                      strokeWidth={2}
-                      fill="url(#stepsGradient)"
-                      name="Steps"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Box>
-            ) : (
-              <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
-                No steps data yet
-              </Typography>
-            )}
-          </MuiCard>
-        </motion.div>
-      </Box>
-    </motion.div>
-  );
-}
-
-function CorrelationsTab() {
-  const { data, isLoading } = useCorrelationAnalysis(60);
-  
-  return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show">
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {isLoading ? (
-          <>
-            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
-            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
-            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
-          </>
-        ) : data?.correlations.length ? (
-          data.correlations.map(correlation => (
-            <motion.div key={correlation.id} variants={staggerItem}>
-              <RealCorrelationCard correlation={correlation} />
-            </motion.div>
-          ))
-        ) : (
-          <motion.div variants={staggerItem}>
-            <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Brain size={32} style={{ color: '#95d5b2', marginBottom: 8 }} />
-                <Typography variant="body2" sx={{ color: '#081c15', fontWeight: 600, mb: 0.5 }}>
-                  Building Your Insights
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Log more workouts, sleep, and nutrition data to unlock personalized correlations
-                </Typography>
-              </Box>
-            </MuiCard>
-          </motion.div>
-        )}
-
-        <motion.div variants={staggerItem}>
-          <HealthInsightsCard />
         </motion.div>
       </Box>
     </motion.div>
@@ -481,16 +315,62 @@ function AITab() {
   );
 }
 
+function CorrelationsTab() {
+  const { data, isLoading } = useCorrelationAnalysis(60);
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
+  
+  return (
+    <motion.div variants={staggerContainer} initial="hidden" animate="show">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {isLoading ? (
+          <>
+            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+          </>
+        ) : data?.correlations.length ? (
+          data.correlations.map(correlation => (
+            <motion.div key={correlation.id} variants={staggerItem}>
+              <RealCorrelationCard correlation={correlation} />
+            </motion.div>
+          ))
+        ) : (
+          <motion.div variants={staggerItem}>
+            <MuiCard>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Brain size={32} style={{ color: '#95d5b2', marginBottom: 8 }} />
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
+                  Building Your Insights
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Log more workouts, sleep, and nutrition data to unlock personalized correlations
+                </Typography>
+              </Box>
+            </MuiCard>
+          </motion.div>
+        )}
+
+        <motion.div variants={staggerItem}>
+          <HealthInsightsCard />
+        </motion.div>
+      </Box>
+    </motion.div>
+  );
+}
+
 function InsightsContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
   
   const tabs = [
     { label: 'Overview', value: 'overview', icon: <BarChart3 size={12} /> },
     { label: 'Perf', value: 'performance', icon: <Dumbbell size={12} /> },
     { label: 'Body', value: 'body', icon: <Activity size={12} /> },
-    { label: 'Insights', value: 'insights', icon: <Brain size={12} /> },
+    { label: 'AI', value: 'ai', icon: <Sparkles size={12} /> },
   ];
 
   const handleTabChange = (newValue: string) => {
@@ -510,7 +390,7 @@ function InsightsContent() {
           gap: 2,
           mb: 1,
         }}>
-          <Typography variant="h2" sx={{ color: '#081c15', fontWeight: 700 }}>
+          <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 700 }}>
             Analytics
           </Typography>
           <DateRangeSelector />
@@ -524,7 +404,7 @@ function InsightsContent() {
           {activeTab === 'overview' && <OverviewTab />}
           {activeTab === 'performance' && <PerformanceTab />}
           {activeTab === 'body' && <BodyTab />}
-          {activeTab === 'insights' && <CorrelationsTab />}
+          {activeTab === 'ai' && <AITab />}
         </AnimatedTabs>
       </Box>
     </AnimatedPage>

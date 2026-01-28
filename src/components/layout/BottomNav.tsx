@@ -1,10 +1,12 @@
 import { BottomNavigation, BottomNavigationAction, Paper, Box, Badge } from '@mui/material';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, BarChart3, History, Settings } from 'lucide-react';
+import { Home, Dumbbell, History, Settings, Sparkles } from 'lucide-react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { format, differenceInMinutes } from 'date-fns';
 import { useState, useEffect } from 'react';
+import logoInsights from '@/assets/logo-insights.png';
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
@@ -13,9 +15,27 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h${m}m` : `${h}h`;
 }
 
+// Custom icon component for insights using the logo
+function InsightsIcon({ size = 20 }: { size?: number }) {
+  return (
+    <img 
+      src={logoInsights} 
+      alt="Insights" 
+      style={{ 
+        width: size, 
+        height: size, 
+        objectFit: 'contain',
+        filter: 'brightness(0) invert(0.3)', // Make it match text color
+      }} 
+    />
+  );
+}
+
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useMuiTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { workouts } = useWorkouts();
   const { draft } = useDraftWorkout();
   const [elapsed, setElapsed] = useState<number | null>(null);
@@ -41,11 +61,11 @@ export function BottomNav() {
   const isWorkoutActive = !!elapsed;
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Today' },
-    { path: '/log', icon: Dumbbell, label: durationLabel || 'Workout' },
-    { path: '/insights', icon: BarChart3, label: 'Insights' },
-    { path: '/history', icon: History, label: 'History' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/', icon: Home, label: 'Today', useCustomIcon: false },
+    { path: '/log', icon: Dumbbell, label: durationLabel || 'Workout', useCustomIcon: false },
+    { path: '/insights', icon: Sparkles, label: 'Insights', useCustomIcon: true },
+    { path: '/history', icon: History, label: 'History', useCustomIcon: false },
+    { path: '/settings', icon: Settings, label: 'Settings', useCustomIcon: false },
   ];
 
   const currentPath = location.pathname;
@@ -63,8 +83,9 @@ export function BottomNav() {
         right: 0,
         zIndex: 50,
         borderTop: 1,
-        borderColor: 'divider',
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider',
         pb: 'env(safe-area-inset-bottom)',
+        bgcolor: isDark ? '#0a1f14' : 'background.paper',
       }} 
       elevation={0}
     >
@@ -74,13 +95,13 @@ export function BottomNav() {
           navigate(navItems[newValue].path);
         }}
         sx={{
-          bgcolor: 'background.paper',
+          bgcolor: isDark ? '#0a1f14' : 'background.paper',
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
             py: 1,
-            color: 'text.secondary',
+            color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary',
             '&.Mui-selected': {
-              color: 'text.primary',
+              color: isDark ? '#95d5b2' : 'text.primary',
             },
           },
           '& .MuiBottomNavigationAction-label': {
@@ -100,7 +121,11 @@ export function BottomNav() {
             label={item.label}
             icon={
               <Box sx={{ position: 'relative' }}>
-                <item.icon size={20} />
+                {item.useCustomIcon ? (
+                  <Sparkles size={20} />
+                ) : (
+                  <item.icon size={20} />
+                )}
                 {item.path === '/log' && isWorkoutActive && (
                   <Box
                     sx={{
@@ -110,7 +135,7 @@ export function BottomNav() {
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      bgcolor: 'primary.main',
+                      bgcolor: isDark ? '#95d5b2' : 'primary.main',
                       animation: 'pulse 2s infinite',
                       '@keyframes pulse': {
                         '0%, 100%': { opacity: 1 },

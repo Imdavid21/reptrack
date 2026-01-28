@@ -156,6 +156,13 @@ const baseTheme: ThemeOptions = {
         },
       },
     },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          transition: 'background-color 0.3s ease, color 0.3s ease',
+        },
+      },
+    },
   },
 };
 
@@ -182,7 +189,7 @@ export const lightTheme = createTheme({
       light: palette.mint.light,
     },
     background: {
-      default: '#f8f9fa',  // Pure near-white, not green
+      default: '#f8f9fa',
       paper: '#ffffff',
     },
     text: {
@@ -219,17 +226,28 @@ export const darkTheme = createTheme({
       light: 'rgba(149, 213, 178, 0.2)',
     },
     background: {
-      default: palette.forest.main,
-      paper: palette.forest.light,
+      default: '#0a1f14', // Darker forest
+      paper: '#122a1c', // Slightly lighter forest
     },
     text: {
-      primary: palette.gray[50],
-      secondary: palette.gray[400],
+      primary: '#f8f9fa',
+      secondary: '#adb5bd',
     },
     divider: 'rgba(255, 255, 255, 0.1)',
     action: {
-      hover: 'rgba(149, 213, 178, 0.08)',
-      selected: 'rgba(149, 213, 178, 0.12)',
+      hover: 'rgba(149, 213, 178, 0.12)',
+      selected: 'rgba(149, 213, 178, 0.16)',
+    },
+  },
+  components: {
+    ...baseTheme.components,
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: '#0a1f14',
+          transition: 'background-color 0.3s ease, color 0.3s ease',
+        },
+      },
     },
   },
 });

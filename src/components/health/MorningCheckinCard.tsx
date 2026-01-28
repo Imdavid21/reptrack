@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMorningCheckin } from '@/hooks/useMorningCheckin';
-import { Sun, Heart, Wind, Moon, Check, Loader2, Scale } from 'lucide-react';
+import { Sun, Moon, Check, Loader2, Scale } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast} from '@/lib/toast';
@@ -11,9 +11,6 @@ export function MorningCheckinCard() {
   const [formData, setFormData] = useState({
     sleep_hours: '',
     sleep_minutes: '',
-    energy_level: '',
-    heart_rate: '',
-    oxygen_level: '',
     bodyweight: '',
   });
 
@@ -25,9 +22,6 @@ export function MorningCheckinCard() {
     setFormData({
       sleep_hours: hours ? hours.toString() : '',
       sleep_minutes: minutes ? minutes.toString() : '',
-      energy_level: checkin?.energy_level?.toString() || '',
-      heart_rate: checkin?.heart_rate?.toString() || '',
-      oxygen_level: checkin?.oxygen_level?.toString() || '',
       bodyweight: checkin?.bodyweight?.toString() || '',
     });
     setIsEditing(true);
@@ -41,9 +35,6 @@ export function MorningCheckinCard() {
 
       await upsertCheckin({
         sleep_hours: totalHours > 0 ? totalHours : null,
-        energy_level: formData.energy_level ? parseInt(formData.energy_level) : null,
-        heart_rate: formData.heart_rate ? parseInt(formData.heart_rate) : null,
-        oxygen_level: formData.oxygen_level ? parseInt(formData.oxygen_level) : null,
         bodyweight: formData.bodyweight ? parseFloat(formData.bodyweight) : null,
       });
       setIsEditing(false);
@@ -69,7 +60,7 @@ export function MorningCheckinCard() {
     );
   }
 
-  const hasData = checkin && (checkin.sleep_hours || checkin.energy_level || checkin.heart_rate || checkin.bodyweight);
+  const hasData = checkin && (checkin.sleep_hours || checkin.bodyweight);
 
   if (!isEditing && hasData) {
     return (
@@ -92,20 +83,6 @@ export function MorningCheckinCard() {
             <div>
               <div className="text-2xl font-bold tabular-nums">{checkin.bodyweight || '-'} kg</div>
               <div className="text-xs text-muted-foreground">WEIGHT</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Sun className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.energy_level || '-'}/10</div>
-              <div className="text-xs text-muted-foreground">ENERGY</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Heart className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.heart_rate || '-'}</div>
-              <div className="text-xs text-muted-foreground">BPM</div>
             </div>
           </div>
         </div>
@@ -152,7 +129,7 @@ export function MorningCheckinCard() {
             </div>
           </div>
         </div>
-        <div>
+        <div className="col-span-2">
           <Label className="text-xs text-muted-foreground">WEIGHT (KG)</Label>
           <Input
             type="number"
@@ -160,40 +137,6 @@ export function MorningCheckinCard() {
             placeholder="75.5"
             value={formData.bodyweight}
             onChange={(e) => setFormData(prev => ({ ...prev, bodyweight: e.target.value }))}
-            className="input-terminal mt-1"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">ENERGY (1-10)</Label>
-          <Input
-            type="number"
-            min="1"
-            max="10"
-            placeholder="7"
-            value={formData.energy_level}
-            onChange={(e) => setFormData(prev => ({ ...prev, energy_level: e.target.value }))}
-            className="input-terminal mt-1"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">HEART RATE (BPM)</Label>
-          <Input
-            type="number"
-            placeholder="65"
-            value={formData.heart_rate}
-            onChange={(e) => setFormData(prev => ({ ...prev, heart_rate: e.target.value }))}
-            className="input-terminal mt-1"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">OXYGEN (SpO2 %)</Label>
-          <Input
-            type="number"
-            min="90"
-            max="100"
-            placeholder="98"
-            value={formData.oxygen_level}
-            onChange={(e) => setFormData(prev => ({ ...prev, oxygen_level: e.target.value }))}
             className="input-terminal mt-1"
           />
         </div>

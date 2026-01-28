@@ -1,25 +1,23 @@
 import { useState } from 'react';
 import { useNightCheckin } from '@/hooks/useNightCheckin';
-import { Moon, Activity, Footprints, Star, Check, Loader2, BedDouble } from 'lucide-react';
+import { Moon, Footprints, Check, Loader2, BedDouble, Zap, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/lib/toast';
+import { useAutoMetrics } from '@/hooks/useAutoMetrics';
 
 export function NightCheckinCard() {
   const { checkin, upsertCheckin, isUpserting, isLoading } = useNightCheckin();
+  const { data: autoMetrics } = useAutoMetrics();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    performance_score: '',
-    energy_score: '',
     steps: '',
     is_rest_day: false,
   });
 
   const handleStartEdit = () => {
     setFormData({
-      performance_score: checkin?.performance_score?.toString() || '',
-      energy_score: checkin?.energy_score?.toString() || '',
       steps: checkin?.steps?.toString() || '',
       is_rest_day: checkin?.is_rest_day || false,
     });
@@ -28,9 +26,13 @@ export function NightCheckinCard() {
 
   const handleSave = async () => {
     try {
+      // Auto-calculated values from workout data
+      const performanceScore = autoMetrics?.today.performanceScore || null;
+      const energyScore = autoMetrics?.today.energyScore || null;
+
       await upsertCheckin({
-        performance_score: formData.performance_score ? parseInt(formData.performance_score) : null,
-        energy_score: formData.energy_score ? parseInt(formData.energy_score) : null,
+        performance_score: performanceScore,
+        energy_score: energyScore,
         steps: formData.steps ? parseInt(formData.steps) : 0,
         is_rest_day: formData.is_rest_day,
       });
@@ -49,7 +51,10 @@ export function NightCheckinCard() {
     );
   }
 
-  const hasData = checkin && (checkin.performance_score || checkin.energy_score || checkin.steps);
+  // Use auto-calculated metrics if available
+  const displayPerformance = autoMetrics?.today.performanceScore || checkin?.performance_score || null;
+  const displayEnergy = autoMetrics?.today.energyScore || checkin?.energy_score || null;
+  const hasData = checkin && (checkin.steps || displayPerformance || displayEnergy);
 
   if (!isEditing && hasData) {
     return (
@@ -57,7 +62,7 @@ export function NightCheckinCard() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h3 className="section-header mb-0">NIGHT CHECK-IN</h3>
-            {checkin.is_rest_day && (
+            {checkin?.is_rest_day && (
               <span className="text-xs bg-muted px-2 py-0.5 border border-border">REST DAY</span>
             )}
           </div>
@@ -68,27 +73,29 @@ export function NightCheckinCard() {
           <div className="flex items-center gap-2">
             <Footprints className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.steps?.toLocaleString() || '-'}</div>
+              <div className="text-2xl font-bold tabular-nums">{checkin?.steps?.toLocaleString() || '-'}</div>
               <div className="text-xs text-muted-foreground">STEPS</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.performance_score || '-'}/10</div>
+              <div className="text-2xl font-bold tabular-nums">{displayPerformance || '-'}/10</div>
               <div className="text-xs text-muted-foreground">PERF</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="text-2xl font-bold tabular-nums">{checkin.energy_score || '-'}/10</div>
+              <div className="text-2xl font-bold tabular-nums">{displayEnergy || '-'}/10</div>
               <div className="text-xs text-muted-foreground">ENERGY</div>
             </div>
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground mt-4">Tap to edit</p>
+        <p className="text-xs text-muted-foreground mt-4">
+          Performance & energy auto-calculated from workout data. Tap to edit steps.
+        </p>
       </div>
     );
   }
@@ -112,33 +119,28 @@ export function NightCheckinCard() {
           />
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-3 mt-3">
-        <div>
-          <Label className="text-xs text-muted-foreground">PERFORMANCE</Label>
-          <Input
-            type="number"
-            min="1"
-            max="10"
-            placeholder="7"
-            value={formData.performance_score}
-            onChange={(e) => setFormData(prev => ({ ...prev, performance_score: e.target.value }))}
-            className="input-terminal mt-1"
-          />
+
+      {/* Auto-calculated metrics display */}
+      {autoMetrics?.today.performanceScore || autoMetrics?.today.energyScore ? (
+        <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-muted/30 border border-border">
+          <div>
+            <div className="text-xs text-muted-foreground">AUTO PERFORMANCE</div>
+            <div className="text-xl font-bold tabular-nums flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              {autoMetrics.today.performanceScore}/10
+            </div>
+            <div className="text-xs text-muted-foreground">from weights lifted</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">AUTO ENERGY</div>
+            <div className="text-xl font-bold tabular-nums flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              {autoMetrics.today.energyScore}/10
+            </div>
+            <div className="text-xs text-muted-foreground">from workout speed</div>
+          </div>
         </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">ENERGY</Label>
-          <Input
-            type="number"
-            min="1"
-            max="10"
-            placeholder="7"
-            value={formData.energy_score}
-            onChange={(e) => setFormData(prev => ({ ...prev, energy_score: e.target.value }))}
-            className="input-terminal mt-1"
-          />
-        </div>
-      </div>
+      ) : null}
 
       <div className="flex items-center gap-3 mt-4 p-3 border border-border bg-muted/30">
         <Checkbox
