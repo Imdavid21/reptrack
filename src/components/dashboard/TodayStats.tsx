@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
 import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useWorkouts } from '@/hooks/useWorkouts';
+import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { Droplets, Flame, Footprints, Dumbbell } from 'lucide-react';
 import { differenceInMinutes, format } from 'date-fns';
 
@@ -34,13 +36,33 @@ export function TodayStats() {
   const { totalCalories } = useMeals();
   const { checkin: nightCheckin } = useNightCheckin();
   const { workouts } = useWorkouts();
+  const { draft } = useDraftWorkout();
+  const [elapsedMinutes, setElapsedMinutes] = useState<number | null>(null);
+
+  // Live counter for active workout session
+  useEffect(() => {
+    if (!draft?.workoutStartTime) {
+      setElapsedMinutes(null);
+      return;
+    }
+    const updateElapsed = () => {
+      const mins = differenceInMinutes(new Date(), new Date(draft.workoutStartTime!));
+      setElapsedMinutes(mins > 0 ? mins : 1);
+    };
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [draft?.workoutStartTime]);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const totalWorkoutMinutes = workouts
+  const completedWorkoutMinutes = workouts
     .filter(w => w.date === todayStr)
     .reduce((sum, w) => sum + getWorkoutMinutes(w), 0);
 
-  const hasWorkoutToday = totalWorkoutMinutes > 0;
+  // Show live elapsed if active, otherwise show completed duration
+  const isActiveSession = elapsedMinutes !== null;
+  const displayMinutes = isActiveSession ? elapsedMinutes : completedWorkoutMinutes;
+  const hasWorkoutData = displayMinutes > 0;
   const steps = nightCheckin?.steps || 0;
 
   const stats = [
@@ -67,17 +89,18 @@ export function TodayStats() {
     },
     {
       icon: Dumbbell,
-      value: hasWorkoutToday ? formatDuration(totalWorkoutMinutes) : '-',
+      value: hasWorkoutData ? formatDuration(displayMinutes) : '-',
       goal: 1,
-      current: hasWorkoutToday ? 1 : 0,
-      label: 'Workout',
+      current: hasWorkoutData ? 1 : 0,
+      label: isActiveSession ? 'Active' : 'Workout',
       isBoolean: true,
+      isActive: isActiveSession,
     },
   ];
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-      {stats.map(({ icon: Icon, value, goal, current, label, isBoolean }) => {
+      {stats.map(({ icon: Icon, value, goal, current, label, isBoolean, isActive }) => {
         const progress = isBoolean ? (current ? 100 : 0) : Math.min((current / goal) * 100, 100);
         const isComplete = progress >= 100;
 
@@ -88,6 +111,9 @@ export function TodayStats() {
           >
             <div className="relative">
               <Icon className={`h-4 w-4 ${isComplete ? 'text-primary' : 'text-muted-foreground'}`} />
+              {isActive && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+              )}
             </div>
             <div>
               <div className="text-sm font-bold tabular-nums">{value}</div>
