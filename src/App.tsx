@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { ThemeProvider, CssBaseline } from "@mui/material";
+import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
-import { useTheme } from "./hooks/useTheme";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import LogWorkout from "./pages/LogWorkout";
 import CreateRoutine from "./pages/CreateRoutine";
@@ -37,22 +37,24 @@ function AppRoutes() {
   );
 }
 
-function ThemedApp() {
+function MuiThemedApp() {
   const { isDark } = useTheme();
   
   return (
-    <ThemeProvider theme={isDark ? darkTheme : lightTheme}>
+    <MuiThemeProvider theme={isDark ? darkTheme : lightTheme}>
       <CssBaseline />
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
-    </ThemeProvider>
+    </MuiThemeProvider>
   );
 }
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemedApp />
+    <ThemeProvider>
+      <MuiThemedApp />
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
