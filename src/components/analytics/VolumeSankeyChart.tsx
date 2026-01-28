@@ -1,41 +1,37 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, Chip, Collapse } from '@mui/material';
-import { Layers, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
+import { Box, Typography, Skeleton, useTheme, Chip } from '@mui/material';
+import { Layers, TrendingUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface CategoryData {
   name: string;
   volume: number;
   percentage: number;
+  fill: string;
   exercises: { name: string; volume: number; percentage: number }[];
 }
-
-// Darker color palette - more black
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  push: { bg: 'hsl(0, 0%, 10%)', text: 'hsl(0, 0%, 95%)' },
-  pull: { bg: 'hsl(0, 0%, 25%)', text: 'hsl(0, 0%, 95%)' },
-  legs: { bg: 'hsl(0, 0%, 40%)', text: 'hsl(0, 0%, 100%)' },
-};
-
-const DARK_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  push: { bg: 'hsl(0, 0%, 90%)', text: 'hsl(0, 0%, 10%)' },
-  pull: { bg: 'hsl(0, 0%, 70%)', text: 'hsl(0, 0%, 10%)' },
-  legs: { bg: 'hsl(0, 0%, 50%)', text: 'hsl(0, 0%, 100%)' },
-};
 
 export function VolumeSankeyChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
-  const { categories, totalVolume } = useMemo(() => {
+  // Solid dark colors - no gradients
+  const CATEGORY_FILLS = useMemo(() => ({
+    push: isDark ? 'hsl(0, 0%, 85%)' : 'hsl(0, 0%, 15%)',
+    pull: isDark ? 'hsl(0, 0%, 65%)' : 'hsl(0, 0%, 35%)',
+    legs: isDark ? 'hsl(0, 0%, 45%)' : 'hsl(0, 0%, 55%)',
+  }), [isDark]);
+
+  const { categories, totalVolume, radialData } = useMemo(() => {
     if (!data?.sets || data.sets.length === 0) {
-      return { categories: [], totalVolume: 0 };
+      return { categories: [], totalVolume: 0, radialData: [] };
     }
 
     // Aggregate volume by exercise
@@ -58,7 +54,7 @@ export function VolumeSankeyChart() {
     });
 
     if (exerciseVolumes.size === 0) {
-      return { categories: [], totalVolume: 0 };
+      return { categories: [], totalVolume: 0, radialData: [] };
     }
 
     // Group by category
@@ -87,6 +83,7 @@ export function VolumeSankeyChart() {
         name: cat,
         volume: categoryMap[cat].volume,
         percentage: Math.round((categoryMap[cat].volume / total) * 100),
+        fill: CATEGORY_FILLS[cat as keyof typeof CATEGORY_FILLS],
         exercises: categoryMap[cat].exercises.map(ex => ({
           ...ex,
           percentage: Math.round((ex.volume / categoryMap[cat].volume) * 100),
@@ -94,8 +91,19 @@ export function VolumeSankeyChart() {
       }))
       .sort((a, b) => b.volume - a.volume);
 
-    return { categories: cats, totalVolume: total };
-  }, [data?.sets]);
+    // Create radial bar data - larger categories on outer rings
+    const radial = cats.map((cat, index) => ({
+      name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1),
+      value: cat.percentage,
+      fill: cat.fill,
+      volume: cat.volume,
+      exercises: cat.exercises,
+      innerRadius: 30 + (cats.length - 1 - index) * 25,
+      outerRadius: 50 + (cats.length - 1 - index) * 25,
+    }));
+
+    return { categories: cats, totalVolume: total, radialData: radial };
+  }, [data?.sets, CATEGORY_FILLS]);
 
   const formatVolume = (value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -103,21 +111,18 @@ export function VolumeSankeyChart() {
     return value.toLocaleString();
   };
 
-  const toggleCategory = (cat: string) => {
-    setExpandedCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(cat)) {
-        next.delete(cat);
-      } else {
-        next.add(cat);
-      }
-      return next;
-    });
-  };
+  const hoveredData = useMemo(() => {
+    if (!hoveredCategory) return null;
+    return categories.find(c => c.name.toLowerCase() === hoveredCategory.toLowerCase());
+  }, [hoveredCategory, categories]);
 
-  const getColors = (cat: string) => {
-    const palette = isDark ? DARK_CATEGORY_COLORS : CATEGORY_COLORS;
-    return palette[cat] || palette.push;
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    
+    const data = payload[0].payload;
+    setHoveredCategory(data.name);
+    
+    return null; // We'll show exercises in a separate panel
   };
 
   if (isLoading) {
@@ -129,7 +134,7 @@ export function VolumeSankeyChart() {
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
         </Box>
-        <Skeleton variant="rounded" height={200} />
+        <Skeleton variant="circular" width={200} height={200} sx={{ mx: 'auto' }} />
       </MuiCard>
     );
   }
@@ -153,7 +158,7 @@ export function VolumeSankeyChart() {
   return (
     <MuiCard>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ 
             p: 1, 
@@ -180,221 +185,214 @@ export function VolumeSankeyChart() {
         />
       </Box>
 
-      {/* Total Volume Bar */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          height: 32, 
-          borderRadius: 2, 
-          overflow: 'hidden',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
-        }}>
-          {categories.map((cat, i) => {
-            const colors = getColors(cat.name);
-            return (
+      {/* Chart and Details Container */}
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+        {/* Radial Chart */}
+        <Box 
+          sx={{ width: 180, height: 180, flexShrink: 0 }}
+          onMouseLeave={() => setHoveredCategory(null)}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart 
+              cx="50%" 
+              cy="50%" 
+              innerRadius="25%" 
+              outerRadius="100%" 
+              data={radialData}
+              startAngle={90}
+              endAngle={-270}
+            >
+              <RadialBar
+                dataKey="value"
+                cornerRadius={4}
+                background={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                onMouseEnter={(_, index) => {
+                  const item = radialData[index];
+                  if (item) setHoveredCategory(item.name);
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+            </RadialBarChart>
+          </ResponsiveContainer>
+          
+          {/* Center Total */}
+          <Box sx={{
+            position: 'absolute',
+            top: '50%',
+            left: 90,
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            pointerEvents: 'none',
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
+              {formatVolume(totalVolume)}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
+              kg total
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Legend & Hover Details */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* Category Legend */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2 }}>
+            {categories.map((cat) => (
               <motion.div
                 key={cat.name}
-                initial={{ width: 0 }}
-                animate={{ width: `${cat.percentage}%` }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: 'easeOut' }}
-                style={{
-                  backgroundColor: colors.bg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                }}
-                onClick={() => toggleCategory(cat.name)}
-                whileHover={{ filter: 'brightness(1.1)' }}
-                whileTap={{ scale: 0.99 }}
+                onMouseEnter={() => setHoveredCategory(cat.name)}
+                onMouseLeave={() => setHoveredCategory(null)}
+                whileHover={{ x: 2 }}
               >
-                {cat.percentage > 15 && (
-                  <Typography
-                    variant="caption"
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    py: 0.5,
+                    px: 1,
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    bgcolor: hoveredCategory === cat.name 
+                      ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                      : 'transparent',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <Box
                     sx={{
-                      color: colors.text,
-                      fontWeight: 600,
-                      fontSize: '0.65rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: cat.fill,
+                    }}
+                  />
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      flex: 1, 
+                      textTransform: 'capitalize',
+                      fontWeight: hoveredCategory === cat.name ? 600 : 400,
                     }}
                   >
-                    {cat.name} {cat.percentage}%
-                  </Typography>
-                )}
-              </motion.div>
-            );
-          })}
-        </Box>
-      </Box>
-
-      {/* Category Cards */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {categories.map((cat) => {
-          const isExpanded = expandedCategories.has(cat.name);
-          const colors = getColors(cat.name);
-          
-          return (
-            <motion.div
-              key={cat.name}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {/* Category Header */}
-              <Box
-                onClick={() => toggleCategory(cat.name)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  p: 1.5,
-                  borderRadius: 2,
-                  bgcolor: colors.bg,
-                  color: colors.text,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateX(4px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  },
-                }}
-              >
-                <motion.div
-                  animate={{ rotate: isExpanded ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronRight size={16} />
-                </motion.div>
-                
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
                     {cat.name}
                   </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {cat.exercises.length} exercises
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    {formatVolume(cat.volume)} kg
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                    }}
+                  >
                     {cat.percentage}%
                   </Typography>
                 </Box>
-              </Box>
+              </motion.div>
+            ))}
+          </Box>
 
-              {/* Expanded Exercises */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
+          {/* Exercise Breakdown on Hover */}
+          <AnimatePresence mode="wait">
+            {hoveredData && (
+              <motion.div
+                key={hoveredData.name}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Box sx={{ 
+                  p: 1.5, 
+                  borderRadius: 2, 
+                  bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  border: 1,
+                  borderColor: 'divider',
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      textTransform: 'capitalize',
+                      mb: 1,
+                      display: 'block',
+                    }}
                   >
-                    <Box sx={{ pl: 4, pr: 1, pt: 1 }}>
-                      {cat.exercises.map((ex, i) => (
-                        <motion.div
-                          key={ex.name}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.2, delay: i * 0.05 }}
+                    {hoveredData.name} Exercises
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    {hoveredData.exercises.slice(0, 4).map((ex) => (
+                      <Box 
+                        key={ex.name}
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <Box 
+                          sx={{ 
+                            flex: 1,
+                            height: 4,
+                            borderRadius: 2,
+                            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            overflow: 'hidden',
+                          }}
                         >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.5,
-                              py: 1,
-                              borderBottom: i < cat.exercises.length - 1 ? 1 : 0,
-                              borderColor: 'divider',
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${ex.percentage}%` }}
+                            transition={{ duration: 0.3 }}
+                            style={{
+                              height: '100%',
+                              backgroundColor: hoveredData.fill,
                             }}
-                          >
-                            {/* Progress bar */}
-                            <Box sx={{ 
-                              width: 4, 
-                              height: 24, 
-                              borderRadius: 1,
-                              bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                              overflow: 'hidden',
-                              position: 'relative',
-                            }}>
-                              <motion.div
-                                initial={{ height: 0 }}
-                                animate={{ height: `${ex.percentage}%` }}
-                                transition={{ duration: 0.4, delay: i * 0.05 }}
-                                style={{
-                                  position: 'absolute',
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  backgroundColor: colors.bg,
-                                }}
-                              />
-                            </Box>
-                            
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                flex: 1, 
-                                fontSize: '0.75rem',
-                                color: 'text.primary',
-                              }}
-                            >
-                              {ex.name}
-                            </Typography>
-                            
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                fontWeight: 600,
-                                color: 'text.secondary',
-                                minWidth: 60,
-                                textAlign: 'right',
-                              }}
-                            >
-                              {formatVolume(ex.volume)} kg
-                            </Typography>
-                            
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                color: 'text.disabled',
-                                minWidth: 32,
-                                textAlign: 'right',
-                              }}
-                            >
-                              {ex.percentage}%
-                            </Typography>
-                          </Box>
-                        </motion.div>
-                      ))}
-                    </Box>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
-      </Box>
+                          />
+                        </Box>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            fontSize: '0.6rem',
+                            color: 'text.secondary',
+                            minWidth: 50,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {ex.name.length > 12 ? ex.name.slice(0, 12) + '...' : ex.name}
+                        </Typography>
+                      </Box>
+                    ))}
+                    {hoveredData.exercises.length > 4 && (
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          fontSize: '0.55rem',
+                          color: 'text.disabled',
+                          textAlign: 'right',
+                        }}
+                      >
+                        +{hoveredData.exercises.length - 4} more
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-      {/* Hint */}
-      <Typography 
-        variant="caption" 
-        sx={{ 
-          display: 'block', 
-          textAlign: 'center', 
-          color: 'text.disabled',
-          mt: 2,
-          fontSize: '0.65rem',
-        }}
-      >
-        Click categories to expand exercise breakdown
-      </Typography>
+          {!hoveredData && (
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'text.disabled',
+                fontSize: '0.6rem',
+                display: 'block',
+              }}
+            >
+              Hover on chart or legend to see exercises
+            </Typography>
+          )}
+        </Box>
+      </Box>
     </MuiCard>
   );
 }
