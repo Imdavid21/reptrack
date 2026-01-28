@@ -5,7 +5,8 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts';
+import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
+import { haptic } from '@/lib/haptics';
 
 interface CategoryData {
   name: string;
@@ -117,6 +118,7 @@ export function VolumeSankeyChart() {
   }, [selectedCategory, categories]);
 
   const toggleCategory = (name: string) => {
+    haptic('light');
     setSelectedCategory(prev => prev === name ? null : name);
   };
 
@@ -329,8 +331,8 @@ export function VolumeSankeyChart() {
                   >
                     {selectedData.name} Exercises
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {selectedData.exercises.slice(0, 4).map((ex) => (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    {selectedData.exercises.slice(0, 5).map((ex) => (
                       <Box 
                         key={ex.name}
                         sx={{ 
@@ -341,11 +343,12 @@ export function VolumeSankeyChart() {
                       >
                         <Box 
                           sx={{ 
-                            flex: 1,
-                            height: 4,
-                            borderRadius: 2,
+                            width: 40,
+                            height: 6,
+                            borderRadius: 1,
                             bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                             overflow: 'hidden',
+                            flexShrink: 0,
                           }}
                         >
                           <motion.div
@@ -361,26 +364,39 @@ export function VolumeSankeyChart() {
                         <Typography 
                           variant="caption" 
                           sx={{ 
-                            fontSize: '0.6rem',
-                            color: 'text.secondary',
-                            minWidth: 50,
-                            textAlign: 'right',
+                            flex: 1,
+                            fontSize: '0.65rem',
+                            color: 'text.primary',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                           }}
                         >
-                          {ex.name.length > 12 ? ex.name.slice(0, 12) + '...' : ex.name}
+                          {ex.name}
+                        </Typography>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            fontSize: '0.6rem',
+                            color: 'text.secondary',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {formatVolume(ex.volume)}
                         </Typography>
                       </Box>
                     ))}
-                    {selectedData.exercises.length > 4 && (
+                    {selectedData.exercises.length > 5 && (
                       <Typography 
                         variant="caption" 
                         sx={{ 
                           fontSize: '0.55rem',
                           color: 'text.disabled',
-                          textAlign: 'right',
+                          textAlign: 'center',
+                          pt: 0.5,
                         }}
                       >
-                        +{selectedData.exercises.length - 4} more
+                        +{selectedData.exercises.length - 5} more exercises
                       </Typography>
                     )}
                   </Box>
