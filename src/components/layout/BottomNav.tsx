@@ -1,5 +1,4 @@
-import { BottomNavigation, BottomNavigationAction, Paper, Box, Badge } from '@mui/material';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, History, Settings, Sparkles } from 'lucide-react';
 import { useWorkouts } from '@/hooks/useWorkouts';
@@ -34,8 +33,6 @@ function InsightsIcon({ size = 20 }: { size?: number }) {
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useMuiTheme();
-  const isDark = theme.palette.mode === 'dark';
   const { workouts } = useWorkouts();
   const { draft } = useDraftWorkout();
   const [elapsed, setElapsed] = useState<number | null>(null);
@@ -83,9 +80,9 @@ export function BottomNav() {
         right: 0,
         zIndex: 50,
         borderTop: 1,
-        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'divider',
+        borderColor: 'divider',
         pb: 'env(safe-area-inset-bottom)',
-        bgcolor: isDark ? '#0a1f14' : 'background.paper',
+        bgcolor: 'background.paper',
       }} 
       elevation={0}
     >
@@ -95,13 +92,13 @@ export function BottomNav() {
           navigate(navItems[newValue].path);
         }}
         sx={{
-          bgcolor: isDark ? '#0a1f14' : 'background.paper',
+          bgcolor: 'background.paper',
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
             py: 1,
-            color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary',
+            color: 'text.secondary',
             '&.Mui-selected': {
-              color: isDark ? '#95d5b2' : 'text.primary',
+              color: 'text.primary',
             },
           },
           '& .MuiBottomNavigationAction-label': {
@@ -135,7 +132,7 @@ export function BottomNav() {
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      bgcolor: isDark ? '#95d5b2' : 'primary.main',
+                      bgcolor: 'primary.main',
                       animation: 'pulse 2s infinite',
                       '@keyframes pulse': {
                         '0%, 100%': { opacity: 1 },
