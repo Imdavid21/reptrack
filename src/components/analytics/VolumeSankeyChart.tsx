@@ -1,45 +1,29 @@
-import { useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme } from '@mui/material';
-import { Layers } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Box, Typography, Skeleton, useTheme, Chip, Collapse } from '@mui/material';
+import { Layers, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
-import { Sankey, Tooltip, Layer, Rectangle, ResponsiveContainer } from 'recharts';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface SankeyNode {
+interface CategoryData {
   name: string;
-  category?: string;
+  volume: number;
+  percentage: number;
+  exercises: { name: string; volume: number; percentage: number }[];
 }
 
-interface SankeyLink {
-  source: number;
-  target: number;
-  value: number;
-}
-
-// Grayscale color palette
-const CATEGORY_COLORS: Record<string, string> = {
-  push: 'hsl(0, 0%, 30%)',
-  pull: 'hsl(0, 0%, 50%)',
-  legs: 'hsl(0, 0%, 70%)',
+// Darker color palette - more black
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  push: { bg: 'hsl(0, 0%, 10%)', text: 'hsl(0, 0%, 95%)' },
+  pull: { bg: 'hsl(0, 0%, 25%)', text: 'hsl(0, 0%, 95%)' },
+  legs: { bg: 'hsl(0, 0%, 40%)', text: 'hsl(0, 0%, 100%)' },
 };
 
-const EXERCISE_SHADES: Record<string, string[]> = {
-  push: ['hsl(0, 0%, 25%)', 'hsl(0, 0%, 32%)', 'hsl(0, 0%, 39%)', 'hsl(0, 0%, 46%)', 'hsl(0, 0%, 53%)'],
-  pull: ['hsl(0, 0%, 45%)', 'hsl(0, 0%, 52%)', 'hsl(0, 0%, 59%)', 'hsl(0, 0%, 66%)', 'hsl(0, 0%, 73%)'],
-  legs: ['hsl(0, 0%, 65%)', 'hsl(0, 0%, 72%)', 'hsl(0, 0%, 79%)', 'hsl(0, 0%, 86%)', 'hsl(0, 0%, 90%)'],
-};
-
-const DARK_CATEGORY_COLORS: Record<string, string> = {
-  push: 'hsl(0, 0%, 80%)',
-  pull: 'hsl(0, 0%, 60%)',
-  legs: 'hsl(0, 0%, 40%)',
-};
-
-const DARK_EXERCISE_SHADES: Record<string, string[]> = {
-  push: ['hsl(0, 0%, 85%)', 'hsl(0, 0%, 78%)', 'hsl(0, 0%, 71%)', 'hsl(0, 0%, 64%)', 'hsl(0, 0%, 57%)'],
-  pull: ['hsl(0, 0%, 65%)', 'hsl(0, 0%, 58%)', 'hsl(0, 0%, 51%)', 'hsl(0, 0%, 44%)', 'hsl(0, 0%, 37%)'],
-  legs: ['hsl(0, 0%, 45%)', 'hsl(0, 0%, 38%)', 'hsl(0, 0%, 31%)', 'hsl(0, 0%, 24%)', 'hsl(0, 0%, 20%)'],
+const DARK_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  push: { bg: 'hsl(0, 0%, 90%)', text: 'hsl(0, 0%, 10%)' },
+  pull: { bg: 'hsl(0, 0%, 70%)', text: 'hsl(0, 0%, 10%)' },
+  legs: { bg: 'hsl(0, 0%, 50%)', text: 'hsl(0, 0%, 100%)' },
 };
 
 export function VolumeSankeyChart() {
@@ -47,10 +31,11 @@ export function VolumeSankeyChart() {
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const { sankeyData, totalVolume } = useMemo(() => {
+  const { categories, totalVolume } = useMemo(() => {
     if (!data?.sets || data.sets.length === 0) {
-      return { sankeyData: null, totalVolume: 0 };
+      return { categories: [], totalVolume: 0 };
     }
 
     // Aggregate volume by exercise
@@ -73,227 +58,89 @@ export function VolumeSankeyChart() {
     });
 
     if (exerciseVolumes.size === 0) {
-      return { sankeyData: null, totalVolume: 0 };
+      return { categories: [], totalVolume: 0 };
     }
 
     // Group by category
-    const categoryVolumes = { push: 0, pull: 0, legs: 0 };
-    const exercisesByCategory: Record<string, { name: string; volume: number }[]> = {
-      push: [],
-      pull: [],
-      legs: [],
+    const categoryMap: Record<string, { volume: number; exercises: { name: string; volume: number }[] }> = {
+      push: { volume: 0, exercises: [] },
+      pull: { volume: 0, exercises: [] },
+      legs: { volume: 0, exercises: [] },
     };
 
     exerciseVolumes.forEach((data, name) => {
       const cat = data.category as 'push' | 'pull' | 'legs';
-      categoryVolumes[cat] += data.volume;
-      exercisesByCategory[cat].push({ name, volume: data.volume });
+      categoryMap[cat].volume += data.volume;
+      categoryMap[cat].exercises.push({ name, volume: data.volume });
     });
 
-    // Sort exercises by volume descending within each category
-    Object.values(exercisesByCategory).forEach(arr => {
-      arr.sort((a, b) => b.volume - a.volume);
+    // Sort exercises by volume
+    Object.values(categoryMap).forEach(cat => {
+      cat.exercises.sort((a, b) => b.volume - a.volume);
     });
 
-    // Build nodes: [Total, Push, Pull, Legs, ...exercises]
-    const nodes: SankeyNode[] = [{ name: 'Total Volume' }];
-    const nodeIndexMap = new Map<string, number>();
-    nodeIndexMap.set('Total Volume', 0);
+    const total = categoryMap.push.volume + categoryMap.pull.volume + categoryMap.legs.volume;
 
-    // Add category nodes
-    ['push', 'pull', 'legs'].forEach((cat, i) => {
-      if (categoryVolumes[cat as keyof typeof categoryVolumes] > 0) {
-        nodes.push({ name: cat.charAt(0).toUpperCase() + cat.slice(1), category: cat });
-        nodeIndexMap.set(cat, nodes.length - 1);
-      }
-    });
+    const cats: CategoryData[] = ['push', 'pull', 'legs']
+      .filter(cat => categoryMap[cat].volume > 0)
+      .map(cat => ({
+        name: cat,
+        volume: categoryMap[cat].volume,
+        percentage: Math.round((categoryMap[cat].volume / total) * 100),
+        exercises: categoryMap[cat].exercises.map(ex => ({
+          ...ex,
+          percentage: Math.round((ex.volume / categoryMap[cat].volume) * 100),
+        })),
+      }))
+      .sort((a, b) => b.volume - a.volume);
 
-    // Add exercise nodes
-    Object.entries(exercisesByCategory).forEach(([cat, exercises]) => {
-      exercises.forEach(ex => {
-        nodes.push({ name: ex.name, category: cat });
-        nodeIndexMap.set(`${cat}-${ex.name}`, nodes.length - 1);
-      });
-    });
-
-    // Build links
-    const links: SankeyLink[] = [];
-    
-    // Total → Categories
-    ['push', 'pull', 'legs'].forEach(cat => {
-      const catVolume = categoryVolumes[cat as keyof typeof categoryVolumes];
-      if (catVolume > 0) {
-        links.push({
-          source: 0,
-          target: nodeIndexMap.get(cat)!,
-          value: catVolume,
-        });
-      }
-    });
-
-    // Categories → Exercises
-    Object.entries(exercisesByCategory).forEach(([cat, exercises]) => {
-      const catIndex = nodeIndexMap.get(cat);
-      if (catIndex === undefined) return;
-      
-      exercises.forEach(ex => {
-        const exIndex = nodeIndexMap.get(`${cat}-${ex.name}`);
-        if (exIndex !== undefined) {
-          links.push({
-            source: catIndex,
-            target: exIndex,
-            value: ex.volume,
-          });
-        }
-      });
-    });
-
-    const total = categoryVolumes.push + categoryVolumes.pull + categoryVolumes.legs;
-
-    return {
-      sankeyData: { nodes, links },
-      totalVolume: total,
-    };
+    return { categories: cats, totalVolume: total };
   }, [data?.sets]);
 
   const formatVolume = (value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
     return value.toLocaleString();
   };
 
-  const getNodeColor = (node: SankeyNode, index: number) => {
-    if (node.name === 'Total Volume') {
-      return isDark ? 'hsl(0, 0%, 90%)' : 'hsl(0, 0%, 20%)';
-    }
-    
-    const colors = isDark ? DARK_CATEGORY_COLORS : CATEGORY_COLORS;
-    const shades = isDark ? DARK_EXERCISE_SHADES : EXERCISE_SHADES;
-    
-    if (['Push', 'Pull', 'Legs'].includes(node.name)) {
-      return colors[node.name.toLowerCase()];
-    }
-    
-    // Exercise node - use shade based on category
-    const cat = node.category || 'push';
-    const catShades = shades[cat];
-    const exerciseIndex = index % catShades.length;
-    return catShades[exerciseIndex];
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) {
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
+      return next;
+    });
   };
 
-  // Custom node component
-  const CustomNode = ({ x, y, width, height, index, payload }: any) => {
-    const node = sankeyData?.nodes[index];
-    if (!node) return null;
-    
-    const color = getNodeColor(node, index);
-    const isTotal = node.name === 'Total Volume';
-    const isCategory = ['Push', 'Pull', 'Legs'].includes(node.name);
-    
-    return (
-      <g>
-        <Rectangle
-          x={x}
-          y={y}
-          width={width}
-          height={height}
-          fill={color}
-          fillOpacity={0.9}
-          rx={4}
-          ry={4}
-        />
-        {height > 16 && (
-          <text
-            x={isTotal ? x + width + 6 : isCategory ? x - 6 : x + width + 6}
-            y={y + height / 2}
-            textAnchor={isTotal ? 'start' : isCategory ? 'end' : 'start'}
-            dominantBaseline="middle"
-            fill={isDark ? 'hsl(0, 0%, 80%)' : 'hsl(0, 0%, 30%)'}
-            fontSize={isTotal || isCategory ? 11 : 9}
-            fontWeight={isTotal || isCategory ? 600 : 400}
-          >
-            {node.name}
-          </text>
-        )}
-      </g>
-    );
-  };
-
-  // Custom link component
-  const CustomLink = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: any) => {
-    const link = sankeyData?.links[index];
-    if (!link) return null;
-    
-    const sourceNode = sankeyData?.nodes[link.source];
-    const targetNode = sankeyData?.nodes[link.target];
-    
-    let color = isDark ? 'hsl(0, 0%, 50%)' : 'hsl(0, 0%, 60%)';
-    if (targetNode?.category) {
-      const colors = isDark ? DARK_CATEGORY_COLORS : CATEGORY_COLORS;
-      color = colors[targetNode.category];
-    }
-
-    return (
-      <path
-        d={`
-          M${sourceX},${sourceY}
-          C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
-        `}
-        fill="none"
-        stroke={color}
-        strokeWidth={linkWidth}
-        strokeOpacity={0.4}
-      />
-    );
-  };
-
-  const renderTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    
-    const item = payload[0];
-    if (!item) return null;
-    
-    // Sankey can return different payload structures for nodes vs links
-    const name = item.name || item.payload?.name || item.payload?.payload?.name || 'Volume';
-    const value = item.value ?? item.payload?.value ?? 0;
-    
-    return (
-      <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 2,
-        border: 1,
-        borderColor: 'divider',
-        p: 1.5,
-        minWidth: 120,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {name}
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {formatVolume(value)} kg
-        </Typography>
-      </Box>
-    );
+  const getColors = (cat: string) => {
+    const palette = isDark ? DARK_CATEGORY_COLORS : CATEGORY_COLORS;
+    return palette[cat] || palette.push;
   };
 
   if (isLoading) {
     return (
       <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Layers size={16} />
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+            <Layers size={14} />
+          </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
         </Box>
-        <Skeleton variant="rounded" height={300} />
+        <Skeleton variant="rounded" height={200} />
       </MuiCard>
     );
   }
 
-  if (!sankeyData) {
+  if (categories.length === 0) {
     return (
       <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Layers size={16} />
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+            <Layers size={14} />
+          </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
         </Box>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
@@ -305,62 +152,249 @@ export function VolumeSankeyChart() {
 
   return (
     <MuiCard>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
+          <Box sx={{ 
+            p: 1, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+          }}>
             <Layers size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             Volume Breakdown
           </Typography>
         </Box>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {formatVolume(totalVolume)} kg total
-        </Typography>
+        <Chip
+          size="small"
+          icon={<TrendingUp size={12} />}
+          label={`${formatVolume(totalVolume)} kg`}
+          sx={{
+            height: 26,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            '& .MuiChip-icon': { color: 'inherit' },
+          }}
+        />
       </Box>
 
-      <Box sx={{ height: 320 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <Sankey
-            data={sankeyData}
-            node={<CustomNode />}
-            link={<CustomLink />}
-            nodePadding={8}
-            nodeWidth={12}
-            margin={{ top: 10, right: 120, bottom: 10, left: 10 }}
-          >
-            <Tooltip content={renderTooltip} />
-          </Sankey>
-        </ResponsiveContainer>
+      {/* Total Volume Bar */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          height: 32, 
+          borderRadius: 2, 
+          overflow: 'hidden',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+        }}>
+          {categories.map((cat, i) => {
+            const colors = getColors(cat.name);
+            return (
+              <motion.div
+                key={cat.name}
+                initial={{ width: 0 }}
+                animate={{ width: `${cat.percentage}%` }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: 'easeOut' }}
+                style={{
+                  backgroundColor: colors.bg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                }}
+                onClick={() => toggleCategory(cat.name)}
+                whileHover={{ filter: 'brightness(1.1)' }}
+                whileTap={{ scale: 0.99 }}
+              >
+                {cat.percentage > 15 && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: colors.text,
+                      fontWeight: 600,
+                      fontSize: '0.65rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {cat.name} {cat.percentage}%
+                  </Typography>
+                )}
+              </motion.div>
+            );
+          })}
+        </Box>
       </Box>
 
-      {/* Legend */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: 3, 
-        pt: 2, 
-        mt: 1,
-        borderTop: 1, 
-        borderColor: 'divider' 
-      }}>
-        {['Push', 'Pull', 'Legs'].map(cat => {
-          const colors = isDark ? DARK_CATEGORY_COLORS : CATEGORY_COLORS;
+      {/* Category Cards */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        {categories.map((cat) => {
+          const isExpanded = expandedCategories.has(cat.name);
+          const colors = getColors(cat.name);
+          
           return (
-            <Box key={cat} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Box sx={{ 
-                width: 10, 
-                height: 10, 
-                borderRadius: '50%', 
-                bgcolor: colors[cat.toLowerCase()] 
-              }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {cat}
-              </Typography>
-            </Box>
+            <motion.div
+              key={cat.name}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Category Header */}
+              <Box
+                onClick={() => toggleCategory(cat.name)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor: colors.bg,
+                  color: colors.text,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateX(4px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  },
+                }}
+              >
+                <motion.div
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronRight size={16} />
+                </motion.div>
+                
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                    {cat.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                    {cat.exercises.length} exercises
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {formatVolume(cat.volume)} kg
+                  </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                    {cat.percentage}%
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Expanded Exercises */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Box sx={{ pl: 4, pr: 1, pt: 1 }}>
+                      {cat.exercises.map((ex, i) => (
+                        <motion.div
+                          key={ex.name}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2, delay: i * 0.05 }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              py: 1,
+                              borderBottom: i < cat.exercises.length - 1 ? 1 : 0,
+                              borderColor: 'divider',
+                            }}
+                          >
+                            {/* Progress bar */}
+                            <Box sx={{ 
+                              width: 4, 
+                              height: 24, 
+                              borderRadius: 1,
+                              bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                              overflow: 'hidden',
+                              position: 'relative',
+                            }}>
+                              <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: `${ex.percentage}%` }}
+                                transition={{ duration: 0.4, delay: i * 0.05 }}
+                                style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  backgroundColor: colors.bg,
+                                }}
+                              />
+                            </Box>
+                            
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                flex: 1, 
+                                fontSize: '0.75rem',
+                                color: 'text.primary',
+                              }}
+                            >
+                              {ex.name}
+                            </Typography>
+                            
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                fontWeight: 600,
+                                color: 'text.secondary',
+                                minWidth: 60,
+                                textAlign: 'right',
+                              }}
+                            >
+                              {formatVolume(ex.volume)} kg
+                            </Typography>
+                            
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: 'text.disabled',
+                                minWidth: 32,
+                                textAlign: 'right',
+                              }}
+                            >
+                              {ex.percentage}%
+                            </Typography>
+                          </Box>
+                        </motion.div>
+                      ))}
+                    </Box>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           );
         })}
       </Box>
+
+      {/* Hint */}
+      <Typography 
+        variant="caption" 
+        sx={{ 
+          display: 'block', 
+          textAlign: 'center', 
+          color: 'text.disabled',
+          mt: 2,
+          fontSize: '0.65rem',
+        }}
+      >
+        Click categories to expand exercise breakdown
+      </Typography>
     </MuiCard>
   );
 }

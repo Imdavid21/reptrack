@@ -73,12 +73,12 @@
     /* Progress bar */
     --progress-radius: 6px;
 
-    /* Chart colors - unified grayscale spectrum */
-    --chart-1: 0 0% 20%;  /* darkest - primary emphasis */
-    --chart-2: 0 0% 35%;  /* dark gray */
-    --chart-3: 0 0% 50%;  /* mid gray */
-    --chart-4: 0 0% 65%;  /* light gray */
-    --chart-5: 0 0% 80%;  /* lightest */
+    /* Chart colors - darker grayscale spectrum */
+    --chart-1: 0 0% 8%;   /* near black - primary emphasis */
+    --chart-2: 0 0% 20%;  /* very dark gray */
+    --chart-3: 0 0% 35%;  /* dark gray */
+    --chart-4: 0 0% 50%;  /* mid gray */
+    --chart-5: 0 0% 65%;  /* light gray */
   }
 
   .dark {
@@ -122,12 +122,12 @@
     --heat-3: 0 0% 60%;
     --heat-4: 0 0% 85%;
 
-    /* Chart colors - dark mode */
-    --chart-1: 0 0% 85%;  /* lightest - primary emphasis */
-    --chart-2: 0 0% 70%;
-    --chart-3: 0 0% 55%;
-    --chart-4: 0 0% 40%;
-    --chart-5: 0 0% 25%;  /* darkest */
+    /* Chart colors - dark mode (brighter) */
+    --chart-1: 0 0% 95%;  /* near white - primary emphasis */
+    --chart-2: 0 0% 80%;
+    --chart-3: 0 0% 65%;
+    --chart-4: 0 0% 50%;
+    --chart-5: 0 0% 35%;
   }
 }
 
