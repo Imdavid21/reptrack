@@ -9,8 +9,9 @@ export function useTheme() {
       if (stored) {
         return stored === 'dark';
       }
-      // Default to system preference
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Default to LIGHT unless the user explicitly chose dark.
+      // (System preference often makes the app feel "randomly green" on first load.)
+      return false;
     }
     return false;
   });

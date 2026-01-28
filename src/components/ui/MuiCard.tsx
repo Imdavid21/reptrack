@@ -23,10 +23,10 @@ export function MuiCard({
   return (
     <Card
       sx={{
-        bgcolor: '#f8f9fa',
-        border: '1px solid #e9ecef',
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
         borderRadius: 3,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         ...sx,
       }}
       {...props}
@@ -39,8 +39,8 @@ export function MuiCard({
                 <Box sx={{ 
                   p: 1, 
                   borderRadius: 2, 
-                  bgcolor: '#d8f3dc',
-                  color: '#081c15',
+                  bgcolor: 'success.light',
+                  color: 'text.primary',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -50,7 +50,7 @@ export function MuiCard({
               )}
               <Box>
                 {title && (
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: '#081c15' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
                     {title}
                   </Typography>
                 )}
