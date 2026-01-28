@@ -106,12 +106,6 @@ export function BodyweightChart() {
       <div className="h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
-              </linearGradient>
-            </defs>
             <XAxis
               dataKey="date"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
@@ -139,7 +133,7 @@ export function BodyweightChart() {
               dataKey="weight"
               stroke="hsl(var(--chart-2))"
               strokeWidth={2}
-              fill="url(#weightGradient)"
+              fill="hsl(var(--chart-2) / 0.15)"
               dot={{ r: 3, fill: 'hsl(var(--chart-2))' }}
               connectNulls
             />

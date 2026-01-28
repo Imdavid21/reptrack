@@ -89,16 +89,6 @@ export function SleepEnergyChart() {
       <div className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="sleepGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0} />
-              </linearGradient>
-            </defs>
             <XAxis
               dataKey="date"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
@@ -130,7 +120,7 @@ export function SleepEnergyChart() {
               name="Sleep"
               stroke="hsl(var(--chart-1))"
               strokeWidth={2}
-              fill="url(#sleepGradient)"
+              fill="hsl(var(--chart-1) / 0.15)"
               dot={{ r: 3, fill: 'hsl(var(--chart-1))' }}
               connectNulls
             />
@@ -141,7 +131,7 @@ export function SleepEnergyChart() {
               name="Energy"
               stroke="hsl(var(--chart-3))"
               strokeWidth={2}
-              fill="url(#energyGradient)"
+              fill="hsl(var(--chart-3) / 0.15)"
               dot={{ r: 3, fill: 'hsl(var(--chart-3))' }}
               connectNulls
             />

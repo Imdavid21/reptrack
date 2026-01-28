@@ -294,17 +294,6 @@ export function StrengthOverviewChart() {
         <Box sx={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={filteredChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-              <defs>
-                {Array.from(activeExercises).map((ex, i) => {
-                  const color = getExerciseColor(ex);
-                  return (
-                    <linearGradient key={ex} id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color.stroke} stopOpacity={0.4} />
-                      <stop offset="95%" stopColor={color.stroke} stopOpacity={0.05} />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
               <XAxis
                 dataKey="week"
                 tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
@@ -319,8 +308,8 @@ export function StrengthOverviewChart() {
               />
               <Tooltip content={renderTooltip} />
               
-              {/* Stacked areas for each exercise */}
-              {Array.from(activeExercises).map((ex, i) => {
+              {/* Stacked areas for each exercise - solid fills, no gradients */}
+              {Array.from(activeExercises).map((ex) => {
                 const color = getExerciseColor(ex);
                 return (
                   <Area
@@ -330,7 +319,7 @@ export function StrengthOverviewChart() {
                     stackId="1"
                     stroke={color.stroke}
                     strokeWidth={1}
-                    fill={`url(#gradient-${i})`}
+                    fill={color.fill}
                   />
                 );
               })}
