@@ -1,40 +1,63 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Chip, Skeleton, useTheme } from '@mui/material';
-import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
+import { Box, Typography, Chip, Skeleton, useTheme, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import { Trophy, TrendingUp, TrendingDown, X, ChevronRight } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import {
-  ComposedChart,
+  AreaChart,
   Area,
-  Line,
+  ResponsiveContainer,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { haptic } from '@/lib/haptics';
 
-// High contrast black/white palette for exercises
-const EXERCISE_COLORS = [
-  { stroke: '#000000', fill: 'rgba(0,0,0,0.4)' },
-  { stroke: '#000000', fill: 'rgba(0,0,0,0.3)' },
-  { stroke: '#000000', fill: 'rgba(0,0,0,0.2)' },
-  { stroke: '#000000', fill: 'rgba(0,0,0,0.15)' },
-  { stroke: '#000000', fill: 'rgba(0,0,0,0.1)' },
+// Muscle group definitions with pattern matching
+const MUSCLE_GROUPS = [
+  { key: 'chest', label: 'Chest', patterns: ['chest', 'bench', 'fly', 'flye', 'dip'] },
+  { key: 'back', label: 'Back', patterns: ['row', 'pulldown', 'pull-up', 'pullup', 'chin', 'lat', 'deadlift'] },
+  { key: 'shoulders', label: 'Shoulders', patterns: ['shoulder', 'overhead', 'ohp', 'lateral', 'raise', 'delt', 'arnold'] },
+  { key: 'arms', label: 'Arms', patterns: ['curl', 'tricep', 'bicep', 'pushdown', 'extension', 'skull', 'hammer'] },
+  { key: 'legs', label: 'Legs', patterns: ['squat', 'leg', 'lunge', 'calf', 'thrust', 'rdl', 'romanian', 'glute', 'ham'] },
+  { key: 'core', label: 'Core', patterns: ['ab', 'core', 'plank', 'crunch', 'wheel'] },
 ];
+
+function getMuscleGroup(exerciseName: string): string {
+  const lower = exerciseName.toLowerCase();
+  for (const group of MUSCLE_GROUPS) {
+    if (group.patterns.some(p => lower.includes(p))) {
+      return group.key;
+    }
+  }
+  return 'other';
+}
+
+interface MuscleGroupData {
+  key: string;
+  label: string;
+  weeklyMaxWeights: { week: string; weekKey: string; weight: number }[];
+  startWeight: number;
+  currentWeight: number;
+  growthPercent: number;
+  exercises: { name: string; maxWeight: number; recentWeight: number }[];
+}
 
 export function StrengthOverviewChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
-  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+  const [selectedGroup, setSelectedGroup] = useState<MuscleGroupData | null>(null);
 
-  // Process data: get max weight per exercise per week
-  const { chartData, availableExercises, currentStrength, growth } = useMemo(() => {
-    if (!data?.sets) return { chartData: [], availableExercises: [], currentStrength: 0, growth: 0 };
+  // Process data into muscle group sparklines
+  const { muscleGroups, totalStrength, overallGrowth } = useMemo(() => {
+    if (!data?.sets) return { muscleGroups: [], totalStrength: 0, overallGrowth: 0 };
 
     // Filter by date range
     const filteredSets = data.sets.filter(set => {
@@ -43,119 +66,99 @@ export function StrengthOverviewChart() {
       return isWithinInterval(date, { start: dateRange.from, end: dateRange.to });
     });
 
-    // Group by week and exercise
-    const weeklyData = new Map<string, Map<string, number>>();
-    const exerciseSet = new Set<string>();
-
+    // Group by muscle group, week, and exercise
+    const groupData = new Map<string, Map<string, Map<string, number>>>();
+    
     filteredSets.forEach(set => {
       if (!set.workout_date || !set.actual_weight) return;
-
+      
+      const muscleGroup = getMuscleGroup(set.exercise_name);
       const weekStart = startOfWeek(parseISO(set.workout_date), { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
-
-      if (!weeklyData.has(weekKey)) {
-        weeklyData.set(weekKey, new Map());
+      
+      if (!groupData.has(muscleGroup)) {
+        groupData.set(muscleGroup, new Map());
       }
-
-      const exerciseMap = weeklyData.get(weekKey)!;
+      const weekMap = groupData.get(muscleGroup)!;
+      
+      if (!weekMap.has(weekKey)) {
+        weekMap.set(weekKey, new Map());
+      }
+      const exerciseMap = weekMap.get(weekKey)!;
+      
       const currentMax = exerciseMap.get(set.exercise_name) || 0;
       exerciseMap.set(set.exercise_name, Math.max(currentMax, set.actual_weight));
-      exerciseSet.add(set.exercise_name);
     });
 
-    const exercises = Array.from(exerciseSet).sort();
+    // Build muscle group objects
+    const groups: MuscleGroupData[] = MUSCLE_GROUPS.map(group => {
+      const weekMap = groupData.get(group.key);
+      if (!weekMap || weekMap.size === 0) {
+        return null;
+      }
 
-    // Build chart data
-    const sorted = Array.from(weeklyData.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    const chart = sorted.map(([weekKey, exerciseMap]) => {
-      const point: Record<string, string | number> = {
-        week: format(parseISO(weekKey), 'MMM d'),
-        weekKey,
-      };
+      // Sort weeks and build weekly max (sum of all exercise maxes in that group)
+      const sortedWeeks = Array.from(weekMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]));
 
-      let total = 0;
-      exercises.forEach(ex => {
-        const weight = exerciseMap.get(ex) || 0;
-        point[ex] = weight;
-        total += weight;
+      const weeklyMaxWeights = sortedWeeks.map(([weekKey, exerciseMap]) => {
+        // Take max weight across all exercises in this group for this week
+        const maxWeight = Math.max(...Array.from(exerciseMap.values()));
+        return {
+          week: format(parseISO(weekKey), 'MMM d'),
+          weekKey,
+          weight: maxWeight,
+        };
       });
-      point.total = total;
 
-      return point;
-    });
+      // Get all exercises with their max weights
+      const exerciseMaxes = new Map<string, { max: number; recent: number }>();
+      sortedWeeks.forEach(([, exerciseMap], weekIdx) => {
+        exerciseMap.forEach((weight, name) => {
+          const current = exerciseMaxes.get(name) || { max: 0, recent: 0 };
+          current.max = Math.max(current.max, weight);
+          if (weekIdx === sortedWeeks.length - 1) {
+            current.recent = weight;
+          }
+          exerciseMaxes.set(name, current);
+        });
+      });
 
-    // Calculate growth
-    const firstTotal = (chart[0]?.total as number) || 0;
-    const lastTotal = (chart[chart.length - 1]?.total as number) || 0;
-    const growthPct = firstTotal > 0 ? Math.round(((lastTotal - firstTotal) / firstTotal) * 100) : 0;
+      const exercises = Array.from(exerciseMaxes.entries())
+        .map(([name, data]) => ({ name, maxWeight: data.max, recentWeight: data.recent }))
+        .sort((a, b) => b.maxWeight - a.maxWeight);
 
-    return {
-      chartData: chart,
-      availableExercises: exercises,
-      currentStrength: lastTotal,
-      growth: growthPct,
-    };
+      const startWeight = weeklyMaxWeights[0]?.weight || 0;
+      const currentWeight = weeklyMaxWeights[weeklyMaxWeights.length - 1]?.weight || 0;
+      const growthPercent = startWeight > 0 
+        ? Math.round(((currentWeight - startWeight) / startWeight) * 100)
+        : 0;
+
+      return {
+        key: group.key,
+        label: group.label,
+        weeklyMaxWeights,
+        startWeight,
+        currentWeight,
+        growthPercent,
+        exercises,
+      };
+    }).filter((g): g is MuscleGroupData => g !== null && g.weeklyMaxWeights.length >= 1);
+
+    // Calculate total strength (sum of current max weights across groups)
+    const total = groups.reduce((sum, g) => sum + g.currentWeight, 0);
+    
+    // Overall growth
+    const startTotal = groups.reduce((sum, g) => sum + g.startWeight, 0);
+    const growth = startTotal > 0 ? Math.round(((total - startTotal) / startTotal) * 100) : 0;
+
+    return { muscleGroups: groups, totalStrength: total, overallGrowth: growth };
   }, [data?.sets, dateRange]);
 
-  // Active exercises (default to top 5 by most recent week's weight)
-  const activeExercises = useMemo(() => {
-    if (selectedExercises.size > 0) return selectedExercises;
-    if (availableExercises.length === 0) return new Set<string>();
-
-    // Get top 5 exercises by weight in most recent week
-    const lastWeek = chartData[chartData.length - 1];
-    if (!lastWeek) return new Set(availableExercises.slice(0, 5));
-
-    const sorted = availableExercises
-      .map(ex => ({ name: ex, weight: (lastWeek[ex] as number) || 0 }))
-      .sort((a, b) => b.weight - a.weight)
-      .slice(0, 5)
-      .map(e => e.name);
-
-    return new Set(sorted);
-  }, [selectedExercises, availableExercises, chartData]);
-
-  const getExerciseColor = (exerciseName: string) => {
-    const activeList = Array.from(activeExercises);
-    const index = activeList.indexOf(exerciseName);
-    if (isDark) {
-      // High contrast white for dark mode
-      const darkColors = [
-        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.4)' },
-        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.3)' },
-        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.2)' },
-        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.15)' },
-        { stroke: '#FFFFFF', fill: 'rgba(255,255,255,0.1)' },
-      ];
-      return darkColors[index % darkColors.length];
-    }
-    return EXERCISE_COLORS[index % EXERCISE_COLORS.length];
+  const handleGroupClick = (group: MuscleGroupData) => {
+    haptic('light');
+    setSelectedGroup(group);
   };
-
-  const toggleExercise = (exerciseName: string) => {
-    setSelectedExercises(prev => {
-      const next = new Set(prev.size === 0 ? Array.from(activeExercises) : prev);
-      if (next.has(exerciseName)) {
-        next.delete(exerciseName);
-      } else {
-        next.add(exerciseName);
-      }
-      return next;
-    });
-  };
-
-  // Recalculate totals based on selected exercises
-  const filteredChartData = useMemo(() => {
-    return chartData.map(point => {
-      let filteredTotal = 0;
-      activeExercises.forEach(ex => {
-        filteredTotal += (point[ex] as number) || 0;
-      });
-      return { ...point, filteredTotal };
-    });
-  }, [chartData, activeExercises]);
-
-  const filteredCurrentStrength = filteredChartData[filteredChartData.length - 1]?.filteredTotal || 0;
 
   if (isLoading) {
     return (
@@ -166,7 +169,7 @@ export function StrengthOverviewChart() {
     );
   }
 
-  if (chartData.length === 0) {
+  if (muscleGroups.length === 0) {
     return (
       <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -188,210 +191,324 @@ export function StrengthOverviewChart() {
     );
   }
 
-  const renderTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-
-    const totalEntry = payload.find((p: any) => p.dataKey === 'filteredTotal');
-    const exerciseEntries = payload.filter((p: any) => p.dataKey !== 'filteredTotal');
-
-    return (
-      <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 2,
-        border: 1,
-        borderColor: 'divider',
-        p: 1.5,
-        minWidth: 140,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>{label}</Typography>
-        {exerciseEntries.map((entry: any) => (
-          <Box key={entry.dataKey} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: entry.stroke }} />
-            <Typography variant="caption" sx={{ color: 'text.secondary', flex: 1 }}>
-              {entry.dataKey}
-            </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>
-              {entry.value}kg
-            </Typography>
-          </Box>
-        ))}
-        {totalEntry && (
-          <Box sx={{ borderTop: 1, borderColor: 'divider', mt: 1, pt: 1 }}>
-            <Typography variant="caption" sx={{ fontWeight: 700 }}>
-              Total: {totalEntry.value}kg
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
   return (
-    <MuiCard>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ 
-            p: 1, 
-            borderRadius: 2, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-          }}>
-            <Trophy size={14} />
+    <>
+      <MuiCard>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ 
+              p: 1, 
+              borderRadius: 2, 
+              bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            }}>
+              <Trophy size={14} />
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Strength Overview
+            </Typography>
           </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            Strength Overview
-          </Typography>
-        </Box>
-        {growth !== 0 && (
-          <Chip
-            size="small"
-            icon={growth > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            label={`${growth > 0 ? '+' : ''}${growth}%`}
-            sx={{
-              height: 24,
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              bgcolor: growth > 0 ? 'action.selected' : 'action.hover',
-              color: growth > 0 ? 'text.primary' : 'error.main',
-              '& .MuiChip-icon': { color: 'inherit' },
-            }}
-          />
-        )}
-      </Box>
-
-      {/* Exercise toggles */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 2, maxHeight: 80, overflowY: 'auto' }}>
-        {availableExercises.map((name) => {
-          const isActive = activeExercises.has(name);
-          const color = isActive ? getExerciseColor(name) : null;
-          return (
+          {overallGrowth !== 0 && (
             <Chip
-              key={name}
-              label={name}
               size="small"
-              onClick={() => toggleExercise(name)}
-              icon={isActive ? (
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color?.stroke, ml: 0.5 }} />
-              ) : undefined}
+              icon={overallGrowth > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              label={`${overallGrowth > 0 ? '+' : ''}${overallGrowth}%`}
               sx={{
-                fontSize: '0.65rem',
-                height: 26,
-                bgcolor: isActive ? 'background.paper' : 'action.hover',
-                border: 1,
-                borderColor: isActive ? 'divider' : 'transparent',
-                color: isActive ? 'text.primary' : 'text.secondary',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.selected' },
+                height: 24,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                bgcolor: overallGrowth > 0 ? 'action.selected' : 'action.hover',
+                color: overallGrowth > 0 ? 'text.primary' : 'error.main',
+                '& .MuiChip-icon': { color: 'inherit' },
               }}
             />
-          );
-        })}
-      </Box>
-
-      {/* Chart */}
-      {filteredChartData.length > 1 ? (
-        <Box sx={{ height: 220 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={filteredChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-              <XAxis
-                dataKey="week"
-                tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                width={40}
-              />
-              <Tooltip content={renderTooltip} />
-              
-              {/* Stacked areas for each exercise - solid fills, no gradients */}
-              {Array.from(activeExercises).map((ex) => {
-                const color = getExerciseColor(ex);
-                return (
-                  <Area
-                    key={ex}
-                    type="monotone"
-                    dataKey={ex}
-                    stackId="1"
-                    stroke={color.stroke}
-                    strokeWidth={1}
-                    fill={color.fill}
-                  />
-                );
-              })}
-
-              {/* Total line overlay */}
-              <Line
-                type="monotone"
-                dataKey="filteredTotal"
-                stroke={theme.palette.text.primary}
-                strokeWidth={2}
-                dot={{ fill: theme.palette.text.primary, strokeWidth: 0, r: 3 }}
-                activeDot={{ fill: theme.palette.primary.main, strokeWidth: 0, r: 5 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+          )}
         </Box>
-      ) : (
-        <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
-          Log more workouts to see progression
-        </Typography>
-      )}
 
-      {/* Current strength index */}
-      {filteredCurrentStrength > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-        >
-          <Box sx={{
-            mt: 2,
-            p: 2.5,
-            bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-            borderRadius: 3,
-            textAlign: 'center',
-            border: 1,
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-          }}>
-            <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-              {filteredCurrentStrength.toLocaleString()} kg
-            </Typography>
-            <Typography variant="caption" sx={{ 
-              color: 'text.secondary', 
-              letterSpacing: '0.1em',
-              fontWeight: 500,
+        {/* Sparkline Grid */}
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: 1.5,
+          mb: 2,
+        }}>
+          {muscleGroups.map((group, idx) => (
+            <motion.div
+              key={group.key}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <SparklineCard
+                group={group}
+                isDark={isDark}
+                onClick={() => handleGroupClick(group)}
+              />
+            </motion.div>
+          ))}
+        </Box>
+
+        {/* Strength Index */}
+        {totalStrength > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <Box sx={{
+              p: 2,
+              bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+              borderRadius: 2,
+              textAlign: 'center',
+              border: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             }}>
-              STRENGTH INDEX
-            </Typography>
-          </Box>
-        </motion.div>
-      )}
-
-      {/* Legend */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-        {Array.from(activeExercises).map(ex => {
-          const color = getExerciseColor(ex);
-          return (
-            <Box key={ex} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: color.stroke }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
-                {ex}
+              <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                {totalStrength.toLocaleString()} kg
+              </Typography>
+              <Typography variant="caption" sx={{ 
+                color: 'text.secondary', 
+                letterSpacing: '0.08em',
+                fontWeight: 500,
+                fontSize: '0.65rem',
+              }}>
+                STRENGTH INDEX
               </Typography>
             </Box>
-          );
-        })}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ width: 16, height: 2, bgcolor: 'text.primary', borderRadius: 1 }} />
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
-            Total
-          </Typography>
-        </Box>
+          </motion.div>
+        )}
+      </MuiCard>
+
+      {/* Drill-down Dialog */}
+      <ExerciseBreakdownDialog
+        group={selectedGroup}
+        isDark={isDark}
+        onClose={() => setSelectedGroup(null)}
+      />
+    </>
+  );
+}
+
+interface SparklineCardProps {
+  group: MuscleGroupData;
+  isDark: boolean;
+  onClick: () => void;
+}
+
+function SparklineCard({ group, isDark, onClick }: SparklineCardProps) {
+  const hasGrowth = group.growthPercent !== 0;
+  const isPositive = group.growthPercent > 0;
+
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        p: 1.5,
+        borderRadius: 2,
+        bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+        border: 1,
+        borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+          borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+        },
+        '&:active': {
+          transform: 'scale(0.98)',
+        },
+      }}
+    >
+      {/* Label + Growth */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+          {group.label}
+        </Typography>
+        {hasGrowth && (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.25,
+            color: isPositive ? 'success.main' : 'error.main',
+          }}>
+            {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
+              {isPositive ? '+' : ''}{group.growthPercent}%
+            </Typography>
+          </Box>
+        )}
       </Box>
-    </MuiCard>
+
+      {/* Weight progression */}
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
+        {group.startWeight}kg → <strong>{group.currentWeight}kg</strong>
+      </Typography>
+
+      {/* Sparkline */}
+      <Box sx={{ height: 40, mt: 0.5, mx: -0.5 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={group.weeklyMaxWeights} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+            <Area
+              type="monotone"
+              dataKey="weight"
+              stroke={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'}
+              strokeWidth={1.5}
+              fill={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Box>
+
+      {/* Tap hint */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 0.5 }}>
+        <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.55rem' }}>
+          {group.exercises.length} exercises
+        </Typography>
+        <ChevronRight size={10} style={{ opacity: 0.4 }} />
+      </Box>
+    </Box>
+  );
+}
+
+interface ExerciseBreakdownDialogProps {
+  group: MuscleGroupData | null;
+  isDark: boolean;
+  onClose: () => void;
+}
+
+function ExerciseBreakdownDialog({ group, isDark, onClose }: ExerciseBreakdownDialogProps) {
+  if (!group) return null;
+
+  const maxWeight = Math.max(...group.exercises.map(e => e.maxWeight));
+
+  return (
+    <Dialog
+      open={!!group}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          bgcolor: 'background.paper',
+        },
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        pb: 1,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            {group.label}
+          </Typography>
+          {group.growthPercent !== 0 && (
+            <Chip
+              size="small"
+              label={`${group.growthPercent > 0 ? '+' : ''}${group.growthPercent}%`}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: group.growthPercent > 0 ? 'success.main' : 'error.main',
+                color: 'white',
+              }}
+            />
+          )}
+        </Box>
+        <IconButton size="small" onClick={onClose}>
+          <X size={18} />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ pt: 0 }}>
+        {/* Weekly progression chart */}
+        <Box sx={{ height: 100, mb: 2 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={group.weeklyMaxWeights} margin={{ top: 5, right: 5, bottom: 20, left: 5 }}>
+              <XAxis 
+                dataKey="week" 
+                tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+                labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                formatter={(value: number) => [`${value} kg`, 'Max Weight']}
+              />
+              <Area
+                type="monotone"
+                dataKey="weight"
+                stroke={isDark ? '#fff' : '#000'}
+                strokeWidth={2}
+                fill={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Box>
+
+        {/* Exercise breakdown */}
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>
+          EXERCISES ({group.exercises.length})
+        </Typography>
+        
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {group.exercises.map((exercise, idx) => (
+            <motion.div
+              key={exercise.name}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.03 }}
+            >
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1.5,
+                py: 0.75,
+              }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 500, 
+                    fontSize: '0.8rem',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {exercise.name}
+                  </Typography>
+                  {/* Progress bar */}
+                  <Box sx={{ 
+                    height: 4, 
+                    bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    borderRadius: 2,
+                    mt: 0.5,
+                    overflow: 'hidden',
+                  }}>
+                    <Box sx={{
+                      height: '100%',
+                      width: `${(exercise.maxWeight / maxWeight) * 100}%`,
+                      bgcolor: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.25)',
+                      borderRadius: 2,
+                    }} />
+                  </Box>
+                </Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.85rem', minWidth: 50, textAlign: 'right' }}>
+                  {exercise.maxWeight}kg
+                </Typography>
+              </Box>
+            </motion.div>
+          ))}
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
 }
