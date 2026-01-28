@@ -95,12 +95,6 @@ export function EfficiencyChart() {
         <Box sx={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
-              <defs>
-                <linearGradient id="efficiencyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={barColor} stopOpacity={0.9} />
-                  <stop offset="95%" stopColor={barColor} stopOpacity={0.3} />
-                </linearGradient>
-              </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} hide />
@@ -108,7 +102,7 @@ export function EfficiencyChart() {
               <Bar 
                 yAxisId="left"
                 dataKey="volume" 
-                fill="url(#efficiencyGradient)" 
+                fill={barColor}
                 radius={[4, 4, 0, 0]}
                 name="Volume (k kg)"
               />
