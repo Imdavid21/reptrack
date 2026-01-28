@@ -1,68 +1,17 @@
 import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, History, Settings, Sparkles } from 'lucide-react';
-import { useWorkouts } from '@/hooks/useWorkouts';
-import { useDraftWorkout } from '@/hooks/useDraftWorkout';
-import { format, differenceInMinutes } from 'date-fns';
-import { useState, useEffect } from 'react';
-import logoInsights from '@/assets/logo-insights.png';
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h${m}m` : `${h}h`;
-}
-
-// Custom icon component for insights using the logo
-function InsightsIcon({ size = 20 }: { size?: number }) {
-  return (
-    <img 
-      src={logoInsights} 
-      alt="Insights" 
-      style={{ 
-        width: size, 
-        height: size, 
-        objectFit: 'contain',
-        filter: 'brightness(0) invert(0.3)', // Make it match text color
-      }} 
-    />
-  );
-}
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { workouts } = useWorkouts();
-  const { draft } = useDraftWorkout();
-  const [elapsed, setElapsed] = useState<number | null>(null);
-  
-  useEffect(() => {
-    if (!draft?.workoutStartTime) {
-      setElapsed(null);
-      return;
-    }
-    const updateElapsed = () => {
-      const mins = differenceInMinutes(new Date(), new Date(draft.workoutStartTime!));
-      setElapsed(mins > 0 ? mins : 1);
-    };
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 60000);
-    return () => clearInterval(interval);
-  }, [draft?.workoutStartTime]);
-  
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const todayWorkout = workouts.find(w => w.date === today);
-  const completedDuration = todayWorkout?.workout_duration_minutes;
-  const durationLabel = elapsed ? formatDuration(elapsed) : (completedDuration ? formatDuration(completedDuration) : null);
-  const isWorkoutActive = !!elapsed;
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Today', useCustomIcon: false },
-    { path: '/log', icon: Dumbbell, label: durationLabel || 'Workout', useCustomIcon: false },
-    { path: '/insights', icon: Sparkles, label: 'Insights', useCustomIcon: true },
-    { path: '/history', icon: History, label: 'History', useCustomIcon: false },
-    { path: '/settings', icon: Settings, label: 'Settings', useCustomIcon: false },
+    { path: '/', icon: Home, label: 'Today' },
+    { path: '/log', icon: Dumbbell, label: 'Workout' },
+    { path: '/insights', icon: Sparkles, label: 'Insights' },
+    { path: '/history', icon: History, label: 'History' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const currentPath = location.pathname;
@@ -112,37 +61,11 @@ export function BottomNav() {
           },
         }}
       >
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <BottomNavigationAction
             key={item.path}
             label={item.label}
-            icon={
-              <Box sx={{ position: 'relative' }}>
-                {item.useCustomIcon ? (
-                  <Sparkles size={20} />
-                ) : (
-                  <item.icon size={20} />
-                )}
-                {item.path === '/log' && isWorkoutActive && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: -2,
-                      right: -6,
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      bgcolor: 'primary.main',
-                      animation: 'pulse 2s infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': { opacity: 1 },
-                        '50%': { opacity: 0.5 },
-                      },
-                    }}
-                  />
-                )}
-              </Box>
-            }
+            icon={<item.icon size={20} />}
           />
         ))}
       </BottomNavigation>
