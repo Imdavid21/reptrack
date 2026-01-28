@@ -3,130 +3,141 @@
 @tailwind utilities;
 
 /* Modern Fitness Analytics Design System
-   Clean, data-driven, soft greens with professional grays */
+   Clean, minimal black & white with subtle grays */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* Core palette - Professional greens and grays */
-    --background: 210 17% 98%; /* #f8f9fa */
-    --foreground: 150 75% 6%; /* #081c15 */
+    /* Core palette - Pure black & white */
+    --background: 0 0% 98%; /* near white */
+    --foreground: 0 0% 9%; /* near black */
 
     --card: 0 0% 100%;
-    --card-foreground: 150 75% 6%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 75% 6%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary - Dark forest green */
-    --primary: 150 75% 6%; /* #081c15 */
+    /* Primary - Black */
+    --primary: 0 0% 9%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Light gray */
-    --secondary: 210 14% 93%; /* #e9ecef */
-    --secondary-foreground: 150 75% 6%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 210 14% 93%; /* #e9ecef */
-    --muted-foreground: 210 10% 50%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 141 43% 71%; /* #95d5b2 */
-    --accent-foreground: 150 75% 6%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 15 80% 68%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Status colors */
-    --success: 141 43% 71%; /* #95d5b2 */
-    --success-foreground: 150 75% 6%;
-    --success-light: 141 47% 91%; /* #d8f3dc */
-    --warning: 38 92% 50%;
+    /* Status colors - grayscale */
+    --success: 0 0% 35%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 0 0% 93%;
+    --warning: 0 0% 50%;
     --warning-foreground: 0 0% 0%;
 
     /* Borders and inputs */
-    --border: 210 14% 93%; /* #e9ecef */
-    --input: 210 14% 93%;
-    --ring: 141 43% 71%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 20%;
 
     /* Radius - Modern rounded */
     --radius: 12px;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 150 75% 6%;
-    --sidebar-primary: 141 43% 71%;
-    --sidebar-primary-foreground: 150 75% 6%;
-    --sidebar-accent: 210 17% 98%;
-    --sidebar-accent-foreground: 150 75% 6%;
-    --sidebar-border: 210 14% 93%;
-    --sidebar-ring: 141 43% 71%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 20%;
 
-    /* Heatmap intensity levels */
-    --heat-0: 210 14% 93%;
-    --heat-1: 141 47% 91%;
-    --heat-2: 141 43% 81%;
-    --heat-3: 141 43% 71%;
-    --heat-4: 150 75% 6%;
+    /* Heatmap intensity levels - grayscale */
+    --heat-0: 0 0% 93%;
+    --heat-1: 0 0% 80%;
+    --heat-2: 0 0% 60%;
+    --heat-3: 0 0% 40%;
+    --heat-4: 0 0% 15%;
 
     /* Progress bar */
     --progress-radius: 6px;
 
-    /* Analytics palette - refined greens */
-    --insight-primary: 141 43% 71%; /* #95d5b2 - main accent */
-    --insight-success: 141 47% 91%; /* #d8f3dc - success bg */
-    --insight-neutral: 210 14% 93%; /* #e9ecef - neutral */
-    --insight-background: 210 17% 98%; /* #f8f9fa - light bg */
-    --insight-text: 150 75% 6%; /* #081c15 - dark text */
-    --insight-warning: 15 80% 68%; /* coral - warnings */
+    /* Analytics palette - grayscale */
+    --insight-primary: 0 0% 20%;
+    --insight-success: 0 0% 93%;
+    --insight-neutral: 0 0% 90%;
+    --insight-background: 0 0% 98%;
+    --insight-text: 0 0% 9%;
+    --insight-warning: 0 0% 50%;
+    
+    /* Chart colors - grayscale spectrum */
+    --insight-mint: 0 0% 35%;
+    --insight-lavender: 0 0% 55%;
+    --insight-blue: 0 0% 45%;
+    --insight-coral: 0 0% 65%;
   }
 
   .dark {
-    --background: 150 75% 6%; /* #081c15 inverted */
-    --foreground: 210 17% 98%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 150 50% 10%;
-    --card-foreground: 210 17% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 150 50% 10%;
-    --popover-foreground: 210 17% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 141 43% 71%; /* #95d5b2 */
-    --primary-foreground: 150 75% 6%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 9%;
 
-    --secondary: 150 30% 15%;
-    --secondary-foreground: 210 17% 98%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 150 30% 18%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 141 43% 71%;
-    --accent-foreground: 150 75% 6%;
+    --accent: 0 0% 80%;
+    --accent-foreground: 0 0% 9%;
 
-    --destructive: 15 80% 68%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 141 43% 71%;
-    --success-foreground: 150 75% 6%;
-    --success-light: 141 30% 25%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --success: 0 0% 70%;
+    --success-foreground: 0 0% 9%;
+    --success-light: 0 0% 20%;
+    --warning: 0 0% 50%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 150 30% 18%;
-    --input: 150 30% 18%;
-    --ring: 141 43% 71%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 80%;
 
-    --heat-0: 150 30% 15%;
-    --heat-1: 141 30% 25%;
-    --heat-2: 141 35% 40%;
-    --heat-3: 141 40% 55%;
-    --heat-4: 141 43% 71%;
+    --heat-0: 0 0% 15%;
+    --heat-1: 0 0% 25%;
+    --heat-2: 0 0% 40%;
+    --heat-3: 0 0% 60%;
+    --heat-4: 0 0% 85%;
 
-    --insight-primary: 141 43% 71%;
-    --insight-success: 141 30% 25%;
-    --insight-neutral: 150 30% 18%;
-    --insight-background: 150 50% 10%;
-    --insight-text: 210 17% 98%;
-    --insight-warning: 15 80% 68%;
+    --insight-primary: 0 0% 80%;
+    --insight-success: 0 0% 20%;
+    --insight-neutral: 0 0% 18%;
+    --insight-background: 0 0% 12%;
+    --insight-text: 0 0% 95%;
+    --insight-warning: 0 0% 50%;
+    
+    --insight-mint: 0 0% 70%;
+    --insight-lavender: 0 0% 55%;
+    --insight-blue: 0 0% 60%;
+    --insight-coral: 0 0% 45%;
   }
 }
 

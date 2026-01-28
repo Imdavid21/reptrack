@@ -87,15 +87,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Direct color references
-        forest: "#081c15",
-        mint: {
-          DEFAULT: "#95d5b2",
-          light: "#d8f3dc",
-        },
+        // Direct color references - grayscale only
         gray: {
-          50: "#f8f9fa",
-          100: "#e9ecef",
+          50: "#fafafa",
+          100: "#f0f0f0",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
         },
       },
       spacing: {

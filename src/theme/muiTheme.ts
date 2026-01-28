@@ -1,33 +1,28 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-// Refined palette based on user colors
-// #081c15 - Dark forest green (primary text, dark accents)
-// #95d5b2 - Medium mint (primary accent, charts)
-// #d8f3dc - Light mint (success backgrounds)
-// #e9ecef - Light gray (borders, card backgrounds)
-// #f8f9fa - Near white (page background)
+// Black & White palette - pure grayscale
 const palette = {
-  forest: {
-    main: '#081c15', // Primary text, headers
-    light: '#1a3a2a',
-    dark: '#040e0a',
+  black: {
+    main: '#171717',
+    light: '#262626',
+    dark: '#0a0a0a',
   },
-  mint: {
-    main: '#95d5b2', // Primary accent, charts, positive
-    light: '#d8f3dc', // Success backgrounds
-    dark: '#74c69d',
+  white: {
+    main: '#fafafa',
+    light: '#ffffff',
+    dark: '#f5f5f5',
   },
   gray: {
-    50: '#f8f9fa', // Page background
-    100: '#e9ecef', // Card borders, dividers
-    200: '#dee2e6',
-    300: '#ced4da',
-    400: '#adb5bd',
-    500: '#6c757d', // Secondary text
-  },
-  warning: {
-    main: '#ff8a65', // Warnings, negative trends
-    light: 'rgba(255, 138, 101, 0.15)',
+    50: '#fafafa',
+    100: '#f5f5f5',
+    200: '#e5e5e5',
+    300: '#d4d4d4',
+    400: '#a3a3a3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
   },
 };
 
@@ -171,35 +166,35 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: palette.forest.main,
-      light: palette.forest.light,
-      dark: palette.forest.dark,
+      main: palette.black.main,
+      light: palette.black.light,
+      dark: palette.black.dark,
       contrastText: '#ffffff',
     },
     secondary: {
-      main: palette.mint.main,
-      light: palette.mint.light,
-      dark: palette.mint.dark,
+      main: palette.gray[400],
+      light: palette.gray[200],
+      dark: palette.gray[600],
     },
     error: {
-      main: palette.warning.main,
+      main: '#dc2626',
     },
     success: {
-      main: palette.mint.main,
-      light: palette.mint.light,
+      main: palette.gray[600],
+      light: palette.gray[200],
     },
     background: {
-      default: '#f8f9fa',
+      default: palette.gray[50],
       paper: '#ffffff',
     },
     text: {
-      primary: palette.forest.main,
+      primary: palette.black.main,
       secondary: palette.gray[500],
     },
-    divider: palette.gray[100],
+    divider: palette.gray[200],
     action: {
-      hover: 'rgba(149, 213, 178, 0.08)',
-      selected: 'rgba(149, 213, 178, 0.12)',
+      hover: 'rgba(0, 0, 0, 0.04)',
+      selected: 'rgba(0, 0, 0, 0.08)',
     },
   },
 });
@@ -209,34 +204,34 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: palette.mint.main,
-      light: palette.mint.light,
-      dark: palette.mint.dark,
+      main: palette.white.main,
+      light: palette.white.light,
+      dark: palette.white.dark,
     },
     secondary: {
-      main: palette.mint.main,
-      light: palette.mint.light,
-      dark: palette.mint.dark,
+      main: palette.gray[500],
+      light: palette.gray[400],
+      dark: palette.gray[600],
     },
     error: {
-      main: palette.warning.main,
+      main: '#ef4444',
     },
     success: {
-      main: palette.mint.main,
-      light: 'rgba(149, 213, 178, 0.2)',
+      main: palette.gray[400],
+      light: 'rgba(255, 255, 255, 0.1)',
     },
     background: {
-      default: '#0a1f14', // Darker forest
-      paper: '#122a1c', // Slightly lighter forest
+      default: palette.gray[900],
+      paper: palette.gray[800],
     },
     text: {
-      primary: '#f8f9fa',
-      secondary: '#adb5bd',
+      primary: palette.white.main,
+      secondary: palette.gray[400],
     },
     divider: 'rgba(255, 255, 255, 0.1)',
     action: {
-      hover: 'rgba(149, 213, 178, 0.12)',
-      selected: 'rgba(149, 213, 178, 0.16)',
+      hover: 'rgba(255, 255, 255, 0.04)',
+      selected: 'rgba(255, 255, 255, 0.08)',
     },
   },
   components: {
@@ -244,7 +239,7 @@ export const darkTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#0a1f14',
+          backgroundColor: palette.gray[900],
           transition: 'background-color 0.3s ease, color 0.3s ease',
         },
       },
