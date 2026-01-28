@@ -13,9 +13,9 @@ export function BodyPartsSpline() {
   const isDark = theme.palette.mode === 'dark';
 
   const accentColor = theme.palette.secondary.main;
-  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
-  const errorLight = 'rgba(255, 138, 101, 0.15)';
-  const surfaceBg = isDark ? 'rgba(255,255,255,0.05)' : theme.palette.grey[200];
+  const selectedBg = theme.palette.action.selected;
+  const negativeBg = theme.palette.action.hover;
+  const surfaceBg = theme.palette.action.hover;
   const mutedColor = theme.palette.text.secondary;
 
   if (isLoading) {
@@ -96,13 +96,13 @@ export function BodyPartsSpline() {
               sx={{
                 fontSize: '0.65rem',
                 height: 26,
-                bgcolor: (selectedPart || bodyParts[0]?.bodyPart) === bp.bodyPart ? successLight : surfaceBg,
+                bgcolor: (selectedPart || bodyParts[0]?.bodyPart) === bp.bodyPart ? selectedBg : surfaceBg,
                 color: 'text.primary',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 '&:hover': {
-                  bgcolor: successLight,
+                  bgcolor: selectedBg,
                 },
               }}
             />
@@ -137,7 +137,7 @@ export function BodyPartsSpline() {
                 px: 1.5,
                 py: 0.5,
                 borderRadius: 2,
-                bgcolor: selectedData.growth > 0 ? successLight : selectedData.growth < 0 ? errorLight : surfaceBg,
+                bgcolor: selectedData.growth > 0 ? selectedBg : selectedData.growth < 0 ? negativeBg : surfaceBg,
               }}>
                 <GrowthIcon growth={selectedData.growth} />
                 <Typography 

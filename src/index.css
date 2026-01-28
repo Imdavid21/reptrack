@@ -30,10 +30,12 @@
     --muted: 0 0% 93%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent is a subtle surface (shadcn semantics) */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
-    --destructive: 0 72% 51%;
+    /* Monochrome destructive/warning */
+    --destructive: 0 0% 25%;
     --destructive-foreground: 0 0% 100%;
 
     /* Status colors - grayscale */
@@ -105,16 +107,16 @@
     --muted: 0 0% 18%;
     --muted-foreground: 0 0% 55%;
 
-    --accent: 0 0% 80%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 0% 65%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 0 0% 70%;
     --success-foreground: 0 0% 9%;
     --success-light: 0 0% 20%;
-    --warning: 0 0% 50%;
+    --warning: 0 0% 55%;
     --warning-foreground: 0 0% 100%;
 
     --border: 0 0% 20%;
@@ -212,6 +214,17 @@
   /* Card styles */
   .card-modern {
     @apply border border-border bg-card rounded-2xl p-5 shadow-sm;
+  }
+
+  /* Legacy class names still used across the app */
+  .card-brutalist {
+    @apply border border-border bg-card rounded-2xl p-5 shadow-sm;
+  }
+
+  .input-terminal {
+    @apply w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground;
+    @apply placeholder:text-muted-foreground;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
   }
 
   /* Stat block */

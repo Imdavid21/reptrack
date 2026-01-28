@@ -14,8 +14,8 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
 
   const positiveColor = theme.palette.secondary.main;
   const negativeColor = theme.palette.error.main;
-  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
-  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const positiveBg = theme.palette.action.selected;
+  const negativeBg = theme.palette.action.hover;
   
   return (
     <motion.div
@@ -48,7 +48,7 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
               <Box sx={{ 
                 p: 0.75, 
                 borderRadius: 1.5, 
-                bgcolor: correlation.positive ? successLight : errorLight,
+                bgcolor: correlation.positive ? positiveBg : negativeBg,
               }}>
                 {correlation.positive ? (
                   <TrendingUp size={14} style={{ color: theme.palette.text.primary }} />

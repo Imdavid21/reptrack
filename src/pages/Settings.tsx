@@ -261,7 +261,16 @@ export default function Settings() {
             </Box>
             
             <Collapse in={expandedSections.pwa}>
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.main', borderRadius: 2, opacity: 0.1 }}>
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  bgcolor: 'action.hover',
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {['Tap Share in Safari', 'Select "Add to Home Screen"', 'Tap "Add"'].map((step, i) => (
                     <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
