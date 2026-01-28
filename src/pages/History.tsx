@@ -1,4 +1,5 @@
-import { Box, Typography, Chip } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Chip, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
@@ -6,10 +7,12 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Calendar, Edit2 } from 'lucide-react';
+import { ChevronRight, Calendar, Edit2, ClipboardEdit } from 'lucide-react';
 import { BackfillDialog } from '@/components/dashboard/BackfillDialog';
+import { EditDailyLogDialog } from '@/components/dashboard/EditDailyLogDialog';
 
 export default function History() {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { workouts, isLoading } = useWorkouts();
   const navigate = useNavigate();
 
@@ -27,8 +30,17 @@ export default function History() {
     <MainLayout title="HISTORY">
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
-          {/* Backfill Action */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ClipboardEdit size={16} />}
+              onClick={() => setEditDialogOpen(true)}
+              sx={{ textTransform: 'none' }}
+            >
+              Edit Daily Logs
+            </Button>
             <BackfillDialog />
           </Box>
 
@@ -132,6 +144,12 @@ export default function History() {
             </motion.div>
           )}
         </Box>
+
+        {/* Edit Daily Log Dialog */}
+        <EditDailyLogDialog 
+          open={editDialogOpen} 
+          onClose={() => setEditDialogOpen(false)} 
+        />
       </AnimatedPage>
     </MainLayout>
   );
