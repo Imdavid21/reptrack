@@ -10,7 +10,6 @@ import {
   Target,
   Brain,
   BarChart3,
-  Sparkles,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedTabs } from '@/components/ui/AnimatedTabs';
@@ -24,7 +23,7 @@ import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
 import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
-import { AICoachInsights } from '@/components/analytics/AICoachInsights';
+import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
 import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
 import { NutritionInsights } from '@/components/health/NutritionInsights';
@@ -292,7 +291,7 @@ function BodyTab() {
   );
 }
 
-function AITab() {
+function MLTab() {
   const { dateRange } = useDateRange();
   const days = differenceInDays(dateRange.to, dateRange.from) + 1;
   
@@ -303,7 +302,7 @@ function AITab() {
           <HealthInsightsCard days={days} />
         </motion.div>
         <motion.div variants={staggerItem}>
-          <AICoachInsights />
+          <MLCoachInsights />
         </motion.div>
       </Box>
     </motion.div>
@@ -363,7 +362,7 @@ function InsightsContent() {
     { label: 'Overview', value: 'overview', icon: <BarChart3 size={12} /> },
     { label: 'Perf', value: 'performance', icon: <Dumbbell size={12} /> },
     { label: 'Body', value: 'body', icon: <Activity size={12} /> },
-    { label: 'AI', value: 'ai', icon: <Sparkles size={12} /> },
+    { label: 'ML', value: 'ml', icon: <Brain size={12} /> },
   ];
 
   const handleTabChange = (newValue: string) => {
@@ -397,7 +396,7 @@ function InsightsContent() {
           {activeTab === 'overview' && <OverviewTab />}
           {activeTab === 'performance' && <PerformanceTab />}
           {activeTab === 'body' && <BodyTab />}
-          {activeTab === 'ai' && <AITab />}
+          {activeTab === 'ml' && <MLTab />}
         </AnimatedTabs>
       </Box>
     </AnimatedPage>
