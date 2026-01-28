@@ -36,7 +36,7 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
           display: 'flex',
           gap: 0.5,
           p: 0.5,
-          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#e9ecef',
+          bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.200',
           borderRadius: 2.5,
           mb: 3,
         }}
@@ -59,17 +59,17 @@ export function AnimatedTabs({ tabs, value, onChange, children }: AnimatedTabsPr
               fontWeight: 600,
               transition: 'all 0.2s ease',
               bgcolor: value === tab.value 
-                ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#ffffff')
+                ? (isDark ? 'rgba(149, 213, 178, 0.15)' : 'background.paper')
                 : 'transparent',
               color: value === tab.value 
-                ? (isDark ? '#95d5b2' : '#081c15')
-                : (isDark ? 'rgba(255,255,255,0.6)' : '#6c757d'),
+                ? (isDark ? 'secondary.main' : 'text.primary')
+                : 'text.secondary',
               boxShadow: value === tab.value 
                 ? (isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.08)')
                 : 'none',
               '&:hover': {
                 bgcolor: value === tab.value 
-                  ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#ffffff')
+                  ? (isDark ? 'rgba(149, 213, 178, 0.15)' : 'background.paper')
                   : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.5)'),
               },
             }}

@@ -10,6 +10,12 @@ interface RealCorrelationCardProps {
 
 export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const positiveColor = theme.palette.secondary.main;
+  const negativeColor = theme.palette.error.main;
+  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
+  const errorLight = 'rgba(255, 138, 101, 0.15)';
   
   return (
     <motion.div
@@ -19,8 +25,6 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
     >
       <MuiCard
         sx={{
-          bgcolor: '#f8f9fa',
-          border: '1px solid #e9ecef',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -33,7 +37,7 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
             top: 0,
             bottom: 0,
             width: 4,
-            bgcolor: correlation.positive ? '#95d5b2' : '#ff8a65',
+            bgcolor: correlation.positive ? positiveColor : negativeColor,
           }}
         />
 
@@ -44,15 +48,15 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
               <Box sx={{ 
                 p: 0.75, 
                 borderRadius: 1.5, 
-                bgcolor: correlation.positive ? '#d8f3dc' : 'rgba(255, 138, 101, 0.15)',
+                bgcolor: correlation.positive ? successLight : errorLight,
               }}>
                 {correlation.positive ? (
-                  <TrendingUp size={14} style={{ color: '#081c15' }} />
+                  <TrendingUp size={14} style={{ color: theme.palette.text.primary }} />
                 ) : (
-                  <TrendingDown size={14} style={{ color: '#ff8a65' }} />
+                  <TrendingDown size={14} style={{ color: negativeColor }} />
                 )}
               </Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                 {correlation.title}
               </Typography>
             </Box>
@@ -78,9 +82,9 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
                 sx={{
                   height: 6,
                   borderRadius: 3,
-                  bgcolor: '#e9ecef',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'grey.200',
                   '& .MuiLinearProgress-bar': {
-                    bgcolor: correlation.positive ? '#95d5b2' : '#ff8a65',
+                    bgcolor: correlation.positive ? positiveColor : negativeColor,
                     borderRadius: 3,
                   },
                 }}
@@ -89,7 +93,7 @@ export function RealCorrelationCard({ correlation }: RealCorrelationCardProps) {
             <Typography 
               variant="caption" 
               sx={{ 
-                color: correlation.positive ? '#081c15' : '#ff8a65',
+                color: correlation.positive ? 'text.primary' : 'error.main',
                 fontWeight: 600,
                 minWidth: 35,
                 textAlign: 'right',

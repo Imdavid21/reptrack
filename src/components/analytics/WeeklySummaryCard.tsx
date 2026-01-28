@@ -11,6 +11,7 @@ interface WeeklySummaryCardProps {
 
 export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardProps) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   
   const workoutChange = summary.priorWeekWorkouts !== undefined
     ? summary.workouts - summary.priorWeekWorkouts
@@ -27,8 +28,11 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
 
   const getTrendColor = (value: number | null) => {
     if (value === null || value === 0) return theme.palette.text.secondary;
-    return value > 0 ? '#95d5b2' : '#ff8a65';
+    return value > 0 ? theme.palette.secondary.main : theme.palette.error.main;
   };
+
+  const surfaceBg = isDark ? 'rgba(255,255,255,0.05)' : 'background.default';
+  const accentBorder = theme.palette.secondary.main;
 
   return (
     <motion.div
@@ -38,8 +42,8 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
     >
       <MuiCard
         sx={{
-          bgcolor: isCurrentWeek ? '#f8f9fa' : 'background.paper',
-          border: isCurrentWeek ? '2px solid #95d5b2' : '1px solid #e9ecef',
+          border: isCurrentWeek ? 2 : 1,
+          borderColor: isCurrentWeek ? 'secondary.main' : 'divider',
         }}
       >
         {/* Header */}
@@ -48,7 +52,7 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
             <Typography 
               variant="caption" 
               sx={{ 
-                color: '#081c15', 
+                color: 'text.primary', 
                 fontWeight: 600,
                 fontSize: '0.65rem',
               }}
@@ -63,10 +67,10 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
             <Box sx={{ 
               px: 1, 
               py: 0.5, 
-              bgcolor: '#d8f3dc', 
+              bgcolor: 'success.light', 
               borderRadius: 2,
             }}>
-              <Typography variant="caption" sx={{ color: '#081c15', fontWeight: 600, fontSize: '0.6rem' }}>
+              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600, fontSize: '0.6rem' }}>
                 CURRENT
               </Typography>
             </Box>
@@ -82,18 +86,19 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
           {/* Workouts */}
           <Box sx={{ 
             p: 1.5, 
-            bgcolor: '#f8f9fa', 
+            bgcolor: surfaceBg, 
             borderRadius: 2,
-            border: '1px solid #e9ecef',
+            border: 1,
+            borderColor: 'divider',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Dumbbell size={12} style={{ color: '#081c15' }} />
+              <Dumbbell size={12} style={{ color: theme.palette.text.primary }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
                 SESSIONS
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {summary.workouts}
               </Typography>
               {workoutChange !== null && (
@@ -110,18 +115,19 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
           {/* Volume */}
           <Box sx={{ 
             p: 1.5, 
-            bgcolor: '#f8f9fa', 
+            bgcolor: surfaceBg, 
             borderRadius: 2,
-            border: '1px solid #e9ecef',
+            border: 1,
+            borderColor: 'divider',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Zap size={12} style={{ color: '#081c15' }} />
+              <Zap size={12} style={{ color: theme.palette.text.primary }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
                 VOLUME
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {summary.totalVolume >= 1000 
                   ? `${(summary.totalVolume / 1000).toFixed(1)}k` 
                   : summary.totalVolume}
@@ -140,17 +146,18 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
           {/* Sleep */}
           <Box sx={{ 
             p: 1.5, 
-            bgcolor: '#f8f9fa', 
+            bgcolor: surfaceBg, 
             borderRadius: 2,
-            border: '1px solid #e9ecef',
+            border: 1,
+            borderColor: 'divider',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Moon size={12} style={{ color: '#081c15' }} />
+              <Moon size={12} style={{ color: theme.palette.text.primary }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
                 AVG SLEEP
               </Typography>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {summary.avgSleep ? `${summary.avgSleep.toFixed(1)}h` : '—'}
             </Typography>
           </Box>
@@ -158,17 +165,18 @@ export function WeeklySummaryCard({ summary, isCurrentWeek }: WeeklySummaryCardP
           {/* Steps */}
           <Box sx={{ 
             p: 1.5, 
-            bgcolor: '#f8f9fa', 
+            bgcolor: surfaceBg, 
             borderRadius: 2,
-            border: '1px solid #e9ecef',
+            border: 1,
+            borderColor: 'divider',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <Footprints size={12} style={{ color: '#081c15' }} />
+              <Footprints size={12} style={{ color: theme.palette.text.primary }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
                 AVG STEPS
               </Typography>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {summary.avgSteps ? summary.avgSteps.toLocaleString() : '—'}
             </Typography>
           </Box>

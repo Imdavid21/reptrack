@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Collapse, IconButton } from '@mui/material';
+import { Box, Typography, TextField, Button, Collapse, useTheme } from '@mui/material';
 import { Target, ChevronRight, Loader2, Check } from 'lucide-react';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
@@ -12,6 +12,8 @@ interface GoalsSectionProps {
 export function GoalsSection({ isExpanded, onToggle }: GoalsSectionProps) {
   const { preferences, updatePreferences, isLoading } = useUserPreferences();
   const [isSaving, setIsSaving] = useState(false);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   
   const [goals, setGoals] = useState({
     daily_calorie_goal: '',
@@ -55,7 +57,13 @@ export function GoalsSection({ isExpanded, onToggle }: GoalsSectionProps) {
   };
 
   return (
-    <Box sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: 3, p: 2 }}>
+    <Box sx={{ 
+      bgcolor: 'background.paper', 
+      border: 1, 
+      borderColor: 'divider', 
+      borderRadius: 3, 
+      p: 2 
+    }}>
       <Box
         onClick={onToggle}
         sx={{ 

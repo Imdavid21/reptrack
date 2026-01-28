@@ -1,5 +1,4 @@
-import { Box, Typography, Chip, Skeleton } from '@mui/material';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { Box, Typography, Chip, Skeleton, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -55,7 +54,7 @@ interface StatCardProps {
 }
 
 function StatCard({ icon, label, value, trend, description, loading }: StatCardProps) {
-  const theme = useMuiTheme();
+  const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
   if (loading) {
@@ -70,6 +69,9 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
     );
   }
 
+  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
+  const errorLight = 'rgba(255, 138, 101, 0.15)';
+
   return (
     <motion.div variants={staggerItem}>
       <MuiCard>
@@ -77,8 +79,8 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
           <Box sx={{ 
             p: 1, 
             borderRadius: 2, 
-            bgcolor: isDark ? 'rgba(149, 213, 178, 0.15)' : '#d8f3dc',
-            color: isDark ? '#95d5b2' : '#081c15',
+            bgcolor: 'success.light',
+            color: 'text.primary',
             display: 'flex',
           }}>
             {icon}
@@ -91,12 +93,8 @@ function StatCard({ icon, label, value, trend, description, loading }: StatCardP
               sx={{
                 height: 20,
                 fontSize: '0.6rem',
-                bgcolor: trend > 0 
-                  ? (isDark ? 'rgba(149, 213, 178, 0.15)' : '#d8f3dc')
-                  : 'rgba(255, 138, 101, 0.15)',
-                color: trend > 0 
-                  ? (isDark ? '#95d5b2' : '#081c15')
-                  : '#ff8a65',
+                bgcolor: trend > 0 ? successLight : errorLight,
+                color: trend > 0 ? 'text.primary' : 'error.main',
                 '& .MuiChip-icon': {
                   color: 'inherit',
                   fontSize: 10,
@@ -180,8 +178,6 @@ function SummaryStats() {
 
 function OverviewTab() {
   const { data, isLoading } = useCorrelationAnalysis(60);
-  const theme = useMuiTheme();
-  const isDark = theme.palette.mode === 'dark';
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
@@ -317,8 +313,7 @@ function AITab() {
 
 function CorrelationsTab() {
   const { data, isLoading } = useCorrelationAnalysis(60);
-  const theme = useMuiTheme();
-  const isDark = theme.palette.mode === 'dark';
+  const theme = useTheme();
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
@@ -339,7 +334,7 @@ function CorrelationsTab() {
           <motion.div variants={staggerItem}>
             <MuiCard>
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Brain size={32} style={{ color: '#95d5b2', marginBottom: 8 }} />
+                <Brain size={32} style={{ color: theme.palette.secondary.main, marginBottom: 8 }} />
                 <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
                   Building Your Insights
                 </Typography>
@@ -363,8 +358,6 @@ function InsightsContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
-  const theme = useMuiTheme();
-  const isDark = theme.palette.mode === 'dark';
   
   const tabs = [
     { label: 'Overview', value: 'overview', icon: <BarChart3 size={12} /> },
