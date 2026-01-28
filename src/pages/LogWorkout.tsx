@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Box, Typography, Button, IconButton, LinearProgress, Chip } from '@mui/material';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
-import { SetBySetCard } from '@/components/workout/SetBySetCard';
+import { SwipeableSetCard } from '@/components/workout/SwipeableSetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { HabitsForm } from '@/components/workout/HabitsForm';
 import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWorkoutSimple';
@@ -16,10 +16,11 @@ import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Zap } from 'lucide-react';
+import { haptic } from '@/lib/haptics';
 
 type Step = 'select-day' | 'exercises' | 'post-checkin' | 'habits';
-type ExerciseViewMode = 'single' | 'overview';
+type ExerciseViewMode = 'swipe' | 'overview';
 
 const defaultHabits: Habits = {
   pullups: 0,
@@ -79,7 +80,7 @@ export default function LogWorkout() {
   const [postCheckin, setPostCheckin] = useState<PostWorkoutData>(defaultPostCheckin);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
-  const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
+  const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('swipe');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
@@ -128,6 +129,7 @@ export default function LogWorkout() {
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
+    haptic('medium');
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
@@ -180,27 +182,49 @@ export default function LogWorkout() {
     toast.success(`Added ${newExercise.name}`);
   };
 
+  const handleSetComplete = () => {
+    const currentExercise = exercises[currentExerciseIndex];
+    const isLastSet = currentSetIndex === currentExercise.sets.length - 1;
+    const isLastExercise = currentExerciseIndex === exercises.length - 1;
+
+    if (isLastSet) {
+      if (isLastExercise) {
+        // All done!
+        handleExercisesDone();
+      } else {
+        // Move to next exercise
+        setCurrentExerciseIndex(prev => prev + 1);
+        setCurrentSetIndex(0);
+      }
+    } else {
+      // Move to next set
+      setCurrentSetIndex(prev => prev + 1);
+    }
+  };
+
+  const handleSkipSet = () => {
+    const currentExercise = exercises[currentExerciseIndex];
+    const isLastSet = currentSetIndex === currentExercise.sets.length - 1;
+    const isLastExercise = currentExerciseIndex === exercises.length - 1;
+
+    if (isLastSet) {
+      if (isLastExercise) {
+        setExerciseViewMode('overview');
+      } else {
+        setCurrentExerciseIndex(prev => prev + 1);
+        setCurrentSetIndex(0);
+      }
+    } else {
+      setCurrentSetIndex(prev => prev + 1);
+    }
+  };
+
   const handleNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
       setCurrentSetIndex(0);
-    }
-  };
-
-  const handlePrevExercise = () => {
-    if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(prev => prev - 1);
-      const prevExercise = exercises[currentExerciseIndex - 1];
-      setCurrentSetIndex(prevExercise.sets.length - 1);
-    }
-  };
-
-  const handleSkipExercise = () => {
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExerciseIndex(prev => prev + 1);
-      setCurrentSetIndex(0);
     } else {
-      setExerciseViewMode('overview');
+      handleExercisesDone();
     }
   };
 
@@ -218,6 +242,7 @@ export default function LogWorkout() {
       const durationMins = Math.round(durationMs / 60000);
       setPostCheckin(prev => ({ ...prev, durationMinutes: durationMins }));
     }
+    haptic('success');
     setStep('post-checkin');
   };
 
@@ -247,6 +272,7 @@ export default function LogWorkout() {
         completedAt: new Date(),
       });
       clearDraft();
+      haptic('success');
       toast.success('Workout logged! 💪');
       navigate('/');
     } catch (error) {
@@ -257,7 +283,7 @@ export default function LogWorkout() {
   const handleBack = () => {
     const currentIndex = STEPS.indexOf(step);
     if (step === 'exercises') {
-      if (exerciseViewMode === 'single') {
+      if (exerciseViewMode === 'swipe') {
         if (currentSetIndex > 0) {
           setCurrentSetIndex(prev => prev - 1);
         } else if (currentExerciseIndex > 0) {
@@ -268,7 +294,7 @@ export default function LogWorkout() {
           setStep('select-day');
         }
       } else {
-        setStep('select-day');
+        setExerciseViewMode('swipe');
       }
     } else if (currentIndex > 0) {
       setStep(STEPS[currentIndex - 1]);
@@ -286,186 +312,239 @@ export default function LogWorkout() {
 
   const dayType = selectedDay ? getDayType(defaultRoutine.days[selectedDay]?.name || '') : undefined;
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
+  const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
     <MainLayout title="LOG WORKOUT">
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 6 }}>
           {/* Back Button */}
           {step !== 'select-day' && (
-            <Button
-              startIcon={<ChevronLeft size={16} />}
-              onClick={handleBack}
-              sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
             >
-              Back
-            </Button>
+              <Button
+                startIcon={<ChevronLeft size={16} />}
+                onClick={handleBack}
+                sx={{ 
+                  alignSelf: 'flex-start', 
+                  color: 'text.secondary',
+                  borderRadius: 3,
+                }}
+              >
+                Back
+              </Button>
+            </motion.div>
           )}
 
-          {/* Progress indicator */}
-          <LinearProgress 
-            variant="determinate" 
-            value={progress}
-            sx={{ 
-              height: 4, 
-              borderRadius: 2,
-              bgcolor: 'action.hover',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 2,
-              },
-            }}
-          />
+          {/* Progress bar - only show during exercises */}
+          {step === 'exercises' && (
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              style={{ transformOrigin: 'left' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={progress}
+                  sx={{ 
+                    flex: 1,
+                    height: 8, 
+                    borderRadius: 4,
+                    bgcolor: 'action.hover',
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 4,
+                      background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--chart-3)))',
+                    },
+                  }}
+                />
+                <Typography variant="caption" fontWeight={600} sx={{ minWidth: 45 }}>
+                  {completedSets}/{totalSets}
+                </Typography>
+              </Box>
+            </motion.div>
+          )}
 
-          {/* Weekly Progress */}
-          {(step === 'select-day' || step === 'exercises') && (
+          {/* Weekly Progress - only on day selection */}
+          {step === 'select-day' && (
             <motion.div variants={staggerItem}>
               <WeeklyProgress />
             </motion.div>
           )}
 
           {/* Step Content */}
-          {step === 'select-day' && (
-            <DaySelectorWithCheckin 
-              selectedDay={selectedDay} 
-              onSelect={handleDaySelect}
-              onQuickLog={selectedDay ? handleQuickLog : undefined}
-            />
-          )}
-
-          {step === 'exercises' && (
-            <>
-              {/* Header with view toggle */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h6" fontWeight={700}>
-                    {defaultRoutine.days[selectedDay]?.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Week {weekNumber} • {defaultRoutine.days[selectedDay]?.focus}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ textAlign: 'right', mr: 1 }}>
-                    <Typography variant="h6" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {completedSets}/{totalSets}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">SETS</Typography>
-                  </Box>
-                  <IconButton
-                    size="small"
-                    onClick={() => setExerciseViewMode('single')}
-                    sx={{
-                      bgcolor: exerciseViewMode === 'single' ? 'primary.main' : 'action.hover',
-                      color: exerciseViewMode === 'single' ? 'primary.contrastText' : 'text.primary',
-                      '&:hover': {
-                        bgcolor: exerciseViewMode === 'single' ? 'primary.dark' : 'action.selected',
-                      },
-                    }}
-                  >
-                    <LayoutGrid size={18} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => setExerciseViewMode('overview')}
-                    sx={{
-                      bgcolor: exerciseViewMode === 'overview' ? 'primary.main' : 'action.hover',
-                      color: exerciseViewMode === 'overview' ? 'primary.contrastText' : 'text.primary',
-                      '&:hover': {
-                        bgcolor: exerciseViewMode === 'overview' ? 'primary.dark' : 'action.selected',
-                      },
-                    }}
-                  >
-                    <List size={18} />
-                  </IconButton>
-                </Box>
-              </Box>
-
-              {exerciseViewMode === 'single' && currentExercise && (
-                <SetBySetCard
-                  exercise={currentExercise}
-                  exerciseIndex={currentExerciseIndex}
-                  totalExercises={exercises.length}
-                  currentSetIndex={currentSetIndex}
-                  onChange={handleExerciseChange}
-                  onSetIndexChange={setCurrentSetIndex}
-                  onNextExercise={handleNextExercise}
-                  onPrevExercise={handlePrevExercise}
-                  onSkipExercise={handleSkipExercise}
-                  onComplete={handleExercisesDone}
-                  isFirstExercise={currentExerciseIndex === 0}
-                  isLastExercise={currentExerciseIndex === exercises.length - 1}
-                  personalRecord={getPRForExercise(currentExercise.name)}
-                  lastUsed={getLastUsed(currentExercise.name)}
+          <AnimatePresence mode="wait">
+            {step === 'select-day' && (
+              <motion.div
+                key="select-day"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <DaySelectorWithCheckin 
+                  selectedDay={selectedDay} 
+                  onSelect={handleDaySelect}
+                  onQuickLog={selectedDay ? handleQuickLog : undefined}
                 />
-              )}
+              </motion.div>
+            )}
 
-              {exerciseViewMode === 'overview' && (
-                <>
-                  <ExerciseOverview
-                    exercises={exercises}
-                    currentIndex={currentExerciseIndex}
-                    onSelectExercise={(idx) => {
-                      setCurrentExerciseIndex(idx);
-                      setCurrentSetIndex(0);
-                      setExerciseViewMode('single');
-                    }}
-                    onAddExercise={handleAddExercise}
-                    dayType={dayType}
+            {step === 'exercises' && (
+              <motion.div
+                key="exercises"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                {/* Header with workout info and view toggle */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box>
+                    <Typography variant="h5" fontWeight={700} sx={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+                      {defaultRoutine.days[selectedDay]?.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Week {weekNumber} • {defaultRoutine.days[selectedDay]?.focus}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => setExerciseViewMode('swipe')}
+                      sx={{
+                        bgcolor: exerciseViewMode === 'swipe' ? 'primary.main' : 'action.hover',
+                        color: exerciseViewMode === 'swipe' ? 'primary.contrastText' : 'text.primary',
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Zap size={18} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => setExerciseViewMode('overview')}
+                      sx={{
+                        bgcolor: exerciseViewMode === 'overview' ? 'primary.main' : 'action.hover',
+                        color: exerciseViewMode === 'overview' ? 'primary.contrastText' : 'text.primary',
+                        borderRadius: 2,
+                      }}
+                    >
+                      <List size={18} />
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {exerciseViewMode === 'swipe' && currentExercise && (
+                  <SwipeableSetCard
+                    exercise={currentExercise}
+                    exerciseIndex={currentExerciseIndex}
+                    totalExercises={exercises.length}
+                    currentSetIndex={currentSetIndex}
+                    onChange={handleExerciseChange}
+                    onSetComplete={handleSetComplete}
+                    onSkipSet={handleSkipSet}
+                    onNextExercise={handleNextExercise}
+                    personalRecord={getPRForExercise(currentExercise.name)}
+                    lastUsed={getLastUsed(currentExercise.name)}
                   />
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    onClick={handleExercisesDone}
-                    disabled={completedSets === 0}
-                    sx={{ py: 1.5, borderRadius: 3 }}
-                  >
-                    Finish Exercises
-                  </Button>
-                </>
-              )}
-            </>
-          )}
+                )}
 
-          {step === 'post-checkin' && (
-            <>
-              <PostWorkoutSimple 
-                data={postCheckin} 
-                onChange={setPostCheckin}
-                autoCalculatedDuration={
-                  workoutStartTime 
-                    ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
-                    : undefined
-                }
-              />
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handlePostCheckinDone}
-                sx={{ py: 1.5, borderRadius: 3 }}
-              >
-                Continue to Habits
-              </Button>
-            </>
-          )}
+                {exerciseViewMode === 'overview' && (
+                  <>
+                    <ExerciseOverview
+                      exercises={exercises}
+                      currentIndex={currentExerciseIndex}
+                      onSelectExercise={(idx) => {
+                        setCurrentExerciseIndex(idx);
+                        setCurrentSetIndex(0);
+                        setExerciseViewMode('swipe');
+                      }}
+                      onAddExercise={handleAddExercise}
+                      dayType={dayType}
+                    />
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      onClick={handleExercisesDone}
+                      disabled={completedSets === 0}
+                      sx={{ 
+                        py: 1.5, 
+                        borderRadius: 3,
+                        mt: 2,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Finish Exercises
+                    </Button>
+                  </>
+                )}
 
-          {step === 'habits' && (
-            <>
-              <HabitsForm habits={habits} onChange={setHabits} />
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handleSubmit}
-                disabled={isCreating}
-                sx={{ py: 1.5, borderRadius: 3 }}
+                {/* Swipe instructions */}
+                {exerciseViewMode === 'swipe' && (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: 3, 
+                    mt: 3,
+                    color: 'text.secondary',
+                  }}>
+                    <Typography variant="caption">← Skip</Typography>
+                    <Typography variant="caption">Log →</Typography>
+                  </Box>
+                )}
+              </motion.div>
+            )}
+
+            {step === 'post-checkin' && (
+              <motion.div
+                key="post-checkin"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
               >
-                {isCreating ? 'Saving...' : 'Complete Workout'}
-              </Button>
-            </>
-          )}
+                <PostWorkoutSimple 
+                  data={postCheckin} 
+                  onChange={setPostCheckin}
+                  autoCalculatedDuration={
+                    workoutStartTime 
+                      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
+                      : undefined
+                  }
+                />
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  onClick={handlePostCheckinDone}
+                  sx={{ py: 1.5, borderRadius: 3, mt: 3, fontWeight: 700 }}
+                >
+                  Continue to Habits
+                </Button>
+              </motion.div>
+            )}
+
+            {step === 'habits' && (
+              <motion.div
+                key="habits"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <HabitsForm habits={habits} onChange={setHabits} />
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  onClick={handleSubmit}
+                  disabled={isCreating}
+                  sx={{ py: 1.5, borderRadius: 3, mt: 3, fontWeight: 700 }}
+                >
+                  {isCreating ? 'Saving...' : 'Complete Workout'}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Box>
       </AnimatedPage>
     </MainLayout>
