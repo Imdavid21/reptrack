@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { Zap, Clock, TrendingUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useAutoMetrics } from '@/hooks/useAutoMetrics';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 export function EfficiencyChart() {
-  const { data, isLoading } = useAutoMetrics(60);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useAutoMetrics(dateRange);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 

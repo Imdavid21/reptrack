@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { format, subDays, startOfWeek, parseISO } from 'date-fns';
+import { format, startOfWeek, parseISO } from 'date-fns';
 
 export interface VolumeDataPoint {
   date: string;
@@ -54,11 +54,16 @@ function categorizeByWorkoutDay(dayName: string): 'push' | 'pull' | 'legs' {
   return 'legs';
 }
 
-export function useVolumeData(days: number = 60) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useVolumeData(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['volumeData', user?.id, days],
+    queryKey: ['volumeData', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<VolumeAnalytics> => {
       if (!user) {
         return {
@@ -68,7 +73,8 @@ export function useVolumeData(days: number = 60) {
         };
       }
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+      const startDate = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
+      const endDate = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
 
       // Fetch workouts with exercises
        const { data: workouts, error } = await supabase
@@ -87,6 +93,7 @@ export function useVolumeData(days: number = 60) {
          `)
         .eq('user_id', user.id)
         .gte('date', startDate)
+        .lte('date', endDate)
         .order('date', { ascending: true });
 
       if (error) throw error;

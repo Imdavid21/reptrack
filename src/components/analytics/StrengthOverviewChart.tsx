@@ -29,7 +29,7 @@ export function StrengthOverviewChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
-  const { data, isLoading } = useExerciseSets();
+  const { data, isLoading } = useExerciseSets(dateRange);
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
 
   // Process data: get max weight per exercise per week
