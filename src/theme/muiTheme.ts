@@ -1,39 +1,28 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-// 2026 Refined palette - warm neutrals with subtle depth
+// Black & White palette - pure grayscale
 const palette = {
-  // Warm charcoal tones
-  charcoal: {
-    main: '#1a1816',
-    light: '#2d2926',
-    dark: '#0f0d0c',
+  black: {
+    main: '#171717',
+    light: '#262626',
+    dark: '#0a0a0a',
   },
-  // Warm cream
-  cream: {
-    main: '#faf8f5',
+  white: {
+    main: '#fafafa',
     light: '#ffffff',
-    dark: '#f5f2ed',
+    dark: '#f5f5f5',
   },
-  // Warm gray scale
-  stone: {
-    50: '#faf8f5',
-    100: '#f5f2ed',
-    200: '#e8e4de',
-    300: '#d4cfc6',
-    400: '#a8a198',
-    500: '#787068',
-    600: '#565049',
-    700: '#423d38',
-    800: '#2d2926',
-    900: '#1a1816',
-  },
-  // Accent colors
-  accent: {
-    warm: '#c9a87c',
-    cool: '#7ca3c9',
-    success: '#5d9a6e',
-    warning: '#d4a843',
-    error: '#c66b6b',
+  gray: {
+    50: '#fafafa',
+    100: '#f5f5f5',
+    200: '#e5e5e5',
+    300: '#d4d4d4',
+    400: '#a3a3a3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
   },
 };
 
@@ -41,57 +30,46 @@ const baseTheme: ThemeOptions = {
   typography: {
     fontFamily: '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
-      fontSize: '2rem',
-      fontWeight: 800,
-      letterSpacing: '-0.03em',
-      fontFamily: '"Space Grotesk", "Inter", sans-serif',
-    },
-    h2: {
-      fontSize: '1.5rem',
+      fontSize: '1.75rem',
       fontWeight: 700,
       letterSpacing: '-0.02em',
-      fontFamily: '"Space Grotesk", "Inter", sans-serif',
     },
-    h3: {
-      fontSize: '1.125rem',
-      fontWeight: 600,
+    h2: {
+      fontSize: '1.25rem',
+      fontWeight: 700,
       letterSpacing: '-0.01em',
     },
+    h3: {
+      fontSize: '1rem',
+      fontWeight: 600,
+    },
     h4: {
-      fontSize: '0.9375rem',
+      fontSize: '0.875rem',
       fontWeight: 600,
     },
     h5: {
-      fontSize: '0.8125rem',
+      fontSize: '0.75rem',
       fontWeight: 600,
     },
     h6: {
-      fontSize: '1.75rem',
-      fontWeight: 800,
-      fontFamily: '"Space Grotesk", "Inter", sans-serif',
+      fontSize: '1.5rem',
+      fontWeight: 700,
     },
     body1: {
-      fontSize: '0.9375rem',
-      lineHeight: 1.6,
+      fontSize: '0.875rem',
     },
     body2: {
-      fontSize: '0.8125rem',
-      lineHeight: 1.5,
+      fontSize: '0.75rem',
     },
     caption: {
-      fontSize: '0.6875rem',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.1em',
-      fontWeight: 600,
-    },
-    overline: {
       fontSize: '0.625rem',
-      letterSpacing: '0.15em',
-      fontWeight: 600,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.08em',
+      fontWeight: 500,
     },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 12,
   },
   components: {
     MuiButton: {
@@ -99,37 +77,27 @@ const baseTheme: ThemeOptions = {
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: 12,
-          padding: '12px 24px',
+          borderRadius: 10,
+          padding: '10px 20px',
           boxShadow: 'none',
-          transition: 'all 0.2s ease',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            transform: 'translateY(-1px)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           },
-          '&:active': {
-            transform: 'translateY(0)',
-          },
-        },
-        containedPrimary: {
-          background: 'linear-gradient(135deg, #1a1816 0%, #2d2926 100%)',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 20,
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-          backdropFilter: 'blur(12px)',
+          borderRadius: 16,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
-          backgroundImage: 'none',
+          borderRadius: 12,
         },
       },
     },
@@ -138,10 +106,9 @@ const baseTheme: ThemeOptions = {
         root: {
           textTransform: 'none',
           fontWeight: 500,
-          borderRadius: 12,
-          minHeight: 40,
-          fontSize: '0.8125rem',
-          transition: 'all 0.2s ease',
+          borderRadius: 10,
+          minHeight: 36,
+          fontSize: '0.75rem',
         },
       },
     },
@@ -155,40 +122,32 @@ const baseTheme: ThemeOptions = {
     MuiChip: {
       styleOverrides: {
         root: {
-          fontWeight: 600,
-          borderRadius: 10,
+          fontWeight: 500,
+          borderRadius: 8,
         },
       },
     },
     MuiLinearProgress: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
-          height: 8,
-          overflow: 'hidden',
+          borderRadius: 4,
+          height: 6,
         },
         bar: {
-          borderRadius: 6,
+          borderRadius: 4,
         },
       },
     },
-    MuiFab: {
+    MuiSwitch: {
       styleOverrides: {
         root: {
-          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-          '&:hover': {
-            boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
-          },
+          padding: 8,
         },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          transition: 'all 0.2s ease',
-          '&:active': {
-            transform: 'scale(0.92)',
-          },
+        track: {
+          borderRadius: 12,
+        },
+        thumb: {
+          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
         },
       },
     },
@@ -207,38 +166,35 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: palette.charcoal.main,
-      light: palette.charcoal.light,
-      dark: palette.charcoal.dark,
+      main: palette.black.main,
+      light: palette.black.light,
+      dark: palette.black.dark,
       contrastText: '#ffffff',
     },
     secondary: {
-      main: palette.stone[500],
-      light: palette.stone[200],
-      dark: palette.stone[700],
+      main: palette.gray[400],
+      light: palette.gray[200],
+      dark: palette.gray[600],
     },
     error: {
-      main: palette.accent.error,
+      main: palette.gray[700],
     },
     success: {
-      main: palette.accent.success,
-      light: '#e8f5ea',
-    },
-    warning: {
-      main: palette.accent.warning,
+      main: palette.gray[600],
+      light: palette.gray[200],
     },
     background: {
-      default: palette.cream.main,
-      paper: palette.cream.light,
+      default: palette.gray[50],
+      paper: '#ffffff',
     },
     text: {
-      primary: palette.charcoal.main,
-      secondary: palette.stone[500],
+      primary: palette.black.main,
+      secondary: palette.gray[500],
     },
-    divider: palette.stone[200],
+    divider: palette.gray[200],
     action: {
-      hover: 'rgba(26, 24, 22, 0.04)',
-      selected: 'rgba(26, 24, 22, 0.08)',
+      hover: 'rgba(0, 0, 0, 0.04)',
+      selected: 'rgba(0, 0, 0, 0.08)',
     },
   },
 });
@@ -248,35 +204,31 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: palette.cream.main,
-      light: palette.cream.light,
-      dark: palette.cream.dark,
-      contrastText: palette.charcoal.main,
+      main: palette.white.main,
+      light: palette.white.light,
+      dark: palette.white.dark,
     },
     secondary: {
-      main: palette.stone[400],
-      light: palette.stone[300],
-      dark: palette.stone[500],
+      main: palette.gray[500],
+      light: palette.gray[400],
+      dark: palette.gray[600],
     },
     error: {
-      main: '#e88888',
+      main: palette.gray[400],
     },
     success: {
-      main: '#7db88a',
-      light: 'rgba(125, 184, 138, 0.15)',
-    },
-    warning: {
-      main: '#e4b853',
+      main: palette.gray[400],
+      light: 'rgba(255, 255, 255, 0.1)',
     },
     background: {
-      default: '#0c0b0a',
-      paper: palette.charcoal.main,
+      default: palette.gray[900],
+      paper: palette.gray[800],
     },
     text: {
-      primary: palette.cream.main,
-      secondary: palette.stone[400],
+      primary: palette.white.main,
+      secondary: palette.gray[400],
     },
-    divider: 'rgba(255, 255, 255, 0.08)',
+    divider: 'rgba(255, 255, 255, 0.1)',
     action: {
       hover: 'rgba(255, 255, 255, 0.04)',
       selected: 'rgba(255, 255, 255, 0.08)',
@@ -284,21 +236,10 @@ export const darkTheme = createTheme({
   },
   components: {
     ...baseTheme.components,
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          ...((baseTheme.components?.MuiButton?.styleOverrides?.root as object) || {}),
-        },
-        containedPrimary: {
-          background: 'linear-gradient(135deg, #faf8f5 0%, #e8e4de 100%)',
-          color: palette.charcoal.main,
-        },
-      },
-    },
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#0c0b0a',
+          backgroundColor: palette.gray[900],
           transition: 'background-color 0.3s ease, color 0.3s ease',
         },
       },

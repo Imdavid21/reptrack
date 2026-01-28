@@ -2,158 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 2026 Fitness PWA Design System
-   Refined dark mode with subtle warmth and depth */
+/* Modern Fitness Analytics Design System
+   Clean, minimal black & white with subtle grays */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* Core palette - Warm neutrals */
-    --background: 40 10% 98%;
-    --foreground: 30 10% 8%;
+    /* Core palette - Pure black & white */
+    --background: 0 0% 98%; /* near white */
+    --foreground: 0 0% 9%; /* near black */
 
-    --card: 40 10% 100%;
-    --card-foreground: 30 10% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
 
-    --popover: 40 10% 100%;
-    --popover-foreground: 30 10% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary - Deep charcoal with warmth */
-    --primary: 30 8% 12%;
-    --primary-foreground: 40 10% 98%;
+    /* Primary - Black */
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Warm stone */
-    --secondary: 35 8% 92%;
-    --secondary-foreground: 30 8% 15%;
+    /* Secondary - Light gray */
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 35 6% 93%;
-    --muted-foreground: 30 6% 45%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 45%;
 
-    /* Accent - Subtle gold undertone */
-    --accent: 38 30% 94%;
-    --accent-foreground: 30 8% 12%;
+    /* Accent is a subtle surface (shadcn semantics) */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
-    /* Semantic states */
-    --destructive: 0 72% 50%;
+    /* Monochrome destructive/warning */
+    --destructive: 0 0% 25%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 72% 40%;
+    /* Status colors - grayscale */
+    --success: 0 0% 35%;
     --success-foreground: 0 0% 100%;
-    --success-light: 142 40% 94%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 30 10% 8%;
+    --success-light: 0 0% 93%;
+    --warning: 0 0% 50%;
+    --warning-foreground: 0 0% 0%;
 
     /* Borders and inputs */
-    --border: 35 8% 88%;
-    --input: 35 8% 88%;
-    --ring: 30 8% 20%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 20%;
 
-    /* Radius - Softer, more modern */
-    --radius: 16px;
+    /* Radius - Modern rounded */
+    --radius: 12px;
 
     /* Sidebar */
-    --sidebar-background: 40 10% 100%;
-    --sidebar-foreground: 30 10% 8%;
-    --sidebar-primary: 30 8% 15%;
-    --sidebar-primary-foreground: 40 10% 98%;
-    --sidebar-accent: 38 30% 96%;
-    --sidebar-accent-foreground: 30 8% 12%;
-    --sidebar-border: 35 8% 90%;
-    --sidebar-ring: 30 8% 20%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 20%;
 
-    /* Heatmap - warm progression */
-    --heat-0: 35 6% 93%;
-    --heat-1: 35 20% 80%;
-    --heat-2: 32 40% 65%;
-    --heat-3: 28 50% 50%;
-    --heat-4: 25 60% 35%;
+    /* Heatmap intensity levels - grayscale */
+    --heat-0: 0 0% 93%;
+    --heat-1: 0 0% 80%;
+    --heat-2: 0 0% 60%;
+    --heat-3: 0 0% 40%;
+    --heat-4: 0 0% 15%;
 
     /* Progress bar */
-    --progress-radius: 8px;
+    --progress-radius: 6px;
 
-    /* Chart colors - warm spectrum */
-    --chart-1: 30 8% 12%;
-    --chart-2: 32 15% 30%;
-    --chart-3: 35 20% 45%;
-    --chart-4: 38 25% 60%;
-    --chart-5: 40 30% 75%;
-
-    /* Insight colors */
-    --insight-primary: 220 70% 50%;
-    --insight-success: 142 72% 40%;
-    --insight-neutral: 220 15% 55%;
-    --insight-background: 220 20% 97%;
-    --insight-text: 220 15% 25%;
-    --insight-warning: 38 92% 50%;
-
-    /* Glass effect */
-    --glass-bg: 40 10% 100% / 0.7;
-    --glass-border: 40 10% 100% / 0.3;
+    /* Chart colors - darker grayscale spectrum */
+    --chart-1: 0 0% 8%;   /* near black - primary emphasis */
+    --chart-2: 0 0% 20%;  /* very dark gray */
+    --chart-3: 0 0% 35%;  /* dark gray */
+    --chart-4: 0 0% 50%;  /* mid gray */
+    --chart-5: 0 0% 65%;  /* light gray */
   }
 
   .dark {
-    --background: 220 15% 6%;
-    --foreground: 220 10% 95%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 220 15% 9%;
-    --card-foreground: 220 10% 95%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 220 15% 9%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 220 10% 95%;
-    --primary-foreground: 220 15% 8%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 9%;
 
-    --secondary: 220 12% 15%;
-    --secondary-foreground: 220 10% 90%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 220 12% 15%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 220 15% 18%;
-    --accent-foreground: 220 10% 95%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 0% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 72% 50%;
-    --success-foreground: 0 0% 100%;
-    --success-light: 142 40% 15%;
-    
-    --warning: 38 92% 55%;
-    --warning-foreground: 30 10% 8%;
+    --success: 0 0% 70%;
+    --success-foreground: 0 0% 9%;
+    --success-light: 0 0% 20%;
+    --warning: 0 0% 55%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 220 12% 18%;
-    --input: 220 12% 18%;
-    --ring: 220 10% 80%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 80%;
 
-    --heat-0: 220 12% 12%;
-    --heat-1: 220 15% 22%;
-    --heat-2: 220 18% 35%;
-    --heat-3: 220 20% 50%;
-    --heat-4: 220 25% 70%;
+    --heat-0: 0 0% 15%;
+    --heat-1: 0 0% 25%;
+    --heat-2: 0 0% 40%;
+    --heat-3: 0 0% 60%;
+    --heat-4: 0 0% 85%;
 
-    /* Chart colors - dark mode */
-    --chart-1: 220 10% 95%;
-    --chart-2: 220 12% 75%;
-    --chart-3: 220 15% 55%;
-    --chart-4: 220 12% 40%;
-    --chart-5: 220 10% 28%;
-
-    /* Insight colors dark */
-    --insight-primary: 220 70% 60%;
-    --insight-success: 142 72% 50%;
-    --insight-neutral: 220 15% 60%;
-    --insight-background: 220 15% 12%;
-    --insight-text: 220 10% 90%;
-    --insight-warning: 38 92% 55%;
-
-    /* Glass effect dark */
-    --glass-bg: 220 15% 12% / 0.7;
-    --glass-border: 220 15% 25% / 0.3;
+    /* Chart colors - dark mode (brighter) */
+    --chart-1: 0 0% 95%;  /* near white - primary emphasis */
+    --chart-2: 0 0% 80%;
+    --chart-3: 0 0% 65%;
+    --chart-4: 0 0% 50%;
+    --chart-5: 0 0% 35%;
   }
 }
 
@@ -202,20 +176,10 @@
 }
 
 @layer components {
-  /* Glass card effect */
-  .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl p-5;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  }
-
-  .dark .glass-card {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  }
-
   /* Modern button styles */
   .btn-modern {
-    @apply rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200;
-    @apply hover:shadow-lg active:scale-[0.98];
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200;
+    @apply hover:shadow-md active:scale-[0.98];
   }
 
   .btn-primary {
@@ -230,42 +194,38 @@
 
   /* Modern input */
   .input-modern {
-    @apply bg-background border border-border rounded-2xl px-4 py-3.5;
+    @apply bg-background border border-border rounded-xl px-4 py-3;
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
-    @apply placeholder:text-muted-foreground transition-all duration-200;
+    @apply placeholder:text-muted-foreground;
   }
 
   /* Card styles */
   .card-modern {
-    @apply border border-border bg-card rounded-3xl p-5;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    @apply border border-border bg-card rounded-2xl p-5 shadow-sm;
   }
 
   /* Legacy class names still used across the app */
   .card-brutalist {
-    @apply border border-border bg-card rounded-3xl p-5;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    @apply border border-border bg-card rounded-2xl p-5 shadow-sm;
   }
 
   .input-terminal {
-    @apply w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground;
+    @apply w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground;
     @apply placeholder:text-muted-foreground;
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
-    @apply transition-all duration-200;
   }
 
   /* Stat block */
   .stat-block {
-    @apply bg-card border border-border rounded-2xl p-4;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    @apply bg-card border border-border rounded-xl p-4;
   }
 
   .stat-value {
-    @apply text-3xl font-extrabold tracking-tight;
+    @apply text-2xl font-bold tracking-tight;
   }
 
   .stat-label {
-    @apply text-[0.65rem] text-muted-foreground uppercase tracking-widest mt-1;
+    @apply text-xs text-muted-foreground uppercase tracking-wide mt-1;
   }
 
   /* Progress bar */
@@ -274,56 +234,65 @@
   }
 
   .progress-bar-fill {
-    @apply h-full bg-primary transition-all duration-300 rounded-full;
+    @apply h-full bg-accent transition-all duration-300 rounded-full;
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tab-item {
+    @apply flex flex-col items-center justify-center py-2 px-4 text-muted-foreground;
+    @apply transition-colors;
+  }
+
+  .tab-item-active {
+    @apply text-primary;
   }
 
   /* Section header */
   .section-header {
-    @apply text-[0.65rem] font-bold text-muted-foreground uppercase tracking-widest mb-4;
+    @apply text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3;
   }
 
   /* Badge */
   .badge-modern {
-    @apply inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full;
-    @apply bg-accent/30 text-foreground;
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+    @apply bg-accent/20 text-accent-foreground;
   }
 
-  /* Swipe indicator */
-  .swipe-indicator {
-    @apply flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm;
-    @apply backdrop-blur-sm;
+  /* Analytics card with accent bar */
+  .analytics-card {
+    @apply bg-card border border-border rounded-2xl p-4 relative overflow-hidden;
+  }
+
+  .analytics-card::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-accent;
   }
 }
 
 @layer utilities {
   /* Fade in animation */
   .animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
+    animation: fadeIn 0.3s ease-out;
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
   /* Slide up animation */
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
+    animation: slideUp 0.4s ease-out;
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(24px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Scale in animation */
-  .animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
-  }
-
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
   }
 
   /* Number tabular for stats */
@@ -340,19 +309,4 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
-  /* Touch optimizations */
-  .touch-manipulation {
-    touch-action: manipulation;
-  }
-
-  /* Safe area padding utilities */
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
 }
-
