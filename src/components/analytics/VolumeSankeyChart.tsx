@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, Chip } from '@mui/material';
-import { Layers, TrendingUp } from 'lucide-react';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -125,12 +124,6 @@ export function VolumeSankeyChart() {
   if (isLoading) {
     return (
       <MuiCard>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
-            <Layers size={14} />
-          </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
-        </Box>
         <Skeleton variant="circular" width={200} height={200} sx={{ mx: 'auto' }} />
       </MuiCard>
     );
@@ -139,12 +132,6 @@ export function VolumeSankeyChart() {
   if (categories.length === 0) {
     return (
       <MuiCard>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}>
-            <Layers size={14} />
-          </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>Volume Breakdown</Typography>
-        </Box>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
           Complete workouts with weights to see volume distribution
         </Typography>
@@ -154,33 +141,6 @@ export function VolumeSankeyChart() {
 
   return (
     <MuiCard>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ 
-            p: 1, 
-            borderRadius: 2, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-          }}>
-            <Layers size={14} />
-          </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            Volume Breakdown
-          </Typography>
-        </Box>
-        <Chip
-          size="small"
-          icon={<TrendingUp size={12} />}
-          label={`${formatVolume(totalVolume)} kg`}
-          sx={{
-            height: 26,
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-            '& .MuiChip-icon': { color: 'inherit' },
-          }}
-        />
-      </Box>
 
       {/* Chart and Details Container */}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
