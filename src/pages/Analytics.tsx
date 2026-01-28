@@ -1,6 +1,6 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { StrengthProgressionChart } from '@/components/analytics/StrengthProgressionChart';
+import { StrengthOverviewChart } from '@/components/analytics/StrengthOverviewChart';
 import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
 import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
@@ -67,8 +67,8 @@ function AnalyticsContent() {
       <AICoachInsights />
 
 
-      {/* Strength Progression Chart */}
-      <StrengthProgressionChart />
+      {/* Strength Overview Chart */}
+      <StrengthOverviewChart />
 
       {/* Volume Analytics */}
       <VolumeChart />

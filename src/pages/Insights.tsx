@@ -18,8 +18,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
-import { StrengthProgressionChart } from '@/components/analytics/StrengthProgressionChart';
-import { VolumeChart } from '@/components/analytics/VolumeChart';
+import { StrengthOverviewChart } from '@/components/analytics/StrengthOverviewChart';
 import { SleepEnergyChart } from '@/components/analytics/SleepEnergyChart';
 import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
@@ -32,8 +31,8 @@ import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
 import { WeeklySummaryCard } from '@/components/analytics/WeeklySummaryCard';
 import { MonthlySummaryCard } from '@/components/analytics/MonthlySummaryCard';
 import { RealCorrelationCard } from '@/components/analytics/RealCorrelationCard';
+import { VolumeChart } from '@/components/analytics/VolumeChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
-import { TotalStrengthChart } from '@/components/analytics/TotalStrengthChart';
 import { BodyPartsSpline } from '@/components/analytics/BodyPartsSpline';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useVolumeData } from '@/hooks/useVolumeData';
@@ -249,10 +248,7 @@ function PerformanceTab() {
           <EfficiencyChart />
         </motion.div>
         <motion.div variants={staggerItem}>
-          <TotalStrengthChart />
-        </motion.div>
-        <motion.div variants={staggerItem}>
-          <StrengthProgressionChart />
+          <StrengthOverviewChart />
         </motion.div>
         <motion.div variants={staggerItem}>
           <VolumeChart />
