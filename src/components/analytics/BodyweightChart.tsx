@@ -4,7 +4,7 @@ import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useMorningCheckinHistory } from '@/hooks/useMorningCheckin';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import {
   AreaChart,
   Area,
@@ -19,8 +19,7 @@ export function BodyweightChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
-  const days = differenceInDays(dateRange.to, dateRange.from) + 1;
-  const { data: checkins, isLoading } = useMorningCheckinHistory(days);
+  const { data: checkins, isLoading } = useMorningCheckinHistory(dateRange);
 
   // High contrast black/white
   const primaryColor = isDark ? '#FFFFFF' : '#000000';

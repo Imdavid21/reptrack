@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDailyMetrics } from './useDailyMetrics';
 import { useExerciseSets } from './useExerciseSets';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 export interface WorkoutSummary {
   totalWorkouts: number;
@@ -15,19 +14,18 @@ export interface WorkoutSummary {
   daysActive: number;
 }
 
-// Default date range for AI insights (last 30 days)
-const DEFAULT_DATE_RANGE = {
-  from: startOfDay(subDays(new Date(), 30)),
-  to: endOfDay(new Date()),
-};
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
 
-export function useAIInsights() {
+export function useAIInsights(dateRange?: DateRangeFilter) {
   const [insights, setInsights] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: metricsData } = useDailyMetrics(DEFAULT_DATE_RANGE);
-  const { data: exerciseData } = useExerciseSets(DEFAULT_DATE_RANGE);
+  const { data: metricsData } = useDailyMetrics(dateRange);
+  const { data: exerciseData } = useExerciseSets(dateRange);
 
   const generateInsights = useCallback(async () => {
     setIsLoading(true);

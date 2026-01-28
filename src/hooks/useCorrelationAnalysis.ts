@@ -37,16 +37,26 @@ export interface MonthlySummary {
   priorMonthWorkouts?: number;
 }
 
-export function useCorrelationAnalysis(days: number = 60) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['correlationAnalysis', user?.id, days],
+    queryKey: ['correlationAnalysis', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
       if (!user) return { correlations: [], weeklySummaries: [], monthlySummary: null };
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
-      const priorStart = format(subDays(new Date(), days * 2), 'yyyy-MM-dd');
+      // Use provided dateRange or default to last 60 days
+      const now = new Date();
+      const endDate = dateRange?.to ?? now;
+      const startDate = dateRange?.from ?? subDays(now, 60);
+      
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const priorStart = format(subDays(startDate, 60), 'yyyy-MM-dd');
 
       // Fetch all relevant data
       const [workoutsRes, morningRes, nightRes, mealsRes, exercisesRes] = await Promise.all([
@@ -72,7 +82,7 @@ export function useCorrelationAnalysis(days: number = 60) {
           .from('meals')
           .select('date, calories, protein')
           .eq('user_id', user.id)
-          .gte('date', startDate)
+          .gte('date', startDateStr)
           .order('date', { ascending: true }),
         supabase
           .from('exercises')
@@ -81,7 +91,7 @@ export function useCorrelationAnalysis(days: number = 60) {
             .from('workouts')
             .select('id')
             .eq('user_id', user.id)
-            .gte('date', startDate)).data?.map(w => w.id) || []),
+            .gte('date', startDateStr)).data?.map(w => w.id) || []),
       ]);
 
       const workouts = workoutsRes.data || [];
@@ -244,7 +254,6 @@ export function useCorrelationAnalysis(days: number = 60) {
 
       // Calculate weekly summaries (last 4 weeks)
       const weeklySummaries: WeeklySummary[] = [];
-      const now = new Date();
       
       for (let i = 0; i < 4; i++) {
         const weekEnd = subDays(now, i * 7);

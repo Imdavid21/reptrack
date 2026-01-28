@@ -124,7 +124,7 @@ function SummaryStats() {
   const { workouts, isLoading } = useWorkouts();
   const { dateRange } = useDateRange();
   const { data: metrics, isLoading: metricsLoading } = useDailyMetrics(dateRange);
-  const { data: volumeData } = useVolumeData(60);
+  const { data: volumeData } = useVolumeData(dateRange);
 
   const totalSessions = workouts.length;
   const progressPercent = Math.round((totalSessions / 72) * 100);
@@ -178,7 +178,8 @@ function SummaryStats() {
 }
 
 function OverviewTab() {
-  const { data, isLoading } = useCorrelationAnalysis(60);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useCorrelationAnalysis(dateRange);
   
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show">
@@ -310,7 +311,8 @@ function AITab() {
 }
 
 function CorrelationsTab() {
-  const { data, isLoading } = useCorrelationAnalysis(60);
+  const { dateRange } = useDateRange();
+  const { data, isLoading } = useCorrelationAnalysis(dateRange);
   const theme = useTheme();
   
   return (

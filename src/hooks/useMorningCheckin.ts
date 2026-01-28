@@ -73,22 +73,28 @@ export function useMorningCheckin(date?: Date) {
   };
 }
 
-export function useMorningCheckinHistory(days: number = 30) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useMorningCheckinHistory(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['morningCheckinHistory', user?.id, days],
+    queryKey: ['morningCheckinHistory', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
       if (!user) return [];
 
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
+      const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
 
       const { data, error } = await supabase
         .from('morning_checkins')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .gte('date', startDate)
+        .lte('date', endDate)
         .order('date', { ascending: false });
 
       if (error) throw error;

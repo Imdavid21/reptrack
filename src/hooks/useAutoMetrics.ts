@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { format, differenceInMinutes, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 
 export interface AutoMetrics {
   performanceScore: number; // 1-10 based on weights lifted
@@ -20,11 +20,16 @@ export interface DailyAutoMetrics {
   duration: number;
 }
 
-export function useAutoMetrics(days: number = 30) {
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
+
+export function useAutoMetrics(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['autoMetrics', user?.id, days],
+    queryKey: ['autoMetrics', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<{ today: AutoMetrics; history: DailyAutoMetrics[] }> => {
       if (!user) {
         return {
@@ -33,7 +38,8 @@ export function useAutoMetrics(days: number = 30) {
         };
       }
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+      const startDate = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
+      const endDate = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
       const today = format(new Date(), 'yyyy-MM-dd');
 
       // Fetch workouts with duration
@@ -42,6 +48,7 @@ export function useAutoMetrics(days: number = 30) {
         .select('id, date, workout_duration_minutes, started_at, completed_at')
         .eq('user_id', user.id)
         .gte('date', startDate)
+        .lte('date', endDate)
         .order('date', { ascending: true });
 
       // Fetch all exercise sets

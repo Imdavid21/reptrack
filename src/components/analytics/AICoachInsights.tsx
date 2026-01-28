@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useAIInsights } from '@/hooks/useAIInsights';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AICoachInsights() {
-  const { insights, isLoading, error, generateInsights, hasData } = useAIInsights();
+  const { dateRange } = useDateRange();
+  const { insights, isLoading, error, generateInsights, hasData } = useAIInsights(dateRange);
   const [hasGenerated, setHasGenerated] = useState(false);
 
   const handleGenerate = async () => {
