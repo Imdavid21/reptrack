@@ -163,6 +163,211 @@ supabase/
 
 ---
 
+## Architecture Diagrams
+
+### High-Level System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["Frontend (React PWA)"]
+        UI[UI Components]
+        Hooks[Custom Hooks]
+        RQ[React Query Cache]
+        LS[localStorage]
+    end
+
+    subgraph Backend["Lovable Cloud (Supabase)"]
+        Auth[Supabase Auth]
+        DB[(PostgreSQL + RLS)]
+        Storage[Storage Buckets]
+        Edge[Edge Functions]
+    end
+
+    subgraph External["External Services"]
+        AI[Lovable AI Gateway]
+        TG[Telegram Bot API]
+        RS[Resend Email]
+    end
+
+    UI --> Hooks
+    Hooks --> RQ
+    Hooks --> LS
+    RQ <--> Auth
+    RQ <--> DB
+    RQ <--> Storage
+    RQ <--> Edge
+    Edge --> AI
+    Edge --> TG
+    Edge --> RS
+```
+
+### Data Flow: Workout Logging
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant UI as LogWorkout.tsx
+    participant Draft as useDraftWorkout
+    participant LS as localStorage
+    participant WH as useWorkouts
+    participant RQ as React Query
+    participant DB as Supabase DB
+
+    U->>UI: Select workout day
+    UI->>Draft: saveDraft(exercises)
+    Draft->>LS: Store in-progress
+    
+    loop For each set
+        U->>UI: Log weight/reps
+        UI->>Draft: Update draft
+        Draft->>LS: Persist changes
+    end
+
+    U->>UI: Complete workout
+    UI->>WH: createWorkout(data)
+    WH->>DB: INSERT workouts
+    WH->>DB: INSERT exercise_sets
+    WH->>DB: INSERT habits
+    DB-->>RQ: Success
+    RQ->>RQ: Invalidate queries
+    WH->>Draft: clearDraft()
+    Draft->>LS: Remove draft
+```
+
+### Data Flow: AI Food Analysis
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant UI as CalorieTracker
+    participant SB as Supabase Storage
+    participant EF as analyze-food Function
+    participant AI as Gemini 2.5 Flash
+    participant DB as Supabase DB
+
+    U->>UI: Take food photo
+    UI->>SB: Upload image
+    SB-->>UI: Public URL
+    UI->>EF: invoke(imageUrl)
+    EF->>AI: Analyze image
+    AI-->>EF: {foods, calories, confidence}
+    EF-->>UI: Analysis result
+    U->>UI: Confirm/adjust
+    UI->>DB: INSERT meals
+```
+
+### Component-Hook-Database Relationships
+
+```mermaid
+flowchart LR
+    subgraph Pages
+        D[Dashboard]
+        L[LogWorkout]
+        I[Insights]
+        H[History]
+    end
+
+    subgraph Hooks
+        uW[useWorkouts]
+        uDM[useDailyMetrics]
+        uM[useMeals]
+        uWL[useWaterLogs]
+        uPR[usePersonalRecords]
+        uHA[useHealthAnalytics]
+    end
+
+    subgraph Tables
+        workouts[(workouts)]
+        exercise_sets[(exercise_sets)]
+        daily_metrics[(daily_metrics)]
+        meals[(meals)]
+        water_logs[(water_logs)]
+    end
+
+    D --> uHA --> workouts
+    D --> uDM --> daily_metrics
+    D --> uWL --> water_logs
+    D --> uPR --> exercise_sets
+
+    L --> uW --> workouts
+    L --> uW --> exercise_sets
+
+    I --> uHA --> workouts
+    I --> uDM --> daily_metrics
+    I --> uM --> meals
+
+    H --> uW --> workouts
+```
+
+### Authentication & Authorization Flow
+
+```mermaid
+flowchart TD
+    Start([App Launch]) --> Check{Session exists?}
+    Check -->|No| Auth[AuthForm]
+    Check -->|Yes| Prefs{Preferences exist?}
+    
+    Auth -->|Sign Up| Create[Create Account]
+    Auth -->|Sign In| Login[Authenticate]
+    Create --> AutoConfirm[Auto-confirm Email]
+    AutoConfirm --> Prefs
+    Login --> Prefs
+
+    Prefs -->|No/Not Complete| Onboard[OnboardingFlow]
+    Prefs -->|Yes| Dashboard[Dashboard]
+    Onboard --> SavePrefs[Save Preferences]
+    SavePrefs --> Dashboard
+
+    subgraph RLS["Row Level Security"]
+        Dashboard -->|All Queries| RLSCheck{auth.uid() = user_id?}
+        RLSCheck -->|Yes| Data[(User's Data)]
+        RLSCheck -->|No| Denied[Access Denied]
+    end
+```
+
+### Edge Function Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client
+        App[React App]
+    end
+
+    subgraph EdgeFunctions["Edge Functions (Deno)"]
+        AF[analyze-food]
+        GW[generate-workout]
+        PF[parse-food-text]
+        AK[api-key]
+        API[api]
+        MCP[mcp]
+        SAE[send-auth-email]
+        TWR[telegram-water-reminder]
+    end
+
+    subgraph Services
+        LAI[Lovable AI Gateway]
+        TG[Telegram API]
+        RE[Resend API]
+    end
+
+    App --> AF
+    App --> GW
+    App --> PF
+    App --> AK
+    
+    AF --> LAI
+    GW --> LAI
+    PF --> LAI
+    
+    SAE --> RE
+    TWR --> TG
+
+    API --> DB[(Database)]
+    MCP --> DB
+```
+
+---
+
 ## Database Schema
 
 ### Tables Overview
