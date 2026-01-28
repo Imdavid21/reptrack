@@ -46,7 +46,7 @@ export function HydrationChart() {
         <p className="text-muted-foreground">
           {d.total.toFixed(2)}L ({d.logs} logs)
         </p>
-        {d.metGoal && <p className="text-insight-mint mt-1">✓ Goal met!</p>}
+        {d.metGoal && <p className="text-foreground font-medium mt-1">✓ Goal met!</p>}
       </div>
     );
   };
@@ -99,8 +99,8 @@ export function HydrationChart() {
                     <Cell
                       key={`cell-${index}`}
                       fill={entry.metGoal
-                        ? 'hsl(var(--insight-blue))'
-                        : 'hsl(var(--insight-blue) / 0.3)'
+                        ? 'hsl(var(--chart-1))'
+                        : 'hsl(var(--chart-4))'
                       }
                     />
                   ))}
@@ -112,19 +112,19 @@ export function HydrationChart() {
           {/* Stats */}
           {data?.totals && (
             <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border/30">
-              <div className="bg-insight-blue/10 rounded-xl p-2.5 text-center">
+              <div className="bg-[hsl(var(--chart-1)/0.1)] rounded-xl p-2.5 text-center">
                 <div className="text-base font-bold tabular-nums">
                   {data.totals.avgDaily.toFixed(1)}L
                 </div>
                 <div className="text-xs text-muted-foreground">Avg/Day</div>
               </div>
-              <div className="bg-insight-mint/10 rounded-xl p-2.5 text-center">
+              <div className="bg-[hsl(var(--chart-2)/0.1)] rounded-xl p-2.5 text-center">
                 <div className="text-base font-bold tabular-nums">
                   {data.totals.daysMetGoal}/{data.totals.daysTracked}
                 </div>
                 <div className="text-xs text-muted-foreground">Goals Met</div>
               </div>
-              <div className="bg-insight-lavender/10 rounded-xl p-2.5 text-center">
+              <div className="bg-[hsl(var(--chart-3)/0.1)] rounded-xl p-2.5 text-center">
                 <div className="text-base font-bold tabular-nums">
                   {data.totals.totalLiters.toFixed(1)}L
                 </div>

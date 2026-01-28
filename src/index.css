@@ -73,19 +73,12 @@
     /* Progress bar */
     --progress-radius: 6px;
 
-    /* Analytics palette - grayscale */
-    --insight-primary: 0 0% 20%;
-    --insight-success: 0 0% 93%;
-    --insight-neutral: 0 0% 90%;
-    --insight-background: 0 0% 98%;
-    --insight-text: 0 0% 9%;
-    --insight-warning: 0 0% 50%;
-    
-    /* Chart colors - grayscale spectrum */
-    --insight-mint: 0 0% 35%;
-    --insight-lavender: 0 0% 55%;
-    --insight-blue: 0 0% 45%;
-    --insight-coral: 0 0% 65%;
+    /* Chart colors - unified grayscale spectrum */
+    --chart-1: 0 0% 20%;  /* darkest - primary emphasis */
+    --chart-2: 0 0% 35%;  /* dark gray */
+    --chart-3: 0 0% 50%;  /* mid gray */
+    --chart-4: 0 0% 65%;  /* light gray */
+    --chart-5: 0 0% 80%;  /* lightest */
   }
 
   .dark {
@@ -129,17 +122,12 @@
     --heat-3: 0 0% 60%;
     --heat-4: 0 0% 85%;
 
-    --insight-primary: 0 0% 80%;
-    --insight-success: 0 0% 20%;
-    --insight-neutral: 0 0% 18%;
-    --insight-background: 0 0% 12%;
-    --insight-text: 0 0% 95%;
-    --insight-warning: 0 0% 50%;
-    
-    --insight-mint: 0 0% 70%;
-    --insight-lavender: 0 0% 55%;
-    --insight-blue: 0 0% 60%;
-    --insight-coral: 0 0% 45%;
+    /* Chart colors - dark mode */
+    --chart-1: 0 0% 85%;  /* lightest - primary emphasis */
+    --chart-2: 0 0% 70%;
+    --chart-3: 0 0% 55%;
+    --chart-4: 0 0% 40%;
+    --chart-5: 0 0% 25%;  /* darkest */
   }
 }
 

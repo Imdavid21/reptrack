@@ -32,6 +32,7 @@ import { Logo } from '@/components/layout/Logo';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
 import { GoalsSection } from '@/components/settings/GoalsSection';
+import { DataManagementSection } from '@/components/settings/DataManagementSection';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -71,8 +72,12 @@ export default function Settings() {
             isExpanded={expandedSections.goals || false}
             onToggle={() => toggleSection('goals')}
           />
-          
-          {/* Account */}
+
+          {/* Data Management Section */}
+          <DataManagementSection
+            isExpanded={expandedSections.data || false}
+            onToggle={() => toggleSection('data')}
+          />
           <MuiCard>
             <Box
               onClick={() => toggleSection('account')}

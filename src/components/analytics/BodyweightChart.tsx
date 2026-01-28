@@ -76,7 +76,7 @@ export function BodyweightChart() {
   const changePercent = ((change / firstWeight) * 100).toFixed(1);
 
   const TrendIcon = change > 0.5 ? TrendingUp : change < -0.5 ? TrendingDown : Minus;
-  const trendColor = change > 0.5 ? 'text-insight-coral' : change < -0.5 ? 'text-insight-mint' : 'text-muted-foreground';
+  const trendColor = 'text-foreground';
 
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -108,8 +108,8 @@ export function BodyweightChart() {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--insight-lavender))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -137,10 +137,10 @@ export function BodyweightChart() {
             <Area
               type="monotone"
               dataKey="weight"
-              stroke="hsl(var(--insight-lavender))"
+              stroke="hsl(var(--chart-2))"
               strokeWidth={2}
               fill="url(#weightGradient)"
-              dot={{ r: 3, fill: 'hsl(var(--insight-lavender))' }}
+              dot={{ r: 3, fill: 'hsl(var(--chart-2))' }}
               connectNulls
             />
           </AreaChart>
