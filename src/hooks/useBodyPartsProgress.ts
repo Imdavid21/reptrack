@@ -1,7 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { format, subDays, startOfWeek, parseISO } from 'date-fns';
+import { format, startOfWeek, parseISO } from 'date-fns';
+
+export interface DateRangeFilter {
+  from: Date;
+  to: Date;
+}
 
 // Map exercises to body parts
 const exerciseToBodyPart: Record<string, string> = {
@@ -88,15 +93,16 @@ export interface BodyPartProgress {
   growth: number; // percentage growth from first to last week
 }
 
-export function useBodyPartsProgress(days: number = 60) {
+export function useBodyPartsProgress(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['bodyPartsProgress', user?.id, days],
+    queryKey: ['bodyPartsProgress', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<BodyPartProgress[]> => {
       if (!user) return [];
 
-      const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+      const startDate = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
+      const endDate = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
 
       // Fetch exercise sets with workout dates
       const { data: sets, error } = await supabase
@@ -111,6 +117,7 @@ export function useBodyPartsProgress(days: number = 60) {
         `)
         .eq('workouts.user_id', user.id)
         .gte('workouts.date', startDate)
+        .lte('workouts.date', endDate)
         .eq('completed', true);
 
       if (error || !sets) return [];

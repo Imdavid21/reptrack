@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useBodyPartsProgress } from '@/hooks/useBodyPartsProgress';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
 export function BodyPartsSpline() {
-  const { data: bodyParts, isLoading } = useBodyPartsProgress(60);
+  const { dateRange } = useDateRange();
+  const { data: bodyParts, isLoading } = useBodyPartsProgress(dateRange);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
