@@ -212,15 +212,31 @@ export function VolumeSankeyChart() {
           <Box sx={{
             position: 'absolute',
             top: '50%',
-            left: 90,
+            left: '50%',
             transform: 'translate(-50%, -50%)',
             textAlign: 'center',
             pointerEvents: 'none',
+            width: 70,
           }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 700, 
+                lineHeight: 1,
+                color: 'text.primary',
+              }}
+            >
               {formatVolume(totalVolume)}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'text.secondary', 
+                fontSize: '0.6rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
               kg total
             </Typography>
           </Box>
