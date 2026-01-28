@@ -1,4 +1,4 @@
-import { Box, Typography, Skeleton } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { Trophy, TrendingUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
@@ -7,10 +7,12 @@ import { format, parseISO, startOfWeek } from 'date-fns';
 
 export function TotalStrengthChart() {
   const { data, isLoading } = useExerciseSets();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   if (isLoading) {
     return (
-      <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+      <MuiCard>
         <Skeleton variant="text" width={180} height={24} />
         <Skeleton variant="rounded" height={200} sx={{ mt: 2 }} />
       </MuiCard>
@@ -75,6 +77,12 @@ export function TotalStrengthChart() {
   const lastStrength = chartData[chartData.length - 1]?.strength || 0;
   const growth = firstStrength > 0 ? Math.round(((lastStrength - firstStrength) / firstStrength) * 100) : 0;
 
+  const accentColor = theme.palette.secondary.main;
+  const mutedColor = theme.palette.text.secondary;
+  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
+  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const errorColor = theme.palette.error.main;
+
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
@@ -82,25 +90,26 @@ export function TotalStrengthChart() {
         bgcolor: 'background.paper', 
         borderRadius: 2, 
         boxShadow: 2, 
-        border: '1px solid #e9ecef',
+        border: 1,
+        borderColor: 'divider',
         p: 1.5,
       }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>{label}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-          Strength Index: <strong style={{ color: '#081c15' }}>{payload[0]?.value} kg</strong>
+          Strength Index: <strong style={{ color: theme.palette.text.primary }}>{payload[0]?.value} kg</strong>
         </Typography>
       </Box>
     );
   };
 
   return (
-    <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+    <MuiCard>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#d8f3dc' }}>
-            <Trophy size={14} style={{ color: '#081c15' }} />
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+            <Trophy size={14} style={{ color: theme.palette.text.primary }} />
           </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Total Strength Progression
           </Typography>
         </Box>
@@ -109,13 +118,13 @@ export function TotalStrengthChart() {
             display: 'flex', 
             alignItems: 'center', 
             gap: 0.5, 
-            bgcolor: growth > 0 ? '#d8f3dc' : 'rgba(255,138,101,0.15)', 
+            bgcolor: growth > 0 ? successLight : errorLight, 
             px: 1.5, 
             py: 0.5, 
             borderRadius: 2 
           }}>
-            <TrendingUp size={12} style={{ color: growth > 0 ? '#2d6a4f' : '#ff8a65' }} />
-            <Typography variant="caption" sx={{ color: growth > 0 ? '#2d6a4f' : '#ff8a65', fontWeight: 600 }}>
+            <TrendingUp size={12} style={{ color: growth > 0 ? theme.palette.text.primary : errorColor }} />
+            <Typography variant="caption" sx={{ color: growth > 0 ? 'text.primary' : 'error.main', fontWeight: 600 }}>
               {growth > 0 ? '+' : ''}{growth}%
             </Typography>
           </Box>
@@ -130,21 +139,21 @@ export function TotalStrengthChart() {
         <Box sx={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <Tooltip content={renderTooltip} />
               <ReferenceLine 
                 y={lastStrength} 
-                stroke="#d8f3dc" 
+                stroke={successLight} 
                 strokeDasharray="3 3"
               />
               <Line
                 type="monotone"
                 dataKey="strength"
-                stroke="#95d5b2"
+                stroke={accentColor}
                 strokeWidth={3}
-                dot={{ fill: '#95d5b2', strokeWidth: 0, r: 4 }}
-                activeDot={{ fill: '#081c15', strokeWidth: 0, r: 6 }}
+                dot={{ fill: accentColor, strokeWidth: 0, r: 4 }}
+                activeDot={{ fill: theme.palette.text.primary, strokeWidth: 0, r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -157,8 +166,8 @@ export function TotalStrengthChart() {
 
       {/* Current strength index */}
       {lastStrength > 0 && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: '#e9ecef', borderRadius: 2, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#081c15' }}>
+        <Box sx={{ mt: 2, p: 2, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.200', borderRadius: 2, textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
             {lastStrength.toLocaleString()} kg
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>

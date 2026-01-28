@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Typography, Skeleton, Chip } from '@mui/material';
+import { Box, Typography, Skeleton, Chip, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
@@ -9,10 +9,18 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'rec
 export function BodyPartsSpline() {
   const { data: bodyParts, isLoading } = useBodyPartsProgress(60);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const accentColor = theme.palette.secondary.main;
+  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
+  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const surfaceBg = isDark ? 'rgba(255,255,255,0.05)' : theme.palette.grey[200];
+  const mutedColor = theme.palette.text.secondary;
 
   if (isLoading) {
     return (
-      <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+      <MuiCard>
         <Skeleton variant="text" width={150} height={24} />
         <Box sx={{ display: 'flex', gap: 1, my: 2, flexWrap: 'wrap' }}>
           {[1, 2, 3, 4, 5].map(i => (
@@ -41,33 +49,34 @@ export function BodyPartsSpline() {
         bgcolor: 'background.paper', 
         borderRadius: 2, 
         boxShadow: 2, 
-        border: '1px solid #e9ecef',
+        border: 1,
+        borderColor: 'divider',
         p: 1.5,
       }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>{label}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-          Volume: <strong style={{ color: '#081c15' }}>{payload[0]?.value}k kg</strong>
+          Volume: <strong style={{ color: theme.palette.text.primary }}>{payload[0]?.value}k kg</strong>
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-          Max: <strong style={{ color: '#081c15' }}>{payload[0]?.payload.maxWeight} kg</strong>
+          Max: <strong style={{ color: theme.palette.text.primary }}>{payload[0]?.payload.maxWeight} kg</strong>
         </Typography>
       </Box>
     );
   };
 
   const GrowthIcon = ({ growth }: { growth: number }) => {
-    if (growth > 5) return <TrendingUp size={12} style={{ color: '#2d6a4f' }} />;
-    if (growth < -5) return <TrendingDown size={12} style={{ color: '#ff8a65' }} />;
-    return <Minus size={12} style={{ color: '#6c757d' }} />;
+    if (growth > 5) return <TrendingUp size={12} style={{ color: theme.palette.text.primary }} />;
+    if (growth < -5) return <TrendingDown size={12} style={{ color: theme.palette.error.main }} />;
+    return <Minus size={12} style={{ color: mutedColor }} />;
   };
 
   return (
-    <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+    <MuiCard>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#d8f3dc' }}>
-          <Layers size={14} style={{ color: '#081c15' }} />
+        <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+          <Layers size={14} style={{ color: theme.palette.text.primary }} />
         </Box>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
           Body Parts Progress
         </Typography>
       </Box>
@@ -87,13 +96,13 @@ export function BodyPartsSpline() {
               sx={{
                 fontSize: '0.65rem',
                 height: 26,
-                bgcolor: (selectedPart || bodyParts[0]?.bodyPart) === bp.bodyPart ? '#d8f3dc' : '#e9ecef',
-                color: '#081c15',
+                bgcolor: (selectedPart || bodyParts[0]?.bodyPart) === bp.bodyPart ? successLight : surfaceBg,
+                color: 'text.primary',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 '&:hover': {
-                  bgcolor: '#d8f3dc',
+                  bgcolor: successLight,
                 },
               }}
             />
@@ -111,9 +120,9 @@ export function BodyPartsSpline() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, p: 1.5, bgcolor: '#e9ecef', borderRadius: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, p: 1.5, bgcolor: surfaceBg, borderRadius: 2 }}>
               <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#081c15' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
                   {selectedData.bodyPart}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -128,14 +137,14 @@ export function BodyPartsSpline() {
                 px: 1.5,
                 py: 0.5,
                 borderRadius: 2,
-                bgcolor: selectedData.growth > 0 ? '#d8f3dc' : selectedData.growth < 0 ? 'rgba(255,138,101,0.15)' : '#e9ecef',
+                bgcolor: selectedData.growth > 0 ? successLight : selectedData.growth < 0 ? errorLight : surfaceBg,
               }}>
                 <GrowthIcon growth={selectedData.growth} />
                 <Typography 
                   variant="caption" 
                   sx={{ 
                     fontWeight: 600,
-                    color: selectedData.growth > 0 ? '#2d6a4f' : selectedData.growth < 0 ? '#ff8a65' : '#6c757d',
+                    color: selectedData.growth > 0 ? 'text.primary' : selectedData.growth < 0 ? 'error.main' : 'text.secondary',
                   }}
                 >
                   {selectedData.growth > 0 ? '+' : ''}{selectedData.growth}%
@@ -153,17 +162,17 @@ export function BodyPartsSpline() {
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="bodyPartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#95d5b2" stopOpacity={0.6} />
-                  <stop offset="95%" stopColor="#95d5b2" stopOpacity={0} />
+                  <stop offset="5%" stopColor={accentColor} stopOpacity={0.6} />
+                  <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
               <Tooltip content={renderTooltip} />
               <Area
                 type="monotone"
                 dataKey="volume"
-                stroke="#95d5b2"
+                stroke={accentColor}
                 strokeWidth={2}
                 fill="url(#bodyPartGradient)"
               />

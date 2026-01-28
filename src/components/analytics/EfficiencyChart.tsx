@@ -1,4 +1,4 @@
-import { Box, Typography, Skeleton } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Zap, Clock, TrendingUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
@@ -8,10 +8,12 @@ import { format, parseISO } from 'date-fns';
 
 export function EfficiencyChart() {
   const { data, isLoading } = useAutoMetrics(60);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   if (isLoading) {
     return (
-      <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+      <MuiCard>
         <Skeleton variant="text" width={150} height={24} />
         <Skeleton variant="rounded" height={200} sx={{ mt: 2 }} />
       </MuiCard>
@@ -36,32 +38,39 @@ export function EfficiencyChart() {
         bgcolor: 'background.paper', 
         borderRadius: 2, 
         boxShadow: 2, 
-        border: '1px solid #e9ecef',
+        border: 1,
+        borderColor: 'divider',
         p: 1.5,
       }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>{label}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
         {payload.map((p: any, i: number) => (
           <Typography key={i} variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            {p.name}: <strong style={{ color: '#081c15' }}>{p.value}{p.unit || ''}</strong>
+            {p.name}: <strong style={{ color: theme.palette.text.primary }}>{p.value}{p.unit || ''}</strong>
           </Typography>
         ))}
       </Box>
     );
   };
 
+  // Use theme-aware colors
+  const accentColor = isDark ? theme.palette.secondary.main : theme.palette.secondary.main;
+  const textColor = theme.palette.text.primary;
+  const mutedColor = theme.palette.text.secondary;
+  const surfaceColor = isDark ? 'rgba(255,255,255,0.05)' : theme.palette.grey[200];
+
   return (
-    <MuiCard sx={{ bgcolor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+    <MuiCard>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#d8f3dc' }}>
-            <Zap size={14} style={{ color: '#081c15' }} />
+          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'success.light' }}>
+            <Zap size={14} style={{ color: theme.palette.text.primary }} />
           </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#081c15' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Workout Efficiency
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: '#d8f3dc', px: 1.5, py: 0.5, borderRadius: 2 }}>
-          <Typography variant="caption" sx={{ color: '#081c15', fontWeight: 600 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'success.light', px: 1.5, py: 0.5, borderRadius: 2 }}>
+          <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
             {avgEfficiency} kg/min avg
           </Typography>
         </Box>
@@ -77,13 +86,13 @@ export function EfficiencyChart() {
             <ComposedChart data={chartData}>
               <defs>
                 <linearGradient id="efficiencyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#95d5b2" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#95d5b2" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor={accentColor} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={accentColor} stopOpacity={0.2} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#6c757d' }} axisLine={false} tickLine={false} hide />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} hide />
               <Tooltip content={renderTooltip} />
               <Bar 
                 yAxisId="left"
@@ -96,7 +105,7 @@ export function EfficiencyChart() {
                 yAxisId="right"
                 type="monotone" 
                 dataKey="efficiency" 
-                stroke="#081c15" 
+                stroke={textColor} 
                 strokeWidth={2}
                 dot={false}
                 name="Efficiency"
@@ -112,18 +121,18 @@ export function EfficiencyChart() {
       )}
 
       <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <Box sx={{ flex: 1, p: 1.5, bgcolor: '#e9ecef', borderRadius: 2, textAlign: 'center' }}>
-          <Clock size={14} style={{ color: '#6c757d', marginBottom: 4 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15', fontSize: '1rem' }}>
+        <Box sx={{ flex: 1, p: 1.5, bgcolor: surfaceColor, borderRadius: 2, textAlign: 'center' }}>
+          <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
             {data?.today.avgDuration || '—'}m
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             AVG DURATION
           </Typography>
         </Box>
-        <Box sx={{ flex: 1, p: 1.5, bgcolor: '#e9ecef', borderRadius: 2, textAlign: 'center' }}>
-          <TrendingUp size={14} style={{ color: '#6c757d', marginBottom: 4 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#081c15', fontSize: '1rem' }}>
+        <Box sx={{ flex: 1, p: 1.5, bgcolor: surfaceColor, borderRadius: 2, textAlign: 'center' }}>
+          <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
             {data?.today.totalVolume ? `${(data.today.totalVolume / 1000).toFixed(1)}k` : '—'}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>

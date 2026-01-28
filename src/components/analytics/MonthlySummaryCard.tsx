@@ -18,6 +18,7 @@ interface MonthlySummaryCardProps {
 
 export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   
   const workoutChange = summary.priorMonthWorkouts !== undefined
     ? summary.workouts - summary.priorMonthWorkouts
@@ -31,6 +32,10 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
   const monthlyGoal = 16;
   const goalProgress = Math.min((summary.workouts / monthlyGoal) * 100, 100);
 
+  const successLight = isDark ? 'rgba(149, 213, 178, 0.15)' : theme.palette.success.light;
+  const errorLight = 'rgba(255, 138, 101, 0.15)';
+  const accentColor = theme.palette.secondary.main;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -39,19 +44,19 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
     >
       <MuiCard
         sx={{
-          bgcolor: '#f8f9fa',
-          border: '2px solid #95d5b2',
+          border: 2,
+          borderColor: 'secondary.main',
         }}
       >
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <Calendar size={16} style={{ color: '#081c15' }} />
+              <Calendar size={16} style={{ color: theme.palette.text.primary }} />
               <Typography 
                 variant="body1" 
                 sx={{ 
-                  color: '#081c15', 
+                  color: 'text.primary', 
                   fontWeight: 700,
                 }}
               >
@@ -69,18 +74,18 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
               gap: 0.5,
               px: 1.5,
               py: 0.5,
-              bgcolor: workoutChangePercent >= 0 ? '#d8f3dc' : 'rgba(255, 138, 101, 0.15)',
+              bgcolor: workoutChangePercent >= 0 ? successLight : errorLight,
               borderRadius: 2,
             }}>
               {workoutChangePercent >= 0 ? (
-                <TrendingUp size={14} style={{ color: '#081c15' }} />
+                <TrendingUp size={14} style={{ color: theme.palette.text.primary }} />
               ) : (
-                <TrendingDown size={14} style={{ color: '#ff8a65' }} />
+                <TrendingDown size={14} style={{ color: theme.palette.error.main }} />
               )}
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  color: workoutChangePercent >= 0 ? '#081c15' : '#ff8a65',
+                  color: workoutChangePercent >= 0 ? 'text.primary' : 'error.main',
                   fontWeight: 600,
                 }}
               >
@@ -103,12 +108,13 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
               p: 1.5, 
               bgcolor: 'background.paper', 
               borderRadius: 2,
-              border: '1px solid #e9ecef',
+              border: 1,
+              borderColor: 'divider',
               mb: 0.5,
             }}>
-              <Dumbbell size={20} style={{ color: '#95d5b2', margin: '0 auto' }} />
+              <Dumbbell size={20} style={{ color: accentColor, margin: '0 auto' }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#081c15' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {summary.workouts}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
@@ -122,12 +128,13 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
               p: 1.5, 
               bgcolor: 'background.paper', 
               borderRadius: 2,
-              border: '1px solid #e9ecef',
+              border: 1,
+              borderColor: 'divider',
               mb: 0.5,
             }}>
-              <Zap size={20} style={{ color: '#95d5b2', margin: '0 auto' }} />
+              <Zap size={20} style={{ color: accentColor, margin: '0 auto' }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#081c15' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {summary.totalVolume >= 1000 
                 ? `${(summary.totalVolume / 1000).toFixed(0)}k` 
                 : summary.totalVolume}
@@ -143,12 +150,13 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
               p: 1.5, 
               bgcolor: 'background.paper', 
               borderRadius: 2,
-              border: '1px solid #e9ecef',
+              border: 1,
+              borderColor: 'divider',
               mb: 0.5,
             }}>
-              <Moon size={20} style={{ color: '#95d5b2', margin: '0 auto' }} />
+              <Moon size={20} style={{ color: accentColor, margin: '0 auto' }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, color: '#081c15' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {summary.avgSleep ? summary.avgSleep.toFixed(1) : '—'}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
@@ -162,12 +170,13 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
           p: 2, 
           bgcolor: 'background.paper', 
           borderRadius: 2,
-          border: '1px solid #e9ecef',
+          border: 1,
+          borderColor: 'divider',
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Target size={14} style={{ color: '#081c15' }} />
-              <Typography variant="caption" sx={{ color: '#081c15', fontWeight: 600 }}>
+              <Target size={14} style={{ color: theme.palette.text.primary }} />
+              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 MONTHLY GOAL
               </Typography>
             </Box>
@@ -181,9 +190,9 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
             sx={{
               height: 8,
               borderRadius: 4,
-              bgcolor: '#e9ecef',
+              bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'grey.200',
               '& .MuiLinearProgress-bar': {
-                bgcolor: goalProgress >= 100 ? '#95d5b2' : '#081c15',
+                bgcolor: goalProgress >= 100 ? 'secondary.main' : 'text.primary',
                 borderRadius: 4,
               },
             }}
@@ -191,7 +200,7 @@ export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
           <Typography 
             variant="caption" 
             sx={{ 
-              color: goalProgress >= 75 ? '#081c15' : 'text.secondary',
+              color: goalProgress >= 75 ? 'text.primary' : 'text.secondary',
               display: 'block',
               mt: 0.5,
               textAlign: 'right',
