@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format } from 'date-fns';
@@ -16,6 +16,13 @@ interface ExportOptions {
   tables: DataTable[];
   dateFrom?: Date;
   dateTo?: Date;
+}
+
+export interface LastExportFile {
+  filename: string;
+  url: string;
+  mimeType: string;
+  createdAt: Date;
 }
 
 // Column mappings for each table
@@ -101,12 +108,37 @@ export function useDataExport() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, table: '' });
+  const [lastExport, setLastExport] = useState<LastExportFile | null>(null);
 
-  const exportToCSV = async (options: ExportOptions): Promise<void> => {
+  // Revoke object URLs on unmount (and when the URL changes).
+  useEffect(() => {
+    return () => {
+      if (lastExport?.url) URL.revokeObjectURL(lastExport.url);
+    };
+  }, [lastExport?.url]);
+
+  const setLastExportSafely = (next: LastExportFile | null) => {
+    setLastExport(prev => {
+      if (prev?.url && (!next || prev.url !== next.url)) {
+        URL.revokeObjectURL(prev.url);
+      }
+      return next;
+    });
+  };
+
+  const clearLastExport = () => setLastExportSafely(null);
+
+  const downloadLastExport = () => {
+    if (!lastExport) return;
+    triggerBrowserDownload(lastExport.url, lastExport.filename);
+  };
+
+  const exportToCSV = async (options: ExportOptions): Promise<LastExportFile | null> => {
     if (!user) throw new Error('Not authenticated');
     
     setIsExporting(true);
     setProgress({ current: 0, total: options.tables.length, table: '' });
+    setLastExportSafely(null);
     
     try {
       const csvFiles: { name: string; content: string }[] = [];
@@ -161,23 +193,42 @@ export function useDataExport() {
         }
       }
       
-      // Create and download ZIP-like combined file or individual CSVs
-      if (csvFiles.length === 1) {
-        downloadFile(csvFiles[0].content, csvFiles[0].name, 'text/csv');
-      } else if (csvFiles.length > 1) {
-        // Download as combined file with table markers
-        const combined = csvFiles.map(f => 
-          `### TABLE: ${f.name.replace('.csv', '')} ###\n${f.content}`
-        ).join('\n\n');
-        downloadFile(combined, `fitness_data_export_${format(new Date(), 'yyyy-MM-dd')}.csv`, 'text/csv');
-      }
+      // Prepare final export (single CSV or combined multi-table CSV)
+      if (csvFiles.length === 0) return null;
+
+      const exportContent =
+        csvFiles.length === 1
+          ? csvFiles[0].content
+          : csvFiles
+              .map(f => `### TABLE: ${f.name.replace('.csv', '')} ###\n${f.content}`)
+              .join('\n\n');
+
+      const exportFilename =
+        csvFiles.length === 1
+          ? csvFiles[0].name
+          : `fitness_data_export_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+
+      const mimeType = 'text/csv';
+      const url = URL.createObjectURL(new Blob([exportContent], { type: mimeType }));
+      const file: LastExportFile = {
+        filename: exportFilename,
+        url,
+        mimeType,
+        createdAt: new Date(),
+      };
+
+      // Attempt automatic download (may be blocked on some browsers after async work);
+      // we also store the URL so the user can click a dedicated Download button.
+      setLastExportSafely(file);
+      triggerBrowserDownload(url, exportFilename);
+      return file;
     } finally {
       setIsExporting(false);
       setProgress({ current: 0, total: 0, table: '' });
     }
   };
 
-  const exportAllData = async (): Promise<void> => {
+  const exportAllData = async (): Promise<LastExportFile | null> => {
     const allTables: DataTable[] = [
       'workouts',
       'exercise_sets', 
@@ -188,7 +239,7 @@ export function useDataExport() {
       'meals'
     ];
     
-    await exportToCSV({ tables: allTables });
+    return await exportToCSV({ tables: allTables });
   };
 
   const importFromCSV = async (file: File): Promise<{ 
@@ -319,17 +370,20 @@ export function useDataExport() {
     isExporting,
     isImporting,
     progress,
+    lastExport,
+    downloadLastExport,
+    clearLastExport,
   };
 }
 
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
+function triggerBrowserDownload(url: string, filename: string) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  link.rel = 'noopener noreferrer';
+  // Some browsers (especially mobile) handle blob downloads more reliably when opened in a new context.
+  link.target = '_blank';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -37,7 +37,17 @@ const TABLE_LABELS: Record<DataTable, string> = {
 };
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {
-  const { exportToCSV, exportAllData, importFromCSV, isExporting, isImporting, progress } = useDataExport();
+  const {
+    exportToCSV,
+    exportAllData,
+    importFromCSV,
+    isExporting,
+    isImporting,
+    progress,
+    lastExport,
+    downloadLastExport,
+    clearLastExport,
+  } = useDataExport();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
@@ -64,7 +74,11 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
         toast.error('Select at least one table to export');
         return;
       }
-      await exportToCSV({ tables: selectedTables });
+      const result = await exportToCSV({ tables: selectedTables });
+      if (!result) {
+        toast.info('No data found to export');
+        return;
+      }
       toast.success('Data exported successfully');
     } catch (error: any) {
       toast.error(error.message || 'Export failed');
@@ -73,7 +87,11 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
 
   const handleExportAll = async () => {
     try {
-      await exportAllData();
+      const result = await exportAllData();
+      if (!result) {
+        toast.info('No data found to export');
+        return;
+      }
       toast.success('All data exported successfully');
     } catch (error: any) {
       toast.error(error.message || 'Export failed');
@@ -150,7 +168,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
               </Typography>
               <LinearProgress 
                 variant="determinate" 
-                value={(progress.current / progress.total) * 100} 
+                 value={progress.total ? (progress.current / progress.total) * 100 : 0} 
                 sx={{ mt: 1, borderRadius: 1 }}
               />
             </Box>
@@ -205,6 +223,28 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
                 Export All
               </Button>
             </Box>
+
+            {/* Download fallback (some browsers block automatic downloads after async work) */}
+            {lastExport && (
+              <Alert severity="success" sx={{ mt: 2, fontSize: '0.75rem' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                  <Box>
+                    <strong>Export ready:</strong> {lastExport.filename}
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      If the download didn’t start automatically, click Download.
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                    <Button size="small" variant="contained" onClick={downloadLastExport}>
+                      Download
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={clearLastExport}>
+                      Clear
+                    </Button>
+                  </Box>
+                </Box>
+              </Alert>
+            )}
           </Box>
 
           {/* Import Section */}
