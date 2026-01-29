@@ -100,17 +100,27 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
   });
 
   const upsertMetrics = useMutation({
-    mutationFn: async (metrics: { date: string; pullups?: number; notes?: string }) => {
+    mutationFn: async (metrics: { date: string; pullups?: number; notes?: string; bodyweight?: number }) => {
       if (!user) throw new Error('Not authenticated');
+
+      // Build update object with only provided fields
+      const updateData: {
+        user_id: string;
+        date: string;
+        pullups?: number;
+        notes?: string;
+        bodyweight?: number;
+      } = {
+        user_id: user.id,
+        date: metrics.date,
+      };
+      if (metrics.pullups !== undefined) updateData.pullups = metrics.pullups;
+      if (metrics.notes !== undefined) updateData.notes = metrics.notes;
+      if (metrics.bodyweight !== undefined) updateData.bodyweight = metrics.bodyweight;
 
       const { data, error } = await supabase
         .from('daily_metrics')
-        .upsert({
-          user_id: user.id,
-          date: metrics.date,
-          pullups: metrics.pullups ?? 0,
-          notes: metrics.notes,
-        }, { onConflict: 'user_id,date' })
+        .upsert(updateData, { onConflict: 'user_id,date' })
         .select()
         .single();
 
