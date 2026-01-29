@@ -198,32 +198,32 @@ export function CalorieTrackerCompact() {
     <>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
         <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
-          {/* Compact Header - Always Visible */}
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Utensils className="h-4 w-4 text-muted-foreground" />
-                <span className="section-header mb-0">CALORIES</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold tabular-nums">
-                  {totalCalories.toLocaleString()}
-                  <span className="text-sm text-muted-foreground font-normal"> / {DAILY_GOAL}</span>
-                </span>
-                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </div>
+          {/* Header - Matches WaterTracker */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-header mb-0">TODAY'S CALORIES</h3>
+            <Utensils className="h-4 w-4 text-muted-foreground" />
+          </div>
+
+          {/* Value Display - Matches WaterTracker */}
+          <CollapsibleTrigger className="w-full text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-4xl font-bold tabular-nums">
+                {totalCalories.toLocaleString()}
+              </span>
+              <span className="text-lg text-muted-foreground">/ {DAILY_GOAL}</span>
+              {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
             </div>
           </CollapsibleTrigger>
 
-          {/* Progress Bar - Always Visible */}
-          <div className="progress-bar mt-3">
+          {/* Progress Bar */}
+          <div className="progress-bar mt-4">
             <div
               className="progress-bar-fill transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          {/* Quick Add Button Row - Always Visible */}
+          {/* Quick Add Button Row */}
           <div className="flex gap-2 mt-auto pt-3">
             {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
               const Icon = MEAL_ICONS[type];
