@@ -7,8 +7,6 @@ export type DataTable =
   | 'workouts'
   | 'exercise_sets'
   | 'daily_metrics'
-  | 'morning_checkins'
-  | 'night_checkins'
   | 'water_logs'
   | 'meals';
 
@@ -41,17 +39,7 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
   ],
   daily_metrics: [
     'id', 'user_id', 'date', 'sleep_hours', 'energy_level', 'bodyweight',
-    'pullups', 'supplements', 'is_rest_day', 'notes', 'created_at', 'updated_at'
-  ],
-  morning_checkins: [
-    'id', 'user_id', 'date', 'sleep_time', 'wake_time', 'sleep_hours',
-    'energy_level', 'heart_rate', 'oxygen_level', 'bodyweight',
-    'notes', 'created_at', 'updated_at'
-  ],
-  night_checkins: [
-    'id', 'user_id', 'date', 'performance_score', 'energy_score', 'steps',
-    'bodyweight', 'is_rest_day', 'notes', 'created_at'
-    , 'updated_at'
+    'pullups', 'is_rest_day', 'notes', 'created_at', 'updated_at'
   ],
   water_logs: [
     'id', 'user_id', 'timestamp', 'amount', 'method'
@@ -68,8 +56,6 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   workouts: { column: 'date', ascending: true },
   exercise_sets: { column: 'created_at', ascending: true },
   daily_metrics: { column: 'date', ascending: true },
-  morning_checkins: { column: 'date', ascending: true },
-  night_checkins: { column: 'date', ascending: true },
   water_logs: { column: 'timestamp', ascending: true },
   meals: { column: 'date', ascending: true },
 };
@@ -284,8 +270,6 @@ export function useDataExport() {
       'workouts',
       'exercise_sets', 
       'daily_metrics',
-      'morning_checkins',
-      'night_checkins',
       'water_logs',
       'meals'
     ];
@@ -357,7 +341,7 @@ export function useDataExport() {
               // Parse special types
               if (value === '') {
                 value = null;
-              } else if (header.includes('supplements') || header.includes('muscles')) {
+              } else if (header.includes('muscles')) {
                 try { value = JSON.parse(value); } catch { /* keep as string */ }
               } else if (['completed', 'is_rest_day', 'is_confirmed'].includes(header)) {
                 value = value === 'true' || value === '1';
@@ -365,8 +349,8 @@ export function useDataExport() {
                 'actual_weight', 'actual_reps', 'target_weight', 'target_reps',
                 'sleep_hours', 'energy_level', 'bodyweight', 'pullups',
                 'calories', 'protein', 'carbs', 'fat', 'fiber',
-                'amount', 'heart_rate', 'oxygen_level', 'steps',
-                'performance_score', 'energy_score', 'pre_energy', 'pre_motivation',
+                'amount', 'steps',
+                'pre_energy', 'pre_motivation',
                 'pre_soreness', 'post_difficulty', 'post_satisfaction',
                 'workout_duration_minutes', 'week_number', 'set_number', 'ai_confidence'
               ].includes(header)) {

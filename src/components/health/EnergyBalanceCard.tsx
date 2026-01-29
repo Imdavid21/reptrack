@@ -1,26 +1,22 @@
 import { useMeals } from '@/hooks/useMeals';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
-import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { Flame, TrendingUp, TrendingDown, Minus, Footprints, Dumbbell } from 'lucide-react';
+import { Flame, TrendingUp, TrendingDown, Minus, Dumbbell } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function EnergyBalanceCard() {
   const { totalCalories: caloriesIn } = useMeals();
-  const { totalBurned, calculateStepCalories, calculateWorkoutCalories } = useCalorieBurn();
-  const { checkin: nightCheckin } = useNightCheckin();
+  const { totalBurned, calculateWorkoutCalories } = useCalorieBurn();
   const { workouts } = useWorkouts();
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todayWorkout = workouts.find(w => w.date === todayStr);
-  const steps = nightCheckin?.steps || 0;
 
-  const stepCalories = calculateStepCalories(steps);
   const workoutCalories = todayWorkout?.workout_duration_minutes 
     ? calculateWorkoutCalories(todayWorkout.workout_duration_minutes) 
     : 0;
   
-  const displayBurned = totalBurned > 0 ? totalBurned : stepCalories + workoutCalories;
+  const displayBurned = totalBurned > 0 ? totalBurned : workoutCalories;
 
   const netCalories = caloriesIn - displayBurned;
   const isDeficit = netCalories < 0;
@@ -86,16 +82,8 @@ export function EnergyBalanceCard() {
       </div>
 
       {/* Burn breakdown */}
-      <div className="mt-4 pt-3 border-t border-border/30 space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <Footprints className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Steps ({steps.toLocaleString()})</span>
-          </div>
-          <span className="tabular-nums font-medium">-{stepCalories} cal</span>
-        </div>
-        
-        {todayWorkout && (
+      {todayWorkout && (
+        <div className="mt-4 pt-3 border-t border-border/30 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
@@ -103,8 +91,8 @@ export function EnergyBalanceCard() {
             </div>
             <span className="tabular-nums font-medium">-{workoutCalories} cal</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Status indicator */}
       <div className={`mt-3 p-2.5 rounded-xl text-center text-xs ${

@@ -24,7 +24,7 @@ import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { PullupAccumulator } from '@/components/analytics/PullupAccumulator';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
-import { SupplementAdherence } from '@/components/analytics/SupplementAdherence';
+
 import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
 import { NutritionInsights } from '@/components/health/NutritionInsights';
 import { HealthInsightsCard } from '@/components/health/HealthInsightsCard';
@@ -282,9 +282,6 @@ function BodyTab() {
         </motion.div>
         <motion.div variants={staggerItem}>
           <HydrationChart />
-        </motion.div>
-        <motion.div variants={staggerItem}>
-          <SupplementAdherence />
         </motion.div>
       </Box>
     </motion.div>

@@ -30,8 +30,6 @@ const TABLE_LABELS: Record<DataTable, string> = {
   workouts: 'Workouts',
   exercise_sets: 'Exercise Sets',
   daily_metrics: 'Daily Metrics',
-  morning_checkins: 'Morning Check-ins',
-  night_checkins: 'Night Check-ins',
   water_logs: 'Water Logs',
   meals: 'Meals',
 };
@@ -51,8 +49,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
-    'workouts', 'exercise_sets', 'daily_metrics', 'morning_checkins', 
-    'night_checkins', 'water_logs', 'meals'
+    'workouts', 'exercise_sets', 'daily_metrics', 'water_logs', 'meals'
   ]);
   const [importResult, setImportResult] = useState<{
     success: boolean;
@@ -231,7 +228,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
                   <Box>
                     <strong>Export ready:</strong> {lastExport.filename}
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                      If the download didn’t start automatically, click Download.
+                      If the download didn't start automatically, click Download.
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>

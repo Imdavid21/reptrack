@@ -33,7 +33,7 @@ export function useMLInsights(dateRange?: DateRangeFilter) {
       exerciseProgress,
       avgSleep: metricsData?.totals.avgSleep || null,
       avgEnergy: metricsData?.totals.avgEnergy || null,
-      supplementAdherence: metricsData?.supplementAdherence || {},
+      supplementAdherence: {},
       pullupTotal: metricsData?.totals.totalPullups || 0,
       volumeBreakdown: {
         push: exerciseData?.volumeTotals.push || 0,
