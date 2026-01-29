@@ -26,17 +26,24 @@ export const DATE_PRESETS = [
 ];
 
 export function DateRangeProvider({ children }: { children: ReactNode }) {
-  const [preset, setPreset] = useState('7d');
+  // Load saved preset from localStorage
+  const [preset, setPreset] = useState(() => {
+    const saved = localStorage.getItem('insights-date-range-preset');
+    return saved || '7d';
+  });
+  
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    // Default to last 7 days (including today)
+    const saved = localStorage.getItem('insights-date-range-preset');
+    const presetConfig = DATE_PRESETS.find(p => p.value === (saved || '7d'));
     return {
-      from: startOfDay(subDays(new Date(), 6)),
+      from: startOfDay(subDays(new Date(), presetConfig?.days || 6)),
       to: endOfDay(new Date()),
     };
   });
 
   const handleSetPreset = (newPreset: string) => {
     setPreset(newPreset);
+    localStorage.setItem('insights-date-range-preset', newPreset);
     const presetConfig = DATE_PRESETS.find(p => p.value === newPreset);
     if (presetConfig) {
       setDateRange({
