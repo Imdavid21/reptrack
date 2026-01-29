@@ -1,183 +1,174 @@
 
 
-## Strength Overview Chart Redesign
+# Plan: Fix History Page Alignment
 
-### Current Problems (as seen in screenshot)
-- 30+ exercise toggle chips create visual clutter
-- Stacked area chart becomes hard to read with many overlapping layers
-- All areas use similar gray opacity, making them indistinguishable
-- Legend duplicates information already in the chips
-- Difficult to identify which exercises contribute most to strength gains
+## Problem Summary
 
-### Alternative Visualization Options
+The History page has a major misalignment between what's displayed vs. what's editable:
 
-I recommend a **two-tier approach**: a clean aggregate view by default, with drill-down capability for individual exercises.
+| Metric | Displayed | Editable | Used in Home/Insights |
+|--------|-----------|----------|----------------------|
+| Sleep | Yes | No | Yes (both) |
+| Bodyweight | Yes | No | Yes (both) |
+| Calories | No | No | Yes (both) |
+| Pull-ups | Yes | Yes | No |
+| Notes | Yes | Yes | No |
+| Energy Level | No | No | No |
 
----
+## Solution
 
-### Option A: Category-Based Sparkline Grid (Recommended)
+### 1. Remove Redundant Metrics
+Since **pull-ups**, **notes**, and **energy_level** are not displayed in Dashboard or Insights, they are redundant and should be removed from History.
 
-Instead of showing all 30+ exercises at once, group them by **muscle group** (Chest, Back, Shoulders, Biceps, Triceps, Quads, Hamstrings) and show a mini sparkline for each:
+**Files to modify:**
+- `src/pages/History.tsx` - Remove display and editing of pull-ups and notes
 
-```text
-+--------------------------------------------------+
-| Strength Overview                         +28%   |
-+--------------------------------------------------+
-|  [Chest]        [Back]         [Shoulders]       |
-|  32kg → 40kg    45kg → 52kg    28kg → 35kg       |
-|  ~~~^~~~        ~~~^~~~        ~~~^~~~           |
-|  +25%           +15%           +25%              |
-+--------------------------------------------------+
-|  [Biceps]       [Triceps]      [Quads]           |
-|  12kg → 15kg    25kg → 30kg    80kg → 95kg       |
-|  ~~~^~~~        ~~~^~~~        ~~~^~~~           |
-|  +25%           +20%           +18%              |
-+--------------------------------------------------+
-| STRENGTH INDEX: 328.5 kg                         |
-+--------------------------------------------------+
-```
+### 2. Add Calories to History
+Calories (meals) are tracked on Dashboard and Insights but missing from History. We should display daily calorie totals in the History timeline.
 
-**Benefits**:
-- 6-8 sparklines vs 30+ toggles
-- Each category shows progression clearly
-- Tap a category to drill into individual exercises
-- Keeps the "Strength Index" summary
+**Files to modify:**
+- `src/pages/History.tsx` - Add calorie display using `useMeals` hook
 
----
+### 3. Make Displayed Metrics Editable
+Sleep and bodyweight are displayed but not editable inline. The edit mode should include these fields.
 
-### Option B: Top Exercises Only + Simplified Line Chart
+**Files to modify:**
+- `src/pages/History.tsx` - Expand inline edit to include:
+  - Sleep (hours + minutes inputs)
+  - Bodyweight (kg input)
 
-Show only the **Top 5 exercises by weight** with simple overlapping lines (no stacked areas):
+## Implementation Steps
+
+### Step 1: Update History Page Structure
+
+Remove the current inline edit state that only handles pullups/notes:
 
 ```text
-+--------------------------------------------------+
-| Strength Overview                         +28%   |
-+--------------------------------------------------+
-|  ● Deadlift  ● Squat  ● Bench  ● Row  ● Press    |
-+--------------------------------------------------+
-|      /-------●                                   |
-|     /    /---●                                   |
-|    /  __/  --●                                   |
-|   /__/   /---●                                   |
-|  /------●                                        |
-|  Jan 5    Jan 12    Jan 19    Jan 26             |
-+--------------------------------------------------+
-| 328.5 kg STRENGTH INDEX                          |
-+--------------------------------------------------+
+// Before
+const [editValues, setEditValues] = useState<{
+  pullups: string;
+  notes: string;
+}>
+
+// After
+const [editValues, setEditValues] = useState<{
+  sleepHours: string;
+  sleepMinutes: string;
+  bodyweight: string;
+}>
 ```
 
-**Benefits**:
-- Clean, readable lines
-- Focus on compound lifts that matter most
-- Dropdown/button to "View all exercises" opens a modal with full list
+### Step 2: Add Calorie Data Integration
 
----
-
-### Option C: Bar Chart + Trend (Simplest)
-
-Show aggregated weekly strength as bars with a trend line:
+Import and use the `useMeals` hook to show daily calorie totals:
 
 ```text
-+--------------------------------------------------+
-| Strength Overview                         +28%   |
-+--------------------------------------------------+
-|    █ Weekly Total                                |
-|    ▬ Trend                                       |
-+--------------------------------------------------+
-|        ████                                      |
-|    ███ ████ ████                                 |
-|  █████ ████ ████ █████                           |
-|  █████ ████ ████ █████ ─────●                    |
-|  Jan 5    12    19    26                         |
-+--------------------------------------------------+
-| Top Gainers: Deadlift +10kg, Squat +5kg          |
-| STRENGTH INDEX: 328.5 kg                         |
-+--------------------------------------------------+
+// Add to History.tsx
+import { useMeals } from '@/hooks/useMeals';
+
+// Get meals and group by date
+const { meals } = useMeals();
+const caloriesByDate = meals.reduce((acc, meal) => {
+  acc[meal.date] = (acc[meal.date] || 0) + (meal.calories || 0);
+  return acc;
+}, {});
 ```
 
-**Benefits**:
-- Single data series - no clutter
-- Highlight "Top Gainers" as text chips below
-- Fastest to read
+### Step 3: Update Display Grid
 
----
+Replace the current metrics display:
 
-### Recommendation: Option A (Sparkline Grid)
+**Remove:**
+- Trophy icon + pull-ups count
+- Notes display (italic quote)
 
-This provides the best balance of:
-1. **Information density** - see all muscle groups at a glance
-2. **Progressive disclosure** - tap to drill into exercises
-3. **Minimal UI** - no 30+ toggles
-4. **Actionable insights** - clear growth % per category
+**Keep:**
+- Moon icon + sleep (already there)
+- Scale icon + bodyweight (already there)
 
----
+**Add:**
+- Flame icon + calories (if logged that day)
 
-### Implementation Details
+### Step 4: Update Inline Edit Form
 
-#### Files to Modify
-1. **`src/components/analytics/StrengthOverviewChart.tsx`** - Complete rewrite with new visualization
+Replace the current pullups/notes inputs with:
 
-#### Data Transformation
-- Group exercises by `muscleGroup` from exercise library
-- Calculate weekly max weight per muscle group
-- Compute growth percentage per group
-- Keep total "Strength Index" calculation
-
-#### Component Structure
 ```text
-<MuiCard>
-  <Header: "Strength Overview" + Growth Badge />
-  <Grid cols=3 gap=1.5>
-    {muscleGroups.map(group => (
-      <SparklineCard
-        key={group}
-        label={group.name}
-        data={group.weeklyMaxWeights}
-        currentWeight={group.latestMax}
-        growth={group.growthPercent}
-        onClick={() => setSelectedGroup(group)}
-      />
-    ))}
-  </Grid>
-  <StrengthIndexBox value={totalStrength} />
-</MuiCard>
-
-{/* Optional drill-down dialog */}
-<ExerciseBreakdownDialog
-  open={!!selectedGroup}
-  group={selectedGroup}
-  onClose={() => setSelectedGroup(null)}
-/>
+<Grid container>
+  <Box>
+    <Label>Sleep</Label>
+    <Box display="flex" gap={1}>
+      <TextField label="H" value={editValues.sleepHours} />
+      <TextField label="M" value={editValues.sleepMinutes} />
+    </Box>
+  </Box>
+  <Box>
+    <Label>Weight</Label>
+    <TextField 
+      label="kg" 
+      value={editValues.bodyweight}
+      type="number"
+    />
+  </Box>
+</Grid>
 ```
 
-#### Sparkline Implementation
-Use Recharts `<AreaChart>` with minimal styling:
-- No axes
-- 40-60px height
-- Solid black/white fill with transparency
-- No grid lines
-- Touch target for drill-down
+### Step 5: Update Save Logic
 
-#### Muscle Group Mapping
-```typescript
-const MUSCLE_GROUPS = [
-  { key: 'chest', label: 'Chest', patterns: ['chest', 'bench', 'fly'] },
-  { key: 'back', label: 'Back', patterns: ['row', 'pulldown', 'deadlift'] },
-  { key: 'shoulders', label: 'Shoulders', patterns: ['shoulder', 'press', 'raise', 'delt'] },
-  { key: 'arms', label: 'Arms', patterns: ['curl', 'tricep', 'bicep', 'pushdown'] },
-  { key: 'legs', label: 'Legs', patterns: ['squat', 'leg', 'lunge', 'calf', 'thrust'] },
-];
+Modify `saveEdit` to save sleep and bodyweight:
+
+```text
+const saveEdit = async () => {
+  const sleepDecimal = 
+    (parseInt(editValues.sleepHours) || 0) + 
+    ((parseInt(editValues.sleepMinutes) || 0) / 60);
+
+  await upsertMetrics({
+    date: editingDate,
+    sleep_hours: sleepDecimal || undefined,
+    bodyweight: editValues.bodyweight 
+      ? parseFloat(editValues.bodyweight) 
+      : undefined,
+  });
+};
 ```
 
----
+## Visual Summary
 
-### Summary
+**Before (History day card):**
+```text
++----------------------------------+
+| Tue, Jan 28              [Edit]  |
+| [Push Day]  Moon 7h  Scale 72kg  |
+| Trophy 15 pull-ups               |
+| "feeling good today"             |
++----------------------------------+
+```
 
-| Aspect | Current | Proposed (Option A) |
-|--------|---------|---------------------|
-| Toggles | 30+ chips | 0 chips |
-| Chart elements | 5+ stacked areas | 5-6 sparklines |
-| Visual clarity | Low (overlapping) | High (isolated) |
-| Drill-down | None | Tap category |
-| Legend | Redundant | Integrated |
+**After (History day card):**
+```text
++----------------------------------+
+| Tue, Jan 28              [Edit]  |
+| [Push Day]  Moon 7h  Scale 72kg  |
+| Flame 1,850 cal                  |
++----------------------------------+
+```
+
+**After (Edit mode):**
+```text
++----------------------------------+
+| Tue, Jan 28                      |
+| +------------------------------+ |
+| | Sleep: [7]h [30]m            | |
+| | Weight: [72.0] kg            | |
+| |              [Cancel] [Save] | |
+| +------------------------------+ |
++----------------------------------+
+```
+
+## Technical Notes
+
+- The `useMeals` hook already supports date filtering; we need to check if it can provide data for the last 14 days
+- Calories are not directly editable in History since meals are logged individually (each meal has its own entry) - only display is needed
+- The `upsertMetrics` mutation already supports `sleep_hours` and `bodyweight` fields
 
