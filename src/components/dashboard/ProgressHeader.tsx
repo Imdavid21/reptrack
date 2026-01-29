@@ -110,15 +110,21 @@ export function ProgressHeader() {
           
           <button 
             onClick={() => setShowWeightDialog(true)}
-            className="text-center hover:bg-muted/50 transition-colors -m-2 p-2 rounded"
+            className="text-center hover:bg-muted/50 transition-colors -m-2 p-2 rounded relative"
           >
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
               <Scale className="h-3 w-3" />
+              {/* Subtle dot indicator if not logged today */}
+              {!todayWeight && lastLoggedWeight && (
+                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary/60 animate-pulse" />
+              )}
             </div>
             <div className="text-xl font-bold tabular-nums">
-              {todayWeight ?? lastLoggedWeight ?? '—'}
+              {lastLoggedWeight ?? '—'}
             </div>
-            <div className="text-[10px] text-muted-foreground uppercase">KG</div>
+            <div className="text-[10px] text-muted-foreground uppercase">
+              {!todayWeight && lastLoggedWeight ? 'TAP TO LOG' : 'KG'}
+            </div>
           </button>
         </div>
       </div>
