@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Dialog, DialogTitle, DialogContent, CircularProgress } from '@mui/material';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
-import { useWorkouts } from '@/hooks/useWorkouts';
-import { useDraftWorkout } from '@/hooks/useDraftWorkout';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Droplets, Flame, Dumbbell, Camera, Plus, Check, X, Loader2 } from 'lucide-react';
-import { differenceInMinutes, format } from 'date-fns';
+import { Droplets, Flame, Scale, Camera, Plus, Check, X, Loader2, Minus } from 'lucide-react';
+import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
@@ -33,32 +31,21 @@ function getMealTypeByTime(): MealType {
   return 'snack';
 }
 
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h${m}m` : `${h}h`;
-}
-
-function getWorkoutMinutes(workout: { workout_duration_minutes?: number | null; started_at?: string | null; completed_at?: string | null; }): number {
-  if (typeof workout.workout_duration_minutes === 'number' && workout.workout_duration_minutes > 0) {
-    return workout.workout_duration_minutes;
-  }
-  if (workout.started_at && workout.completed_at) {
-    const mins = differenceInMinutes(new Date(workout.completed_at), new Date(workout.started_at));
-    return mins > 0 ? mins : 0;
-  }
-  return 0;
-}
-
 export function TodayStats() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { totalToday: waterTotal, addWaterLog, isAdding: isAddingWater } = useWaterLogs();
   const { totalCalories, addMeal, isAdding: isAddingMeal } = useMeals();
-  const { workouts } = useWorkouts();
-  const { draft } = useDraftWorkout();
-  const [elapsedMinutes, setElapsedMinutes] = useState<number | null>(null);
+  
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const dateRange = { from: new Date(), to: new Date() };
+  const { data: metricsData, upsertMetrics, isUpserting: isUpdatingWeight } = useDailyMetrics(dateRange);
+  
+  const todayMetrics = metricsData?.dataPoints.find(d => d.date === todayStr);
+  const currentWeight = todayMetrics?.bodyweight ?? null;
+
+  // Weight dialog state
+  const [showWeightDialog, setShowWeightDialog] = useState(false);
+  const [weightInput, setWeightInput] = useState<number>(currentWeight ?? 70);
 
   // Meal dialog state
   const [showMealDialog, setShowMealDialog] = useState(false);
@@ -71,29 +58,12 @@ export function TodayStats() {
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Live counter for active workout session
+  // Sync weight input when data loads
   useEffect(() => {
-    if (!draft?.workoutStartTime) {
-      setElapsedMinutes(null);
-      return;
+    if (currentWeight !== null) {
+      setWeightInput(currentWeight);
     }
-    const updateElapsed = () => {
-      const mins = differenceInMinutes(new Date(), new Date(draft.workoutStartTime!));
-      setElapsedMinutes(mins > 0 ? mins : 1);
-    };
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 60000);
-    return () => clearInterval(interval);
-  }, [draft?.workoutStartTime]);
-
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const completedWorkoutMinutes = workouts
-    .filter(w => w.date === todayStr)
-    .reduce((sum, w) => sum + getWorkoutMinutes(w), 0);
-
-  const isActiveSession = elapsedMinutes !== null;
-  const displayMinutes = isActiveSession ? elapsedMinutes : completedWorkoutMinutes;
-  const hasWorkoutData = displayMinutes > 0;
+  }, [currentWeight]);
 
   // Handlers
   const handleWaterTap = async () => {
@@ -115,8 +85,19 @@ export function TodayStats() {
     setUploadedPhotoUrl(null);
   };
 
-  const handleWorkoutTap = () => {
-    navigate('/log');
+  const handleWeightTap = () => {
+    setWeightInput(currentWeight ?? 70);
+    setShowWeightDialog(true);
+  };
+
+  const handleSaveWeight = async () => {
+    try {
+      await upsertMetrics({ date: todayStr, bodyweight: weightInput });
+      toast.success(`Weight: ${weightInput}kg`);
+      setShowWeightDialog(false);
+    } catch {
+      toast.error('Failed to log weight');
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,16 +202,16 @@ export function TodayStats() {
       isLoading: false,
     },
     {
-      key: 'workout',
-      icon: Dumbbell,
-      value: hasWorkoutData ? formatDuration(displayMinutes) : '-',
+      key: 'weight',
+      icon: Scale,
+      value: currentWeight !== null ? `${currentWeight}kg` : '-',
       goal: 1,
-      current: hasWorkoutData ? 1 : 0,
-      label: isActiveSession ? 'ACTIVE' : 'WORKOUT',
-      onClick: handleWorkoutTap,
+      current: currentWeight !== null ? 1 : 0,
+      label: '+WEIGHT',
+      onClick: handleWeightTap,
       isBoolean: true,
-      isActive: isActiveSession,
-      isLoading: false,
+      isActive: false,
+      isLoading: isUpdatingWeight,
     },
   ];
 
@@ -530,6 +511,101 @@ export function TodayStats() {
                 </Box>
               </>
             )}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Weight Dialog */}
+      <Dialog 
+        open={showWeightDialog} 
+        onClose={() => setShowWeightDialog(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: '0.875rem', fontWeight: 500, pb: 1 }}>
+          LOG WEIGHT
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, py: 2 }}>
+            {/* Weight input with +/- buttons */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <ButtonBase
+                onClick={() => setWeightInput(prev => Math.max(30, prev - 0.5))}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Minus size={20} />
+              </ButtonBase>
+              
+              <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+                <Box sx={{ fontSize: '2rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                  {weightInput.toFixed(1)}
+                </Box>
+                <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>kg</Box>
+              </Box>
+              
+              <ButtonBase
+                onClick={() => setWeightInput(prev => Math.min(300, prev + 0.5))}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Plus size={20} />
+              </ButtonBase>
+            </Box>
+
+            {/* Quick increment buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+              {[-1, -0.5, 0.5, 1].map((delta) => (
+                <ButtonBase
+                  key={delta}
+                  onClick={() => setWeightInput(prev => Math.max(30, Math.min(300, prev + delta)))}
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    fontSize: '0.75rem',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  {delta > 0 ? '+' : ''}{delta}kg
+                </ButtonBase>
+              ))}
+            </Box>
+
+            {/* Save button */}
+            <ButtonBase
+              onClick={handleSaveWeight}
+              disabled={isUpdatingWeight}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+                py: 1.5,
+                border: 2,
+                borderColor: 'primary.main',
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                borderRadius: 1,
+              }}
+            >
+              {isUpdatingWeight ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              SAVE
+            </ButtonBase>
           </Box>
         </DialogContent>
       </Dialog>
