@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
-import { useReadinessScore } from '@/hooks/useReadinessScore';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Activity, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
+import { Calendar, Moon, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
 import { startOfWeek, format, subDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';
-import { cn } from '@/lib/utils';
+
 export function ProgressHeader() {
   const { workouts } = useWorkouts();
   const [showWeightDialog, setShowWeightDialog] = useState(false);
+  const [showSleepDialog, setShowSleepDialog] = useState(false);
   const [weight, setWeight] = useState<string>('');
+  const [sleepHours, setSleepHours] = useState<string>('');
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  // Get last 30 days of metrics to find last logged weight
+  // Get last 30 days of metrics to find last logged weight and sleep
   const { data: metricsData, upsertMetrics, isUpserting, isLoading } = useDailyMetrics({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -39,6 +40,14 @@ export function ProgressHeader() {
   // Get today's weight if already logged
   const todayWeight = metricsData?.dataPoints.find(d => d.date === todayStr)?.bodyweight;
 
+  // Get last logged sleep (most recent non-null sleep_hours)
+  const lastLoggedSleep = metricsData?.dataPoints
+    .filter(d => d.sleep_hours !== null && d.sleep_hours > 0)
+    .sort((a, b) => b.date.localeCompare(a.date))[0]?.sleep_hours;
+  
+  // Get today's sleep if already logged
+  const todaySleep = metricsData?.dataPoints.find(d => d.date === todayStr)?.sleep_hours;
+
   // Pre-fill weight with last logged or today's value
   useEffect(() => {
     if (showWeightDialog) {
@@ -46,6 +55,14 @@ export function ProgressHeader() {
       setWeight(prefill ? String(prefill) : '');
     }
   }, [showWeightDialog, todayWeight, lastLoggedWeight]);
+
+  // Pre-fill sleep with today's value or default
+  useEffect(() => {
+    if (showSleepDialog) {
+      const prefill = todaySleep ?? '';
+      setSleepHours(prefill ? String(prefill) : '7');
+    }
+  }, [showSleepDialog, todaySleep]);
 
   const handleSaveWeight = async () => {
     const numWeight = parseFloat(weight);
@@ -66,35 +83,34 @@ export function ProgressHeader() {
     }
   };
 
+  const handleSaveSleep = async () => {
+    const numSleep = parseFloat(sleepHours);
+    if (isNaN(numSleep) || numSleep < 0 || numSleep > 24) {
+      toast.error('Enter valid sleep hours (0-24)');
+      return;
+    }
+    
+    try {
+      await upsertMetrics({
+        date: todayStr,
+        sleep_hours: numSleep,
+      });
+      toast.success(`${numSleep}h sleep logged`);
+      setShowSleepDialog(false);
+    } catch (error) {
+      toast.error('Failed to log sleep');
+    }
+  };
+
   const adjustWeight = (delta: number) => {
     const current = parseFloat(weight) || lastLoggedWeight || 70;
     setWeight((current + delta).toFixed(1));
   };
 
-  // Readiness Score Component
-  const ReadinessScoreStat = () => {
-    const { score, isLoading: readinessLoading } = useReadinessScore();
-    
-    // Color based on score
-    const getScoreColor = (s: number | null) => {
-      if (s === null) return 'text-muted-foreground';
-      if (s >= 80) return 'text-green-500';
-      if (s >= 60) return 'text-yellow-500';
-      if (s >= 40) return 'text-orange-500';
-      return 'text-red-500';
-    };
-
-    return (
-      <div className="text-center border-x border-border">
-        <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-          <Activity className="h-3 w-3" />
-        </div>
-        <div className={cn("text-xl font-bold tabular-nums", getScoreColor(score))}>
-          {readinessLoading ? '...' : (score ?? '—')}
-        </div>
-        <div className="text-[10px] text-muted-foreground uppercase">READINESS</div>
-      </div>
-    );
+  const adjustSleep = (delta: number) => {
+    const current = parseFloat(sleepHours) || 7;
+    const newVal = Math.max(0, Math.min(24, current + delta));
+    setSleepHours(newVal.toFixed(1));
   };
 
   return (
@@ -127,7 +143,25 @@ export function ProgressHeader() {
             <div className="text-[10px] text-muted-foreground uppercase">THIS WEEK</div>
           </div>
           
-          <ReadinessScoreStat />
+          {/* Sleep Stat - Tappable */}
+          <button 
+            onClick={() => setShowSleepDialog(true)}
+            className="text-center hover:bg-muted/50 transition-colors -m-2 p-2 rounded relative border-x border-border"
+          >
+            <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+              <Moon className="h-3 w-3" />
+              {/* Subtle dot indicator if not logged today */}
+              {!todaySleep && (
+                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary/60 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xl font-bold tabular-nums">
+              {isLoading ? '...' : (todaySleep ? `${todaySleep}h` : (lastLoggedSleep ? `${lastLoggedSleep}h` : '—'))}
+            </div>
+            <div className="text-[10px] text-muted-foreground uppercase">
+              {!todaySleep ? 'TAP TO LOG' : 'SLEEP'}
+            </div>
+          </button>
           
           <button 
             onClick={() => setShowWeightDialog(true)}
@@ -149,6 +183,64 @@ export function ProgressHeader() {
           </button>
         </div>
       </div>
+
+      {/* Sleep Dialog */}
+      <Dialog open={showSleepDialog} onOpenChange={setShowSleepDialog}>
+        <DialogContent className="border-border bg-background max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-medium">
+              LOG SLEEP
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Sleep input with +/- buttons */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => adjustSleep(-0.5)}
+                className="p-3 border border-border hover:bg-muted transition-colors"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              
+              <div className="flex-1 text-center">
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={sleepHours}
+                  onChange={(e) => setSleepHours(e.target.value)}
+                  placeholder="7"
+                  className="text-center text-2xl font-bold h-14 input-terminal"
+                />
+                <span className="text-xs text-muted-foreground">hours</span>
+              </div>
+              
+              <button
+                onClick={() => adjustSleep(0.5)}
+                className="p-3 border border-border hover:bg-muted transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Today hint */}
+            {todaySleep && (
+              <p className="text-xs text-muted-foreground text-center">
+                Today: {todaySleep}h (updating)
+              </p>
+            )}
+
+            <button
+              onClick={handleSaveSleep}
+              disabled={isUpserting || !sleepHours}
+              className="btn-brutalist w-full flex items-center justify-center gap-2"
+            >
+              {isUpserting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              SAVE
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Weight Dialog */}
       <Dialog open={showWeightDialog} onOpenChange={setShowWeightDialog}>
