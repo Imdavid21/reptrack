@@ -342,9 +342,7 @@ export function CalorieTrackerCompact() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-border bg-background">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              LOG {MEAL_LABELS[selectedMealType].toUpperCase()}
-            </DialogTitle>
+            <DialogTitle className="text-sm font-medium">LOG MEAL</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
