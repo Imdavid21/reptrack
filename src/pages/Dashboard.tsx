@@ -7,7 +7,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
-import { TodayStats } from '@/components/dashboard/TodayStats';
+
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
@@ -39,10 +39,6 @@ export default function Dashboard() {
               <QuickActionsBar />
             </motion.div>
 
-            {/* Today's Stats (horizontal scroll) */}
-            <motion.div variants={staggerItem}>
-              <TodayStats />
-            </motion.div>
 
             {/* Core Trackers */}
             <motion.div variants={staggerItem}>
