@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useReadinessScore } from '@/hooks/useReadinessScore';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Target, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
+import { Calendar, Activity, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
 import { startOfWeek, format, subDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';
-
+import { cn } from '@/lib/utils';
 export function ProgressHeader() {
   const { workouts } = useWorkouts();
   const [showWeightDialog, setShowWeightDialog] = useState(false);
@@ -70,6 +71,32 @@ export function ProgressHeader() {
     setWeight((current + delta).toFixed(1));
   };
 
+  // Readiness Score Component
+  const ReadinessScoreStat = () => {
+    const { score, isLoading: readinessLoading } = useReadinessScore();
+    
+    // Color based on score
+    const getScoreColor = (s: number | null) => {
+      if (s === null) return 'text-muted-foreground';
+      if (s >= 80) return 'text-green-500';
+      if (s >= 60) return 'text-yellow-500';
+      if (s >= 40) return 'text-orange-500';
+      return 'text-red-500';
+    };
+
+    return (
+      <div className="text-center border-x border-border">
+        <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+          <Activity className="h-3 w-3" />
+        </div>
+        <div className={cn("text-xl font-bold tabular-nums", getScoreColor(score))}>
+          {readinessLoading ? '...' : (score ?? '—')}
+        </div>
+        <div className="text-[10px] text-muted-foreground uppercase">READINESS</div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="card-brutalist">
@@ -100,13 +127,7 @@ export function ProgressHeader() {
             <div className="text-[10px] text-muted-foreground uppercase">THIS WEEK</div>
           </div>
           
-          <div className="text-center border-x border-border">
-            <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-              <Target className="h-3 w-3" />
-            </div>
-            <div className="text-xl font-bold tabular-nums">{Math.max(targetSessions - totalSessions, 0)}</div>
-            <div className="text-[10px] text-muted-foreground uppercase">TO GO</div>
-          </div>
+          <ReadinessScoreStat />
           
           <button 
             onClick={() => setShowWeightDialog(true)}
