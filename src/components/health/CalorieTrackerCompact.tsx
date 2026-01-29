@@ -60,6 +60,7 @@ export function CalorieTrackerCompact() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageMode, setImageMode] = useState(false); // NEW: Track when we're in image upload mode
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +68,7 @@ export function CalorieTrackerCompact() {
     setAnalysis(null);
     setManualMode(false);
     setTextMode(false);
+    setImageMode(false);
     setTextInput('');
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
@@ -76,15 +78,17 @@ export function CalorieTrackerCompact() {
   const handleCameraClick = () => {
     setSelectedMealType(getMealTypeByTime());
     resetDialogState();
-    setIsDialogOpen(true);
-    setTimeout(() => cameraInputRef.current?.click(), 100);
+    setImageMode(true);
+    // Directly trigger camera without opening dialog first
+    cameraInputRef.current?.click();
   };
 
   const handleGalleryClick = () => {
     setSelectedMealType(getMealTypeByTime());
     resetDialogState();
-    setIsDialogOpen(true);
-    setTimeout(() => galleryInputRef.current?.click(), 100);
+    setImageMode(true);
+    // Directly trigger gallery without opening dialog first
+    galleryInputRef.current?.click();
   };
 
   const handleDescribeClick = () => {
@@ -104,6 +108,9 @@ export function CalorieTrackerCompact() {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
+    // Open dialog now that we have a file
+    setIsDialogOpen(true);
 
     const reader = new FileReader();
     reader.onload = (e) => setPreviewUrl(e.target?.result as string);
@@ -138,8 +145,11 @@ export function CalorieTrackerCompact() {
       console.error('Analysis failed:', error);
       toast.error('Could not analyze image. Try manual entry.');
       setManualMode(true);
+      setImageMode(false);
     } finally {
       setIsAnalyzing(false);
+      // Reset file input so same file can be selected again
+      e.target.value = '';
     }
   };
 
@@ -346,67 +356,36 @@ export function CalorieTrackerCompact() {
           </DialogHeader>
 
           <div className="space-y-4">
-          {!analysis && !manualMode && !textMode && (
-              <>
-                {/* Separate inputs: camera with capture, gallery without */}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <input
-                  ref={galleryInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
+            {/* File inputs - always rendered but hidden */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
+            {/* Image Mode: Show preview and analysis */}
+            {imageMode && !analysis && !manualMode && (
+              <>
                 {previewUrl && (
                   <div className="aspect-video bg-muted overflow-hidden">
                     <img src={previewUrl} alt="Food" className="w-full h-full object-cover" />
                   </div>
                 )}
 
-                {isAnalyzing ? (
+                {isAnalyzing && (
                   <div className="flex flex-col items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin mb-2" />
                     <p className="text-sm text-muted-foreground">Analyzing food...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="btn-brutalist flex flex-col items-center justify-center gap-1 py-4"
-                      >
-                        <Camera className="h-5 w-5" />
-                        <span className="text-xs">CAMERA</span>
-                      </button>
-                      <button
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="border border-border p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
-                      >
-                        <Plus className="h-5 w-5" />
-                        <span className="text-xs">GALLERY</span>
-                      </button>
-                      <button
-                        onClick={() => setTextMode(true)}
-                        className="border border-border p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
-                      >
-                        <Utensils className="h-5 w-5" />
-                        <span className="text-xs">DESCRIBE</span>
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setManualMode(true)}
-                      className="w-full border border-dashed border-border p-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
-                    >
-                      Manual entry (food + calories)
-                    </button>
                   </div>
                 )}
               </>
