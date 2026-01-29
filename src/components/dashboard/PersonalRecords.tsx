@@ -42,8 +42,13 @@ export function PersonalRecords() {
     );
   }
 
-  // Show top 4 PRs collapsed, all when expanded
-  const visibleRecords = expanded ? records : records.slice(0, 4);
+  // Sort by date (most recent first) for display
+  const sortedByDate = [...records].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  // Show top 4 most recent PRs collapsed, all when expanded
+  const visibleRecords = expanded ? sortedByDate : sortedByDate.slice(0, 4);
   const hasMore = records.length > 4;
 
   return (
@@ -120,7 +125,7 @@ export function PersonalRecords() {
             gap: 1, 
             mt: 1,
           }}>
-            {records.slice(4).map((record) => (
+            {sortedByDate.slice(4).map((record) => (
               <Chip
                 key={record.exerciseName}
                 label={
