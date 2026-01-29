@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Box, Typography, Skeleton, Chip, Button, Collapse, useTheme } from '@mui/material';
+import { Box, Typography, Skeleton, Chip, Button, Collapse, useTheme, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Moon, Scale, Calendar, Zap, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, TrendingUp, Moon, Scale, Calendar, Zap, Sparkles, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useMLInsights } from '@/hooks/useMLInsights';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { haptic } from '@/lib/haptics';
 
 const categoryIcons: Record<string, React.ReactNode> = {
   strength: <TrendingUp size={14} />,
@@ -29,10 +31,21 @@ export function MLCoachInsights() {
   const { insights, isLoading, hasData } = useMLInsights(dateRange);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleGenerate = () => {
     setHasGenerated(true);
     setIsExpanded(true);
+  };
+
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptic('light');
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ['dailyMetrics'] });
+    await queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   if (isLoading && hasGenerated) {
@@ -155,7 +168,26 @@ export function MLCoachInsights() {
             }} 
           />
         </Box>
-        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <IconButton 
+            size="small" 
+            onClick={handleRefresh}
+            sx={{ 
+              p: 0.5,
+              opacity: 0.5,
+              '&:hover': { opacity: 1 },
+            }}
+          >
+            <RefreshCw 
+              size={14} 
+              style={{ 
+                transition: 'transform 0.3s ease',
+                transform: isRefreshing ? 'rotate(180deg)' : 'rotate(0deg)',
+              }} 
+            />
+          </IconButton>
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </Box>
       </Box>
 
       <Collapse in={isExpanded}>
