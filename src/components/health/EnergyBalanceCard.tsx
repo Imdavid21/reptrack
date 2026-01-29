@@ -1,23 +1,12 @@
 import { useMeals } from '@/hooks/useMeals';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
-import { useWorkouts } from '@/hooks/useWorkouts';
 import { Flame, TrendingUp, TrendingDown, Minus, Dumbbell } from 'lucide-react';
-import { format } from 'date-fns';
 
 export function EnergyBalanceCard() {
   const { totalCalories: caloriesIn } = useMeals();
-  const { totalBurned, calculateWorkoutCalories } = useCalorieBurn();
-  const { workouts } = useWorkouts();
+  const { totalBurned, todayWorkout } = useCalorieBurn();
 
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const todayWorkout = workouts.find(w => w.date === todayStr);
-
-  const workoutCalories = todayWorkout?.workout_duration_minutes 
-    ? calculateWorkoutCalories(todayWorkout.workout_duration_minutes) 
-    : 0;
-  
-  const displayBurned = totalBurned > 0 ? totalBurned : workoutCalories;
-
+  const displayBurned = totalBurned;
   const netCalories = caloriesIn - displayBurned;
   const isDeficit = netCalories < 0;
   const isSurplus = netCalories > 200;
@@ -81,15 +70,17 @@ export function EnergyBalanceCard() {
         <div className="text-xs text-muted-foreground mt-1">Net Balance</div>
       </div>
 
-      {/* Burn breakdown */}
-      {todayWorkout && (
+      {/* Burn breakdown - show workout details */}
+      {todayWorkout && todayWorkout.calculatedDuration > 0 && (
         <div className="mt-4 pt-3 border-t border-border/30 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">Workout ({todayWorkout.workout_duration_minutes}min)</span>
+              <span className="text-muted-foreground">
+                {todayWorkout.day_name} ({todayWorkout.calculatedDuration}min)
+              </span>
             </div>
-            <span className="tabular-nums font-medium">-{workoutCalories} cal</span>
+            <span className="tabular-nums font-medium">-{todayWorkout.calculatedCalories} cal</span>
           </div>
         </div>
       )}
