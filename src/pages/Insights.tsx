@@ -29,12 +29,16 @@ import { SleepChart } from '@/components/analytics/SleepChart';
 import { toast } from '@/lib/toast';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
-// Generate last 12 months for selection
+// Generate months for current year only (2026)
 function getMonthOptions() {
   const options = [];
   const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const date = subMonths(now, i);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  
+  // Only show months from current year, starting from January up to current month
+  for (let month = currentMonth; month >= 0; month--) {
+    const date = new Date(currentYear, month, 1);
     options.push({
       value: format(date, 'yyyy-MM'),
       label: format(date, 'MMMM yyyy'),
