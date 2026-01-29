@@ -1,6 +1,4 @@
-import { Link } from 'react-router-dom';
-import { Box, Fab } from '@mui/material';
-import { Plus } from 'lucide-react';
+import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -51,22 +49,6 @@ export default function Dashboard() {
           </Box>
         </motion.div>
       </AnimatedPage>
-
-      {/* Floating Action Button */}
-      <Fab
-        component={Link}
-        to="/log"
-        color="primary"
-        aria-label="Log workout"
-        sx={{
-          position: 'fixed',
-          bottom: 88,
-          right: 16,
-          zIndex: 40,
-        }}
-      >
-        <Plus size={24} />
-      </Fab>
     </MainLayout>
   );
 }
