@@ -232,20 +232,28 @@ export function StrengthOverviewChart() {
           gap: 1.5,
           mb: 2,
         }}>
-          {muscleGroups.map((group, idx) => (
-            <motion.div
-              key={group.key}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <SparklineCard
-                group={group}
-                isDark={isDark}
-                onClick={() => handleGroupClick(group)}
-              />
-            </motion.div>
-          ))}
+          {muscleGroups.map((group, idx) => {
+            // If odd number of groups, make the last one span full width
+            const isLast = idx === muscleGroups.length - 1;
+            const isOddTotal = muscleGroups.length % 2 !== 0;
+            const shouldSpanFull = isLast && isOddTotal;
+            
+            return (
+              <motion.div
+                key={group.key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                style={{ gridColumn: shouldSpanFull ? 'span 2' : 'span 1' }}
+              >
+                <SparklineCard
+                  group={group}
+                  isDark={isDark}
+                  onClick={() => handleGroupClick(group)}
+                />
+              </motion.div>
+            );
+          })}
         </Box>
 
         {/* Strength Index */}
