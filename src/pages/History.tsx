@@ -6,9 +6,10 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useCalorieHistory } from '@/hooks/useMeals';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Calendar, Edit2, Moon, Scale, Dumbbell, Trophy, Check, X } from 'lucide-react';
+import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
 export default function History() {
@@ -21,12 +22,16 @@ export default function History() {
     to: new Date(),
   });
 
+  // Get calorie history for the last 30 days
+  const { data: calorieHistory } = useCalorieHistory(30);
+
   // Editing state
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
-    pullups: string;
-    notes: string;
-  }>({ pullups: '', notes: '' });
+    sleepHours: string;
+    sleepMinutes: string;
+    bodyweight: string;
+  }>({ sleepHours: '', sleepMinutes: '', bodyweight: '' });
 
   // Build a combined timeline of the last 14 days
   const last14Days = eachDayOfInterval({
@@ -45,28 +50,43 @@ export default function History() {
     return acc;
   }, {} as Record<string, typeof metricsData.dataPoints[0]>);
 
+  // Build calorie lookup by date
+  const caloriesByDate = (calorieHistory || []).reduce((acc, entry) => {
+    acc[entry.date] = entry.calories;
+    return acc;
+  }, {} as Record<string, number>);
+
   const startEdit = (dateStr: string) => {
     const metric = metricsByDate[dateStr];
+    const sleepHours = metric?.sleep_hours || 0;
+    const h = Math.floor(sleepHours);
+    const m = Math.round((sleepHours - h) * 60);
+    
     setEditingDate(dateStr);
     setEditValues({
-      pullups: metric?.pullups ? String(metric.pullups) : '',
-      notes: metric?.notes || '',
+      sleepHours: h > 0 ? String(h) : '',
+      sleepMinutes: m > 0 ? String(m) : '',
+      bodyweight: metric?.bodyweight ? String(metric.bodyweight) : '',
     });
   };
 
   const cancelEdit = () => {
     setEditingDate(null);
-    setEditValues({ pullups: '', notes: '' });
+    setEditValues({ sleepHours: '', sleepMinutes: '', bodyweight: '' });
   };
 
   const saveEdit = async () => {
     if (!editingDate) return;
     
     try {
+      const hours = parseInt(editValues.sleepHours) || 0;
+      const minutes = parseInt(editValues.sleepMinutes) || 0;
+      const sleepDecimal = hours + (minutes / 60);
+      
       await upsertMetrics({
         date: editingDate,
-        pullups: editValues.pullups ? parseInt(editValues.pullups) : 0,
-        notes: editValues.notes || undefined,
+        sleep_hours: sleepDecimal > 0 ? sleepDecimal : undefined,
+        bodyweight: editValues.bodyweight ? parseFloat(editValues.bodyweight) : undefined,
       });
       toast.success('Saved');
       setEditingDate(null);
@@ -98,9 +118,8 @@ export default function History() {
               
               const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
               const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
-              const hasPullups = metric?.pullups && metric.pullups > 0;
-              const hasNotes = metric?.notes;
-              const hasAnyData = workout || hasSleep || hasWeight || hasPullups || hasNotes;
+              const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
+              const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
 
               return (
                 <motion.div key={dateStr} variants={staggerItem}>
@@ -131,24 +150,40 @@ export default function History() {
                     {/* Inline Edit Mode */}
                     {isEditing && (
                       <Box sx={{ mb: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                          <TextField
-                            label="Pull-ups"
-                            type="number"
-                            size="small"
-                            value={editValues.pullups}
-                            onChange={(e) => setEditValues(v => ({ ...v, pullups: e.target.value }))}
-                            sx={{ width: 100 }}
-                            inputProps={{ min: 0 }}
-                          />
-                          <TextField
-                            label="Notes"
-                            size="small"
-                            value={editValues.notes}
-                            onChange={(e) => setEditValues(v => ({ ...v, notes: e.target.value }))}
-                            sx={{ flex: 1 }}
-                            placeholder="Any notes..."
-                          />
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Moon size={14} style={{ opacity: 0.6 }} />
+                            <TextField
+                              label="H"
+                              type="number"
+                              size="small"
+                              value={editValues.sleepHours}
+                              onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
+                              sx={{ width: 60 }}
+                              inputProps={{ min: 0, max: 24 }}
+                            />
+                            <TextField
+                              label="M"
+                              type="number"
+                              size="small"
+                              value={editValues.sleepMinutes}
+                              onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
+                              sx={{ width: 60 }}
+                              inputProps={{ min: 0, max: 59 }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Scale size={14} style={{ opacity: 0.6 }} />
+                            <TextField
+                              label="kg"
+                              type="number"
+                              size="small"
+                              value={editValues.bodyweight}
+                              onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
+                              sx={{ width: 80 }}
+                              inputProps={{ min: 0, step: 0.1 }}
+                            />
+                          </Box>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                           <IconButton size="small" onClick={cancelEdit}>
@@ -213,32 +248,16 @@ export default function History() {
                           </Box>
                         )}
                         
-                        {/* Pull-ups */}
-                        {hasPullups && (
+                        {/* Calories */}
+                        {hasCalories && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Trophy size={14} style={{ opacity: 0.6 }} />
+                            <Flame size={14} style={{ opacity: 0.6 }} />
                             <Typography variant="caption" color="text.secondary">
-                              {metric.pullups} pull-ups
+                              {caloriesByDate[dateStr].toLocaleString()} cal
                             </Typography>
                           </Box>
                         )}
                       </Box>
-                    )}
-
-                    {/* Notes */}
-                    {hasNotes && !isEditing && (
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
-                        sx={{ 
-                          display: 'block', 
-                          mt: 1, 
-                          fontStyle: 'italic',
-                          opacity: 0.8,
-                        }}
-                      >
-                        "{metric.notes}"
-                      </Typography>
                     )}
 
                     {/* Empty state */}
