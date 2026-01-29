@@ -36,8 +36,14 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // IMPORTANT: Many callers pass `new Date()` inline, which changes every render.
+  // Using ISO strings in the query key causes an endless stream of “new” queries.
+  // Normalize to date-only keys to keep caching stable while preserving behavior.
+  const fromKey = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
+  const toKey = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
+
   const query = useQuery({
-    queryKey: ['dailyMetrics', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    queryKey: ['dailyMetrics', user?.id, fromKey, toKey],
     queryFn: async (): Promise<MetricsAnalytics> => {
       if (!user) {
         return {
@@ -46,8 +52,8 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
         };
       }
 
-      const startDate = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
-      const endDate = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
+      const startDate = dateRange ? fromKey : undefined;
+      const endDate = dateRange ? toKey : undefined;
 
       const { data, error } = await supabase
         .from('daily_metrics')
