@@ -1,174 +1,150 @@
 
+# Plan: Redesign Calorie Tracker Quick Actions
 
-# Plan: Fix History Page Alignment
+## Current State
 
-## Problem Summary
+The CalorieTrackerCompact component has 4 buttons for meal types:
+```
+[ ☕ ] [ ☀️ ] [ 🌅 ] [ 🍪 ]
+  B       L       D      S
+```
 
-The History page has a major misalignment between what's displayed vs. what's editable:
+## Desired State (from reference)
 
-| Metric | Displayed | Editable | Used in Home/Insights |
-|--------|-----------|----------|----------------------|
-| Sleep | Yes | No | Yes (both) |
-| Bodyweight | Yes | No | Yes (both) |
-| Calories | No | No | Yes (both) |
-| Pull-ups | Yes | Yes | No |
-| Notes | Yes | Yes | No |
-| Energy Level | No | No | No |
+Replace meal type buttons with **input method buttons** that directly trigger logging:
+```
+[ 📷 CAMERA ] [ + GALLERY ] [ 🍴 DESCRIBE ]
+      ─────────────────────────────────
+      Manual entry (food + calories)
+```
 
 ## Solution
 
-### 1. Remove Redundant Metrics
-Since **pull-ups**, **notes**, and **energy_level** are not displayed in Dashboard or Insights, they are redundant and should be removed from History.
+### 1. Auto-detect Meal Type
+Use `getMealTypeByTime()` (already exists in QuickActionsBar.tsx) to automatically categorize meals based on time:
+- 5-11: Breakfast
+- 11-15: Lunch  
+- 15-20: Dinner
+- 20-5: Snack
 
-**Files to modify:**
-- `src/pages/History.tsx` - Remove display and editing of pull-ups and notes
+### 2. Replace Button Row
+Change from meal type buttons to input method buttons:
 
-### 2. Add Calories to History
-Calories (meals) are tracked on Dashboard and Insights but missing from History. We should display daily calorie totals in the History timeline.
-
-**Files to modify:**
-- `src/pages/History.tsx` - Add calorie display using `useMeals` hook
-
-### 3. Make Displayed Metrics Editable
-Sleep and bodyweight are displayed but not editable inline. The edit mode should include these fields.
-
-**Files to modify:**
-- `src/pages/History.tsx` - Expand inline edit to include:
-  - Sleep (hours + minutes inputs)
-  - Bodyweight (kg input)
-
-## Implementation Steps
-
-### Step 1: Update History Page Structure
-
-Remove the current inline edit state that only handles pullups/notes:
-
-```text
-// Before
-const [editValues, setEditValues] = useState<{
-  pullups: string;
-  notes: string;
-}>
-
-// After
-const [editValues, setEditValues] = useState<{
-  sleepHours: string;
-  sleepMinutes: string;
-  bodyweight: string;
-}>
+**Current (lines 226-246):**
+```tsx
+<div className="flex gap-2 mt-auto pt-3">
+  {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
+    const Icon = MEAL_ICONS[type];
+    return <button onClick={() => handleOpenDialog(type)}>...</button>
+  })}
+</div>
 ```
 
-### Step 2: Add Calorie Data Integration
-
-Import and use the `useMeals` hook to show daily calorie totals:
-
-```text
-// Add to History.tsx
-import { useMeals } from '@/hooks/useMeals';
-
-// Get meals and group by date
-const { meals } = useMeals();
-const caloriesByDate = meals.reduce((acc, meal) => {
-  acc[meal.date] = (acc[meal.date] || 0) + (meal.calories || 0);
-  return acc;
-}, {});
+**After:**
+```tsx
+<div className="space-y-2 mt-auto pt-3">
+  <div className="grid grid-cols-3 gap-2">
+    <button onClick={() => handleCameraClick()}>
+      <Camera /> CAMERA
+    </button>
+    <button onClick={() => handleGalleryClick()}>
+      <Plus /> GALLERY
+    </button>
+    <button onClick={() => handleDescribeClick()}>
+      <Utensils /> DESCRIBE
+    </button>
+  </div>
+  <button onClick={() => handleManualClick()}>
+    Manual entry (food + calories)
+  </button>
+</div>
 ```
 
-### Step 3: Update Display Grid
+### 3. Simplify Dialog Flow
+Remove meal type selector from dialog since it's auto-detected. The dialog will:
+1. Skip the initial "choose input method" screen (already chosen)
+2. Go directly to the selected mode (camera/text/manual)
+3. Auto-assign meal type based on time when saving
 
-Replace the current metrics display:
+### 4. Files to Modify
+- `src/components/health/CalorieTrackerCompact.tsx`
 
-**Remove:**
-- Trophy icon + pull-ups count
-- Notes display (italic quote)
+### 5. Technical Changes
 
-**Keep:**
-- Moon icon + sleep (already there)
-- Scale icon + bodyweight (already there)
+```tsx
+// Add getMealTypeByTime function
+function getMealTypeByTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 20) return 'dinner';
+  return 'snack';
+}
 
-**Add:**
-- Flame icon + calories (if logged that day)
+// New handlers that set mode directly
+const handleCameraClick = () => {
+  setSelectedMealType(getMealTypeByTime());
+  setIsDialogOpen(true);
+  // Immediately trigger camera input
+  setTimeout(() => cameraInputRef.current?.click(), 100);
+};
 
-### Step 4: Update Inline Edit Form
+const handleGalleryClick = () => {
+  setSelectedMealType(getMealTypeByTime());
+  setIsDialogOpen(true);
+  setTimeout(() => galleryInputRef.current?.click(), 100);
+};
 
-Replace the current pullups/notes inputs with:
+const handleDescribeClick = () => {
+  setSelectedMealType(getMealTypeByTime());
+  setTextMode(true);
+  setIsDialogOpen(true);
+};
 
-```text
-<Grid container>
-  <Box>
-    <Label>Sleep</Label>
-    <Box display="flex" gap={1}>
-      <TextField label="H" value={editValues.sleepHours} />
-      <TextField label="M" value={editValues.sleepMinutes} />
-    </Box>
-  </Box>
-  <Box>
-    <Label>Weight</Label>
-    <TextField 
-      label="kg" 
-      value={editValues.bodyweight}
-      type="number"
-    />
-  </Box>
-</Grid>
-```
-
-### Step 5: Update Save Logic
-
-Modify `saveEdit` to save sleep and bodyweight:
-
-```text
-const saveEdit = async () => {
-  const sleepDecimal = 
-    (parseInt(editValues.sleepHours) || 0) + 
-    ((parseInt(editValues.sleepMinutes) || 0) / 60);
-
-  await upsertMetrics({
-    date: editingDate,
-    sleep_hours: sleepDecimal || undefined,
-    bodyweight: editValues.bodyweight 
-      ? parseFloat(editValues.bodyweight) 
-      : undefined,
-  });
+const handleManualClick = () => {
+  setSelectedMealType(getMealTypeByTime());
+  setManualMode(true);
+  setIsDialogOpen(true);
 };
 ```
 
-## Visual Summary
+### 6. Visual Result
 
-**Before (History day card):**
-```text
-+----------------------------------+
-| Tue, Jan 28              [Edit]  |
-| [Push Day]  Moon 7h  Scale 72kg  |
-| Trophy 15 pull-ups               |
-| "feeling good today"             |
-+----------------------------------+
+**Before:**
+```
+┌─────────────────────────────────┐
+│ TODAY'S CALORIES          🍴   │
+│ 0 / 2000                   ▼   │
+│ ▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│                                 │
+│ [☕] [☀️] [🌅] [🍪]             │
+└─────────────────────────────────┘
 ```
 
-**After (History day card):**
-```text
-+----------------------------------+
-| Tue, Jan 28              [Edit]  |
-| [Push Day]  Moon 7h  Scale 72kg  |
-| Flame 1,850 cal                  |
-+----------------------------------+
+**After:**
+```
+┌─────────────────────────────────┐
+│ TODAY'S CALORIES          🍴   │
+│ 0 / 2000                   ▼   │
+│ ▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│                                 │
+│ [📷 CAMERA][+ GALLERY][🍴 DESC]│
+│ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
+│    Manual entry (food + cal)   │
+└─────────────────────────────────┘
 ```
 
-**After (Edit mode):**
-```text
-+----------------------------------+
-| Tue, Jan 28                      |
-| +------------------------------+ |
-| | Sleep: [7]h [30]m            | |
-| | Weight: [72.0] kg            | |
-| |              [Cancel] [Save] | |
-| +------------------------------+ |
-+----------------------------------+
-```
+## User Flow Change
 
-## Technical Notes
+**Before:**
+1. Tap breakfast/lunch/dinner/snack button
+2. Dialog opens with input method options
+3. Choose camera/gallery/describe/manual
+4. Log meal
 
-- The `useMeals` hook already supports date filtering; we need to check if it can provide data for the last 14 days
-- Calories are not directly editable in History since meals are logged individually (each meal has its own entry) - only display is needed
-- The `upsertMetrics` mutation already supports `sleep_hours` and `bodyweight` fields
+**After:**
+1. Tap Camera/Gallery/Describe/Manual button
+2. Camera opens immediately OR dialog opens in describe/manual mode
+3. Log meal (meal type auto-detected)
 
+This removes one tap from the flow and matches the reference design.
