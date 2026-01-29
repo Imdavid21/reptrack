@@ -9,38 +9,12 @@ import {
   TextField,
   Box,
   Typography,
-  Checkbox,
-  FormControlLabel,
   IconButton,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Calendar, Pill, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Trophy } from 'lucide-react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
-
-const supplements = [
-  { key: 'whey', label: 'Whey' },
-  { key: 'casein', label: 'Casein' },
-  { key: 'creatine', label: 'Creatine' },
-  { key: 'omega3', label: 'Omega-3' },
-  { key: 'vitaminD', label: 'Vitamin D' },
-  { key: 'magnesium', label: 'Magnesium' },
-  { key: 'zinc', label: 'Zinc' },
-] as const;
-
-type SupplementKey = typeof supplements[number]['key'];
-
-type SupplementState = Record<SupplementKey, boolean>;
-
-const DEFAULT_SUPPLEMENTS: SupplementState = {
-  whey: false,
-  casein: false,
-  creatine: false,
-  omega3: false,
-  vitaminD: false,
-  magnesium: false,
-  zinc: false,
-};
 
 interface EditDailyLogDialogProps {
   open: boolean;
@@ -59,7 +33,6 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
 
   const [pullups, setPullups] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
-  const [supplementsState, setSupplementsState] = useState<SupplementState>(DEFAULT_SUPPLEMENTS);
 
   // Load existing data when date changes
   useEffect(() => {
@@ -68,15 +41,10 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
       if (dayData) {
         setPullups(dayData.pullups || 0);
         setNotes(dayData.notes || '');
-        setSupplementsState({
-          ...DEFAULT_SUPPLEMENTS,
-          ...dayData.supplements,
-        });
       } else {
         // Reset to defaults if no data for this date
         setPullups(0);
         setNotes('');
-        setSupplementsState(DEFAULT_SUPPLEMENTS);
       }
     }
   }, [data, dateStr]);
@@ -104,21 +72,12 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
     }
   };
 
-  const handleSupplementToggle = (key: SupplementKey) => {
-    setSupplementsState(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    haptic('light');
-  };
-
   const handleSave = async () => {
     try {
       await upsertMetrics({
         date: dateStr,
         pullups,
         notes: notes || undefined,
-        supplements: supplementsState,
       });
       haptic('medium');
       toast.success(`Saved log for ${format(selectedDate, 'MMM d')}`);
@@ -189,29 +148,6 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
             fullWidth
             inputProps={{ min: 0 }}
           />
-        </Box>
-
-        {/* Supplements */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <Pill size={16} />
-            <Typography variant="body2" fontWeight={600}>Supplements</Typography>
-          </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-            {supplements.map(({ key, label }) => (
-              <FormControlLabel
-                key={key}
-                control={
-                  <Checkbox
-                    checked={supplementsState[key]}
-                    onChange={() => handleSupplementToggle(key)}
-                    size="small"
-                  />
-                }
-                label={<Typography variant="body2">{label}</Typography>}
-              />
-            ))}
-          </Box>
         </Box>
 
         {/* Notes */}

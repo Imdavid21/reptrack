@@ -4,11 +4,10 @@ import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Droplets, Utensils, Dumbbell, Scale, Loader2, Camera, Plus, Check, X } from 'lucide-react';
+import { Droplets, Utensils, Dumbbell, Loader2, Camera, Plus, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useMorningCheckin } from '@/hooks/useMorningCheckin';
 import { toast } from '@/lib/toast';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -39,11 +38,8 @@ export function QuickActionsBar() {
   const { user } = useAuth();
   const { addWaterLog, isAdding: isAddingWater } = useWaterLogs();
   const { addMeal, isAdding: isAddingMeal } = useMeals();
-  const { upsertCheckin, isUpserting: isUpdatingWeight } = useMorningCheckin();
   
-  const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [showMealDialog, setShowMealDialog] = useState(false);
-  const [weight, setWeight] = useState('');
   
   // Meal dialog state
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -61,18 +57,6 @@ export function QuickActionsBar() {
       toast.success('+250ml');
     } catch (error) {
       toast.error('Failed to log water');
-    }
-  };
-
-  const handleQuickWeight = async () => {
-    if (!weight) return;
-    try {
-      await upsertCheckin({ bodyweight: parseFloat(weight) });
-      toast.success('Weight logged');
-      setShowWeightDialog(false);
-      setWeight('');
-    } catch (error) {
-      toast.error('Failed to log weight');
     }
   };
 
@@ -171,7 +155,7 @@ export function QuickActionsBar() {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={handleQuickWater}
           disabled={isAddingWater}
@@ -200,43 +184,7 @@ export function QuickActionsBar() {
           <Utensils className="h-5 w-5" />
           <span className="text-2xs text-muted-foreground">MEAL</span>
         </button>
-
-        <button
-          onClick={() => setShowWeightDialog(true)}
-          className="flex flex-col items-center justify-center gap-1 p-3 border border-border bg-card hover:bg-muted transition-colors"
-        >
-          <Scale className="h-5 w-5" />
-          <span className="text-2xs text-muted-foreground">WEIGHT</span>
-        </button>
       </div>
-
-      {/* Weight Dialog */}
-      <Dialog open={showWeightDialog} onOpenChange={setShowWeightDialog}>
-        <DialogContent className="border-border bg-background max-w-xs">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-medium">QUICK WEIGHT LOG</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              type="number"
-              step="0.1"
-              placeholder="75.5"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="input-terminal text-2xl text-center"
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground text-center">Enter weight in kg</p>
-            <button
-              onClick={handleQuickWeight}
-              disabled={!weight || isUpdatingWeight}
-              className="btn-brutalist w-full flex items-center justify-center gap-2"
-            >
-              {isUpdatingWeight ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SAVE'}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Meal Dialog */}
       <Dialog open={showMealDialog} onOpenChange={setShowMealDialog}>

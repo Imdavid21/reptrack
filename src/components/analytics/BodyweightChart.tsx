@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Box, Typography, Skeleton, useTheme, Chip } from '@mui/material';
 import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
-import { useMorningCheckinHistory } from '@/hooks/useMorningCheckin';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO } from 'date-fns';
 import {
@@ -19,26 +19,26 @@ export function BodyweightChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
-  const { data: checkins, isLoading } = useMorningCheckinHistory(dateRange);
+  const { data, isLoading } = useDailyMetrics(dateRange);
 
   // High contrast black/white
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
 
   const chartData = useMemo(() => {
-    if (!checkins) return [];
+    if (!data?.dataPoints) return [];
     
-    return checkins
-      .filter(c => {
-        const date = parseISO(c.date);
-        return date >= dateRange.from && date <= dateRange.to && c.bodyweight !== null && c.bodyweight > 0;
+    return data.dataPoints
+      .filter(d => {
+        const date = parseISO(d.date);
+        return date >= dateRange.from && date <= dateRange.to && d.bodyweight !== null && d.bodyweight > 0;
       })
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map(c => ({
-        date: format(parseISO(c.date), 'MMM d'),
-        weight: c.bodyweight,
+      .map(d => ({
+        date: format(parseISO(d.date), 'MMM d'),
+        weight: d.bodyweight,
       }));
-  }, [checkins, dateRange]);
+  }, [data, dateRange]);
 
   const { yMin, yMax, avgWeight } = useMemo(() => {
     if (chartData.length === 0) return { yMin: 60, yMax: 100, avgWeight: null };
@@ -76,7 +76,7 @@ export function BodyweightChart() {
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Bodyweight</Typography>
         </Box>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
-          No bodyweight data yet. Log your weight in morning check-in!
+          No bodyweight data yet. Log your weight to see trends!
         </Typography>
       </MuiCard>
     );
@@ -85,7 +85,6 @@ export function BodyweightChart() {
   const firstWeight = chartData[0]?.weight as number;
   const lastWeight = chartData[chartData.length - 1]?.weight as number;
   const change = lastWeight - firstWeight;
-  const changePercent = ((change / firstWeight) * 100).toFixed(1);
 
   const TrendIcon = change > 0.5 ? TrendingUp : change < -0.5 ? TrendingDown : Minus;
 

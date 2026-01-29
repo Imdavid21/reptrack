@@ -1,20 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useMeals } from '@/hooks/useMeals';
-import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pill 
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { haptic } from '@/lib/haptics';
 
 const MEAL_ICONS = {
   breakfast: Coffee,
@@ -28,29 +24,6 @@ const MEAL_LABELS = {
   lunch: 'Lunch',
   dinner: 'Dinner',
   snack: 'Snacks',
-};
-
-const supplements = [
-  { key: 'whey', label: 'Whey' },
-  { key: 'casein', label: 'Casein' },
-  { key: 'creatine', label: 'Creatine' },
-  { key: 'omega3', label: 'Omega-3' },
-  { key: 'vitaminD', label: 'Vit D' },
-  { key: 'magnesium', label: 'Mg' },
-  { key: 'zinc', label: 'Zinc' },
-] as const;
-
-type SupplementKey = typeof supplements[number]['key'];
-type SupplementState = Record<SupplementKey, boolean>;
-
-const DEFAULT_SUPPLEMENTS: SupplementState = {
-  whey: false,
-  casein: false,
-  creatine: false,
-  omega3: false,
-  vitaminD: false,
-  magnesium: false,
-  zinc: false,
 };
 
 interface FoodAnalysis {
@@ -67,55 +40,6 @@ interface FoodAnalysis {
 export function CalorieTrackerCompact() {
   const { user } = useAuth();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
-    from: new Date(),
-    to: new Date(),
-  });
-  const todayMetrics = metricsData?.dataPoints.find(d => d.date === today);
-  
-  // Local state for optimistic supplement updates
-  const [localSupplements, setLocalSupplements] = useState<SupplementState>(DEFAULT_SUPPLEMENTS);
-  
-  // Sync local state with server data
-  useEffect(() => {
-    if (todayMetrics?.supplements) {
-      setLocalSupplements({
-        ...DEFAULT_SUPPLEMENTS,
-        ...todayMetrics.supplements,
-      });
-    }
-  }, [todayMetrics?.supplements]);
-
-  const takenCount = Object.values(localSupplements).filter(Boolean).length;
-  
-  const handleSupplementToggle = async (key: SupplementKey) => {
-    const willBeChecked = !localSupplements[key];
-    
-    // Optimistic update
-    const newSupplements = {
-      ...localSupplements,
-      [key]: willBeChecked,
-    };
-    setLocalSupplements(newSupplements);
-    haptic('light');
-    
-    try {
-      await upsertMetrics({
-        date: today,
-        supplements: newSupplements,
-        pullups: todayMetrics?.pullups ?? 0,
-        notes: todayMetrics?.notes,
-      });
-    } catch (error) {
-      // Revert on error
-      setLocalSupplements(prev => ({
-        ...prev,
-        [key]: !willBeChecked,
-      }));
-      toast.error('Failed to update supplement');
-    }
-  };
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
@@ -319,35 +243,6 @@ export function CalorieTrackerCompact() {
                 </button>
               );
             })}
-          </div>
-
-          {/* Supplements Row - Always Visible */}
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-            <Pill className="h-3 w-3 text-muted-foreground shrink-0" />
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {supplements.map(({ key, label }) => {
-                const isChecked = localSupplements[key];
-                return (
-                  <button
-                    key={key}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSupplementToggle(key);
-                    }}
-                    disabled={isUpserting}
-                    className={cn(
-                      "px-2 py-0.5 text-[10px] border transition-all duration-150",
-                      isChecked 
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border text-muted-foreground hover:border-primary/50"
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{takenCount}/{supplements.length}</span>
           </div>
 
           {/* Expanded Detail View */}

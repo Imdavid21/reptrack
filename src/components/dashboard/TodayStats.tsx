@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
-import { useNightCheckin } from '@/hooks/useNightCheckin';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
-import { Droplets, Flame, Footprints, Dumbbell } from 'lucide-react';
+import { Droplets, Flame, Dumbbell } from 'lucide-react';
 import { differenceInMinutes, format } from 'date-fns';
 
 const WATER_GOAL = 3.5;
 const CALORIE_GOAL = 2000;
-const STEP_GOAL = 10000;
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
@@ -34,7 +32,6 @@ function getWorkoutMinutes(workout: { workout_duration_minutes?: number | null; 
 export function TodayStats() {
   const { totalToday: waterTotal } = useWaterLogs();
   const { totalCalories } = useMeals();
-  const { checkin: nightCheckin } = useNightCheckin();
   const { workouts } = useWorkouts();
   const { draft } = useDraftWorkout();
   const [elapsedMinutes, setElapsedMinutes] = useState<number | null>(null);
@@ -63,7 +60,6 @@ export function TodayStats() {
   const isActiveSession = elapsedMinutes !== null;
   const displayMinutes = isActiveSession ? elapsedMinutes : completedWorkoutMinutes;
   const hasWorkoutData = displayMinutes > 0;
-  const steps = nightCheckin?.steps || 0;
 
   const stats = [
     {
@@ -79,13 +75,6 @@ export function TodayStats() {
       goal: CALORIE_GOAL,
       current: totalCalories,
       label: 'Cal',
-    },
-    {
-      icon: Footprints,
-      value: steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : steps.toString(),
-      goal: STEP_GOAL,
-      current: steps,
-      label: 'Steps',
     },
     {
       icon: Dumbbell,

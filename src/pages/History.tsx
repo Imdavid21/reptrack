@@ -7,8 +7,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Calendar, Edit2, ClipboardEdit } from 'lucide-react';
-import { BackfillDialog } from '@/components/dashboard/BackfillDialog';
+import { Calendar, Edit2, ClipboardEdit } from 'lucide-react';
 import { EditDailyLogDialog } from '@/components/dashboard/EditDailyLogDialog';
 
 export default function History() {
@@ -41,7 +40,6 @@ export default function History() {
             >
               Edit Daily Logs
             </Button>
-            <BackfillDialog />
           </Box>
 
           {workouts.length === 0 ? (

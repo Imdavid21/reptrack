@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Box, Fab } from '@mui/material';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
-import { DailyRitualCard } from '@/components/dashboard/DailyRitualCard';
 import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 import { TodayStats } from '@/components/dashboard/TodayStats';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
@@ -14,8 +14,6 @@ import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { Heatmap } from '@/components/dashboard/Heatmap';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
@@ -44,11 +42,6 @@ export default function Dashboard() {
             {/* Today's Stats (horizontal scroll) */}
             <motion.div variants={staggerItem}>
               <TodayStats />
-            </motion.div>
-
-            {/* Time-Aware Daily Ritual Card */}
-            <motion.div variants={staggerItem}>
-              <DailyRitualCard />
             </motion.div>
 
             {/* Core Trackers */}
