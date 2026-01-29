@@ -15,7 +15,7 @@ export function ProgressHeader() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   // Get last 30 days of metrics to find last logged weight
-  const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
+  const { data: metricsData, upsertMetrics, isUpserting, isLoading } = useDailyMetrics({
     from: subDays(new Date(), 30),
     to: new Date(),
   });
@@ -120,7 +120,7 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-xl font-bold tabular-nums">
-              {lastLoggedWeight ?? '—'}
+              {isLoading ? '...' : (lastLoggedWeight ?? '—')}
             </div>
             <div className="text-[10px] text-muted-foreground uppercase">
               {!todayWeight && lastLoggedWeight ? 'TAP TO LOG' : 'KG'}
