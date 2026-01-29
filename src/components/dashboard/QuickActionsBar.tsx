@@ -1,14 +1,15 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Droplets, Utensils, Dumbbell, Loader2, Camera, Plus, Check, X } from 'lucide-react';
+import { Droplets, Utensils, Scale, Loader2, Camera, Plus, Check, X, Minus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/lib/toast';
+import { format, subDays } from 'date-fns';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -39,7 +40,26 @@ export function QuickActionsBar() {
   const { addWaterLog, isAdding: isAddingWater } = useWaterLogs();
   const { addMeal, isAdding: isAddingMeal } = useMeals();
   
+  // Get last 30 days of metrics to find last logged weight
+  const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  
   const [showMealDialog, setShowMealDialog] = useState(false);
+  const [showWeightDialog, setShowWeightDialog] = useState(false);
+  
+  // Weight dialog state
+  const [weight, setWeight] = useState<string>('');
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  
+  // Get last logged weight (most recent non-null bodyweight)
+  const lastLoggedWeight = metricsData?.dataPoints
+    .filter(d => d.bodyweight !== null && d.bodyweight > 0)
+    .sort((a, b) => b.date.localeCompare(a.date))[0]?.bodyweight;
+  
+  // Get today's weight if already logged
+  const todayWeight = metricsData?.dataPoints.find(d => d.date === todayStr)?.bodyweight;
   
   // Meal dialog state
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -51,6 +71,14 @@ export function QuickActionsBar() {
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-fill weight with last logged or today's value
+  useEffect(() => {
+    if (showWeightDialog) {
+      const prefill = todayWeight ?? lastLoggedWeight ?? '';
+      setWeight(prefill ? String(prefill) : '');
+    }
+  }, [showWeightDialog, todayWeight, lastLoggedWeight]);
+
   const handleQuickWater = async () => {
     try {
       await addWaterLog(0.25);
@@ -58,6 +86,30 @@ export function QuickActionsBar() {
     } catch (error) {
       toast.error('Failed to log water');
     }
+  };
+
+  const handleSaveWeight = async () => {
+    const numWeight = parseFloat(weight);
+    if (isNaN(numWeight) || numWeight <= 0) {
+      toast.error('Enter a valid weight');
+      return;
+    }
+    
+    try {
+      await upsertMetrics({
+        date: todayStr,
+        bodyweight: numWeight,
+      });
+      toast.success(`${numWeight} kg logged`);
+      setShowWeightDialog(false);
+    } catch (error) {
+      toast.error('Failed to log weight');
+    }
+  };
+
+  const adjustWeight = (delta: number) => {
+    const current = parseFloat(weight) || lastLoggedWeight || 70;
+    setWeight((current + delta).toFixed(1));
   };
 
   const handleOpenMealDialog = () => {
@@ -169,13 +221,13 @@ export function QuickActionsBar() {
           <span className="text-2xs text-muted-foreground">+WATER</span>
         </button>
 
-        <Link
-          to="/log"
+        <button
+          onClick={() => setShowWeightDialog(true)}
           className="flex flex-col items-center justify-center gap-1 p-3 border border-border bg-card hover:bg-muted transition-colors"
         >
-          <Dumbbell className="h-5 w-5" />
-          <span className="text-2xs text-muted-foreground">WORKOUT</span>
-        </Link>
+          <Scale className="h-5 w-5" />
+          <span className="text-2xs text-muted-foreground">WEIGHT</span>
+        </button>
 
         <button
           onClick={handleOpenMealDialog}
@@ -185,6 +237,70 @@ export function QuickActionsBar() {
           <span className="text-2xs text-muted-foreground">MEAL</span>
         </button>
       </div>
+
+      {/* Weight Dialog */}
+      <Dialog open={showWeightDialog} onOpenChange={setShowWeightDialog}>
+        <DialogContent className="border-border bg-background max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-medium">
+              LOG WEIGHT
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Weight input with +/- buttons */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => adjustWeight(-0.1)}
+                className="p-3 border border-border hover:bg-muted transition-colors"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              
+              <div className="flex-1 text-center">
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder={lastLoggedWeight ? String(lastLoggedWeight) : '70.0'}
+                  className="text-center text-2xl font-bold h-14 input-terminal"
+                />
+                <span className="text-xs text-muted-foreground">kg</span>
+              </div>
+              
+              <button
+                onClick={() => adjustWeight(0.1)}
+                className="p-3 border border-border hover:bg-muted transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Last logged hint */}
+            {lastLoggedWeight && !todayWeight && (
+              <p className="text-xs text-muted-foreground text-center">
+                Last: {lastLoggedWeight} kg
+              </p>
+            )}
+            
+            {todayWeight && (
+              <p className="text-xs text-muted-foreground text-center">
+                Today: {todayWeight} kg (updating)
+              </p>
+            )}
+
+            <button
+              onClick={handleSaveWeight}
+              disabled={isUpserting || !weight}
+              className="btn-brutalist w-full flex items-center justify-center gap-2"
+            >
+              {isUpserting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              SAVE
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Meal Dialog */}
       <Dialog open={showMealDialog} onOpenChange={setShowMealDialog}>
