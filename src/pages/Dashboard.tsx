@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
-import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
@@ -33,12 +32,6 @@ export default function Dashboard() {
             <motion.div variants={staggerItem}>
               <ProgressHeader />
             </motion.div>
-
-            {/* Quick Actions Bar */}
-            <motion.div variants={staggerItem}>
-              <QuickActionsBar />
-            </motion.div>
-
 
             {/* Core Trackers */}
             <motion.div variants={staggerItem}>
