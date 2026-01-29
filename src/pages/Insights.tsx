@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Skeleton, useTheme, TextField, Button, Collapse, IconButton } from '@mui/material';
+import { useState, useEffect, useMemo } from 'react';
+import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Loader2,
+  ChevronDown,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -26,13 +27,36 @@ import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { SleepChart } from '@/components/analytics/SleepChart';
 import { toast } from '@/lib/toast';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
-// Unified Progress Card with week comparison + monthly goals + inline editing
+// Generate last 12 months for selection
+function getMonthOptions() {
+  const options = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = subMonths(now, i);
+    options.push({
+      value: format(date, 'yyyy-MM'),
+      label: format(date, 'MMMM yyyy'),
+    });
+  }
+  return options;
+}
+
+// Unified Progress Card with month selection + weekly comparison + inline editing
 function ProgressCard() {
   const theme = useTheme();
   const { dateRange } = useDateRange();
   const { data, isLoading } = useCorrelationAnalysis(dateRange);
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+  
+  // Month selection - default to current month, persist in localStorage
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const saved = localStorage.getItem('insights-selected-month');
+    return saved || format(new Date(), 'yyyy-MM');
+  });
+  
+  const monthOptions = useMemo(() => getMonthOptions(), []);
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +73,15 @@ function ProgressCard() {
       });
     }
   }, [preferences]);
+  
+  // Persist month selection
+  useEffect(() => {
+    localStorage.setItem('insights-selected-month', selectedMonth);
+  }, [selectedMonth]);
+  
+  const handleMonthChange = (event: SelectChangeEvent<string>) => {
+    setSelectedMonth(event.target.value);
+  };
 
   const workoutGoal = preferences?.weekly_workout_goal || 4;
   const monthlyWorkoutGoal = workoutGoal * 4;
@@ -87,9 +120,7 @@ function ProgressCard() {
     );
   }
 
-  const workoutChange = lastWeek 
-    ? ((thisWeek!.workouts - lastWeek.workouts) / Math.max(lastWeek.workouts, 1)) * 100
-    : 0;
+  // Week-over-week changes (only volume and sleep, not sessions to avoid overlap)
   const volumeChange = lastWeek?.totalVolume && lastWeek.totalVolume > 0
     ? ((thisWeek!.totalVolume - lastWeek.totalVolume) / lastWeek.totalVolume) * 100
     : 0;
@@ -101,6 +132,8 @@ function ProgressCard() {
   const volumeFormatted = summary?.totalVolume 
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
     : '—';
+  
+  const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || summary?.month || 'This Month';
 
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: { 
     label: string; 
@@ -150,13 +183,32 @@ function ProgressCard() {
 
   return (
     <MuiCard>
-      {/* Header with edit button */}
+      {/* Header with month selector and edit button */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Target size={14} />
-          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-            {summary?.month?.toUpperCase() || 'THIS MONTH'} PROGRESS
-          </Typography>
+          <Select
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            variant="standard"
+            disableUnderline
+            IconComponent={() => <ChevronDown size={14} style={{ marginLeft: 4 }} />}
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+              '& .MuiSelect-select': {
+                py: 0,
+                pr: '20px !important',
+              },
+            }}
+          >
+            {monthOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: '0.75rem' }}>
+                {opt.label.toUpperCase()}
+              </MenuItem>
+            ))}
+          </Select>
         </Box>
         {!isEditing ? (
           <IconButton size="small" onClick={() => setIsEditing(true)} sx={{ p: 0.5 }}>
@@ -230,19 +282,13 @@ function ProgressCard() {
         </Box>
       </Collapse>
 
-      {/* Week vs Week comparison */}
+      {/* Week vs Week comparison - just volume and sleep to avoid overlap with monthly workouts */}
       {thisWeek && (
         <>
           <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.55rem', mb: 1, display: 'block' }}>
             THIS WEEK VS LAST WEEK
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1.5 }}>
-            <StatItem 
-              label="SESSIONS" 
-              thisVal={thisWeek.workouts} 
-              lastVal={lastWeek?.workouts || 0}
-              changeVal={workoutChange}
-            />
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 1.5 }}>
             <StatItem 
               label="VOLUME" 
               thisVal={thisWeek.totalVolume >= 1000 ? `${(thisWeek.totalVolume / 1000).toFixed(1)}k` : thisWeek.totalVolume}
