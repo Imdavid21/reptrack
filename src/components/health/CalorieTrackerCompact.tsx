@@ -26,6 +26,14 @@ const MEAL_LABELS = {
   snack: 'Snacks',
 };
 
+function getMealTypeByTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 20) return 'dinner';
+  return 'snack';
+}
+
 interface FoodAnalysis {
   foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number }[];
   total_calories: number;
@@ -55,9 +63,7 @@ export function CalorieTrackerCompact() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleOpenDialog = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
-    setSelectedMealType(mealType);
-    setIsDialogOpen(true);
+  const resetDialogState = () => {
     setAnalysis(null);
     setManualMode(false);
     setTextMode(false);
@@ -65,6 +71,34 @@ export function CalorieTrackerCompact() {
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
     setUploadedPhotoUrl(null);
+  };
+
+  const handleCameraClick = () => {
+    setSelectedMealType(getMealTypeByTime());
+    resetDialogState();
+    setIsDialogOpen(true);
+    setTimeout(() => cameraInputRef.current?.click(), 100);
+  };
+
+  const handleGalleryClick = () => {
+    setSelectedMealType(getMealTypeByTime());
+    resetDialogState();
+    setIsDialogOpen(true);
+    setTimeout(() => galleryInputRef.current?.click(), 100);
+  };
+
+  const handleDescribeClick = () => {
+    setSelectedMealType(getMealTypeByTime());
+    resetDialogState();
+    setTextMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleManualClick = () => {
+    setSelectedMealType(getMealTypeByTime());
+    resetDialogState();
+    setManualMode(true);
+    setIsDialogOpen(true);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,26 +257,37 @@ export function CalorieTrackerCompact() {
             />
           </div>
 
-          {/* Quick Add Button Row */}
-          <div className="flex gap-2 mt-auto pt-3">
-            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
-              const Icon = MEAL_ICONS[type];
-              const count = mealsByType[type].length;
-              
-              return (
-                <button
-                  key={type}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenDialog(type);
-                  }}
-                  className="flex-1 border border-border p-2 flex items-center justify-center gap-1 hover:bg-muted transition-colors"
-                >
-                  <Icon className="h-3 w-3" />
-                  {count > 0 && <span className="text-xs tabular-nums">{count}</span>}
-                </button>
-              );
-            })}
+          {/* Quick Add Button Row - Input Methods */}
+          <div className="space-y-2 mt-auto pt-3">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
+                className="btn-brutalist flex flex-col items-center justify-center gap-1 py-3"
+              >
+                <Camera className="h-4 w-4" />
+                <span className="text-[10px]">CAMERA</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
+                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="text-[10px]">GALLERY</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
+                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+              >
+                <Utensils className="h-4 w-4" />
+                <span className="text-[10px]">DESCRIBE</span>
+              </button>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleManualClick(); }}
+              className="w-full border border-dashed border-border p-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
+            >
+              Manual entry (food + calories)
+            </button>
           </div>
 
           {/* Expanded Detail View */}
