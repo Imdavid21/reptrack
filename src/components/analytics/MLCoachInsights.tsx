@@ -1,6 +1,7 @@
-import { Box, Typography, Skeleton, Chip, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Skeleton, Chip, Button, Collapse, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Moon, Scale, Calendar, Zap } from 'lucide-react';
+import { Brain, TrendingUp, Moon, Scale, Calendar, Zap, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useMLInsights } from '@/hooks/useMLInsights';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -26,8 +27,15 @@ export function MLCoachInsights() {
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { insights, isLoading, hasData } = useMLInsights(dateRange);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
-  if (isLoading) {
+  const handleGenerate = () => {
+    setHasGenerated(true);
+    setIsExpanded(true);
+  };
+
+  if (isLoading && hasGenerated) {
     return (
       <MuiCard>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -65,9 +73,66 @@ export function MLCoachInsights() {
     );
   }
 
+  // Collapsed state - show generate button
+  if (!hasGenerated) {
+    return (
+      <MuiCard>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          gap: 2,
+          py: 2,
+        }}>
+          <Box sx={{ 
+            p: 1.5, 
+            borderRadius: 2, 
+            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          }}>
+            <Brain size={20} />
+          </Box>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+              ML Coach Insights
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Get personalized tips based on your data
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Sparkles size={14} />}
+            onClick={handleGenerate}
+            sx={{
+              bgcolor: 'text.primary',
+              color: 'background.paper',
+              '&:hover': {
+                bgcolor: 'text.secondary',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+            }}
+          >
+            Generate Insights
+          </Button>
+        </Box>
+      </MuiCard>
+    );
+  }
+
   return (
     <MuiCard>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          cursor: 'pointer',
+        }}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ 
             p: 1, 
@@ -79,88 +144,91 @@ export function MLCoachInsights() {
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             ML Coach
           </Typography>
+          <Chip 
+            label={`${insights.length} tips`}
+            size="small" 
+            sx={{ 
+              height: 20, 
+              fontSize: '0.6rem',
+              bgcolor: 'action.hover',
+              color: 'text.secondary',
+            }} 
+          />
         </Box>
-        <Chip 
-          label="Auto-updated" 
-          size="small" 
-          sx={{ 
-            height: 20, 
-            fontSize: '0.6rem',
-            bgcolor: 'action.hover',
-            color: 'text.secondary',
-          }} 
-        />
+        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {insights.map((insight, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-          >
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 1.5,
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-              border: 1,
-              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-            }}>
-              <Box sx={{ 
-                p: 0.75, 
-                borderRadius: 1.5, 
-                bgcolor: 'action.hover',
-                color: categoryColors[insight.category] || 'text.primary',
+      <Collapse in={isExpanded}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
+          {insights.map((insight, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <Box sx={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                border: 1,
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
               }}>
-                {categoryIcons[insight.category] || <Zap size={14} />}
-              </Box>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 500,
-                  lineHeight: 1.4,
-                  fontSize: '0.8rem',
+                <Box sx={{ 
+                  p: 0.75, 
+                  borderRadius: 1.5, 
+                  bgcolor: 'action.hover',
+                  color: categoryColors[insight.category] || 'text.primary',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}>
-                  {insight.text}
-                </Typography>
-                <Typography variant="caption" sx={{ 
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  fontSize: '0.6rem',
-                }}>
-                  {insight.category}
-                </Typography>
-              </Box>
-              {insight.priority >= 4 && (
-                <Box sx={{
-                  px: 0.75,
-                  py: 0.25,
-                  borderRadius: 1,
-                  bgcolor: 'error.main',
-                  color: 'error.contrastText',
-                  fontSize: '0.55rem',
-                  fontWeight: 700,
-                }}>
-                  !
+                  {categoryIcons[insight.category] || <Zap size={14} />}
                 </Box>
-              )}
-            </Box>
-          </motion.div>
-        ))}
-      </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 500,
+                    lineHeight: 1.4,
+                    fontSize: '0.8rem',
+                  }}>
+                    {insight.text}
+                  </Typography>
+                  <Typography variant="caption" sx={{ 
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.6rem',
+                  }}>
+                    {insight.category}
+                  </Typography>
+                </Box>
+                {insight.priority >= 4 && (
+                  <Box sx={{
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 1,
+                    bgcolor: 'error.main',
+                    color: 'error.contrastText',
+                    fontSize: '0.55rem',
+                    fontWeight: 700,
+                  }}>
+                    !
+                  </Box>
+                )}
+              </Box>
+            </motion.div>
+          ))}
+        </Box>
 
-      {insights.length === 0 && hasData && (
-        <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
-          Keep logging to build enough data for insights.
-        </Typography>
-      )}
+        {insights.length === 0 && hasData && (
+          <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center', mt: 2 }}>
+            Keep logging to build enough data for insights.
+          </Typography>
+        )}
+      </Collapse>
     </MuiCard>
   );
 }

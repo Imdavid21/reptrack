@@ -145,33 +145,6 @@ export function SleepChart() {
         </ResponsiveContainer>
       </Box>
 
-      {data?.totals && (
-        <Box sx={{ 
-          mt: 2, 
-          pt: 2, 
-          borderTop: 1, 
-          borderColor: 'divider',
-          display: 'flex',
-          justifyContent: 'center',
-        }}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
-            borderRadius: 2,
-            textAlign: 'center',
-            border: 1,
-            borderColor: 'divider',
-            minWidth: 120,
-          }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {data.totals.avgSleep?.toFixed(1) ?? '—'}h
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Average Sleep
-            </Typography>
-          </Box>
-        </Box>
-      )}
     </MuiCard>
   );
 }
