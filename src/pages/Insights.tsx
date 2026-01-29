@@ -393,14 +393,14 @@ function InsightsContent() {
               <EfficiencyChart />
             </motion.div>
 
-            {/* Strength Overview */}
-            <motion.div variants={staggerItem}>
-              <StrengthOverviewChart />
-            </motion.div>
-
             {/* Volume Breakdown */}
             <motion.div variants={staggerItem}>
               <VolumeSankeyChart />
+            </motion.div>
+
+            {/* Strength Overview */}
+            <motion.div variants={staggerItem}>
+              <StrengthOverviewChart />
             </motion.div>
 
             {/* Energy (Calories In vs Out) */}
