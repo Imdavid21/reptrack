@@ -172,7 +172,11 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-xl font-bold tabular-nums">
-              {isLoading ? '...' : (todaySleep ? `${todaySleep}h` : (lastLoggedSleep ? `${lastLoggedSleep}h` : '—'))}
+              {isLoading ? '...' : (
+                (todaySleep ?? lastLoggedSleep) 
+                  ? `${(todaySleep ?? lastLoggedSleep)?.toFixed(1)}h`
+                  : '—'
+              )}
             </div>
             <div className="text-[10px] text-muted-foreground uppercase">
               {!todaySleep ? 'TAP TO LOG' : 'SLEEP'}
@@ -191,7 +195,11 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-xl font-bold tabular-nums">
-              {isLoading ? '...' : (lastLoggedWeight ?? '—')}
+              {isLoading ? '...' : (
+                (todayWeight ?? lastLoggedWeight) 
+                  ? (todayWeight ?? lastLoggedWeight)?.toFixed(1)
+                  : '—'
+              )}
             </div>
             <div className="text-[10px] text-muted-foreground uppercase">
               {!todayWeight && lastLoggedWeight ? 'TAP TO LOG' : 'KG'}
