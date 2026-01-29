@@ -30,7 +30,6 @@ export interface WorkoutWithDetails {
     energy_level: number;
     bodyweight: number | null;
     notes: string | null;
-    supplements: Record<string, boolean>;
   } | null;
 }
 

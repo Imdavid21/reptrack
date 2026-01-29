@@ -28,15 +28,6 @@ const defaultHabits: Habits = {
   energy_level: 5,
   bodyweight: undefined,
   notes: '',
-  supplements: {
-    whey: false,
-    casein: false,
-    creatine: false,
-    omega3: false,
-    vitaminD: false,
-    magnesium: false,
-    zinc: false,
-  },
 };
 
 const defaultPostCheckin: PostWorkoutData = {

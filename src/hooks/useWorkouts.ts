@@ -26,15 +26,6 @@ export interface Habits {
   energy_level: number;
   bodyweight?: number;
   notes?: string;
-  supplements: {
-    whey: boolean;
-    casein: boolean;
-    creatine: boolean;
-    omega3: boolean;
-    vitaminD: boolean;
-    magnesium: boolean;
-    zinc: boolean;
-  };
 }
 
 export interface PostCheckin {
@@ -157,7 +148,6 @@ export function useWorkouts() {
           energy_level: workout.habits.energy_level,
           bodyweight: workout.habits.bodyweight,
           notes: workout.habits.notes,
-          supplements: workout.habits.supplements,
         });
 
       if (habitsError) throw habitsError;
