@@ -4,7 +4,6 @@ import {
   TrendingUp, 
   TrendingDown, 
   Target,
-  Brain,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -131,9 +130,8 @@ function WeekComparisonCard() {
   );
 }
 
-// Monthly goals card
+// Monthly goals card - workouts only, no duplicate sleep
 function MonthlyGoalsCard() {
-  const theme = useTheme();
   const { dateRange } = useDateRange();
   const { data, isLoading } = useCorrelationAnalysis(dateRange);
   const { preferences } = useUserPreferences();
@@ -141,11 +139,9 @@ function MonthlyGoalsCard() {
   const workoutGoal = preferences?.weekly_workout_goal 
     ? preferences.weekly_workout_goal * 4 
     : 16; // Default 4 weeks × 4 sessions
-  const sleepGoal = preferences?.sleep_goal || 7;
-  const waterGoal = preferences?.daily_water_goal || 3.5;
 
   if (isLoading) {
-    return <Skeleton variant="rounded" height={160} sx={{ borderRadius: 2 }} />;
+    return <Skeleton variant="rounded" height={100} sx={{ borderRadius: 2 }} />;
   }
 
   const summary = data?.monthlySummary;
@@ -160,78 +156,77 @@ function MonthlyGoalsCard() {
   }
 
   const workoutProgress = Math.round((summary.workouts / workoutGoal) * 100);
-  const sleepProgress = summary.avgSleep ? Math.round((summary.avgSleep / sleepGoal) * 100) : 0;
-
-  const GoalItem = ({ label, current, goal, unit, progress }: {
-    label: string;
-    current: string | number;
-    goal: number;
-    unit: string;
-    progress: number;
-  }) => (
-    <Box sx={{ 
-      p: 1.5, 
-      bgcolor: 'action.hover', 
-      borderRadius: 2,
-      border: 1,
-      borderColor: 'divider',
-    }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
-          {label}
-        </Typography>
-        <Typography variant="caption" sx={{ 
-          fontWeight: 600, 
-          fontSize: '0.6rem',
-          color: progress >= 100 ? 'success.main' : progress >= 75 ? 'text.primary' : 'warning.main',
-        }}>
-          {Math.min(progress, 100)}%
-        </Typography>
-      </Box>
-      <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
-        {current} <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>/ {goal}{unit}</Typography>
-      </Typography>
-      <Box sx={{ 
-        height: 4, 
-        bgcolor: 'divider', 
-        borderRadius: 2, 
-        mt: 0.5,
-        overflow: 'hidden',
-      }}>
-        <Box sx={{ 
-          height: '100%', 
-          width: `${Math.min(progress, 100)}%`,
-          bgcolor: progress >= 100 ? 'success.main' : 'text.primary',
-          borderRadius: 2,
-          transition: 'width 0.3s ease',
-        }} />
-      </Box>
-    </Box>
-  );
+  const volumeFormatted = summary.totalVolume >= 1000 
+    ? `${(summary.totalVolume / 1000).toFixed(1)}k` 
+    : summary.totalVolume;
 
   return (
     <MuiCard>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <Target size={14} />
         <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-          MONTHLY GOALS — {summary.month?.toUpperCase()}
+          {summary.month?.toUpperCase()} PROGRESS
         </Typography>
       </Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-        <GoalItem 
-          label="WORKOUTS" 
-          current={summary.workouts} 
-          goal={workoutGoal}
-          unit=""
-          progress={workoutProgress}
-        />
-        <GoalItem 
-          label="AVG SLEEP" 
-          current={summary.avgSleep?.toFixed(1) || '—'} 
-          goal={sleepGoal}
-          unit="h"
-          progress={sleepProgress}
-        />
+      
+      {/* Main workout goal */}
+      <Box sx={{ 
+        p: 1.5, 
+        bgcolor: 'action.hover', 
+        borderRadius: 2,
+        border: 1,
+        borderColor: 'divider',
+        mb: 1,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
+            WORKOUTS
+          </Typography>
+          <Typography variant="caption" sx={{ 
+            fontWeight: 600, 
+            fontSize: '0.6rem',
+            color: workoutProgress >= 100 ? 'success.main' : workoutProgress >= 75 ? 'text.primary' : 'warning.main',
+          }}>
+            {Math.min(workoutProgress, 100)}%
+          </Typography>
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+          {summary.workouts} <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>/ {workoutGoal} sessions</Typography>
+        </Typography>
+        <Box sx={{ 
+          height: 4, 
+          bgcolor: 'divider', 
+          borderRadius: 2, 
+          mt: 0.5,
+          overflow: 'hidden',
+        }}>
+          <Box sx={{ 
+            height: '100%', 
+            width: `${Math.min(workoutProgress, 100)}%`,
+            bgcolor: workoutProgress >= 100 ? 'success.main' : 'text.primary',
+            borderRadius: 2,
+            transition: 'width 0.3s ease',
+          }} />
+        </Box>
+      </Box>
+
+      {/* Volume stat */}
+      <Box sx={{ 
+        p: 1.5, 
+        bgcolor: 'action.hover', 
+        borderRadius: 2,
+        border: 1,
+        borderColor: 'divider',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
+          TOTAL VOLUME
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {volumeFormatted} kg
+        </Typography>
       </Box>
     </MuiCard>
   );
@@ -307,12 +302,6 @@ function InsightsContent() {
 
             {/* ML Tips at the bottom */}
             <motion.div variants={staggerItem}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Brain size={14} />
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                  ML INSIGHTS
-                </Typography>
-              </Box>
               <MLCoachInsights />
             </motion.div>
           </Box>
