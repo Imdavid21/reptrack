@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
+import { QuickActionsBar } from '@/components/dashboard/QuickActionsBar';
 import { TodayStats } from '@/components/dashboard/TodayStats';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
@@ -33,7 +34,12 @@ export default function Dashboard() {
               <ProgressHeader />
             </motion.div>
 
-            {/* Today's Stats - Interactive Quick Actions */}
+            {/* Quick Actions Bar */}
+            <motion.div variants={staggerItem}>
+              <QuickActionsBar />
+            </motion.div>
+
+            {/* Today's Stats (horizontal scroll) */}
             <motion.div variants={staggerItem}>
               <TodayStats />
             </motion.div>
