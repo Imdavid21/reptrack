@@ -25,7 +25,7 @@ export function EfficiencyChart() {
   const chartData = data?.history.map(h => ({
     date: format(parseISO(h.date), 'MMM d'),
     efficiency: h.efficiency,
-    volume: Math.round(h.volume / 1000), // in thousands
+    volume: Math.round(h.volume / 1000), // in thousands (k kg)
     duration: h.duration,
   })) || [];
 
@@ -33,8 +33,13 @@ export function EfficiencyChart() {
     ? Math.round(data.history.reduce((s, h) => s + h.efficiency, 0) / data.history.length)
     : 0;
 
+  const avgDuration = data?.history.length
+    ? Math.round(data.history.reduce((s, h) => s + h.duration, 0) / data.history.length)
+    : 0;
+
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
+    const dataPoint = chartData.find(d => d.date === label);
     return (
       <Box sx={{ 
         bgcolor: 'background.paper', 
@@ -45,11 +50,15 @@ export function EfficiencyChart() {
         p: 1.5,
       }}>
         <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
-        {payload.map((p: any, i: number) => (
-          <Typography key={i} variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            {p.name}: <strong style={{ color: theme.palette.text.primary }}>{p.value}{p.unit || ''}</strong>
-          </Typography>
-        ))}
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          Volume: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.volume}k kg</strong>
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          Duration: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.duration} min</strong>
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          Efficiency: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.efficiency} kg/min</strong>
+        </Typography>
       </Box>
     );
   };
@@ -137,7 +146,7 @@ export function EfficiencyChart() {
         }}>
           <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-            {data?.today.avgDuration || '—'}m
+            {avgDuration || '—'}m
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             AVG DURATION
