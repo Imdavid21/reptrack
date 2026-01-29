@@ -262,7 +262,7 @@ export function CalorieTrackerCompact() {
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-                className="btn-brutalist flex flex-col items-center justify-center gap-1 py-3"
+                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
               >
                 <Camera className="h-4 w-4" />
                 <span className="text-[10px]">CAMERA</span>
@@ -284,9 +284,10 @@ export function CalorieTrackerCompact() {
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); handleManualClick(); }}
-              className="w-full border border-dashed border-border p-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
+              className="btn-brutalist w-full flex items-center justify-center gap-2 py-3"
             >
-              Manual entry (food + calories)
+              <Plus className="h-4 w-4" />
+              MANUAL ENTRY
             </button>
           </div>
 
