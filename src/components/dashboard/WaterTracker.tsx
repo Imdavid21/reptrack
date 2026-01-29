@@ -63,7 +63,7 @@ export function WaterTracker() {
   };
 
   return (
-    <div className="card-brutalist h-full flex flex-col">
+    <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
         <h3 className="section-header mb-0">TODAY'S WATER</h3>
         <Droplets className="h-4 w-4 text-muted-foreground" />

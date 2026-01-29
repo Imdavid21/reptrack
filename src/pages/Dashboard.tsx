@@ -42,9 +42,19 @@ export default function Dashboard() {
 
             {/* Core Trackers */}
             <motion.div variants={staggerItem}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                <WaterTracker />
-                <CalorieTrackerCompact />
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+                gap: 2,
+                alignItems: 'stretch',
+                '& > *': { minHeight: 0 }
+              }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <WaterTracker />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <CalorieTrackerCompact />
+                </Box>
               </Box>
             </motion.div>
 

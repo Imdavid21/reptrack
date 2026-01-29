@@ -196,8 +196,8 @@ export function CalorieTrackerCompact() {
 
   return (
     <>
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full">
-        <div className="card-brutalist h-full flex flex-col">
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
+        <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
           {/* Compact Header - Always Visible */}
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between">
