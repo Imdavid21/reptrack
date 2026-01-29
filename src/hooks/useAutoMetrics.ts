@@ -74,8 +74,8 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
         .lte('date', endDate)
         .order('date', { ascending: true });
 
-      // Calculate metrics per workout
-      const workoutMetrics = new Map<string, { volume: number; duration: number; date: string }>();
+      // Calculate metrics per workout, then aggregate by date
+      const workoutMetricsById = new Map<string, { volume: number; duration: number; date: string }>();
 
       workouts?.forEach(w => {
         let volume = 0;
@@ -96,7 +96,19 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
         // Default to 45 min if no duration data
         if (duration <= 0) duration = 45;
 
-        workoutMetrics.set(w.id, { volume, duration, date: w.date });
+        workoutMetricsById.set(w.id, { volume, duration, date: w.date });
+      });
+
+      // Aggregate by date (sum volume and duration for same-day workouts)
+      const workoutMetrics = new Map<string, { volume: number; duration: number; date: string }>();
+      workoutMetricsById.forEach((metrics) => {
+        const existing = workoutMetrics.get(metrics.date);
+        if (existing) {
+          existing.volume += metrics.volume;
+          existing.duration += metrics.duration;
+        } else {
+          workoutMetrics.set(metrics.date, { ...metrics });
+        }
       });
 
       // Calculate max volume for normalization (personal baseline)
