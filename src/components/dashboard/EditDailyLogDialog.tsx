@@ -11,7 +11,7 @@ import {
   Typography,
   IconButton,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Calendar, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Trophy, Moon, Zap, Scale } from 'lucide-react';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
@@ -33,6 +33,10 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
 
   const [pullups, setPullups] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
+  const [sleepHours, setSleepHours] = useState<string>('');
+  const [sleepMinutes, setSleepMinutes] = useState<string>('');
+  const [energyLevel, setEnergyLevel] = useState<string>('');
+  const [bodyweight, setBodyweight] = useState<string>('');
 
   // Load existing data when date changes
   useEffect(() => {
@@ -41,10 +45,33 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
       if (dayData) {
         setPullups(dayData.pullups || 0);
         setNotes(dayData.notes || '');
+        
+        // Sleep - convert decimal to hours/minutes
+        if (dayData.sleep_hours !== null && dayData.sleep_hours > 0) {
+          const hours = Math.floor(dayData.sleep_hours);
+          const minutes = Math.round((dayData.sleep_hours - hours) * 60);
+          setSleepHours(String(hours));
+          setSleepMinutes(String(minutes));
+        } else {
+          setSleepHours('');
+          setSleepMinutes('');
+        }
+        
+        // Energy
+        setEnergyLevel(dayData.energy_level !== null ? String(dayData.energy_level) : '');
+        
+        // Bodyweight
+        setBodyweight(dayData.bodyweight !== null && dayData.bodyweight > 0 
+          ? String(dayData.bodyweight) 
+          : '');
       } else {
         // Reset to defaults if no data for this date
         setPullups(0);
         setNotes('');
+        setSleepHours('');
+        setSleepMinutes('');
+        setEnergyLevel('');
+        setBodyweight('');
       }
     }
   }, [data, dateStr]);
@@ -74,10 +101,21 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
 
   const handleSave = async () => {
     try {
+      // Calculate sleep in decimal hours
+      let sleepDecimal: number | undefined = undefined;
+      if (sleepHours || sleepMinutes) {
+        const hours = parseInt(sleepHours) || 0;
+        const minutes = parseInt(sleepMinutes) || 0;
+        sleepDecimal = hours + (minutes / 60);
+      }
+
       await upsertMetrics({
         date: dateStr,
         pullups,
         notes: notes || undefined,
+        sleep_hours: sleepDecimal,
+        energy_level: energyLevel ? parseInt(energyLevel) : undefined,
+        bodyweight: bodyweight ? parseFloat(bodyweight) : undefined,
       });
       haptic('medium');
       toast.success(`Saved log for ${format(selectedDate, 'MMM d')}`);
@@ -133,6 +171,71 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
           </IconButton>
         </Box>
 
+        {/* Sleep - Hours & Minutes */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Moon size={16} />
+            <Typography variant="body2" fontWeight={600}>Sleep</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              type="number"
+              value={sleepHours}
+              onChange={(e) => setSleepHours(e.target.value)}
+              placeholder="0"
+              size="small"
+              label="Hours"
+              inputProps={{ min: 0, max: 23 }}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              type="number"
+              value={sleepMinutes}
+              onChange={(e) => setSleepMinutes(e.target.value)}
+              placeholder="0"
+              size="small"
+              label="Minutes"
+              inputProps={{ min: 0, max: 59 }}
+              sx={{ flex: 1 }}
+            />
+          </Box>
+        </Box>
+
+        {/* Energy Level */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Zap size={16} />
+            <Typography variant="body2" fontWeight={600}>Energy Level</Typography>
+          </Box>
+          <TextField
+            type="number"
+            value={energyLevel}
+            onChange={(e) => setEnergyLevel(e.target.value)}
+            placeholder="1-10"
+            size="small"
+            fullWidth
+            inputProps={{ min: 1, max: 10 }}
+            helperText="Rate 1 (exhausted) to 10 (energized)"
+          />
+        </Box>
+
+        {/* Bodyweight */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Scale size={16} />
+            <Typography variant="body2" fontWeight={600}>Bodyweight (kg)</Typography>
+          </Box>
+          <TextField
+            type="number"
+            value={bodyweight}
+            onChange={(e) => setBodyweight(e.target.value)}
+            placeholder="70.0"
+            size="small"
+            fullWidth
+            inputProps={{ min: 0, step: 0.1 }}
+          />
+        </Box>
+
         {/* Pull-ups */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
@@ -155,7 +258,7 @@ export function EditDailyLogDialog({ open, onClose, initialDate }: EditDailyLogD
           <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>Notes</Typography>
           <TextField
             multiline
-            rows={3}
+            rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any notes for this day..."

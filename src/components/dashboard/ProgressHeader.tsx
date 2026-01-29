@@ -13,7 +13,8 @@ export function ProgressHeader() {
   const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [showSleepDialog, setShowSleepDialog] = useState(false);
   const [weight, setWeight] = useState<string>('');
-  const [sleepHours, setSleepHours] = useState<string>('');
+  const [sleepHours, setSleepHours] = useState<string>('7');
+  const [sleepMinutes, setSleepMinutes] = useState<string>('0');
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   // Get last 30 days of metrics to find last logged weight and sleep
@@ -59,8 +60,11 @@ export function ProgressHeader() {
   // Pre-fill sleep with today's value or default
   useEffect(() => {
     if (showSleepDialog) {
-      const prefill = todaySleep ?? '';
-      setSleepHours(prefill ? String(prefill) : '7');
+      const prefill = todaySleep ?? 7;
+      const hours = Math.floor(prefill);
+      const minutes = Math.round((prefill - hours) * 60);
+      setSleepHours(String(hours));
+      setSleepMinutes(String(minutes));
     }
   }, [showSleepDialog, todaySleep]);
 
@@ -84,18 +88,22 @@ export function ProgressHeader() {
   };
 
   const handleSaveSleep = async () => {
-    const numSleep = parseFloat(sleepHours);
-    if (isNaN(numSleep) || numSleep < 0 || numSleep > 24) {
-      toast.error('Enter valid sleep hours (0-24)');
+    const hours = parseInt(sleepHours) || 0;
+    const minutes = parseInt(sleepMinutes) || 0;
+    const totalHours = hours + (minutes / 60);
+    
+    if (totalHours < 0 || totalHours > 24) {
+      toast.error('Enter valid sleep time (0-24h)');
       return;
     }
     
     try {
       await upsertMetrics({
         date: todayStr,
-        sleep_hours: numSleep,
+        sleep_hours: Math.round(totalHours * 100) / 100, // Round to 2 decimals
       });
-      toast.success(`${numSleep}h sleep logged`);
+      const displayTime = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+      toast.success(`${displayTime} sleep logged`);
       setShowSleepDialog(false);
     } catch (error) {
       toast.error('Failed to log sleep');
@@ -107,10 +115,18 @@ export function ProgressHeader() {
     setWeight((current + delta).toFixed(1));
   };
 
-  const adjustSleep = (delta: number) => {
-    const current = parseFloat(sleepHours) || 7;
-    const newVal = Math.max(0, Math.min(24, current + delta));
-    setSleepHours(newVal.toFixed(1));
+  const adjustSleepHours = (delta: number) => {
+    const current = parseInt(sleepHours) || 0;
+    const newVal = Math.max(0, Math.min(23, current + delta));
+    setSleepHours(String(newVal));
+  };
+
+  const adjustSleepMinutes = (delta: number) => {
+    const current = parseInt(sleepMinutes) || 0;
+    let newVal = current + delta;
+    if (newVal < 0) newVal = 45;
+    if (newVal >= 60) newVal = 0;
+    setSleepMinutes(String(newVal));
   };
 
   return (
@@ -194,45 +210,73 @@ export function ProgressHeader() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Sleep input with +/- buttons */}
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => adjustSleep(-0.5)}
-                className="p-3 border border-border hover:bg-muted transition-colors"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              
-              <div className="flex-1 text-center">
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={sleepHours}
-                  onChange={(e) => setSleepHours(e.target.value)}
-                  placeholder="7"
-                  className="text-center text-2xl font-bold h-14 input-terminal"
-                />
-                <span className="text-xs text-muted-foreground">hours</span>
+            {/* Hours and Minutes side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Hours */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground block text-center">HOURS</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => adjustSleepHours(-1)}
+                    className="p-2 border border-border hover:bg-muted transition-colors"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={sleepHours}
+                    onChange={(e) => setSleepHours(e.target.value)}
+                    className="text-center text-xl font-bold h-12 input-terminal"
+                  />
+                  <button
+                    onClick={() => adjustSleepHours(1)}
+                    className="p-2 border border-border hover:bg-muted transition-colors"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
               
-              <button
-                onClick={() => adjustSleep(0.5)}
-                className="p-3 border border-border hover:bg-muted transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+              {/* Minutes */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground block text-center">MINUTES</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => adjustSleepMinutes(-15)}
+                    className="p-2 border border-border hover:bg-muted transition-colors"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={sleepMinutes}
+                    onChange={(e) => setSleepMinutes(e.target.value)}
+                    className="text-center text-xl font-bold h-12 input-terminal"
+                  />
+                  <button
+                    onClick={() => adjustSleepMinutes(15)}
+                    className="p-2 border border-border hover:bg-muted transition-colors"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Today hint */}
             {todaySleep && (
               <p className="text-xs text-muted-foreground text-center">
-                Today: {todaySleep}h (updating)
+                Today: {Math.floor(todaySleep)}h {Math.round((todaySleep % 1) * 60)}m (updating)
               </p>
             )}
 
             <button
               onClick={handleSaveSleep}
-              disabled={isUpserting || !sleepHours}
+              disabled={isUpserting}
               className="btn-brutalist w-full flex items-center justify-center gap-2"
             >
               {isUpserting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
