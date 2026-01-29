@@ -139,8 +139,9 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailyMetrics'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['dailyMetrics'] });
+      await queryClient.refetchQueries({ queryKey: ['dailyMetrics'] });
     },
   });
 
