@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { WorkoutExercise, Habits, PostCheckin } from './useWorkouts';
+import { WorkoutExercise, Habits } from './useWorkouts';
 import { useAuth } from './useAuth';
 
 export interface DraftWorkout {
@@ -11,9 +11,8 @@ export interface DraftWorkout {
   habits: Habits;
   currentExerciseIndex: number;
   currentSetIndex: number;
-  step: 'select-day' | 'exercises' | 'post-checkin' | 'habits';
+  step: 'select-day' | 'exercises';
   lastSavedAt: string;
-  postCheckin?: PostCheckin;
   workoutStartTime?: string;
 }
 
