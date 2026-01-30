@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Button, IconButton, LinearProgress, Chip } from '@mui/material';
+import { Box, Typography, Button, IconButton, LinearProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
+import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
-import { HabitsForm } from '@/components/workout/HabitsForm';
-import { PostWorkoutSimple, PostWorkoutData } from '@/components/workout/PostWorkoutSimple';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
@@ -18,7 +16,7 @@ import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
 
-type Step = 'select-day' | 'exercises' | 'post-checkin' | 'habits';
+type Step = 'select-day' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
 
 const defaultHabits: Habits = {
@@ -28,12 +26,6 @@ const defaultHabits: Habits = {
   energy_level: 5,
   bodyweight: undefined,
   notes: '',
-};
-
-const defaultPostCheckin: PostWorkoutData = {
-  difficulty: 5,
-  satisfaction: 7,
-  durationMinutes: undefined,
 };
 
 function parseTargetReps(targetReps: string): { sets: number; reps: string } {
@@ -51,7 +43,7 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
-const STEPS: Step[] = ['select-day', 'exercises', 'post-checkin', 'habits'];
+const STEPS: Step[] = ['select-day', 'exercises'];
 
 export default function LogWorkout() {
   const navigate = useNavigate();
@@ -65,8 +57,7 @@ export default function LogWorkout() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [habits, setHabits] = useState<Habits>(defaultHabits);
-  const [postCheckin, setPostCheckin] = useState<PostWorkoutData>(defaultPostCheckin);
+  const [habits] = useState<Habits>(defaultHabits);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
@@ -80,16 +71,10 @@ export default function LogWorkout() {
       setSelectedDate(new Date(draft.date));
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
-      setHabits(draft.habits);
-      let validStep: Step = 'exercises';
-      if (draft.step === 'select-day') validStep = 'select-day';
-      else if (draft.step === 'exercises') validStep = 'exercises';
-      else if (draft.step === 'post-checkin') validStep = 'post-checkin';
-      else if (draft.step === 'habits') validStep = 'habits';
+      const validStep: Step = draft.step === 'select-day' ? 'select-day' : 'exercises';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
-      if (draft.postCheckin) setPostCheckin(draft.postCheckin);
       if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
       setDraftRestored(true);
       toast.info('Restored your previous session');
@@ -110,12 +95,11 @@ export default function LogWorkout() {
         currentExerciseIndex,
         currentSetIndex,
         step,
-        postCheckin,
         workoutStartTime: workoutStartTime?.toISOString(),
       });
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, postCheckin, workoutStartTime, saveDraft]);
+  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft]);
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -149,14 +133,29 @@ export default function LogWorkout() {
     setStep('exercises');
   };
 
-  const handleQuickLog = () => {
+  const handleQuickLog = async () => {
     if (!selectedDay) {
       toast.error('Please select a workout day first');
       return;
     }
-    setExercises([]);
-    setWorkoutStartTime(new Date());
-    setStep('post-checkin');
+    // Quick log - just save an empty workout
+    try {
+      await createWorkout({
+        day: selectedDay,
+        day_name: defaultRoutine.days[selectedDay].name,
+        week_number: weekNumber,
+        date: selectedDate,
+        exercises: [],
+        habits,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      });
+      clearDraft();
+      toast.success('Workout logged! 💪');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to save workout');
+    }
   };
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
@@ -194,7 +193,7 @@ export default function LogWorkout() {
     }
   };
 
-  const handleExercisesDone = () => {
+  const handleExercisesDone = async () => {
     const completedCount = exercises.reduce(
       (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
       0
@@ -203,16 +202,35 @@ export default function LogWorkout() {
       toast.error('Complete at least one set');
       return;
     }
-    if (workoutStartTime && !postCheckin.durationMinutes) {
-      const durationMs = Date.now() - workoutStartTime.getTime();
-      const durationMins = Math.round(durationMs / 60000);
-      setPostCheckin(prev => ({ ...prev, durationMinutes: durationMins }));
+    
+    // Calculate duration
+    const durationMinutes = workoutStartTime 
+      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
+      : undefined;
+    
+    // Finish workout immediately
+    try {
+      await createWorkout({
+        day: selectedDay,
+        day_name: defaultRoutine.days[selectedDay].name,
+        week_number: weekNumber,
+        date: selectedDate,
+        exercises,
+        habits,
+        postCheckin: {
+          difficulty: 5,
+          satisfaction: 7,
+          durationMinutes,
+        },
+        startedAt: workoutStartTime || undefined,
+        completedAt: new Date(),
+      });
+      clearDraft();
+      toast.success('Workout logged! 💪');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to save workout');
     }
-    setStep('post-checkin');
-  };
-
-  const handlePostCheckinDone = () => {
-    setStep('habits');
   };
 
   const handleSubmit = async () => {
@@ -230,10 +248,9 @@ export default function LogWorkout() {
         day_name: defaultRoutine.days[selectedDay].name,
         week_number: weekNumber,
         date: selectedDate,
-        exercises,
+        exercises: [],
         habits,
-        postCheckin,
-        startedAt: workoutStartTime || undefined,
+        startedAt: new Date(),
         completedAt: new Date(),
       });
       clearDraft();
@@ -418,44 +435,6 @@ export default function LogWorkout() {
             </>
           )}
 
-          {step === 'post-checkin' && (
-            <>
-              <PostWorkoutSimple 
-                data={postCheckin} 
-                onChange={setPostCheckin}
-                autoCalculatedDuration={
-                  workoutStartTime 
-                    ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
-                    : undefined
-                }
-              />
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handlePostCheckinDone}
-                sx={{ py: 1.5, borderRadius: 3 }}
-              >
-                Continue to Habits
-              </Button>
-            </>
-          )}
-
-          {step === 'habits' && (
-            <>
-              <HabitsForm habits={habits} onChange={setHabits} />
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                onClick={handleSubmit}
-                disabled={isCreating}
-                sx={{ py: 1.5, borderRadius: 3 }}
-              >
-                {isCreating ? 'Saving...' : 'Complete Workout'}
-              </Button>
-            </>
-          )}
         </Box>
       </AnimatedPage>
     </MainLayout>
