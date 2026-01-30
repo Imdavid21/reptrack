@@ -1,13 +1,10 @@
 import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Clock, ThumbsUp, MessageSquare } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 export interface PostWorkoutData {
   difficulty: number;
   satisfaction: number;
   durationMinutes?: number;
-  notes?: string;
 }
 
 interface PostWorkoutSimpleProps {
@@ -95,19 +92,6 @@ export function PostWorkoutSimple({ data, onChange, autoCalculatedDuration }: Po
         </div>
       </div>
 
-      {/* Optional Notes */}
-      <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground flex items-center gap-2">
-          <MessageSquare className="h-3 w-3" />
-          QUICK NOTES (OPTIONAL)
-        </Label>
-        <Textarea
-          placeholder="PRs hit, form improvements, things to remember..."
-          value={data.notes || ''}
-          onChange={(e) => handleChange('notes', e.target.value)}
-          className="input-terminal min-h-[80px] resize-none"
-        />
-      </div>
     </div>
   );
 }
