@@ -240,6 +240,23 @@ export function CalorieTrackerCompact() {
 
   return (
     <>
+      {/* File inputs - MUST be outside Dialog so they're always rendered */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
         <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
           {/* Header - Matches WaterTracker */}
@@ -356,23 +373,6 @@ export function CalorieTrackerCompact() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* File inputs - always rendered but hidden */}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
             {/* Image Mode: Show preview and analysis */}
             {imageMode && !analysis && !manualMode && (
               <>
@@ -408,7 +408,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => { setTextMode(false); setTextInput(''); }}
+                    onClick={() => { setTextMode(false); setTextInput(''); setIsDialogOpen(false); }}
                     className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
