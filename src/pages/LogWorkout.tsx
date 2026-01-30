@@ -34,7 +34,6 @@ const defaultPostCheckin: PostWorkoutData = {
   difficulty: 5,
   satisfaction: 7,
   durationMinutes: undefined,
-  notes: undefined,
 };
 
 function parseTargetReps(targetReps: string): { sets: number; reps: string } {
