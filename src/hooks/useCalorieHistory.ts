@@ -26,7 +26,7 @@ export function useCalorieHistory(days: number = 7) {
   const weightKg = preferences?.weight_goal || 70;
 
   return useQuery({
-    queryKey: ['calorie-history', user?.id, days],
+    queryKey: ['calorie-history', user?.id, days, weightKg],
     queryFn: async (): Promise<CalorieDataPoint[]> => {
       if (!user) return [];
 
@@ -53,6 +53,7 @@ export function useCalorieHistory(days: number = 7) {
           .from('workouts')
           .select(`
             date,
+            day_name,
             completed_at,
             workout_duration_minutes,
             exercise_sets (
@@ -77,7 +78,7 @@ export function useCalorieHistory(days: number = 7) {
         burnsByDate[burn.date] = (burnsByDate[burn.date] || 0) + (burn.calories || 0);
       });
 
-      // Calculate workout calories where no manual burn entry exists
+      // Calculate workout calories from workout data
       (workoutsRes.data || []).forEach((workout: any) => {
         const date = workout.date;
         
@@ -85,9 +86,8 @@ export function useCalorieHistory(days: number = 7) {
         if (burnsByDate[date]) return;
 
         const sets = workout.exercise_sets || [];
-        if (sets.length === 0) return;
-
-        // Calculate duration
+        
+        // Calculate duration - prioritize stored duration, then calculate from sets
         let durationMinutes = workout.workout_duration_minutes;
         
         if (!durationMinutes && sets.length > 0) {
@@ -103,15 +103,26 @@ export function useCalorieHistory(days: number = 7) {
           durationMinutes = Math.max(differenceInMinutes(endTime, firstSetTime), 0);
         }
 
-        if (durationMinutes > 0) {
-          // Get primary category
-          const categoryCounts: Record<string, number> = {};
-          sets.forEach((set: any) => {
-            const cat = set.exercise_category.toLowerCase();
-            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-          });
-          const primaryCategory = Object.entries(categoryCounts)
-            .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
+        // If we have duration, calculate calories
+        if (durationMinutes && durationMinutes > 0) {
+          // Get primary category from sets, or infer from day_name
+          let primaryCategory = 'strength';
+          
+          if (sets.length > 0) {
+            const categoryCounts: Record<string, number> = {};
+            sets.forEach((set: any) => {
+              const cat = set.exercise_category.toLowerCase();
+              categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+            });
+            primaryCategory = Object.entries(categoryCounts)
+              .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
+          } else if (workout.day_name) {
+            // Infer category from day name (e.g., "Push Day" -> "push")
+            const dayNameLower = workout.day_name.toLowerCase();
+            if (dayNameLower.includes('push')) primaryCategory = 'push';
+            else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
+            else if (dayNameLower.includes('leg')) primaryCategory = 'legs';
+          }
           
           const met = MET_VALUES[primaryCategory] || 5.0;
           const calories = Math.round(met * weightKg * (durationMinutes / 60));
