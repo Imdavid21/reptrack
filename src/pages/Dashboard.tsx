@@ -6,6 +6,8 @@ import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
+import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
+import { CalorieChart } from '@/components/health/CalorieChart';
 import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 
 export default function Dashboard() {
@@ -40,6 +42,16 @@ export default function Dashboard() {
                   <CalorieTrackerCompact />
                 </Box>
               </Box>
+            </motion.div>
+
+            {/* Energy Balance */}
+            <motion.div variants={staggerItem}>
+              <EnergyBalanceCard />
+            </motion.div>
+
+            {/* Calorie Trends Chart */}
+            <motion.div variants={staggerItem}>
+              <CalorieChart />
             </motion.div>
 
             {/* Personal Records */}
