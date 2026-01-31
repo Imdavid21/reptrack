@@ -22,6 +22,7 @@ import { BodyweightChart } from '@/components/analytics/BodyweightChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { EnergyBalanceCard } from '@/components/health/EnergyBalanceCard';
+import { CalorieChart } from '@/components/health/CalorieChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -406,6 +407,11 @@ function InsightsContent() {
             {/* Energy (Calories In vs Out) */}
             <motion.div variants={staggerItem}>
               <EnergyBalanceCard />
+            </motion.div>
+
+            {/* Calorie Trends Chart */}
+            <motion.div variants={staggerItem}>
+              <CalorieChart />
             </motion.div>
 
             {/* Bodyweight Chart */}
