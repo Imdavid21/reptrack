@@ -18,14 +18,13 @@ import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { StrengthOverviewChart } from '@/components/analytics/StrengthOverviewChart';
 import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
-import { BodyweightChart } from '@/components/analytics/BodyweightChart';
+import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { CalorieChart } from '@/components/health/CalorieChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { SleepChart } from '@/components/analytics/SleepChart';
 import { toast } from '@/lib/toast';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -408,14 +407,9 @@ function InsightsContent() {
               <CalorieChart />
             </motion.div>
 
-            {/* Bodyweight Chart */}
+            {/* Daily Vitals (Weight + Sleep merged) */}
             <motion.div variants={staggerItem}>
-              <BodyweightChart />
-            </motion.div>
-
-            {/* Sleep Chart (no energy) */}
-            <motion.div variants={staggerItem}>
-              <SleepChart />
+              <DailyVitalsChart />
             </motion.div>
 
             {/* Hydration Chart */}
