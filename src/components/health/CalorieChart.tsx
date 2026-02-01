@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, Flame } from 'lucide-react';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
@@ -18,14 +18,17 @@ export function CalorieChart() {
   const netBalance = totalIntake - totalBurned;
   const isDeficit = netBalance < 0;
 
-  // Format data for chart
+  // Format data for diverging bar chart
+  // Intake is positive (up), Burned is negative (down)
   const chartData = calorieData.map(d => ({
     ...d,
     displayDate: format(parseISO(d.date), 'MMM d'),
     shortDate: format(parseISO(d.date), 'd'),
+    intakeValue: d.intake,
+    burnedValue: -d.burned, // Negative to go below baseline
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     
     const data = payload[0]?.payload;
@@ -69,6 +72,12 @@ export function CalorieChart() {
       </div>
     );
   }
+
+  // Calculate Y-axis domain to be symmetric around 0
+  const maxIntake = Math.max(...calorieData.map(d => d.intake), 0);
+  const maxBurned = Math.max(...calorieData.map(d => d.burned), 0);
+  const maxValue = Math.max(maxIntake, maxBurned, 500);
+  const yDomain = [-maxValue * 1.1, maxValue * 1.1];
 
   return (
     <motion.div
@@ -117,20 +126,14 @@ export function CalorieChart() {
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Diverging Bar Chart */}
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="intakeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--insight-coral))" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(var(--insight-coral))" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="burnedGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--insight-mint))" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(var(--insight-mint))" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+          <BarChart 
+            data={chartData} 
+            margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+            stackOffset="sign"
+          >
             <XAxis 
               dataKey="shortDate" 
               axisLine={false}
@@ -139,44 +142,60 @@ export function CalorieChart() {
               interval="preserveStartEnd"
             />
             <YAxis 
+              domain={yDomain}
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v}
+              tickFormatter={(v) => {
+                const abs = Math.abs(v);
+                return abs >= 1000 ? `${(abs/1000).toFixed(1)}k` : abs.toString();
+              }}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-            <Area
-              type="monotone"
-              dataKey="intake"
-              stroke="hsl(var(--insight-coral))"
-              strokeWidth={2}
-              fill="url(#intakeGradient)"
-              dot={false}
-              activeDot={{ r: 4, fill: 'hsl(var(--insight-coral))' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="burned"
-              stroke="hsl(var(--insight-mint))"
-              strokeWidth={2}
-              fill="url(#burnedGradient)"
-              dot={false}
-              activeDot={{ r: 4, fill: 'hsl(var(--insight-mint))' }}
-            />
-          </AreaChart>
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
+            
+            {/* Intake bars (positive, going up) */}
+            <Bar 
+              dataKey="intakeValue" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={24}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`intake-${index}`} 
+                  fill="hsl(var(--insight-coral))"
+                  fillOpacity={0.85}
+                />
+              ))}
+            </Bar>
+            
+            {/* Burned bars (negative, going down) */}
+            <Bar 
+              dataKey="burnedValue" 
+              radius={[0, 0, 4, 4]}
+              maxBarSize={24}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`burned-${index}`} 
+                  fill="hsl(var(--insight-mint))"
+                  fillOpacity={0.85}
+                />
+              ))}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Legend */}
       <div className="flex justify-center gap-6 mt-3">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-insight-coral" />
-          <span className="text-xs text-muted-foreground">Intake</span>
+          <div className="w-3 h-3 rounded-sm bg-insight-coral" />
+          <span className="text-xs text-muted-foreground">Intake ↑</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-insight-mint" />
-          <span className="text-xs text-muted-foreground">Burned</span>
+          <div className="w-3 h-3 rounded-sm bg-insight-mint" />
+          <span className="text-xs text-muted-foreground">Burned ↓</span>
         </div>
       </div>
     </motion.div>
