@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
-import { format, subDays, eachDayOfInterval, parseISO, differenceInMinutes } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, differenceInMinutes } from 'date-fns';
+import { DateRange } from '@/contexts/DateRangeContext';
 
 interface CalorieDataPoint {
   date: string;
@@ -20,20 +21,18 @@ const MET_VALUES: Record<string, number> = {
   'strength': 5.0,
 };
 
-export function useCalorieHistory(days: number = 7) {
+export function useCalorieHistory(dateRange: DateRange) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
   const weightKg = preferences?.weight_goal || 70;
 
+  const startDateStr = format(dateRange.from, 'yyyy-MM-dd');
+  const endDateStr = format(dateRange.to, 'yyyy-MM-dd');
+
   return useQuery({
-    queryKey: ['calorie-history', user?.id, days, weightKg],
+    queryKey: ['calorie-history', user?.id, startDateStr, endDateStr, weightKg],
     queryFn: async (): Promise<CalorieDataPoint[]> => {
       if (!user) return [];
-
-      const endDate = new Date();
-      const startDate = subDays(endDate, days - 1);
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd');
 
       // Fetch meals (intake) and calorie burns in parallel
       const [mealsRes, burnsRes, workoutsRes] = await Promise.all([
@@ -131,7 +130,7 @@ export function useCalorieHistory(days: number = 7) {
       });
 
       // Generate array for all days in range
-      const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+      const allDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
       
       return allDays.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd');

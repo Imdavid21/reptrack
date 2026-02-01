@@ -1,20 +1,14 @@
-import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, Flame } from 'lucide-react';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { cn } from '@/lib/utils';
 
-const TIMEFRAMES = [
-  { label: '7D', days: 7 },
-  { label: '14D', days: 14 },
-  { label: '30D', days: 30 },
-];
-
 export function CalorieChart() {
-  const [selectedDays, setSelectedDays] = useState(7);
-  const { data: calorieData = [], isLoading } = useCalorieHistory(selectedDays);
+  const { dateRange } = useDateRange();
+  const { data: calorieData = [], isLoading } = useCalorieHistory(dateRange);
 
   // Calculate stats
   const totalIntake = calorieData.reduce((sum, d) => sum + d.intake, 0);
@@ -83,31 +77,11 @@ export function CalorieChart() {
       className="bg-card rounded-2xl shadow-sm border border-border/50 p-5"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-insight-coral/15">
-            <Flame className="h-4 w-4 text-insight-coral" />
-          </div>
-          <h3 className="text-sm font-semibold">Calorie Trends</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-xl bg-insight-coral/15">
+          <Flame className="h-4 w-4 text-insight-coral" />
         </div>
-
-        {/* Timeframe selector */}
-        <div className="flex gap-1 bg-muted/30 rounded-lg p-1">
-          {TIMEFRAMES.map(tf => (
-            <button
-              key={tf.days}
-              onClick={() => setSelectedDays(tf.days)}
-              className={cn(
-                "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
-                selectedDays === tf.days
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {tf.label}
-            </button>
-          ))}
-        </div>
+        <h3 className="text-sm font-semibold">Calorie Trends</h3>
       </div>
 
       {/* Stats summary */}
