@@ -28,10 +28,13 @@ export function ProgressHeader() {
   const progressPercent = Math.min((totalSessions / targetSessions) * 100, 100);
   const currentWeek = Math.ceil(totalSessions / 6) || 1;
   
-  // Count sessions this calendar week (Mon-Sun)
+  // Count days with logged metrics this calendar week (Mon-Sun)
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
-  const sessionsThisWeek = workouts.filter(w => w.date >= weekStartStr).length;
+  const daysLoggedThisWeek = metricsData?.dataPoints.filter(d => 
+    d.date >= weekStartStr && 
+    (d.bodyweight !== null || d.sleep_hours !== null)
+  ).length ?? 0;
 
   // Get last logged weight (most recent non-null bodyweight)
   const lastLoggedWeight = metricsData?.dataPoints
@@ -155,8 +158,8 @@ export function ProgressHeader() {
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
               <Calendar className="h-3 w-3" />
             </div>
-            <div className="text-xl font-bold tabular-nums">{sessionsThisWeek}/6</div>
-            <div className="text-[10px] text-muted-foreground uppercase">THIS WEEK</div>
+            <div className="text-xl font-bold tabular-nums">{daysLoggedThisWeek}/7</div>
+            <div className="text-[10px] text-muted-foreground uppercase">DAYS LOGGED</div>
           </div>
           
           {/* Sleep Stat - Tappable */}
