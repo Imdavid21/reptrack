@@ -319,8 +319,8 @@ export function CalorieTrackerCompact() {
           </div>
 
           {/* Expanded Detail View */}
-          <CollapsibleContent className="animate-accordion-down">
-            <div className="mt-4 pt-4 border-t border-border space-y-3">
+          <CollapsibleContent className="animate-accordion-down overflow-hidden">
+            <div className="mt-4 pt-4 border-t border-border space-y-3 overflow-hidden">
               {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
                 const Icon = MEAL_ICONS[type];
                 const mealsOfType = mealsByType[type];
@@ -329,18 +329,18 @@ export function CalorieTrackerCompact() {
                 if (mealsOfType.length === 0) return null;
 
                 return (
-                  <div key={type} className="space-y-1">
+                  <div key={type} className="space-y-1 overflow-hidden">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-3 w-3" />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon className="h-3 w-3 shrink-0" />
                         <span>{MEAL_LABELS[type]}</span>
                       </div>
-                      <span className="tabular-nums">{typeCalories} cal</span>
+                      <span className="tabular-nums shrink-0">{typeCalories} cal</span>
                     </div>
                     {mealsOfType.map((meal) => (
-                      <div key={meal.id} className="flex items-center justify-between text-sm pl-5 group">
-                        <span className="truncate">{meal.food_name || 'Unnamed'}</span>
-                        <div className="flex items-center gap-2">
+                      <div key={meal.id} className="flex items-center justify-between text-sm pl-5 group min-w-0 gap-2">
+                        <span className="truncate min-w-0 flex-1">{meal.food_name || 'Unnamed'}</span>
+                        <div className="flex items-center gap-2 shrink-0">
                           <span className="tabular-nums text-muted-foreground">{meal.calories}</span>
                           <button
                             onClick={() => handleDeleteMeal(meal.id)}
