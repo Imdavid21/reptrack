@@ -250,7 +250,7 @@ export function SetBySetCard({
             <h2 className="text-base font-bold">{exercise.name}</h2>
             {personalRecord && !isNewPR && (
               <span className="text-[10px] text-muted-foreground tabular-nums">
-                PR {personalRecord.maxWeight}{weightLabel}×{personalRecord.reps}
+                PR {personalRecord.maxWeight}{weightLabel}
               </span>
             )}
             {isNewPR && (
