@@ -107,8 +107,10 @@ export default function LogWorkout() {
     setWeekNumber(week);
     const dayData = defaultRoutine.days[day];
     if (dayData) {
+      // Filter out warmup exercises - only include primary and accessory
+      const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
       setExercises(
-        dayData.exercises.map((ex, idx) => {
+        workExercises.map((ex, idx) => {
           const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
           const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
             setNumber: i + 1,
