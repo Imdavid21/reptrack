@@ -88,7 +88,7 @@ export function AuthForm() {
           <p className="text-sm text-muted-foreground mt-2">
             {mode === 'forgot' ? 'RESET YOUR PASSWORD' :
               mode === 'reset' ? 'ENTER NEW PASSWORD' :
-                'YOUR PERSONAL HEALTH DASHBOARD'}
+                'YOUR FITNESS COMPANION'}
           </p>
           {mode === 'signin' && (
             <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">

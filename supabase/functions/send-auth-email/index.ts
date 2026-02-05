@@ -29,10 +29,10 @@ const handler = async (req: Request): Promise<Response> => {
     let html: string;
 
     if (type === "password_reset") {
-      subject = "Reset Your Password - HEALTH OS";
+      subject = "Reset Your Password - Reptrack Fitness";
       html = `
         <div style="font-family: monospace; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 24px;">HEALTH OS</h1>
+          <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 24px;">Reptrack Fitness</h1>
           <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">PASSWORD RESET REQUEST</h2>
           <p style="font-size: 14px; color: #666; margin-bottom: 24px;">
             You requested to reset your password. Click the button below to set a new password:
@@ -47,10 +47,10 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `;
     } else if (type === "email_change") {
-      subject = "Confirm Email Change - HEALTH OS";
+      subject = "Confirm Email Change - Reptrack Fitness";
       html = `
         <div style="font-family: monospace; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 24px;">HEALTH OS</h1>
+          <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 24px;">Reptrack Fitness</h1>
           <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">EMAIL CHANGE CONFIRMATION</h2>
           <p style="font-size: 14px; color: #666; margin-bottom: 24px;">
             You requested to change your email${newEmail ? ` to ${newEmail}` : ''}. Click the button below to confirm:
@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `HEALTH OS <${fromEmail}>`,
+        from: `Reptrack Fitness <${fromEmail}>`,
         to: [email],
         subject,
         html,

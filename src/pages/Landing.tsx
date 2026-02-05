@@ -53,7 +53,7 @@ export default function Landing() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-2xl font-bold tracking-widest animate-pulse">
-          REPTRACK<span className="text-muted-foreground">/</span>FITNESS
+          REPTRACK<span className="text-muted-foreground"> </span>FITNESS
         </div>
       </div>
     );
