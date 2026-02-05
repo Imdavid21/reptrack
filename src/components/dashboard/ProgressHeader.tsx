@@ -33,7 +33,9 @@ export function ProgressHeader() {
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
   const daysLoggedThisWeek = metricsData?.dataPoints.filter(d => 
     d.date >= weekStartStr && 
-    (d.bodyweight !== null || d.sleep_hours !== null)
+    d.date <= todayStr &&
+    ((d.bodyweight !== null && d.bodyweight > 0) || 
+     (d.sleep_hours !== null && d.sleep_hours > 0))
   ).length ?? 0;
 
   // Get last logged weight (most recent non-null bodyweight)
