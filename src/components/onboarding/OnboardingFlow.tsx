@@ -49,7 +49,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     try {
       await completeOnboarding(data);
       haptic('success');
-      toast.success('Welcome to HEALTH/OS');
+      toast.success('Welcome to reptrack.fitness');
       onComplete();
     } catch (error) {
       toast.error('Failed to save preferences');
@@ -72,9 +72,8 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           {STEPS.map((_, i) => (
             <div
               key={i}
-              className={`w-8 h-1 transition-colors ${
-                i <= step ? 'bg-foreground' : 'bg-muted'
-              }`}
+              className={`w-8 h-1 transition-colors ${i <= step ? 'bg-foreground' : 'bg-muted'
+                }`}
             />
           ))}
         </div>
@@ -168,11 +167,10 @@ function GoalStep({
               haptic('light');
               onSelect(goal.type);
             }}
-            className={`w-full p-4 text-left border transition-colors ${
-              selected === goal.type
+            className={`w-full p-4 text-left border transition-colors ${selected === goal.type
                 ? 'border-foreground bg-accent'
                 : 'border-border hover:border-muted-foreground'
-            }`}
+              }`}
           >
             <div className="font-medium">{goal.label}</div>
             <div className="text-sm text-muted-foreground">{goal.description}</div>

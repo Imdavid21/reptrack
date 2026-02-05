@@ -84,11 +84,11 @@ export function AuthForm() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-widest">HEALTH OS</h1>
+          <h1 className="text-2xl font-bold tracking-widest">reptrack.fitness</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            {mode === 'forgot' ? 'RESET YOUR PASSWORD' : 
-             mode === 'reset' ? 'ENTER NEW PASSWORD' :
-             'YOUR PERSONAL HEALTH DASHBOARD'}
+            {mode === 'forgot' ? 'RESET YOUR PASSWORD' :
+              mode === 'reset' ? 'ENTER NEW PASSWORD' :
+                'YOUR PERSONAL HEALTH DASHBOARD'}
           </p>
           {mode === 'signin' && (
             <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
@@ -174,7 +174,7 @@ export function AuthForm() {
               </button>
             </>
           )}
-          
+
           {mode === 'signup' && (
             <button
               onClick={() => setMode('signin')}

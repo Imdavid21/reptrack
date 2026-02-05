@@ -9,15 +9,15 @@ export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
   return (
     <div className="flex items-center gap-2">
-      <img 
-        src={logoHeart} 
-        alt="HEALTH/OS" 
+      <img
+        src={logoHeart}
+        alt="reptrack.fitness"
         className={`${sizes[size].img} object-contain`}
       />
-      <div className={`font-bold tracking-[0.2em] ${sizes[size].text}`}>
-        <span className="text-foreground">HEALTH</span>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-foreground">OS</span>
+      <div className={`font-bold tracking-[0.15em] ${sizes[size].text}`}>
+        <span className="text-foreground">reptrack</span>
+        <span className="text-muted-foreground">.</span>
+        <span className="text-foreground">fitness</span>
       </div>
     </div>
   );
