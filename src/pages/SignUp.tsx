@@ -32,7 +32,7 @@ export default function SignUp() {
       const { error } = await signUp(email, password);
       if (error) throw error;
 
-      toast.success('Account created! Welcome to HEALTH/OS.');
+      toast.success('Account created! Welcome to Reptrack Fitness.');
       navigate('/app', { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account');
