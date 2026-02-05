@@ -74,7 +74,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             status: "ok", 
-            version: "1.0.0",
+            version: "1.1.0",
             endpoints: [
               "GET /workouts",
               "GET /workouts/:id",
@@ -84,6 +84,11 @@ serve(async (req) => {
               "GET /metrics/daily",
               "GET /metrics/morning",
               "GET /metrics/night",
+              "GET /metrics/vitals",
+              "GET /metrics/recovery",
+              "GET /calories/burned",
+              "GET /habits",
+              "GET /preferences",
               "GET /stats/summary"
             ]
           }),
@@ -164,11 +169,12 @@ serve(async (req) => {
         break;
       }
 
+      // Deprecated: metrics/morning now proxies to daily_metrics for backward compatibility
       case "metrics/morning": {
         const startDate = url.searchParams.get("start_date");
         const endDate = url.searchParams.get("end_date");
         let query = supabase
-          .from("morning_checkins")
+          .from("daily_metrics")
           .select("*")
           .eq("user_id", userId)
           .order("date", { ascending: false });
@@ -177,6 +183,106 @@ serve(async (req) => {
         if (endDate) query = query.lte("date", endDate);
         
         ({ data, error } = await query.limit(90));
+        break;
+      }
+
+      case "metrics/vitals": {
+        const startDate = url.searchParams.get("start_date");
+        const endDate = url.searchParams.get("end_date");
+
+        const filters: { start: string | null; end: string | null } = {
+          start: startDate,
+          end: endDate,
+        };
+
+        const [bpRes, sugarRes] = await Promise.all([
+          supabase
+            .from("blood_pressure_readings")
+            .select("*")
+            .eq("user_id", userId)
+            .order("measured_at", { ascending: false })
+            .limit(200),
+          supabase
+            .from("blood_sugar_readings")
+            .select("*")
+            .eq("user_id", userId)
+            .order("measured_at", { ascending: false })
+            .limit(200),
+        ]);
+
+        if (bpRes.error || sugarRes.error) {
+          error = bpRes.error || sugarRes.error;
+          break;
+        }
+
+        let bloodPressure = bpRes.data || [];
+        let bloodSugar = sugarRes.data || [];
+
+        if (filters.start) {
+          bloodPressure = bloodPressure.filter((r) => r.measured_at >= filters.start!);
+          bloodSugar = bloodSugar.filter((r) => r.measured_at >= filters.start!);
+        }
+        if (filters.end) {
+          bloodPressure = bloodPressure.filter((r) => r.measured_at <= filters.end!);
+          bloodSugar = bloodSugar.filter((r) => r.measured_at <= filters.end!);
+        }
+
+        data = {
+          blood_pressure: bloodPressure,
+          blood_sugar: bloodSugar,
+        };
+        break;
+      }
+
+      case "metrics/recovery": {
+        const startDate = url.searchParams.get("start_date");
+        const endDate = url.searchParams.get("end_date");
+        let query = supabase
+          .from("recovery_metrics")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: false });
+
+        if (startDate) query = query.gte("date", startDate);
+        if (endDate) query = query.lte("date", endDate);
+
+        ({ data, error } = await query.limit(90));
+        break;
+      }
+
+      case "calories/burned": {
+        const startDate = url.searchParams.get("start_date");
+        const endDate = url.searchParams.get("end_date");
+        let query = supabase
+          .from("calorie_burns")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: false });
+
+        if (startDate) query = query.gte("date", startDate);
+        if (endDate) query = query.lte("date", endDate);
+
+        ({ data, error } = await query.limit(180));
+        break;
+      }
+
+      case "habits": {
+        let query = supabase
+          .from("habits")
+          .select("*, workouts!inner(date)")
+          .eq("workouts.user_id", userId)
+          .order("workouts.date", { ascending: false });
+
+        ({ data, error } = await query.limit(180));
+        break;
+      }
+
+      case "preferences": {
+        ({ data, error } = await supabase
+          .from("user_preferences")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle());
         break;
       }
 
@@ -201,7 +307,7 @@ serve(async (req) => {
         const today = new Date().toISOString().split("T")[0];
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-        const [workoutsRes, mealsRes, waterRes, morningRes] = await Promise.all([
+        const [workoutsRes, mealsRes, waterRes, dailyMetricsRes] = await Promise.all([
           supabase
             .from("workouts")
             .select("id, date, workout_duration_minutes")
@@ -218,11 +324,11 @@ serve(async (req) => {
             .eq("user_id", userId)
             .gte("timestamp", `${today}T00:00:00`),
           supabase
-            .from("morning_checkins")
+            .from("daily_metrics")
             .select("sleep_hours, energy_level, bodyweight")
             .eq("user_id", userId)
             .eq("date", today)
-            .single()
+            .maybeSingle()
         ]);
 
         const totalWorkouts = workoutsRes.data?.length || 0;
@@ -238,9 +344,9 @@ serve(async (req) => {
             calories: todayCalories,
             protein: todayProtein,
             water_liters: todayWater,
-            sleep_hours: morningRes.data?.sleep_hours || null,
-            energy_level: morningRes.data?.energy_level || null,
-            bodyweight: morningRes.data?.bodyweight || null,
+            sleep_hours: dailyMetricsRes.data?.sleep_hours || null,
+            energy_level: dailyMetricsRes.data?.energy_level || null,
+            bodyweight: dailyMetricsRes.data?.bodyweight || null,
           },
           last_30_days: {
             total_workouts: totalWorkouts,

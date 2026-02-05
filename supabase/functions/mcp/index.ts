@@ -90,7 +90,7 @@ async function getTodaySummary(userId: string) {
   const supabase = createSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
   
-  const [workoutRes, waterRes, mealsRes, morningRes] = await Promise.all([
+  const [workoutRes, waterRes, mealsRes, metricsRes] = await Promise.all([
     supabase
       .from("workouts")
       .select("id, day_name, workout_duration_minutes")
@@ -107,11 +107,11 @@ async function getTodaySummary(userId: string) {
       .eq("user_id", userId)
       .eq("date", today),
     supabase
-      .from("morning_checkins")
+      .from("daily_metrics")
       .select("sleep_hours, energy_level, bodyweight")
       .eq("user_id", userId)
       .eq("date", today)
-      .single()
+      .maybeSingle()
   ]);
 
   const totalWater = waterRes.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
@@ -127,7 +127,7 @@ async function getTodaySummary(userId: string) {
       protein: totalProtein,
       meals_logged: mealsRes.data?.length || 0
     },
-    morning_checkin: morningRes.data || null
+    daily_metrics: metricsRes.data || null
   };
 }
 
@@ -191,7 +191,7 @@ async function getSleepEnergy(args: { days?: number }, userId: string) {
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   
   const { data, error } = await supabase
-    .from("morning_checkins")
+    .from("daily_metrics")
     .select("date, sleep_hours, energy_level")
     .eq("user_id", userId)
     .gte("date", startDate)
@@ -217,7 +217,7 @@ async function getBodyweight(args: { days?: number }, userId: string) {
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   
   const { data, error } = await supabase
-    .from("morning_checkins")
+    .from("daily_metrics")
     .select("date, bodyweight")
     .eq("user_id", userId)
     .gte("date", startDate)
@@ -235,6 +235,77 @@ async function getBodyweight(args: { days?: number }, userId: string) {
     current_weight: current,
     change_kg: change,
     period_days: days
+  };
+}
+
+async function getVitals(args: { days?: number }, userId: string) {
+  const supabase = createSupabaseClient();
+  const days = args.days || 90;
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const [bpRes, sugarRes] = await Promise.all([
+    supabase
+      .from("blood_pressure_readings")
+      .select("measured_at, systolic, diastolic, pulse, notes")
+      .eq("user_id", userId)
+      .gte("measured_at", startDate)
+      .order("measured_at", { ascending: false }),
+    supabase
+      .from("blood_sugar_readings")
+      .select("measured_at, glucose_level, reading_type, notes")
+      .eq("user_id", userId)
+      .gte("measured_at", startDate)
+      .order("measured_at", { ascending: false }),
+  ]);
+
+  if (bpRes.error || sugarRes.error) {
+    throw new Error((bpRes.error || sugarRes.error)!.message);
+  }
+
+  return {
+    period_days: days,
+    blood_pressure: bpRes.data || [],
+    blood_sugar: sugarRes.data || [],
+  };
+}
+
+async function getDailyMetrics(args: { days?: number }, userId: string) {
+  const supabase = createSupabaseClient();
+  const days = args.days || 60;
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("daily_metrics")
+    .select("date, pullups, bodyweight, sleep_hours, energy_level, is_rest_day, notes")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .order("date", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return {
+    period_days: days,
+    metrics: data || [],
+  };
+}
+
+async function getRecovery(args: { days?: number }, userId: string) {
+  const supabase = createSupabaseClient();
+  const days = args.days || 60;
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("recovery_metrics")
+    .select("date, recovery_score, hrv_ms, resting_hr, sleep_quality, fatigue_level, stress_level, workout_readiness, deload_recommended, notes")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .order("date", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return {
+    period_days: days,
+    recovery: data || [],
   };
 }
 
@@ -283,7 +354,7 @@ async function getWeeklyStats(userId: string) {
   const supabase = createSupabaseClient();
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   
-  const [workoutsRes, waterRes, mealsRes, sleepRes] = await Promise.all([
+  const [workoutsRes, waterRes, mealsRes, metricsRes] = await Promise.all([
     supabase
       .from("workouts")
       .select("workout_duration_minutes")
@@ -300,7 +371,7 @@ async function getWeeklyStats(userId: string) {
       .eq("user_id", userId)
       .gte("date", weekAgo),
     supabase
-      .from("morning_checkins")
+      .from("daily_metrics")
       .select("sleep_hours, energy_level")
       .eq("user_id", userId)
       .gte("date", weekAgo)
@@ -310,7 +381,7 @@ async function getWeeklyStats(userId: string) {
   const totalGymMins = workoutsRes.data?.reduce((sum, w) => sum + (w.workout_duration_minutes || 0), 0) || 0;
   const totalWater = waterRes.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
   const avgCalories = mealsRes.data?.length ? mealsRes.data.reduce((sum, m) => sum + (m.calories || 0), 0) / 7 : 0;
-  const avgSleep = sleepRes.data?.length ? sleepRes.data.reduce((sum, s) => sum + (s.sleep_hours || 0), 0) / sleepRes.data.length : 0;
+  const avgSleep = metricsRes.data?.length ? metricsRes.data.reduce((sum, s) => sum + (s.sleep_hours || 0), 0) / metricsRes.data.length : 0;
 
   return {
     period: "last_7_days",
@@ -392,6 +463,36 @@ const tools = [
     }
   },
   {
+    name: "get_vitals",
+    description: "Get blood pressure and blood sugar readings.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Number of days to look back (default 90)" }
+      }
+    }
+  },
+  {
+    name: "get_daily_metrics",
+    description: "Get daily health metrics (sleep, energy, bodyweight, pullups, rest days).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Number of days to look back (default 60)" }
+      }
+    }
+  },
+  {
+    name: "get_recovery",
+    description: "Get recovery metrics including HRV, resting HR, fatigue, and stress levels.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Number of days to look back (default 60)" }
+      }
+    }
+  },
+  {
     name: "get_personal_records",
     description: "Get personal records (PRs) for exercises based on estimated 1RM.",
     inputSchema: {
@@ -425,6 +526,12 @@ async function handleToolCall(name: string, args: Record<string, unknown>, userI
       return await getSleepEnergy(args as { days?: number }, userId);
     case "get_bodyweight":
       return await getBodyweight(args as { days?: number }, userId);
+    case "get_vitals":
+      return await getVitals(args as { days?: number }, userId);
+    case "get_daily_metrics":
+      return await getDailyMetrics(args as { days?: number }, userId);
+    case "get_recovery":
+      return await getRecovery(args as { days?: number }, userId);
     case "get_personal_records":
       return await getPersonalRecords(args as { exercise_name?: string }, userId);
     case "get_weekly_stats":

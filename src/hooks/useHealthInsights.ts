@@ -30,10 +30,10 @@ export function useHealthInsights(days: number = 30) {
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
 
       // Fetch all relevant data in parallel
-      const [morningRes, nightRes, workoutsRes] = await Promise.all([
+      const [metricsRes, nightRes, workoutsRes] = await Promise.all([
         supabase
-          .from('morning_checkins')
-          .select('*')
+          .from('daily_metrics')
+          .select('date, sleep_hours, energy_level, bodyweight')
           .eq('user_id', user.id)
           .gte('date', startDate)
           .order('date', { ascending: true }),
@@ -51,7 +51,7 @@ export function useHealthInsights(days: number = 30) {
           .order('date', { ascending: true }),
       ]);
 
-      const morningData = (morningRes.data || []) as any[];
+      const morningData = (metricsRes.data || []) as any[];
       const nightData = (nightRes.data || []) as any[];
       const workoutData = (workoutsRes.data || []) as any[];
 
