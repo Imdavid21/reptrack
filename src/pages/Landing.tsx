@@ -12,7 +12,12 @@ import {
   ArrowRight,
   Bot,
   Code2,
-  BarChart3
+  BarChart3,
+  Smartphone,
+  Wifi,
+  Download,
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
 const fadeInUp = {
@@ -272,6 +277,64 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* PWA Benefits Section */}
+      <section className="py-20 px-4 border-t border-border">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground mb-6">
+              <Smartphone className="w-4 h-4" />
+              Works Like an App
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+              No app store required
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Add to your home screen and use it just like any other app.
+              Lightweight, fast, and always up to date.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <PwaFeature
+              icon={<Download className="w-5 h-5" />}
+              title="No Installation"
+              description="Skip the app store"
+            />
+            <PwaFeature
+              icon={<Wifi className="w-5 h-5" />}
+              title="Works Offline"
+              description="Use without internet"
+            />
+            <PwaFeature
+              icon={<Zap className="w-5 h-5" />}
+              title="Lightweight"
+              description="Under 2MB total"
+            />
+            <PwaFeature
+              icon={<RefreshCw className="w-5 h-5" />}
+              title="Auto Updates"
+              description="Always latest version"
+            />
+            <PwaFeature
+              icon={<Globe className="w-5 h-5" />}
+              title="Cross Platform"
+              description="iPhone, Android, Desktop"
+            />
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-card border-t border-border">
         <motion.div
@@ -349,6 +412,21 @@ function IntegrationCard({ icon, title, description }: { icon: React.ReactNode; 
       </div>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-muted-foreground text-sm">{description}</p>
+    </motion.div>
+  );
+}
+
+function PwaFeature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className="text-center p-4"
+    >
+      <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-3">
+        {icon}
+      </div>
+      <h3 className="text-sm font-semibold mb-1">{title}</h3>
+      <p className="text-muted-foreground text-xs">{description}</p>
     </motion.div>
   );
 }

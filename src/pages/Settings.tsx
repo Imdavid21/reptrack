@@ -212,7 +212,7 @@ export default function Settings() {
             </Box>
           </MuiCard>
 
-          {/* Add to Home Screen */}
+          {/* Install as App */}
           <MuiCard>
             <Box
               onClick={() => toggleSection('pwa')}
@@ -226,7 +226,12 @@ export default function Settings() {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Smartphone size={18} />
-                <Typography variant="body1" fontWeight={600}>Add to Home Screen</Typography>
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>Install as App</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Use like a real app on your phone
+                  </Typography>
+                </Box>
               </Box>
               <ChevronRight
                 size={18}
@@ -238,36 +243,68 @@ export default function Settings() {
             </Box>
 
             <Collapse in={expandedSections.pwa}>
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 2,
-                  bgcolor: 'action.hover',
-                  borderRadius: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {['Tap Share in Safari', 'Select "Add to Home Screen"', 'Tap "Add"'].map((step, i) => (
-                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Box sx={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                      }}>
-                        {i + 1}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Add this app to your home screen and it will work just like any other app - with its own icon, full screen experience, and offline access.
+                </Typography>
+
+                {/* iPhone Instructions */}
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    iPhone (Safari)
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the Share button (square with arrow)',
+                      'Scroll down and tap "Add to Home Screen"',
+                      'Tap "Add" in the top right'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
                       </Box>
-                      <Typography variant="body2">{step}</Typography>
-                    </Box>
-                  ))}
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Android Instructions */}
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    Android (Chrome)
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the menu (three dots) in the top right',
+                      'Tap "Add to Home screen" or "Install app"',
+                      'Tap "Add" to confirm'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             </Collapse>
