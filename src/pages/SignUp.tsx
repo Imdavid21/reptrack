@@ -47,7 +47,7 @@ export default function SignUp() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-2xl font-bold tracking-widest animate-pulse">
-            HEALTH<span className="text-muted-foreground">/</span>OS
+            REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </div>
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function SignUp() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
-            HEALTH<span className="text-muted-foreground">/</span>OS
+            REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             CREATE YOUR ACCOUNT

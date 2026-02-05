@@ -21,12 +21,13 @@ import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
 import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
+import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { CalorieChart } from '@/components/health/CalorieChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, parse } from 'date-fns';
 
 // Generate months for current year only (2026)
 function getMonthOptions() {
@@ -49,8 +50,6 @@ function getMonthOptions() {
 // Unified Progress Card with month selection + weekly comparison + inline editing
 function ProgressCard() {
   const theme = useTheme();
-  const { dateRange } = useDateRange();
-  const { data, isLoading } = useCorrelationAnalysis(dateRange);
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
   
   // Month selection - default to current month, persist in localStorage
@@ -60,7 +59,19 @@ function ProgressCard() {
   });
   
   const monthOptions = useMemo(() => getMonthOptions(), []);
-  
+
+  // Calculate date range from selected month
+  const monthDateRange = useMemo(() => {
+    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+    return {
+      from: startOfMonth(monthDate),
+      to: endOfMonth(monthDate),
+    };
+  }, [selectedMonth]);
+
+  // Use the selected month's date range for data
+  const { data, isLoading } = useCorrelationAnalysis(monthDateRange);
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [goals, setGoals] = useState({
@@ -370,7 +381,7 @@ function InsightsContent() {
           mb: 1,
         }}>
           <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-            Analytics
+            Insights
           </Typography>
           <DateRangeSelector />
         </Box>
@@ -414,7 +425,12 @@ function InsightsContent() {
               <HydrationChart />
             </motion.div>
 
-            {/* ML Tips at the bottom */}
+            {/* Personal Records */}
+            <motion.div variants={staggerItem}>
+              <PersonalRecords />
+            </motion.div>
+
+            {/* AI Coach Insights */}
             <motion.div variants={staggerItem}>
               <MLCoachInsights />
             </motion.div>

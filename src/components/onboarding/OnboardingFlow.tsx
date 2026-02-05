@@ -49,7 +49,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     try {
       await completeOnboarding(data);
       haptic('success');
-      toast.success('Welcome to reptrack.fitness');
+      toast.success('Welcome to Reptrack Fitness');
       onComplete();
     } catch (error) {
       toast.error('Failed to save preferences');
