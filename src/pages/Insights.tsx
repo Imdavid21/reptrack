@@ -334,9 +334,6 @@ function ProgressCard() {
             <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
               {summary.workouts} <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>/ {monthlyWorkoutGoal}</Typography>
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {volumeFormatted} kg vol
-            </Typography>
           </Box>
           <Box sx={{ 
             height: 4, 

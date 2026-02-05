@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { subDays, format } from 'date-fns';
+import { subDays, format, startOfMonth, endOfMonth } from 'date-fns';
 
 export interface Correlation {
   id: string;
@@ -57,18 +57,20 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const priorStart = format(subDays(startDate, 60), 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
 
       // Fetch all relevant data
-      const [workoutsRes, morningRes, nightRes, mealsRes, exercisesRes] = await Promise.all([
+      const [workoutsRes, dailyMetricsRes, nightRes, mealsRes, exercisesRes] = await Promise.all([
         supabase
           .from('workouts')
           .select('id, date, post_satisfaction, post_difficulty, workout_duration_minutes, completed_at')
           .eq('user_id', user.id)
           .gte('date', priorStart)
           .order('date', { ascending: true }),
+        // Fetch sleep from daily_metrics (not morning_checkins)
         supabase
-          .from('morning_checkins')
-          .select('date, sleep_hours, energy_level, heart_rate')
+          .from('daily_metrics')
+          .select('date, sleep_hours, bodyweight')
           .eq('user_id', user.id)
           .gte('date', priorStart)
           .order('date', { ascending: true }),
@@ -95,7 +97,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       ]);
 
       const workouts = workoutsRes.data || [];
-      const morningData = morningRes.data || [];
+      const dailyMetrics = dailyMetricsRes.data || [];
       const nightData = nightRes.data || [];
       const meals = mealsRes.data || [];
       const exercises = exercisesRes.data || [];
@@ -106,10 +108,10 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       // 1. Sleep → Performance correlation
       const sleepPerformanceData: { sleep: number; satisfaction: number }[] = [];
       workouts.forEach(w => {
-        const morning = morningData.find(m => m.date === w.date);
-        if (morning?.sleep_hours && w.post_satisfaction) {
+        const metrics = dailyMetrics.find(m => m.date === w.date);
+        if (metrics?.sleep_hours && metrics.sleep_hours > 0 && w.post_satisfaction) {
           sleepPerformanceData.push({
-            sleep: morning.sleep_hours,
+            sleep: metrics.sleep_hours,
             satisfaction: w.post_satisfaction,
           });
         }
@@ -140,47 +142,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       }
 
       // 2. Morning Energy → Volume correlation
-      const energyVolumeData: { energy: number; volume: number }[] = [];
-      workouts.forEach(w => {
-        const morning = morningData.find(m => m.date === w.date);
-        const workoutExercises = exercises.filter(e => e.workout_id === w.id && e.completed);
-        
-        if (morning?.energy_level && workoutExercises.length > 0) {
-          const volume = workoutExercises.reduce((sum, e) => {
-            const weight = parseFloat(e.actual_weight?.match(/[\d.]+/)?.[0] || '0');
-            const reps = parseInt(e.actual_reps?.match(/\d+/)?.[0] || '0');
-            return sum + weight * reps;
-          }, 0);
-          
-          if (volume > 0) {
-            energyVolumeData.push({ energy: morning.energy_level, volume });
-          }
-        }
-      });
-
-      if (energyVolumeData.length >= 5) {
-        const highEnergy = energyVolumeData.filter(d => d.energy >= 7);
-        const lowEnergy = energyVolumeData.filter(d => d.energy <= 4);
-        
-        if (highEnergy.length >= 2 && lowEnergy.length >= 2) {
-          const avgHighVol = highEnergy.reduce((s, d) => s + d.volume, 0) / highEnergy.length;
-          const avgLowVol = lowEnergy.reduce((s, d) => s + d.volume, 0) / lowEnergy.length;
-          const diff = Math.round(((avgHighVol - avgLowVol) / avgLowVol) * 100);
-          
-          if (Math.abs(diff) > 5) {
-            correlations.push({
-              id: 'energy-volume',
-              title: 'Energy → Volume',
-              insight: diff > 0
-                ? `High morning energy (7+) correlates with ${diff}% more volume.`
-                : `Low energy days see reduced training volume.`,
-              strength: Math.min(Math.abs(diff) + 35, 90),
-              positive: diff > 0,
-              dataPoints: energyVolumeData.length,
-            });
-          }
-        }
-      }
+      // Removed - energy_level is no longer tracked per minimalism policy
 
       // 3. Steps → Night Energy correlation
       const stepsEnergyData = nightData
@@ -212,45 +174,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       }
 
       // 4. Protein → Recovery (next day energy)
-      const proteinRecoveryData: { protein: number; nextDayEnergy: number }[] = [];
-      meals.forEach((meal, i) => {
-        const nextDayMorning = morningData.find(m => {
-          const mealDate = new Date(meal.date);
-          const morningDate = new Date(m.date);
-          return morningDate.getTime() - mealDate.getTime() === 86400000; // 1 day diff
-        });
-        
-        if (meal.protein && nextDayMorning?.energy_level) {
-          proteinRecoveryData.push({
-            protein: meal.protein,
-            nextDayEnergy: nextDayMorning.energy_level,
-          });
-        }
-      });
-
-      if (proteinRecoveryData.length >= 5) {
-        const highProtein = proteinRecoveryData.filter(d => d.protein >= 100);
-        const lowProtein = proteinRecoveryData.filter(d => d.protein < 60);
-        
-        if (highProtein.length >= 2 && lowProtein.length >= 2) {
-          const avgHighEnergy = highProtein.reduce((s, d) => s + d.nextDayEnergy, 0) / highProtein.length;
-          const avgLowEnergy = lowProtein.reduce((s, d) => s + d.nextDayEnergy, 0) / lowProtein.length;
-          const diff = (avgHighEnergy - avgLowEnergy).toFixed(1);
-          
-          if (Math.abs(parseFloat(diff)) > 0.3) {
-            correlations.push({
-              id: 'protein-recovery',
-              title: 'Protein → Recovery',
-              insight: parseFloat(diff) > 0
-                ? `100g+ protein days boost next-day energy by ${diff} pts.`
-                : `High protein may not be improving recovery for you.`,
-              strength: Math.min(Math.abs(parseFloat(diff)) * 15 + 45, 80),
-              positive: parseFloat(diff) > 0,
-              dataPoints: proteinRecoveryData.length,
-            });
-          }
-        }
-      }
+      // Removed - energy_level is no longer tracked per minimalism policy
 
       // Calculate weekly summaries (last 4 weeks)
       const weeklySummaries: WeeklySummary[] = [];
@@ -262,7 +186,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
         const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
         
         const weekWorkouts = workouts.filter(w => w.date >= weekStartStr && w.date <= weekEndStr);
-        const weekMornings = morningData.filter(m => m.date >= weekStartStr && m.date <= weekEndStr);
+        const weekMetrics = dailyMetrics.filter(m => m.date >= weekStartStr && m.date <= weekEndStr);
         const weekNights = nightData.filter(n => n.date >= weekStartStr && n.date <= weekEndStr);
         const weekMeals = meals.filter(m => m.date >= weekStartStr && m.date <= weekEndStr);
         
@@ -276,8 +200,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
           return sum + weight * reps;
         }, 0);
         
-        const sleepData = weekMornings.filter(m => m.sleep_hours).map(m => m.sleep_hours!);
-        const energyData = weekMornings.filter(m => m.energy_level).map(m => m.energy_level!);
+        const sleepData = weekMetrics.filter(m => m.sleep_hours && m.sleep_hours > 0).map(m => m.sleep_hours!);
         const stepsData = weekNights.filter(n => n.steps && n.steps > 0).map(n => n.steps!);
         
         weeklySummaries.push({
@@ -286,7 +209,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
           workouts: weekWorkouts.length,
           totalVolume: Math.round(totalVolume),
           avgSleep: sleepData.length ? sleepData.reduce((a, b) => a + b, 0) / sleepData.length : null,
-          avgEnergy: energyData.length ? energyData.reduce((a, b) => a + b, 0) / energyData.length : null,
+          avgEnergy: null, // No longer tracked
           avgSteps: stepsData.length ? Math.round(stepsData.reduce((a, b) => a + b, 0) / stepsData.length) : null,
           caloriesIn: weekMeals.reduce((sum, m) => sum + (m.calories || 0), 0),
           caloriesOut: weekWorkouts.length * 350, // Estimate
@@ -300,14 +223,20 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       }
 
       // Calculate monthly summary
-      const monthStart = format(subDays(now, 30), 'yyyy-MM-dd');
-      const monthWorkouts = workouts.filter(w => w.date >= monthStart);
+      // Use actual calendar month boundaries
+      const currentMonthStart = format(startOfMonth(endDate), 'yyyy-MM-dd');
+      const currentMonthEnd = format(endOfMonth(endDate), 'yyyy-MM-dd');
+      const monthWorkouts = workouts.filter(w => w.date >= currentMonthStart && w.date <= currentMonthEnd);
+      
+      const priorMonthStartDate = subDays(startOfMonth(endDate), 1);
+      const priorMonthStart = format(startOfMonth(priorMonthStartDate), 'yyyy-MM-dd');
+      const priorMonthEnd = format(endOfMonth(priorMonthStartDate), 'yyyy-MM-dd');
       const priorMonthWorkouts = workouts.filter(w => {
         const d = w.date;
-        return d >= format(subDays(now, 60), 'yyyy-MM-dd') && d < monthStart;
+        return d >= priorMonthStart && d <= priorMonthEnd;
       });
       
-      const monthMornings = morningData.filter(m => m.date >= monthStart);
+      const monthMetrics = dailyMetrics.filter(m => m.date >= currentMonthStart && m.date <= currentMonthEnd);
       const monthExercises = exercises.filter(e => 
         monthWorkouts.some(w => w.id === e.workout_id) && e.completed
       );
@@ -318,15 +247,14 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
         return sum + weight * reps;
       }, 0);
       
-      const monthSleep = monthMornings.filter(m => m.sleep_hours).map(m => m.sleep_hours!);
-      const monthEnergy = monthMornings.filter(m => m.energy_level).map(m => m.energy_level!);
+      const monthSleep = monthMetrics.filter(m => m.sleep_hours && m.sleep_hours > 0).map(m => m.sleep_hours!);
 
       const monthlySummary: MonthlySummary = {
-        month: format(now, 'MMMM yyyy'),
+        month: format(endDate, 'MMMM yyyy'),
         workouts: monthWorkouts.length,
         totalVolume: Math.round(monthVolume),
         avgSleep: monthSleep.length ? monthSleep.reduce((a, b) => a + b, 0) / monthSleep.length : null,
-        avgEnergy: monthEnergy.length ? monthEnergy.reduce((a, b) => a + b, 0) / monthEnergy.length : null,
+        avgEnergy: null, // No longer tracked
         weightChange: null, // Would need bodyweight tracking
         bestExercise: null, // Would need PR analysis
         priorMonthWorkouts: priorMonthWorkouts.length,
