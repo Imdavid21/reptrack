@@ -60,7 +60,7 @@ async function getWorkouts(args: { limit?: number; days?: number }, userId: stri
 
 async function getWorkoutDetails(args: { workout_id: string }, userId: string) {
   const supabase = createSupabaseClient();
-  const [workoutRes, setsRes] = await Promise.all([
+  const [workoutRes, exercisesRes] = await Promise.all([
     supabase
       .from("workouts")
       .select("*")
@@ -68,22 +68,15 @@ async function getWorkoutDetails(args: { workout_id: string }, userId: string) {
       .eq("user_id", userId)
       .single(),
     supabase
-      .from("exercise_sets")
-      .select("exercise_name, set_number, actual_weight, actual_reps, completed")
+      .from("exercises")
+      .select("name, category, target_weight, target_reps, actual_weight, actual_reps, completed, sort_order")
       .eq("workout_id", args.workout_id)
-      .order("exercise_name")
-      .order("set_number")
+      .order("sort_order")
   ]);
-  
+
   if (workoutRes.error) throw new Error("Workout not found");
-  
-  const exercises: Record<string, unknown[]> = {};
-  for (const set of setsRes.data || []) {
-    if (!exercises[set.exercise_name]) exercises[set.exercise_name] = [];
-    exercises[set.exercise_name].push(set);
-  }
-  
-  return { workout: workoutRes.data, exercises };
+
+  return { workout: workoutRes.data, exercises: exercisesRes.data || [] };
 }
 
 async function getTodaySummary(userId: string) {
@@ -311,42 +304,47 @@ async function getRecovery(args: { days?: number }, userId: string) {
 
 async function getPersonalRecords(args: { exercise_name?: string }, userId: string) {
   const supabase = createSupabaseClient();
-  
+
   let query = supabase
-    .from("exercise_sets")
-    .select("exercise_name, actual_weight, actual_reps, created_at, workouts!inner(user_id)")
+    .from("exercises")
+    .select("name, actual_weight, actual_reps, created_at, workouts!inner(user_id)")
     .eq("workouts.user_id", userId)
     .eq("completed", true)
     .not("actual_weight", "is", null)
     .not("actual_reps", "is", null);
-  
+
   if (args.exercise_name) {
-    query = query.ilike("exercise_name", `%${args.exercise_name}%`);
+    query = query.ilike("name", `%${args.exercise_name}%`);
   }
-  
+
   const { data, error } = await query.order("created_at", { ascending: false }).limit(500);
   if (error) throw new Error(error.message);
-  
+
   const prs: Record<string, { exercise: string; weight: number; reps: number; e1rm: number; date: string }> = {};
-  
-  for (const set of data || []) {
-    const weight = Number(set.actual_weight);
-    const reps = Number(set.actual_reps);
+
+  for (const exercise of data || []) {
+    // Parse weight - handle formats like "50kg" or "50"
+    const weightMatch = exercise.actual_weight?.match(/[\d.]+/);
+    const repsMatch = exercise.actual_reps?.match(/\d+/);
+    if (!weightMatch || !repsMatch) continue;
+
+    const weight = parseFloat(weightMatch[0]);
+    const reps = parseInt(repsMatch[0]);
     if (weight <= 0 || reps <= 0) continue;
-    
+
     const e1rm = reps === 1 ? weight : Math.round(weight * (1 + reps / 30));
-    
-    if (!prs[set.exercise_name] || e1rm > prs[set.exercise_name].e1rm) {
-      prs[set.exercise_name] = {
-        exercise: set.exercise_name,
+
+    if (!prs[exercise.name] || e1rm > prs[exercise.name].e1rm) {
+      prs[exercise.name] = {
+        exercise: exercise.name,
         weight,
         reps,
         e1rm,
-        date: set.created_at.split("T")[0]
+        date: exercise.created_at.split("T")[0]
       };
     }
   }
-  
+
   return { personal_records: Object.values(prs).sort((a, b) => b.e1rm - a.e1rm) };
 }
 

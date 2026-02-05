@@ -10,7 +10,7 @@ import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 
 export default function Dashboard() {
   return (
-    <MainLayout>
+    <MainLayout title="DASHBOARD">
       <AnimatedPage>
         <motion.div 
           variants={staggerContainer} 

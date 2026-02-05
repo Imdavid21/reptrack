@@ -56,7 +56,7 @@ export function MLCoachInsights() {
             <Brain size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            ML Coach
+            AI Coach
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -76,7 +76,7 @@ export function MLCoachInsights() {
             <Brain size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            ML Coach
+            AI Coach
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
@@ -106,7 +106,7 @@ export function MLCoachInsights() {
           </Box>
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              ML Coach Insights
+              AI Coach Insights
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               Get personalized tips based on your data
@@ -155,7 +155,7 @@ export function MLCoachInsights() {
             <Brain size={14} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            ML Coach
+            AI Coach
           </Typography>
           <Chip 
             label={`${insights.length} tips`}

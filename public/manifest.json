@@ -1,8 +1,8 @@
 {
-  "name": "HEALTH/OS",
-  "short_name": "HEALTH/OS",
-  "description": "Your Personal Health Operating System",
-  "start_url": "/",
+  "name": "Reptrack Fitness",
+  "short_name": "Reptrack",
+  "description": "Your Personal Health & Fitness Tracker",
+  "start_url": "/signin",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

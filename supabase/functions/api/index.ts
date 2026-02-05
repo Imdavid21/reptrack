@@ -110,11 +110,11 @@ serve(async (req) => {
       case "exercises": {
         const workoutId = url.searchParams.get("workout_id");
         let query = supabase
-          .from("exercise_sets")
+          .from("exercises")
           .select("*, workouts!inner(user_id)")
           .eq("workouts.user_id", userId)
-          .order("created_at", { ascending: false });
-        
+          .order("sort_order", { ascending: true });
+
         if (workoutId) {
           query = query.eq("workout_id", workoutId);
         }
@@ -361,7 +361,7 @@ serve(async (req) => {
         // Check if it's a workout ID request
         if (path.startsWith("workouts/")) {
           const workoutId = path.replace("workouts/", "");
-          const [workoutRes, setsRes] = await Promise.all([
+          const [workoutRes, exercisesRes] = await Promise.all([
             supabase
               .from("workouts")
               .select("*")
@@ -369,10 +369,10 @@ serve(async (req) => {
               .eq("user_id", userId)
               .single(),
             supabase
-              .from("exercise_sets")
+              .from("exercises")
               .select("*")
               .eq("workout_id", workoutId)
-              .order("set_number")
+              .order("sort_order")
           ]);
 
           if (workoutRes.error) {
@@ -382,7 +382,7 @@ serve(async (req) => {
             );
           }
 
-          data = { ...workoutRes.data, exercise_sets: setsRes.data || [] };
+          data = { ...workoutRes.data, exercises: exercisesRes.data || [] };
           break;
         }
 

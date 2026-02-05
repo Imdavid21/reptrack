@@ -11,13 +11,13 @@ export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     <div className="flex items-center gap-2">
       <img
         src={logoHeart}
-        alt="reptrack.fitness"
+        alt="Reptrack Fitness"
         className={`${sizes[size].img} object-contain`}
       />
       <div className={`font-bold tracking-[0.15em] ${sizes[size].text}`}>
-        <span className="text-foreground">reptrack</span>
-        <span className="text-muted-foreground">.</span>
-        <span className="text-foreground">fitness</span>
+        <span className="text-foreground">Reptrack</span>
+        <span className="text-muted-foreground"> </span>
+        <span className="text-foreground">Fitness</span>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dumbbell,
   Droplets,
@@ -36,13 +38,34 @@ const staggerContainer = {
 };
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // Redirect logged-in users to app
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-2xl font-bold tracking-widest animate-pulse">
+          REPTRACK<span className="text-muted-foreground">/</span>FITNESS
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold tracking-widest">
-            HEALTH<span className="text-muted-foreground">/</span>OS
+            REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -209,7 +232,7 @@ export default function Landing() {
               </ul>
             </div>
             <div className="bg-background border border-border rounded-2xl p-8">
-              <div className="text-sm text-muted-foreground uppercase tracking-wide mb-4">ML Insights</div>
+              <div className="text-sm text-muted-foreground uppercase tracking-wide mb-4">AI Insights</div>
               <div className="space-y-4">
                 <InsightCard
                   label="Pattern Detected"
@@ -363,8 +386,7 @@ export default function Landing() {
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            <span className="font-bold tracking-widest text-foreground">HEALTH/OS</span>
-            {' '}by reptrack.fitness
+            <span className="font-bold tracking-widest text-foreground">REPTRACK FITNESS</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>

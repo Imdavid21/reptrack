@@ -18,7 +18,7 @@ export default function WorkoutDetail() {
 
   if (isLoading) {
     return (
-      <MainLayout title="WORKOUT">
+      <MainLayout title="WORKOUT" showBack backTo="/app/history">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -28,7 +28,7 @@ export default function WorkoutDetail() {
 
   if (!workout) {
     return (
-      <MainLayout title="WORKOUT">
+      <MainLayout title="WORKOUT" showBack backTo="/app/history">
         <div className="text-center py-8">
           <p className="text-muted-foreground">Workout not found</p>
           <Button
@@ -69,17 +69,8 @@ export default function WorkoutDetail() {
   };
 
   return (
-    <MainLayout title={workout.day_name.toUpperCase()}>
+    <MainLayout title={workout.day_name.toUpperCase()} showBack backTo="/app/history">
       <div className="space-y-6 animate-fade-in">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/app/history')}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          BACK TO HISTORY
-        </button>
-
         {/* Workout Header */}
         <div className="card-brutalist">
           <div className="flex items-center justify-between">
