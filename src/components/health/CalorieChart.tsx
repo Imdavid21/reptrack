@@ -1,10 +1,9 @@
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, Flame, Dumbbell } from 'lucide-react';
+import { Flame, Dumbbell } from 'lucide-react';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useMeals } from '@/hooks/useMeals';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { cn } from '@/lib/utils';
 
@@ -12,23 +11,15 @@ export function CalorieChart() {
   const { dateRange } = useDateRange();
   const { data: calorieData = [], isLoading } = useCalorieHistory(dateRange);
   
-  // Today's data for the header section
-  const { totalCalories: todayIntake } = useMeals();
-  const { totalBurned: todayBurned, todayWorkout } = useCalorieBurn();
-  const todayNet = todayIntake - todayBurned;
-  const todayIsDeficit = todayNet < 0;
-  const todayIsSurplus = todayNet > 200;
-
-  // Calculate percentages for today's bars
-  const maxTodayValue = Math.max(todayIntake, todayBurned, 1);
-  const intakePercent = (todayIntake / maxTodayValue) * 100;
-  const burnPercent = (todayBurned / maxTodayValue) * 100;
+  // Today's workout info for breakdown
+  const { todayWorkout } = useCalorieBurn();
 
   // Period stats for summary
   const totalIntake = calorieData.reduce((sum, d) => sum + d.intake, 0);
   const totalBurned = calorieData.reduce((sum, d) => sum + d.burned, 0);
   const netBalance = totalIntake - totalBurned;
   const isDeficit = netBalance < 0;
+  const isSurplus = netBalance > 200;
 
   // Format data for diverging bar chart
   const chartData = calorieData.map(d => ({
@@ -104,49 +95,6 @@ export function CalorieChart() {
         <h3 className="text-sm font-semibold">Energy Balance</h3>
       </div>
 
-      {/* Today's Balance - Progress Bars */}
-      <div className="space-y-2.5 mb-4">
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-muted-foreground">Intake</span>
-            <span className="font-medium text-insight-coral">+{todayIntake.toLocaleString()} cal</span>
-          </div>
-          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-insight-coral rounded-full transition-all duration-500"
-              style={{ width: `${intakePercent}%` }}
-            />
-          </div>
-        </div>
-        
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-muted-foreground">Burned</span>
-            <span className="font-medium text-insight-mint">-{todayBurned.toLocaleString()} cal</span>
-          </div>
-          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-insight-mint rounded-full transition-all duration-500"
-              style={{ width: `${burnPercent}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Today's Net Result */}
-      <div className={cn(
-        "p-3 rounded-xl text-center mb-4",
-        todayIsDeficit ? "bg-insight-mint/10" : todayIsSurplus ? "bg-insight-coral/10" : "bg-muted/30"
-      )}>
-        <div className={cn(
-          "text-2xl font-bold tabular-nums",
-          todayIsDeficit ? "text-insight-mint" : todayIsSurplus ? "text-insight-coral" : ""
-        )}>
-          {todayNet >= 0 ? '+' : ''}{todayNet.toLocaleString()} cal
-        </div>
-        <div className="text-xs text-muted-foreground mt-0.5">Today's Net</div>
-      </div>
-
       {/* Today's Workout Breakdown */}
       {todayWorkout && todayWorkout.calculatedDuration > 0 && (
         <div className="mb-4 p-2.5 bg-muted/20 rounded-lg border border-border/30">
@@ -163,26 +111,6 @@ export function CalorieChart() {
           </div>
         </div>
       )}
-
-      {/* Period Summary */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 pt-3 border-t border-border/30">
-        <span>Period Total</span>
-        <div className="flex items-center gap-1">
-          {isDeficit ? (
-            <TrendingDown className="h-3 w-3 text-insight-mint" />
-          ) : netBalance > 500 ? (
-            <TrendingUp className="h-3 w-3 text-insight-coral" />
-          ) : (
-            <Minus className="h-3 w-3" />
-          )}
-          <span className={cn(
-            "font-semibold",
-            isDeficit ? "text-insight-mint" : netBalance > 500 ? "text-insight-coral" : ""
-          )}>
-            {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString()} cal
-          </span>
-        </div>
-      </div>
 
       {/* Diverging Bar Chart */}
       <div className="h-40">
@@ -253,6 +181,20 @@ export function CalorieChart() {
           <div className="w-2.5 h-2.5 rounded-sm bg-insight-mint" />
           <span className="text-xs text-muted-foreground">Burned ↓</span>
         </div>
+      </div>
+
+      {/* Net Calorie - Period Total */}
+      <div className={cn(
+        "p-3 rounded-xl text-center mt-4",
+        isDeficit ? "bg-insight-mint/10" : isSurplus ? "bg-insight-coral/10" : "bg-muted/30"
+      )}>
+        <div className={cn(
+          "text-2xl font-bold tabular-nums",
+          isDeficit ? "text-insight-mint" : isSurplus ? "text-insight-coral" : ""
+        )}>
+          {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString()} cal
+        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">Net Calorie</div>
       </div>
     </motion.div>
   );
