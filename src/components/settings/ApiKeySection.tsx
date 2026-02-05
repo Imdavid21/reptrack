@@ -102,11 +102,18 @@ export function ApiKeySection() {
   const mcpBaseUrl = `${supabaseUrl}/functions/v1/mcp`;
   const mcpSseUrl = `${mcpBaseUrl}/sse`;
 
-  const resolvedKey = showKey && apiKey?.api_key ? apiKey.api_key : 'YOUR_API_KEY';
+  // Always use actual key for copy operations, but display placeholder when hidden
+  const actualKey = apiKey?.api_key || '';
+  const displayKey = showKey ? actualKey : 'YOUR_API_KEY';
+  const keyIsAvailable = !!apiKey?.api_key;
 
-  const mcpRemoteCommand = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${resolvedKey}"`;
+  // Commands for display (shows placeholder if key hidden)
+  const mcpRemoteCommandDisplay = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${displayKey}"`;
 
-  const claudeConfig = `{
+  // Commands for copying (always uses actual key)
+  const mcpRemoteCommandCopy = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${actualKey}"`;
+
+  const claudeConfigDisplay = `{
   "mcpServers": {
     "fitness-tracker": {
       "command": "npx",
@@ -115,21 +122,41 @@ export function ApiKeySection() {
         "mcp-remote",
         "${mcpSseUrl}",
         "--header",
-        "X-API-Key:${resolvedKey}"
+        "X-API-Key:${displayKey}"
       ]
     }
   }
 }`;
 
-  const copyWithToast = async (value: string, type: 'command' | 'config') => {
+  const claudeConfigCopy = `{
+  "mcpServers": {
+    "fitness-tracker": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "${mcpSseUrl}",
+        "--header",
+        "X-API-Key:${actualKey}"
+      ]
+    }
+  }
+}`;
+
+  const copyWithToast = async (type: 'command' | 'config') => {
+    if (!keyIsAvailable) {
+      toast.error('API key not available');
+      return;
+    }
+    const value = type === 'command' ? mcpRemoteCommandCopy : claudeConfigCopy;
     await navigator.clipboard.writeText(value);
     if (type === 'command') {
       setCopiedCommand(true);
-      toast.success('MCP command copied');
+      toast.success('MCP command copied (with your API key)');
       setTimeout(() => setCopiedCommand(false), 2000);
     } else {
       setCopiedConfig(true);
-      toast.success('Claude config copied');
+      toast.success('Claude config copied (with your API key)');
       setTimeout(() => setCopiedConfig(false), 2000);
     }
   };
@@ -247,8 +274,6 @@ export function ApiKeySection() {
             'GET /meals',
             'GET /water',
             'GET /metrics/daily',
-            'GET /metrics/morning',
-            'GET /metrics/night',
             'GET /metrics/vitals',
             'GET /metrics/recovery',
             'GET /calories/burned',
@@ -277,14 +302,15 @@ export function ApiKeySection() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => copyWithToast(mcpRemoteCommand, 'command')}
-                title="Copy command"
+                onClick={() => copyWithToast('command')}
+                disabled={!keyIsAvailable}
+                title="Copy command with your API key"
               >
                 {copiedCommand ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
             <code className="block bg-muted p-2 break-all">
-              {mcpRemoteCommand}
+              {mcpRemoteCommandDisplay}
             </code>
             <div className="text-2xs text-muted-foreground mt-1">
               Paste this into a terminal to run the MCP server for Claude or other MCP-aware agents.
@@ -297,14 +323,15 @@ export function ApiKeySection() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => copyWithToast(claudeConfig, 'config')}
-                title="Copy Claude config JSON"
+                onClick={() => copyWithToast('config')}
+                disabled={!keyIsAvailable}
+                title="Copy Claude config with your API key"
               >
                 {copiedConfig ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
             <pre className="bg-muted p-3 text-2xs overflow-x-auto">
-{claudeConfig}
+{claudeConfigDisplay}
             </pre>
             <div className="text-2xs text-muted-foreground">
               Paste into your Claude Desktop configuration file. The SSE endpoint at <code className="bg-muted px-1">/sse</code> is required for MCP.

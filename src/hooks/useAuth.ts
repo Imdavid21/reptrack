@@ -51,7 +51,7 @@ export function useAuth() {
   const resetPassword = async (email: string) => {
     // Use Supabase's built-in method which triggers the password reset flow
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?type=recovery`,
+      redirectTo: `${window.location.origin}/signin?type=recovery`,
     });
     
     if (error) return { data, error };

@@ -39,7 +39,7 @@ export function RecentActivity() {
       <div className="flex items-center justify-between mb-3">
         <h3 className="section-header mb-0">RECENT ACTIVITY</h3>
         <Link 
-          to="/history" 
+          to="/app/history" 
           className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
         >
           VIEW ALL <ChevronRight className="h-3 w-3" />

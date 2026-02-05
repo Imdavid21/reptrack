@@ -87,17 +87,8 @@ export function useHealthInsights(days: number = 30) {
         }
       }
 
-      // Correlate resting heart rate with workout difficulty perception
-      for (const workout of workoutData) {
-        const morning = morningData.find(m => m.date === workout.date);
-        if (morning && morning.heart_rate && workout.post_difficulty) {
-          if (morning.heart_rate <= 60) {
-            correlations.heartRate.low.push(workout.post_difficulty);
-          } else if (morning.heart_rate >= 75) {
-            correlations.heartRate.high.push(workout.post_difficulty);
-          }
-        }
-      }
+      // Note: Heart rate correlation removed - heart_rate is not tracked in daily_metrics
+      // Heart rate data would need to be added via wearable integration or manual entry
 
       // Steps to night energy correlation
       for (const night of nightData) {
@@ -145,21 +136,7 @@ export function useHealthInsights(days: number = 30) {
         }
       }
 
-      const lowHRAvg = avgFunc(correlations.heartRate.low);
-      const highHRAvg = avgFunc(correlations.heartRate.high);
-      if (lowHRAvg && highHRAvg && correlations.heartRate.low.length >= 3) {
-        const diff = Math.round(highHRAvg - lowHRAvg);
-        if (diff > 1) {
-          insights.push({
-            id: 'heart-rate-recovery',
-            type: 'neutral',
-            title: 'Resting HR Insight',
-            description: `Workouts feel ${diff > 0 ? 'harder' : 'easier'} when your morning HR is elevated (75+ BPM).`,
-            metric: `${diff > 0 ? '+' : ''}${diff.toFixed(1)} difficulty`,
-            trend: diff > 0 ? 'up' : 'down',
-          });
-        }
-      }
+      // Heart rate insights removed - not currently tracked in daily_metrics
 
       // Recent sleep trend
       const recentSleep = morningData.slice(-7).filter(m => m.sleep_hours);

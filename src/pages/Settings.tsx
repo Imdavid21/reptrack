@@ -1,26 +1,25 @@
 import { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Switch, 
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Switch,
   Button,
   Collapse,
-  IconButton,
-  Divider,
   TextField,
-  Alert,
 } from '@mui/material';
-import { 
-  LogOut, 
-  Moon, 
-  Sun, 
-  Loader2, 
-  Mail, 
-  Key, 
-  ChevronRight, 
+import {
+  LogOut,
+  Moon,
+  Sun,
+  Loader2,
+  Mail,
+  Key,
+  ChevronRight,
   Smartphone,
   Code,
   User,
+  ChevronDown,
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
@@ -31,25 +30,27 @@ import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
-
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 import { GoalsSection } from '@/components/settings/GoalsSection';
-import { cn } from '@/lib/utils';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  
+
   // Section expansion state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     profile: true,
     goals: true,
   });
-  
+
   // Account management state
   const [newEmail, setNewEmail] = useState('');
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Advanced section visibility
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -58,23 +59,18 @@ export default function Settings() {
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out');
+    navigate('/', { replace: true });
   };
 
   return (
     <MainLayout title="SETTINGS">
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4 }}>
-          
-          {/* BASIC SETTINGS */}
-          <Typography 
-            variant="overline" 
-            sx={{ color: 'text.secondary', letterSpacing: 1, mb: -0.5 }}
-          >
-            BASIC SETTINGS
-          </Typography>
+
+          {/* ============ MAIN SETTINGS ============ */}
 
           {/* Profile Section */}
-          <ProfileSection 
+          <ProfileSection
             isExpanded={expandedSections.profile || false}
             onToggle={() => toggleSection('profile')}
           />
@@ -85,12 +81,13 @@ export default function Settings() {
             onToggle={() => toggleSection('goals')}
           />
 
+          {/* Account */}
           <MuiCard>
             <Box
               onClick={() => toggleSection('account')}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
                 py: 1,
@@ -100,19 +97,19 @@ export default function Settings() {
                 <User size={18} />
                 <Typography variant="body1" fontWeight={600}>Account</Typography>
               </Box>
-              <ChevronRight 
-                size={18} 
-                style={{ 
+              <ChevronRight
+                size={18}
+                style={{
                   transform: expandedSections.account ? 'rotate(90deg)' : 'none',
                   transition: 'transform 0.2s',
-                }} 
+                }}
               />
             </Box>
-            
+
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {user?.email}
             </Typography>
-            
+
             <Collapse in={expandedSections.account}>
               <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {/* Change Email */}
@@ -198,7 +195,7 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
-          {/* Appearance */}
+          {/* Appearance - Dark Mode Toggle */}
           <MuiCard>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -207,21 +204,21 @@ export default function Settings() {
                   {isDark ? 'Dark Mode' : 'Light Mode'}
                 </Typography>
               </Box>
-              <Switch 
-                checked={isDark} 
+              <Switch
+                checked={isDark}
                 onChange={toggleTheme}
                 color="primary"
               />
             </Box>
           </MuiCard>
 
-          {/* Add to Home Screen */}
+          {/* Install as App */}
           <MuiCard>
             <Box
               onClick={() => toggleSection('pwa')}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
                 py: 1,
@@ -229,187 +226,176 @@ export default function Settings() {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Smartphone size={18} />
-                <Typography variant="body1" fontWeight={600}>Add to Home Screen</Typography>
-              </Box>
-              <ChevronRight 
-                size={18} 
-                style={{ 
-                  transform: expandedSections.pwa ? 'rotate(90deg)' : 'none',
-                  transition: 'transform 0.2s',
-                }} 
-              />
-            </Box>
-            
-            <Collapse in={expandedSections.pwa}>
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 2,
-                  bgcolor: 'action.hover',
-                  borderRadius: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {['Tap Share in Safari', 'Select \"Add to Home Screen\"', 'Tap \"Add\"'].map((step, i) => (
-                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Box sx={{ 
-                        width: 24, 
-                        height: 24, 
-                        borderRadius: '50%', 
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                      }}>
-                        {i + 1}
-                      </Box>
-                      <Typography variant="body2">{step}</Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            </Collapse>
-          </MuiCard>
-
-          {/* ADVANCED / POWER USER */}
-          <Typography 
-            variant="overline" 
-            sx={{ color: 'text.secondary', letterSpacing: 1, mt: 2, mb: -0.5 }}
-          >
-            ADVANCED &amp; AUTOMATIONS
-          </Typography>
-
-          {/* Data Management Section (advanced) */}
-          <DataManagementSection
-            isExpanded={expandedSections.data || false}
-            onToggle={() => toggleSection('data')}
-          />
-
-          {/* API Access */}
-          <MuiCard>
-            <Box
-              onClick={() => toggleSection('api')}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                py: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Code size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>API &amp; AI Agents</Typography>
+                  <Typography variant="body1" fontWeight={600}>Install as App</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    For integrations, automations, and Claude / AI tools
+                    Use like a real app on your phone
                   </Typography>
                 </Box>
               </Box>
-              <ChevronRight 
-                size={18} 
-                style={{ 
-                  transform: expandedSections.api ? 'rotate(90deg)' : 'none',
-                  transition: 'transform 0.2s',
-                }} 
-              />
-            </Box>
-            
-            <Collapse in={expandedSections.api}>
-              <Box sx={{ mt: 2 }}>
-                <ApiKeySection />
-              </Box>
-            </Collapse>
-          </MuiCard>
-
-          {/* Appearance */}
-          <MuiCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                {isDark ? <Moon size={18} /> : <Sun size={18} />}
-                <Typography variant="body1" fontWeight={600}>
-                  {isDark ? 'Dark Mode' : 'Light Mode'}
-                </Typography>
-              </Box>
-              <Switch 
-                checked={isDark} 
-                onChange={toggleTheme}
-                color="primary"
-              />
-            </Box>
-          </MuiCard>
-
-          {/* Add to Home Screen */}
-          <MuiCard>
-            <Box
-              onClick={() => toggleSection('pwa')}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                py: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Smartphone size={18} />
-                <Typography variant="body1" fontWeight={600}>Add to Home Screen</Typography>
-              </Box>
-              <ChevronRight 
-                size={18} 
-                style={{ 
+              <ChevronRight
+                size={18}
+                style={{
                   transform: expandedSections.pwa ? 'rotate(90deg)' : 'none',
                   transition: 'transform 0.2s',
-                }} 
+                }}
               />
             </Box>
-            
+
             <Collapse in={expandedSections.pwa}>
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 2,
-                  bgcolor: 'action.hover',
-                  borderRadius: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {['Tap Share in Safari', 'Select "Add to Home Screen"', 'Tap "Add"'].map((step, i) => (
-                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Box sx={{ 
-                        width: 24, 
-                        height: 24, 
-                        borderRadius: '50%', 
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                      }}>
-                        {i + 1}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Add this app to your home screen and it will work just like any other app - with its own icon, full screen experience, and offline access.
+                </Typography>
+
+                {/* iPhone Instructions */}
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    iPhone (Safari)
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the Share button (square with arrow)',
+                      'Scroll down and tap "Add to Home Screen"',
+                      'Tap "Add" in the top right'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
                       </Box>
-                      <Typography variant="body2">{step}</Typography>
-                    </Box>
-                  ))}
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Android Instructions */}
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    Android (Chrome)
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the menu (three dots) in the top right',
+                      'Tap "Add to Home screen" or "Install app"',
+                      'Tap "Add" to confirm'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             </Collapse>
           </MuiCard>
+
+          {/* ============ ADVANCED SECTION ============ */}
+          <Box
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              py: 2,
+              cursor: 'pointer',
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' },
+              transition: 'color 0.2s',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+              {showAdvanced ? 'HIDE ADVANCED OPTIONS' : 'SHOW ADVANCED OPTIONS'}
+            </Typography>
+            <ChevronDown
+              size={14}
+              style={{
+                transform: showAdvanced ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s',
+              }}
+            />
+          </Box>
+
+          <Collapse in={showAdvanced}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', letterSpacing: 1, mb: -0.5 }}
+              >
+                DEVELOPER & INTEGRATIONS
+              </Typography>
+
+              {/* Data Management Section */}
+              <DataManagementSection
+                isExpanded={expandedSections.data || false}
+                onToggle={() => toggleSection('data')}
+              />
+
+              {/* API Access */}
+              <MuiCard>
+                <Box
+                  onClick={() => toggleSection('api')}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    py: 1,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Code size={18} />
+                    <Box>
+                      <Typography variant="body1" fontWeight={600}>API & AI Agents</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        REST API, MCP for Claude, webhooks
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <ChevronRight
+                    size={18}
+                    style={{
+                      transform: expandedSections.api ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}
+                  />
+                </Box>
+
+                <Collapse in={expandedSections.api}>
+                  <Box sx={{ mt: 2 }}>
+                    <ApiKeySection />
+                  </Box>
+                </Collapse>
+              </MuiCard>
+            </Box>
+          </Collapse>
 
           {/* Version */}
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <Logo size="sm" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              v3.0
+              v3.1
             </Typography>
           </Box>
         </Box>

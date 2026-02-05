@@ -33,7 +33,7 @@ export default function WorkoutDetail() {
           <p className="text-muted-foreground">Workout not found</p>
           <Button
             variant="link"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/app/history')}
             className="mt-2"
           >
             Back to History
@@ -73,7 +73,7 @@ export default function WorkoutDetail() {
       <div className="space-y-6 animate-fade-in">
         {/* Back Button */}
         <button
-          onClick={() => navigate('/history')}
+          onClick={() => navigate('/app/history')}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />

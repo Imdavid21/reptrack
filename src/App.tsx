@@ -4,7 +4,12 @@ import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
-import Index from "./pages/Index";
+// Landing & Auth pages
+import Landing from "./pages/Landing";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
+// App pages
+import AppIndex from "./pages/AppIndex";
 import LogWorkout from "./pages/LogWorkout";
 import CreateRoutine from "./pages/CreateRoutine";
 import Insights from "./pages/Insights";
@@ -17,20 +22,34 @@ const queryClient = new QueryClient();
 
 function AppRoutes() {
   const location = useLocation();
-  
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Index />} />
-        <Route path="/log" element={<LogWorkout />} />
-        <Route path="/create" element={<CreateRoutine />} />
-        <Route path="/insights" element={<Insights />} />
-        {/* Redirect old routes to new unified insights */}
-        <Route path="/analytics" element={<Navigate to="/insights" replace />} />
-        <Route path="/health" element={<Navigate to="/insights?tab=vitals" replace />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/history/:workoutId" element={<WorkoutDetail />} />
-        <Route path="/settings" element={<Settings />} />
+        {/* Public routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* App routes (authenticated) */}
+        <Route path="/app" element={<AppIndex />} />
+        <Route path="/app/log" element={<LogWorkout />} />
+        <Route path="/app/create" element={<CreateRoutine />} />
+        <Route path="/app/insights" element={<Insights />} />
+        <Route path="/app/history" element={<History />} />
+        <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
+        <Route path="/app/settings" element={<Settings />} />
+
+        {/* Legacy redirects */}
+        <Route path="/log" element={<Navigate to="/app/log" replace />} />
+        <Route path="/create" element={<Navigate to="/app/create" replace />} />
+        <Route path="/insights" element={<Navigate to="/app/insights" replace />} />
+        <Route path="/analytics" element={<Navigate to="/app/insights" replace />} />
+        <Route path="/health" element={<Navigate to="/app/insights?tab=vitals" replace />} />
+        <Route path="/history" element={<Navigate to="/app/history" replace />} />
+        <Route path="/history/:workoutId" element={<Navigate to="/app/history/:workoutId" replace />} />
+        <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

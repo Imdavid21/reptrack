@@ -7,17 +7,17 @@ export function BottomNav() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Today' },
-    { path: '/log', icon: Dumbbell, label: 'Workout' },
-    { path: '/insights', icon: Sparkles, label: 'Insights' },
-    { path: '/history', icon: History, label: 'History' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/app', icon: Home, label: 'Today' },
+    { path: '/app/log', icon: Dumbbell, label: 'Workout' },
+    { path: '/app/insights', icon: Sparkles, label: 'Insights' },
+    { path: '/app/history', icon: History, label: 'History' },
+    { path: '/app/settings', icon: Settings, label: 'Settings' },
   ];
 
   const currentPath = location.pathname;
-  const currentValue = navItems.findIndex(item => 
-    item.path === currentPath || 
-    (item.path !== '/' && currentPath.startsWith(item.path))
+  const currentValue = navItems.findIndex(item =>
+    item.path === currentPath ||
+    (item.path !== '/app' && currentPath.startsWith(item.path))
   );
 
   return (
