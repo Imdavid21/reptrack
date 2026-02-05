@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.healthos.repsandreminders',
-  appName: 'reps-and-reminders',
+  appId: 'com.reptrack.fitness',
+  appName: 'Reptrack Fitness',
   webDir: 'dist'
 };
 
