@@ -67,13 +67,15 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
           .eq('user_id', user.id)
           .gte('date', priorStart)
           .order('date', { ascending: true }),
-        // Fetch sleep from daily_metrics (not morning_checkins)
+        // Primary metrics from daily_metrics (unified table)
         supabase
           .from('daily_metrics')
-          .select('date, sleep_hours, bodyweight')
+          .select('date, sleep_hours, bodyweight, energy_level')
           .eq('user_id', user.id)
           .gte('date', priorStart)
           .order('date', { ascending: true }),
+        // Legacy: night_checkins for step tracking (deprecated, may be empty)
+        // Steps should eventually be moved to daily_metrics or wearable integration
         supabase
           .from('night_checkins')
           .select('date, steps, energy_score')
