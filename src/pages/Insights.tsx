@@ -371,18 +371,8 @@ function InsightsContent() {
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-        {/* Header */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          flexWrap: 'wrap', 
-          gap: 2,
-          mb: 1,
-        }}>
-          <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-            Insights
-          </Typography>
+        {/* Date range selector */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <DateRangeSelector />
         </Box>
         
@@ -443,7 +433,7 @@ function InsightsContent() {
 
 export default function Insights() {
   return (
-    <MainLayout>
+    <MainLayout title="INSIGHTS">
       <DateRangeProvider>
         <InsightsContent />
       </DateRangeProvider>

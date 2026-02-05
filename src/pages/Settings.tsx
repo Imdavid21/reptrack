@@ -70,6 +70,7 @@ export default function Settings() {
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profile, setProfile] = useState({
+    name: '',
     age: '',
     height_cm: '',
     gender: '',
@@ -80,6 +81,7 @@ export default function Settings() {
   useEffect(() => {
     if (preferences) {
       setProfile({
+        name: (preferences as any).name || '',
         age: (preferences as any).age?.toString() || '',
         height_cm: (preferences as any).height_cm?.toString() || '',
         gender: (preferences as any).gender || '',
@@ -99,13 +101,14 @@ export default function Settings() {
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out');
-    navigate('/', { replace: true });
+    navigate('/signin', { replace: true });
   };
 
   const handleSaveProfile = async () => {
     setIsSavingProfile(true);
     try {
       await updatePreferences.mutateAsync({
+        name: profile.name || null,
         age: profile.age ? parseInt(profile.age) : null,
         height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
         gender: profile.gender || null,
@@ -142,9 +145,9 @@ export default function Settings() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <User size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>Profile & Account</Typography>
+                  <Typography variant="body1" fontWeight={600}>Account</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {user?.email}
+                    {profile.name || user?.email}
                   </Typography>
                 </Box>
               </Box>
@@ -178,6 +181,16 @@ export default function Settings() {
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box>
+                        <Label className="text-xs text-muted-foreground">NAME</Label>
+                        <Input
+                          type="text"
+                          placeholder="Your name"
+                          value={profile.name}
+                          onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))}
+                          className="input-terminal mt-1"
+                        />
+                      </Box>
                       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                         <Box>
                           <Label className="text-xs text-muted-foreground">AGE</Label>
