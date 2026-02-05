@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Copy, RefreshCw, Eye, EyeOff, Key, ExternalLink, Check } from 'lucide-react';
+import { Copy, RefreshCw, Eye, EyeOff, Key, ExternalLink, Check, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,9 @@ export function ApiKeySection() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedCommand, setCopiedCommand] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState(false);
 
   const fetchApiKey = async () => {
     setIsLoading(true);
@@ -55,9 +57,9 @@ export function ApiKeySection() {
   const handleCopy = async () => {
     if (!apiKey?.api_key) return;
     await navigator.clipboard.writeText(apiKey.api_key);
-    setCopied(true);
+    setCopiedKey(true);
     toast.success('API key copied');
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   const handleRegenerate = async () => {
@@ -96,8 +98,41 @@ export function ApiKeySection() {
     : '';
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const apiDocsUrl = `${supabaseUrl}/functions/v1/api`;
-  const mcpUrl = `${supabaseUrl}/functions/v1/mcp`;
+  const apiBaseUrl = `${supabaseUrl}/functions/v1/api`;
+  const mcpBaseUrl = `${supabaseUrl}/functions/v1/mcp`;
+  const mcpSseUrl = `${mcpBaseUrl}/sse`;
+
+  const resolvedKey = showKey && apiKey?.api_key ? apiKey.api_key : 'YOUR_API_KEY';
+
+  const mcpRemoteCommand = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${resolvedKey}"`;
+
+  const claudeConfig = `{
+  "mcpServers": {
+    "fitness-tracker": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "${mcpSseUrl}",
+        "--header",
+        "X-API-Key:${resolvedKey}"
+      ]
+    }
+  }
+}`;
+
+  const copyWithToast = async (value: string, type: 'command' | 'config') => {
+    await navigator.clipboard.writeText(value);
+    if (type === 'command') {
+      setCopiedCommand(true);
+      toast.success('MCP command copied');
+      setTimeout(() => setCopiedCommand(false), 2000);
+    } else {
+      setCopiedConfig(true);
+      toast.success('Claude config copied');
+      setTimeout(() => setCopiedConfig(false), 2000);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -137,7 +172,7 @@ export function ApiKeySection() {
               onClick={handleCopy}
               title="Copy"
             >
-              {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+              {copiedKey ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
         )}
@@ -163,7 +198,7 @@ export function ApiKeySection() {
             <div className="flex items-center justify-between mb-1">
               <span className="font-medium text-sm">REST API</span>
               <a 
-                href={apiDocsUrl} 
+                href={apiBaseUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground"
@@ -172,7 +207,7 @@ export function ApiKeySection() {
               </a>
             </div>
             <code className="text-2xs text-muted-foreground break-all">
-              {apiDocsUrl}
+              {apiBaseUrl}
             </code>
             <div className="mt-2 text-2xs text-muted-foreground">
               Header: <code className="bg-muted px-1">X-API-Key: your_key</code>
@@ -183,7 +218,7 @@ export function ApiKeySection() {
             <div className="flex items-center justify-between mb-1">
               <span className="font-medium text-sm">MCP Server</span>
               <a 
-                href={mcpUrl} 
+                href={mcpBaseUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground"
@@ -192,7 +227,7 @@ export function ApiKeySection() {
               </a>
             </div>
             <code className="text-2xs text-muted-foreground break-all">
-              {mcpUrl}
+              {mcpBaseUrl}
             </code>
             <div className="mt-2 text-2xs text-muted-foreground">
               For Claude Desktop &amp; AI assistants
@@ -214,6 +249,11 @@ export function ApiKeySection() {
             'GET /metrics/daily',
             'GET /metrics/morning',
             'GET /metrics/night',
+            'GET /metrics/vitals',
+            'GET /metrics/recovery',
+            'GET /calories/burned',
+            'GET /habits',
+            'GET /preferences',
             'GET /stats/summary',
           ].map((endpoint) => (
             <code key={endpoint} className="bg-muted px-2 py-1">
@@ -223,25 +263,53 @@ export function ApiKeySection() {
         </div>
       </div>
 
-      {/* Claude Desktop Config */}
-      <div className="space-y-2">
-        <div className="text-xs text-muted-foreground uppercase tracking-wider">Claude Desktop Config</div>
-        <pre className="bg-muted p-3 text-2xs overflow-x-auto">
-{`{
-  "mcpServers": {
-    "fitness-tracker": {
-      "command": "npx",
-      "args": [
-        "-y", 
-        "mcp-remote", 
-        "${mcpUrl}/sse?api_key=${showKey && apiKey?.api_key ? apiKey.api_key : 'YOUR_API_KEY'}"
-      ]
-    }
-  }
-}`}
-        </pre>
-        <div className="text-2xs text-muted-foreground">
-          The SSE endpoint at <code className="bg-muted px-1">/sse</code> is required for Claude Desktop compatibility.
+      {/* AI Agents & Claude (one-click) */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">
+          <Bot className="h-3 w-3" />
+          AI AGENTS &amp; CLAUDE
+        </div>
+
+        <div className="space-y-2 text-2xs">
+          <div className="border border-border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm">MCP Remote Command</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => copyWithToast(mcpRemoteCommand, 'command')}
+                title="Copy command"
+              >
+                {copiedCommand ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <code className="block bg-muted p-2 break-all">
+              {mcpRemoteCommand}
+            </code>
+            <div className="text-2xs text-muted-foreground mt-1">
+              Paste this into a terminal to run the MCP server for Claude or other MCP-aware agents.
+            </div>
+          </div>
+
+          <div className="border border-border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm">Claude Desktop Config</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => copyWithToast(claudeConfig, 'config')}
+                title="Copy Claude config JSON"
+              >
+                {copiedConfig ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <pre className="bg-muted p-3 text-2xs overflow-x-auto">
+{claudeConfig}
+            </pre>
+            <div className="text-2xs text-muted-foreground">
+              Paste into your Claude Desktop configuration file. The SSE endpoint at <code className="bg-muted px-1">/sse</code> is required for MCP.
+            </div>
+          </div>
         </div>
       </div>
     </div>

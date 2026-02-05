@@ -33,6 +33,7 @@ import { ProfileSection } from '@/components/settings/ProfileSection';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
 
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
+import { GoalsSection } from '@/components/settings/GoalsSection';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -40,7 +41,10 @@ export default function Settings() {
   const { isDark, toggleTheme } = useTheme();
   
   // Section expansion state
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    profile: true,
+    goals: true,
+  });
   
   // Account management state
   const [newEmail, setNewEmail] = useState('');
@@ -61,17 +65,26 @@ export default function Settings() {
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4 }}>
           
+          {/* BASIC SETTINGS */}
+          <Typography 
+            variant="overline" 
+            sx={{ color: 'text.secondary', letterSpacing: 1, mb: -0.5 }}
+          >
+            BASIC SETTINGS
+          </Typography>
+
           {/* Profile Section */}
           <ProfileSection 
             isExpanded={expandedSections.profile || false}
             onToggle={() => toggleSection('profile')}
           />
 
-          {/* Data Management Section */}
-          <DataManagementSection
-            isExpanded={expandedSections.data || false}
-            onToggle={() => toggleSection('data')}
+          {/* Goals Section */}
+          <GoalsSection
+            isExpanded={expandedSections.goals || false}
+            onToggle={() => toggleSection('goals')}
           />
+
           <MuiCard>
             <Box
               onClick={() => toggleSection('account')}
@@ -185,6 +198,98 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
+          {/* Appearance */}
+          <MuiCard>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                {isDark ? <Moon size={18} /> : <Sun size={18} />}
+                <Typography variant="body1" fontWeight={600}>
+                  {isDark ? 'Dark Mode' : 'Light Mode'}
+                </Typography>
+              </Box>
+              <Switch 
+                checked={isDark} 
+                onChange={toggleTheme}
+                color="primary"
+              />
+            </Box>
+          </MuiCard>
+
+          {/* Add to Home Screen */}
+          <MuiCard>
+            <Box
+              onClick={() => toggleSection('pwa')}
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Smartphone size={18} />
+                <Typography variant="body1" fontWeight={600}>Add to Home Screen</Typography>
+              </Box>
+              <ChevronRight 
+                size={18} 
+                style={{ 
+                  transform: expandedSections.pwa ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }} 
+              />
+            </Box>
+            
+            <Collapse in={expandedSections.pwa}>
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  bgcolor: 'action.hover',
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {['Tap Share in Safari', 'Select \"Add to Home Screen\"', 'Tap \"Add\"'].map((step, i) => (
+                    <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 24, 
+                        height: 24, 
+                        borderRadius: '50%', 
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                      }}>
+                        {i + 1}
+                      </Box>
+                      <Typography variant="body2">{step}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Collapse>
+          </MuiCard>
+
+          {/* ADVANCED / POWER USER */}
+          <Typography 
+            variant="overline" 
+            sx={{ color: 'text.secondary', letterSpacing: 1, mt: 2, mb: -0.5 }}
+          >
+            ADVANCED &amp; AUTOMATIONS
+          </Typography>
+
+          {/* Data Management Section (advanced) */}
+          <DataManagementSection
+            isExpanded={expandedSections.data || false}
+            onToggle={() => toggleSection('data')}
+          />
+
           {/* API Access */}
           <MuiCard>
             <Box
@@ -199,7 +304,12 @@ export default function Settings() {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Code size={18} />
-                <Typography variant="body1" fontWeight={600}>API Access</Typography>
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>API &amp; AI Agents</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    For integrations, automations, and Claude / AI tools
+                  </Typography>
+                </Box>
               </Box>
               <ChevronRight 
                 size={18} 
