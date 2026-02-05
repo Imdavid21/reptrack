@@ -154,7 +154,7 @@ export default function LogWorkout() {
       });
       clearDraft();
       toast.success('Workout logged! 💪');
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       toast.error('Failed to save workout');
     }
@@ -229,7 +229,7 @@ export default function LogWorkout() {
       });
       clearDraft();
       toast.success('Workout logged! 💪');
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       toast.error('Failed to save workout');
     }
@@ -257,7 +257,7 @@ export default function LogWorkout() {
       });
       clearDraft();
       toast.success('Workout logged! 💪');
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       toast.error('Failed to save workout');
     }

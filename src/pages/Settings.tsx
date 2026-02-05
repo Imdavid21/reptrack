@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Switch, 
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Switch,
   Button,
   Collapse,
   IconButton,
@@ -37,6 +38,7 @@ import { GoalsSection } from '@/components/settings/GoalsSection';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   
@@ -58,6 +60,7 @@ export default function Settings() {
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out');
+    navigate('/', { replace: true });
   };
 
   return (
