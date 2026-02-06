@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const stats = [
-  '3 sets logged',
-  '2.1L water',
-  '7.5h sleep',
-  '1,820 kcal',
-  '82.4 kg',
-  'New PR: Bench',
+const activities = [
+  { name: 'Alex', action: 'logged a push workout' },
+  { name: 'Priya', action: 'hit a new squat PR' },
+  { name: 'Marcus', action: 'tracked 2.4L of water' },
+  { name: 'Sofia', action: 'logged breakfast — 620 kcal' },
+  { name: 'James', action: 'completed leg day' },
+  { name: 'Aisha', action: 'logged 8h of sleep' },
+  { name: 'Daniel', action: 'added 3 sets of deadlifts' },
+  { name: 'Emma', action: 'hit a bench press PR' },
+  { name: 'Kai', action: 'tracked a rest day' },
+  { name: 'Lena', action: 'logged her morning check-in' },
+  { name: 'Ryan', action: 'finished an upper body session' },
+  { name: 'Nina', action: 'tracked 1,950 kcal for the day' },
 ];
 
 export default function LiveStatTicker() {
@@ -15,23 +21,25 @@ export default function LiveStatTicker() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % stats.length);
+      setIndex((prev) => (prev + 1) % activities.length);
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const current = activities[index];
 
   return (
     <div className="h-6 flex items-center justify-center overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.span
-          key={stats[index]}
+          key={index}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.35, ease: 'easeInOut' }}
-          className="text-sm font-medium text-muted-foreground tracking-wide"
+          className="text-sm text-muted-foreground tracking-wide"
         >
-          {stats[index]}
+          <span className="font-medium">{current.name}</span> {current.action}
         </motion.span>
       </AnimatePresence>
     </div>
