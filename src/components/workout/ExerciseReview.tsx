@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
-import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2 } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,12 +24,201 @@ interface ExerciseReviewProps {
   hasPendingSuggestions?: boolean;
   onConfirmSuggestions?: () => void;
   onDenySuggestions?: () => void;
-  /** Available days from the user's split for quick switching */
   availableDays?: DayOption[];
-  /** Currently selected day key */
   selectedDayKey?: string;
-  /** Callback when user switches to a different day */
   onSwitchDay?: (dayKey: string) => void;
+}
+
+function ExerciseItemCard({
+  exercise,
+  globalIndex,
+  totalExercises,
+  isEditing,
+  onToggleEdit,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  onUpdate,
+}: {
+  exercise: WorkoutExercise;
+  globalIndex: number;
+  totalExercises: number;
+  isEditing: boolean;
+  onToggleEdit: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  onUpdate: (updated: WorkoutExercise) => void;
+}) {
+  const totalSets = exercise.sets.length;
+  const targetInfo = exercise.sets[0];
+
+  const handleSetsChange = (delta: number) => {
+    haptic('light');
+    const newCount = Math.max(1, Math.min(10, totalSets + delta));
+    if (newCount === totalSets) return;
+
+    let newSets: ExerciseSet[];
+    if (newCount > totalSets) {
+      const lastSet = exercise.sets[exercise.sets.length - 1];
+      const added = Array.from({ length: newCount - totalSets }, (_, i) => ({
+        setNumber: totalSets + i + 1,
+        targetWeight: lastSet.targetWeight,
+        targetReps: lastSet.targetReps,
+        actualWeight: '',
+        actualReps: '',
+        completed: false,
+      }));
+      newSets = [...exercise.sets, ...added];
+    } else {
+      newSets = exercise.sets.slice(0, newCount);
+    }
+    newSets.forEach((s, i) => (s.setNumber = i + 1));
+    onUpdate({ ...exercise, sets: newSets });
+  };
+
+  const handleRepsChange = (value: string) => {
+    const newSets = exercise.sets.map(s => ({ ...s, targetReps: value }));
+    onUpdate({ ...exercise, sets: newSets });
+  };
+
+  const handleWeightChange = (value: string) => {
+    const newSets = exercise.sets.map(s => ({ ...s, targetWeight: value }));
+    onUpdate({ ...exercise, sets: newSets });
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -40, height: 0 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-xl border border-border bg-card overflow-hidden"
+    >
+      <div className="flex items-center gap-2 p-3">
+        {/* Reorder controls */}
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button
+            onClick={onMoveUp}
+            disabled={globalIndex === 0}
+            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+          >
+            <ChevronUp className="h-3 w-3" />
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={globalIndex === totalExercises - 1}
+            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Exercise info — tap to expand editor */}
+        <button
+          onClick={() => {
+            haptic('light');
+            onToggleEdit();
+          }}
+          className="flex-1 min-w-0 text-left"
+        >
+          <div className="font-semibold text-sm truncate">{exercise.name}</div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+            <span>{totalSets} sets</span>
+            <span className="opacity-40">·</span>
+            <span>{targetInfo?.targetReps || '—'}</span>
+            {targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
+              <>
+                <span className="opacity-40">·</span>
+                <span>{targetInfo.targetWeight}</span>
+              </>
+            )}
+          </div>
+        </button>
+
+        {/* Category badge */}
+        <span className={cn(
+          'text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0',
+          exercise.category === 'primary'
+            ? 'bg-primary/10 text-primary'
+            : 'bg-muted text-muted-foreground'
+        )}>
+          {exercise.category === 'primary' ? 'MAIN' : 'ACC'}
+        </span>
+
+        {/* Remove button */}
+        <button
+          onClick={onRemove}
+          className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Inline editor */}
+      <AnimatePresence>
+        {isEditing && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-1 flex items-center gap-3 border-t border-border/50">
+              {/* Sets */}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Sets</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleSetsChange(-1)}
+                    className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="text-sm font-bold w-5 text-center tabular-nums">{totalSets}</span>
+                  <button
+                    onClick={() => handleSetsChange(1)}
+                    className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-px h-8 bg-border/50" />
+
+              {/* Reps */}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Reps</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={targetInfo?.targetReps || ''}
+                  onChange={(e) => handleRepsChange(e.target.value)}
+                  className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                />
+              </div>
+
+              <div className="w-px h-8 bg-border/50" />
+
+              {/* Weight */}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Weight</span>
+                <input
+                  type="text"
+                  value={targetInfo?.targetWeight || ''}
+                  onChange={(e) => handleWeightChange(e.target.value)}
+                  className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }
 
 export function ExerciseReview({
@@ -49,10 +238,12 @@ export function ExerciseReview({
   onSwitchDay,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const handleRemove = (index: number) => {
     haptic('light');
     onChange(exercises.filter((_, i) => i !== index));
+    if (editingIndex === index) setEditingIndex(null);
   };
 
   const handleMoveUp = (index: number) => {
@@ -62,6 +253,7 @@ export function ExerciseReview({
     [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
     updated.forEach((ex, i) => (ex.sort_order = i));
     onChange(updated);
+    if (editingIndex === index) setEditingIndex(index - 1);
   };
 
   const handleMoveDown = (index: number) => {
@@ -71,6 +263,13 @@ export function ExerciseReview({
     [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
     updated.forEach((ex, i) => (ex.sort_order = i));
     onChange(updated);
+    if (editingIndex === index) setEditingIndex(index + 1);
+  };
+
+  const handleUpdateExercise = (index: number, updated: WorkoutExercise) => {
+    const newExercises = [...exercises];
+    newExercises[index] = updated;
+    onChange(newExercises);
   };
 
   const handleAddExercise = (exercise: WorkoutExercise) => {
@@ -81,72 +280,21 @@ export function ExerciseReview({
   const primaryExercises = exercises.filter(ex => ex.category === 'primary');
   const accessoryExercises = exercises.filter(ex => ex.category === 'accessory');
 
-  const renderExerciseItem = (exercise: WorkoutExercise, globalIndex: number) => {
-    const totalSets = exercise.sets.length;
-    const targetInfo = exercise.sets[0];
-
+  const renderExerciseItem = (exercise: WorkoutExercise) => {
+    const globalIndex = exercises.indexOf(exercise);
     return (
-      <motion.div
+      <ExerciseItemCard
         key={`${exercise.name}-${globalIndex}`}
-        layout
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -40, height: 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex items-center gap-2 p-3 rounded-xl border border-border bg-card group"
-      >
-        {/* Reorder controls */}
-        <div className="flex flex-col gap-0.5 shrink-0">
-          <button
-            onClick={() => handleMoveUp(globalIndex)}
-            disabled={globalIndex === 0}
-            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-          >
-            <ChevronUp className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => handleMoveDown(globalIndex)}
-            disabled={globalIndex === exercises.length - 1}
-            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-          >
-            <ChevronDown className="h-3 w-3" />
-          </button>
-        </div>
-
-        {/* Exercise info */}
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm truncate">{exercise.name}</div>
-          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-            <span>{totalSets} sets</span>
-            <span className="opacity-40">·</span>
-            <span>{targetInfo?.targetReps || '—'}</span>
-            {targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
-              <>
-                <span className="opacity-40">·</span>
-                <span>{targetInfo.targetWeight}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Category badge */}
-        <span className={cn(
-          'text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0',
-          exercise.category === 'primary'
-            ? 'bg-primary/10 text-primary'
-            : 'bg-muted text-muted-foreground'
-        )}>
-          {exercise.category === 'primary' ? 'MAIN' : 'ACC'}
-        </span>
-
-        {/* Remove button */}
-        <button
-          onClick={() => handleRemove(globalIndex)}
-          className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </motion.div>
+        exercise={exercise}
+        globalIndex={globalIndex}
+        totalExercises={exercises.length}
+        isEditing={editingIndex === globalIndex}
+        onToggleEdit={() => setEditingIndex(editingIndex === globalIndex ? null : globalIndex)}
+        onMoveUp={() => handleMoveUp(globalIndex)}
+        onMoveDown={() => handleMoveDown(globalIndex)}
+        onRemove={() => handleRemove(globalIndex)}
+        onUpdate={(updated) => handleUpdateExercise(globalIndex, updated)}
+      />
     );
   };
 
@@ -190,10 +338,7 @@ export function ExerciseReview({
             <h4 className="section-header mb-2">COMPOUNDS</h4>
             <div className="space-y-1.5">
               <AnimatePresence mode="popLayout">
-                {primaryExercises.map((ex) => {
-                  const globalIndex = exercises.indexOf(ex);
-                  return renderExerciseItem(ex, globalIndex);
-                })}
+                {primaryExercises.map((ex) => renderExerciseItem(ex))}
               </AnimatePresence>
             </div>
           </div>
@@ -204,10 +349,7 @@ export function ExerciseReview({
             <h4 className="section-header mb-2">ACCESSORIES</h4>
             <div className="space-y-1.5">
               <AnimatePresence mode="popLayout">
-                {accessoryExercises.map((ex) => {
-                  const globalIndex = exercises.indexOf(ex);
-                  return renderExerciseItem(ex, globalIndex);
-                })}
+                {accessoryExercises.map((ex) => renderExerciseItem(ex))}
               </AnimatePresence>
             </div>
           </div>
@@ -304,7 +446,7 @@ export function ExerciseReview({
 
       {/* Info text */}
       <p className="text-[11px] text-muted-foreground text-center">
-        Reorder or remove exercises before starting. Add more during the workout.
+        Tap an exercise to edit sets, reps & weight. Add more during the workout.
       </p>
     </div>
   );
