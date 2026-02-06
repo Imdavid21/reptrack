@@ -155,19 +155,19 @@ export function ProgressHeader() {
         </div>
 
         {/* Mini stats row */}
-        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border">
-          <div className="text-center">
+        <div className="grid grid-cols-3 gap-0 mt-4 pt-4 border-t border-border">
+          <div className="text-center py-2">
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
               <Calendar className="h-3 w-3" />
             </div>
             <div className="text-xl font-bold tabular-nums">{daysLoggedThisWeek}/7</div>
-            <div className="text-[10px] text-muted-foreground uppercase">DAYS LOGGED</div>
+            <div className="text-[10px] text-muted-foreground uppercase mt-1">DAYS LOGGED</div>
           </div>
           
           {/* Sleep Stat - Tappable */}
           <button 
             onClick={() => setShowSleepDialog(true)}
-            className="text-center hover:bg-muted/50 transition-colors -m-2 p-2 rounded relative border-x border-border"
+            className="text-center hover:bg-muted/50 transition-colors py-2 rounded-xl relative border-x border-border"
           >
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
               <Moon className="h-3 w-3" />
@@ -183,14 +183,14 @@ export function ProgressHeader() {
                   : '—'
               )}
             </div>
-            <div className="text-[10px] text-muted-foreground uppercase">
+            <div className="text-[10px] text-muted-foreground uppercase mt-1">
               {!todaySleep ? 'TAP TO LOG' : 'SLEEP'}
             </div>
           </button>
           
           <button 
             onClick={() => setShowWeightDialog(true)}
-            className="text-center hover:bg-muted/50 transition-colors -m-2 p-2 rounded relative"
+            className="text-center hover:bg-muted/50 transition-colors py-2 rounded-xl relative"
           >
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
               <Scale className="h-3 w-3" />
@@ -206,7 +206,7 @@ export function ProgressHeader() {
                   : '—'
               )}
             </div>
-            <div className="text-[10px] text-muted-foreground uppercase">
+            <div className="text-[10px] text-muted-foreground uppercase mt-1">
               {!todayWeight && lastLoggedWeight ? 'TAP TO LOG' : 'KG'}
             </div>
           </button>

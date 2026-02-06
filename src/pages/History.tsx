@@ -110,19 +110,19 @@ export default function History() {
         <div className="space-y-4 pb-10">
           {/* Monthly stats row */}
           <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
-            <div className="card-brutalist text-center py-3">
+            <div className="card-brutalist text-center !py-4">
               <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
-              <div className="text-[9px] text-muted-foreground uppercase">This Month</div>
+              <div className="text-[9px] text-muted-foreground uppercase mt-1">This Month</div>
             </div>
-            <div className="card-brutalist text-center py-3">
+            <div className="card-brutalist text-center !py-4">
               <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
-              <div className="text-[9px] text-muted-foreground uppercase">All Time</div>
+              <div className="text-[9px] text-muted-foreground uppercase mt-1">All Time</div>
             </div>
-            <div className="card-brutalist text-center py-3">
+            <div className="card-brutalist text-center !py-4">
               <div className="text-xl font-bold tabular-nums">
                 {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
               </div>
-              <div className="text-[9px] text-muted-foreground uppercase">Weeks</div>
+              <div className="text-[9px] text-muted-foreground uppercase mt-1">Weeks</div>
             </div>
           </motion.div>
 
@@ -169,7 +169,7 @@ export default function History() {
                         {!isEditing && (
                           <button
                             onClick={() => startEdit(dateStr)}
-                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
+                           className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
                           >
                             <Edit2 size={13} />
                           </button>
@@ -180,7 +180,7 @@ export default function History() {
                               e.stopPropagation();
                               setSelectedWorkoutForEdit(workout);
                             }}
-                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
+                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
                           >
                             <MoreHorizontal size={13} />
                           </button>
@@ -198,7 +198,7 @@ export default function History() {
                               <input
                                 type="number"
                                 placeholder="H"
-                                className="w-12 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                               className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                 value={editValues.sleepHours}
                                 onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
                                 min="0"
@@ -208,7 +208,7 @@ export default function History() {
                               <input
                                 type="number"
                                 placeholder="M"
-                                className="w-12 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                 value={editValues.sleepMinutes}
                                 onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
                                 min="0"
@@ -221,7 +221,7 @@ export default function History() {
                             <input
                               type="number"
                               placeholder="kg"
-                              className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                              className="w-20 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                               value={editValues.bodyweight}
                               onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
                               min="0"
@@ -232,14 +232,14 @@ export default function History() {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={cancelEdit}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                           >
                             <X size={16} />
                           </button>
                           <button
                             onClick={saveEdit}
                             disabled={isUpserting}
-                            className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                            className="p-1.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                           >
                             <Check size={16} />
                           </button>
@@ -254,7 +254,7 @@ export default function History() {
                         {workout && !isSkipped && (
                           <button
                             onClick={() => navigate(`/history/${workout.id}`)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg hover:opacity-90 transition-opacity"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
                           >
                             <Dumbbell size={13} />
                             <span className="text-xs font-bold">{workout.day_name}</span>
@@ -263,7 +263,7 @@ export default function History() {
                         )}
 
                         {hasSleep && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
                             <Moon size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {formatSleep(metric.sleep_hours)}
@@ -272,7 +272,7 @@ export default function History() {
                         )}
 
                         {hasWeight && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
                             <Scale size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {metric.bodyweight} kg
@@ -281,7 +281,7 @@ export default function History() {
                         )}
 
                         {hasCalories && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
                             <Flame size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {caloriesByDate[dateStr].toLocaleString()} cal
