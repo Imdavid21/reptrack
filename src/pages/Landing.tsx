@@ -203,28 +203,34 @@ export default function Landing() {
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <motion.div variants={fadeInUp} className="text-center">
-              <MiniWorkoutDemo />
-              <p className="text-sm text-muted-foreground mt-4">
-                Log each set as you go. PRs are detected automatically.
+            <motion.div variants={fadeInUp} className="text-center flex flex-col">
+              <div className="flex-1">
+                <MiniWorkoutDemo />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Log sets. PRs detected automatically.
               </p>
             </motion.div>
-            <motion.div variants={fadeInUp} className="text-center">
-              <MiniWaterDemo />
-              <p className="text-sm text-muted-foreground mt-4">
-                One tap to log water. See your daily progress fill up.
+            <motion.div variants={fadeInUp} className="text-center flex flex-col">
+              <div className="flex-1">
+                <MiniWaterDemo />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                One tap to log water.
               </p>
             </motion.div>
-            <motion.div variants={fadeInUp} className="text-center">
-              <MiniCalorieDemo />
-              <p className="text-sm text-muted-foreground mt-4">
-                Snap a photo and AI breaks down calories and macros.
+            <motion.div variants={fadeInUp} className="text-center flex flex-col">
+              <div className="flex-1">
+                <MiniCalorieDemo />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                AI breaks down calories from photos.
               </p>
             </motion.div>
           </motion.div>
