@@ -2,14 +2,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import {
   Dumbbell,
   Droplets,
-  Flame,
   Brain,
   Sparkles,
   Activity,
-  Moon,
   Zap,
   Bot,
   Code2,
@@ -54,6 +54,7 @@ const staggerContainer = {
 export default function Landing() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!loading && user) {
@@ -96,20 +97,13 @@ export default function Landing() {
             <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
             <a href="#insights" onClick={(e) => scrollToSection(e, 'insights')} className="hover:text-foreground transition-colors">Insights</a>
           </nav>
-          <div className="flex items-center gap-4 z-10">
-            <Link
-              to="/signin"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="btn-brutalist btn-primary px-4 py-2 text-sm"
-            >
-              Get Started
-            </Link>
-          </div>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl border border-border hover:bg-secondary transition-colors z-10"
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
       </header>
 
