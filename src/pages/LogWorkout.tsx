@@ -506,7 +506,7 @@ export default function LogWorkout() {
     <MainLayout>
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
-          {/* Back Button - on select-day when returning from exercises */}
+          {/* Back Button - context-aware naming */}
           {step === 'select-day' && selectedDay && exercises.length > 0 && (
             <button
               onClick={handleBack}
@@ -526,20 +526,30 @@ export default function LogWorkout() {
             </button>
           )}
 
-          {/* Split selector - only on day selection */}
-          {step === 'select-day' && preferences && (
-            <motion.div variants={staggerItem}>
-              <SplitSelector
-                currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
-                onChangeSplit={handleSplitChange}
-                isUpdating={updatePreferences.isPending}
-              />
-            </motion.div>
-          )}
 
-          {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              {/* Select Split toggle link */}
+              {preferences && (
+                <button
+                  onClick={() => setShowInlineSplitSelector(v => !v)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  Select Split
+                </button>
+              )}
+
+              {showInlineSplitSelector && preferences && (
+                <SplitSelector
+                  currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
+                  onChangeSplit={(newSplit) => {
+                    handleSplitChange(newSplit);
+                    setShowInlineSplitSelector(false);
+                  }}
+                  isUpdating={updatePreferences.isPending}
+                />
+              )}
+
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 onSelect={handleDaySelect}
