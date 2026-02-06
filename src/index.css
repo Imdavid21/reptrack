@@ -82,52 +82,55 @@
   }
 
   .dark {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 95%;
+    /* Ultra-dark base - true black foundation */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 96%;
 
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 0 0% 95%;
-    --primary-foreground: 0 0% 9%;
+    /* Primary - bright white on black */
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 2%;
 
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 90%;
 
-    --destructive: 0 0% 65%;
+    --destructive: 0 0% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 0 0% 70%;
-    --success-foreground: 0 0% 9%;
-    --success-light: 0 0% 20%;
-    --warning: 0 0% 55%;
+    --success: 0 0% 65%;
+    --success-foreground: 0 0% 2%;
+    --success-light: 0 0% 12%;
+    --warning: 0 0% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
     --ring: 0 0% 80%;
 
-    --heat-0: 0 0% 15%;
-    --heat-1: 0 0% 25%;
+    /* Heatmap - from near-invisible to bright */
+    --heat-0: 0 0% 8%;
+    --heat-1: 0 0% 22%;
     --heat-2: 0 0% 40%;
-    --heat-3: 0 0% 60%;
-    --heat-4: 0 0% 85%;
+    --heat-3: 0 0% 62%;
+    --heat-4: 0 0% 88%;
 
-    /* Chart colors - dark mode (brighter) */
-    --chart-1: 0 0% 95%;  /* near white - primary emphasis */
-    --chart-2: 0 0% 80%;
-    --chart-3: 0 0% 65%;
-    --chart-4: 0 0% 50%;
-    --chart-5: 0 0% 35%;
+    /* Chart colors - high contrast on black */
+    --chart-1: 0 0% 96%;
+    --chart-2: 0 0% 78%;
+    --chart-3: 0 0% 60%;
+    --chart-4: 0 0% 44%;
+    --chart-5: 0 0% 30%;
   }
 }
 

@@ -3,26 +3,27 @@ import { createTheme, ThemeOptions } from '@mui/material/styles';
 // Black & White palette - pure grayscale
 const palette = {
   black: {
-    main: '#171717',
-    light: '#262626',
-    dark: '#0a0a0a',
+    main: '#050505',
+    light: '#0f0f0f',
+    dark: '#000000',
   },
   white: {
-    main: '#fafafa',
+    main: '#f5f5f5',
     light: '#ffffff',
-    dark: '#f5f5f5',
+    dark: '#e5e5e5',
   },
   gray: {
     50: '#fafafa',
-    100: '#f5f5f5',
+    100: '#f0f0f0',
     200: '#e5e5e5',
     300: '#d4d4d4',
     400: '#a3a3a3',
     500: '#737373',
     600: '#525252',
     700: '#404040',
-    800: '#262626',
-    900: '#171717',
+    800: '#1a1a1a',
+    900: '#0f0f0f',
+    950: '#050505',
   },
 };
 
@@ -218,20 +219,20 @@ export const darkTheme = createTheme({
     },
     success: {
       main: palette.gray[400],
-      light: 'rgba(255, 255, 255, 0.1)',
+      light: 'rgba(255, 255, 255, 0.06)',
     },
     background: {
-      default: palette.gray[900],
-      paper: palette.gray[800],
+      default: palette.black.main,
+      paper: palette.gray[900],
     },
     text: {
       primary: palette.white.main,
       secondary: palette.gray[400],
     },
-    divider: 'rgba(255, 255, 255, 0.1)',
+    divider: 'rgba(255, 255, 255, 0.06)',
     action: {
-      hover: 'rgba(255, 255, 255, 0.04)',
-      selected: 'rgba(255, 255, 255, 0.08)',
+      hover: 'rgba(255, 255, 255, 0.03)',
+      selected: 'rgba(255, 255, 255, 0.06)',
     },
   },
   components: {
@@ -239,7 +240,7 @@ export const darkTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: palette.gray[900],
+          backgroundColor: palette.black.main,
           transition: 'background-color 0.3s ease, color 0.3s ease',
         },
       },
