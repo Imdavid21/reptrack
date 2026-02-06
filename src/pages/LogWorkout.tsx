@@ -1,6 +1,6 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -15,14 +15,17 @@ import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWo
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
+
+const REVIEWED_DAYS_KEY = 'fittrack_reviewed_days';
 
 const defaultHabits: Habits = {
   pullups: 0,
@@ -69,8 +72,23 @@ function buildExercisesFromTemplate(dayData: { exercises: Array<{ name: string; 
   });
 }
 
+// --- Smart-skip helpers ---
+function getReviewedDays(userId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(`${REVIEWED_DAYS_KEY}_${userId}`);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch { return new Set(); }
+}
+
+function markDayReviewed(userId: string, dayKey: string) {
+  const set = getReviewedDays(userId);
+  set.add(dayKey);
+  localStorage.setItem(`${REVIEWED_DAYS_KEY}_${userId}`, JSON.stringify([...set]));
+}
+
 export default function LogWorkout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { preferences, isLoading: prefsLoading } = useUserPreferences();
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
@@ -90,6 +108,7 @@ export default function LogWorkout() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
+  const [skippedReview, setSkippedReview] = useState(false);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -108,18 +127,20 @@ export default function LogWorkout() {
   const dayData = selectedDay !== 'custom' && selectedDay ? splitDays[selectedDay] : null;
   const dayType = dayData ? getDayType(dayData.name) : undefined;
   const currentExercise = exercises[currentExerciseIndex];
-  const progressSteps = { 'select-day': 33, 'review': 66, 'exercises': 100 };
-  const progressPercent = progressSteps[step];
 
-  // Restore from draft (skip directly to exercises if draft had exercises step)
+  // Progress: 2 steps if review was skipped, 3 if not
+  const progressPercent = step === 'select-day' ? (skippedReview ? 50 : 33)
+    : step === 'review' ? 66
+    : 100;
+
+  // Restore from draft
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
       setSelectedDay(draft.day);
       setSelectedDate(new Date(draft.date));
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
-      // If draft was in exercises step, go directly there; otherwise go to review
-      const validStep: Step = draft.step === 'exercises' ? 'exercises' : 
+      const validStep: Step = draft.step === 'exercises' ? 'exercises' :
                               draft.step === 'review' ? 'review' : 'review';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
@@ -170,7 +191,7 @@ export default function LogWorkout() {
     );
   }
 
-  // Step 1 → Step 2: Select day, pre-fill exercises, go to review
+  // Smart-skip: check if user has reviewed this day type before
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
     setSelectedDate(date);
@@ -183,18 +204,36 @@ export default function LogWorkout() {
 
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
-    setStep('review');
+
+    // Smart skip: if user has reviewed this day before, go straight to logging
+    const reviewed = user ? getReviewedDays(user.id) : new Set<string>();
+    if (day !== 'custom' && reviewed.has(day)) {
+      setSkippedReview(true);
+      setWorkoutStartTime(new Date());
+      setStep('exercises');
+    } else {
+      setSkippedReview(false);
+      setStep('review');
+    }
   };
 
-  // Step 2 → Step 3: Start the actual workout logging
+  // Start session from review → mark day as reviewed for future smart-skip
   const handleStartSession = () => {
+    if (user && selectedDay !== 'custom') {
+      markDayReviewed(user.id, selectedDay);
+    }
     setWorkoutStartTime(new Date());
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
     setStep('exercises');
   };
 
-  // AI suggestions for the current day type
+  // Navigate to review from exercises (edit exercises escape hatch)
+  const handleEditExercises = () => {
+    setStep('review');
+  };
+
+  // AI suggestions
   const handleSuggestExercises = async () => {
     if (!dayData) return;
     setPreSuggestionExercises([...exercises]);
@@ -338,19 +377,29 @@ export default function LogWorkout() {
     if (step === 'review') {
       setStep('select-day');
       setExercises([]);
+      setSkippedReview(false);
     } else if (step === 'exercises') {
-      if (exerciseViewMode === 'single') {
-        if (currentSetIndex > 0) {
-          setCurrentSetIndex(prev => prev - 1);
-        } else if (currentExerciseIndex > 0) {
-          setCurrentExerciseIndex(prev => prev - 1);
-          const prevEx = exercises[currentExerciseIndex - 1];
-          setCurrentSetIndex(prevEx.sets.length - 1);
+      // If no sets completed yet, allow going back
+      if (completedSets === 0) {
+        if (skippedReview) {
+          // Smart-skipped user: go back to day selection
+          setStep('select-day');
+          setExercises([]);
+          setSkippedReview(false);
         } else {
           setStep('review');
         }
       } else {
-        setStep('review');
+        // Has progress: navigate within exercises
+        if (exerciseViewMode === 'single') {
+          if (currentSetIndex > 0) {
+            setCurrentSetIndex(prev => prev - 1);
+          } else if (currentExerciseIndex > 0) {
+            setCurrentExerciseIndex(prev => prev - 1);
+            const prevEx = exercises[currentExerciseIndex - 1];
+            setCurrentSetIndex(prevEx.sets.length - 1);
+          }
+        }
       }
     }
   };
@@ -370,7 +419,7 @@ export default function LogWorkout() {
             </button>
           )}
 
-          {/* Progress Bar - 3 steps */}
+          {/* Progress Bar */}
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-foreground rounded-full transition-all duration-300"
@@ -402,6 +451,7 @@ export default function LogWorkout() {
                     setSelectedDate(new Date());
                     setWeekNumber(weekNumber);
                     setExercises([]);
+                    setSkippedReview(false);
                     setStep('review');
                   }}
                 >
@@ -432,7 +482,7 @@ export default function LogWorkout() {
           {/* Step 3: Log Sets */}
           {step === 'exercises' && (
             <>
-              {/* Header with view toggle */}
+              {/* Header with view toggle + edit exercises button */}
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold">
@@ -443,6 +493,14 @@ export default function LogWorkout() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Edit exercises shortcut */}
+                  <button
+                    onClick={handleEditExercises}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Edit exercises"
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <div className="text-right mr-1">
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
