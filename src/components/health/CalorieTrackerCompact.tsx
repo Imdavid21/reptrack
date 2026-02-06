@@ -285,7 +285,6 @@ export function CalorieTrackerCompact() {
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
                 <div key={meal.id} className="flex justify-between text-sm">
                   <span className="tabular-nums text-muted-foreground">{format(new Date(meal.created_at), 'HH:mm')}</span>
-                  <span className="truncate mx-3 flex-1 text-right">{meal.food_name || 'Unnamed'}</span>
                   <span className="tabular-nums shrink-0">{meal.calories} cal</span>
                 </div>
               ))}
