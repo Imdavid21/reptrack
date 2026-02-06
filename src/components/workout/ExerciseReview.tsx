@@ -224,59 +224,72 @@ export function ExerciseReview({
       {/* Action buttons */}
       <div className="space-y-2.5">
         {/* AI suggestion confirmation banner */}
-        {hasPendingSuggestions && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 p-3 rounded-xl border-2 border-primary/30 bg-primary/5"
-          >
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <span className="text-sm font-medium flex-1">AI suggestions loaded</span>
-            <button
-              onClick={onConfirmSuggestions}
-              className="h-8 px-3 rounded-lg bg-foreground text-background text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+        <AnimatePresence>
+          {hasPendingSuggestions && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
             >
-              <Check className="h-3.5 w-3.5" />
-              Keep
-            </button>
-            <button
-              onClick={onDenySuggestions}
-              className="h-8 px-3 rounded-lg border border-border text-xs font-semibold flex items-center gap-1.5 hover:bg-muted transition-colors"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-              Undo
-            </button>
-          </motion.div>
-        )}
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted">
+                <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground flex-1">AI updated exercises</span>
+                <button
+                  onClick={onConfirmSuggestions}
+                  className="h-7 px-2.5 rounded-lg bg-foreground text-background text-[11px] font-semibold flex items-center gap-1 hover:opacity-90 transition-opacity"
+                >
+                  <Check className="h-3 w-3" />
+                  Keep
+                </button>
+                <button
+                  onClick={onDenySuggestions}
+                  className="h-7 px-2.5 rounded-lg border border-border text-[11px] font-semibold flex items-center gap-1 hover:bg-muted transition-colors"
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Undo
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Add exercise */}
-        {showPicker ? (
-          <ExercisePicker
-            existingExercises={exercises}
-            onAddExercise={handleAddExercise}
-            dayType={dayType}
-          />
-        ) : (
-          <button
-            onClick={() => setShowPicker(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Add Exercise
-          </button>
-        )}
+        {/* Add exercise + AI suggest row */}
+        <div className="flex gap-2">
+          {showPicker ? (
+            <div className="w-full">
+              <ExercisePicker
+                existingExercises={exercises}
+                onAddExercise={handleAddExercise}
+                dayType={dayType}
+              />
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowPicker(true)}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add Exercise
+              </button>
 
-        {/* AI suggest */}
-        {onSuggest && !hasPendingSuggestions && (
-          <button
-            onClick={onSuggest}
-            disabled={isSuggesting}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4" />
-            {isSuggesting ? 'Generating...' : 'Suggest with AI'}
-          </button>
-        )}
+              {onSuggest && !hasPendingSuggestions && (
+                <button
+                  onClick={onSuggest}
+                  disabled={isSuggesting}
+                  title="Suggest exercises with AI"
+                  className={cn(
+                    'h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40',
+                    isSuggesting && 'animate-pulse'
+                  )}
+                >
+                  <Sparkles className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Start workout */}
         <button
@@ -291,7 +304,7 @@ export function ExerciseReview({
 
       {/* Info text */}
       <p className="text-[11px] text-muted-foreground text-center">
-        Remove or reorder exercises before starting. You can still add more during the workout.
+        Reorder or remove exercises before starting. Add more during the workout.
       </p>
     </div>
   );
