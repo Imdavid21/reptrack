@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { Box, Typography, Chip, IconButton, TextField } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
@@ -15,7 +13,7 @@ import { toast } from '@/lib/toast';
 export default function History() {
   const { workouts } = useWorkouts();
   const navigate = useNavigate();
-  
+
   // Get last 30 days of metrics
   const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
     from: subDays(new Date(), 30),
@@ -61,7 +59,7 @@ export default function History() {
     const sleepHours = metric?.sleep_hours || 0;
     const h = Math.floor(sleepHours);
     const m = Math.round((sleepHours - h) * 60);
-    
+
     setEditingDate(dateStr);
     setEditValues({
       sleepHours: h > 0 ? String(h) : '',
@@ -77,12 +75,12 @@ export default function History() {
 
   const saveEdit = async () => {
     if (!editingDate) return;
-    
+
     try {
       const hours = parseInt(editValues.sleepHours) || 0;
       const minutes = parseInt(editValues.sleepMinutes) || 0;
       const sleepDecimal = hours + (minutes / 60);
-      
+
       await upsertMetrics({
         date: editingDate,
         sleep_hours: sleepDecimal > 0 ? sleepDecimal : undefined,
@@ -106,7 +104,7 @@ export default function History() {
     <MainLayout title="HISTORY">
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-          
+
           {/* Daily Timeline */}
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
             {last14Days.map((date) => {
@@ -115,7 +113,7 @@ export default function History() {
               const metric = metricsByDate[dateStr];
               const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
               const isEditing = editingDate === dateStr;
-              
+
               const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
               const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
               const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
@@ -123,150 +121,142 @@ export default function History() {
 
               return (
                 <motion.div key={dateStr} variants={staggerItem}>
-                  <MuiCard sx={{ mb: 1.5, opacity: hasAnyData ? 1 : 0.5 }}>
+                  <div className={`card-brutalist mb-4 transition-opacity ${!hasAnyData && !isEditing ? 'opacity-50' : 'opacity-100'}`}>
                     {/* Date Header */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      mb: hasAnyData ? 1.5 : 0,
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" fontWeight={600}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">
                           {isToday ? 'Today' : format(date, 'EEE, MMM d')}
-                        </Typography>
+                        </span>
                         {isToday && (
-                          <Chip label="TODAY" size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
+                          <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
                         )}
-                      </Box>
-                      
+                      </div>
+
                       {!isEditing && (
-                        <IconButton size="small" onClick={() => startEdit(dateStr)}>
+                        <button
+                          onClick={() => startEdit(dateStr)}
+                          className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                        >
                           <Edit2 size={14} />
-                        </IconButton>
+                        </button>
                       )}
-                    </Box>
+                    </div>
 
                     {/* Inline Edit Mode */}
                     {isEditing && (
-                      <Box sx={{ mb: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Moon size={14} style={{ opacity: 0.6 }} />
-                            <TextField
-                              label="H"
-                              type="number"
-                              size="small"
-                              value={editValues.sleepHours}
-                              onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
-                              sx={{ width: 60 }}
-                              inputProps={{ min: 0, max: 24 }}
-                            />
-                            <TextField
-                              label="M"
-                              type="number"
-                              size="small"
-                              value={editValues.sleepMinutes}
-                              onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
-                              sx={{ width: 60 }}
-                              inputProps={{ min: 0, max: 59 }}
-                            />
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Scale size={14} style={{ opacity: 0.6 }} />
-                            <TextField
-                              label="kg"
-                              type="number"
-                              size="small"
-                              value={editValues.bodyweight}
-                              onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
-                              sx={{ width: 80 }}
-                              inputProps={{ min: 0, step: 0.1 }}
-                            />
-                          </Box>
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                          <IconButton size="small" onClick={cancelEdit}>
+                      <div className="mb-4 p-3 bg-muted/50 rounded-xl animate-fade-in">
+                        <div className="flex flex-wrap gap-3 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Moon size={14} className="text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                placeholder="H"
+                                className="w-12 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={editValues.sleepHours}
+                                onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
+                                min="0"
+                                max="24"
+                              />
+                              <span className="text-xs text-muted-foreground">:</span>
+                              <input
+                                type="number"
+                                placeholder="M"
+                                className="w-12 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={editValues.sleepMinutes}
+                                onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
+                                min="0"
+                                max="59"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Scale size={14} className="text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                placeholder="kg"
+                                className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={editValues.bodyweight}
+                                onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
+                                min="0"
+                                step="0.1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
                             <X size={16} />
-                          </IconButton>
-                          <IconButton 
-                            size="small" 
+                          </button>
+                          <button
                             onClick={saveEdit}
                             disabled={isUpserting}
-                            sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
+                            className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                           >
                             <Check size={16} />
-                          </IconButton>
-                        </Box>
-                      </Box>
+                          </button>
+                        </div>
+                      </div>
                     )}
 
                     {/* Content Grid */}
                     {hasAnyData && !isEditing && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                      <div className="flex flex-wrap gap-2">
                         {/* Workout */}
                         {workout && (
-                          <Box 
+                          <div
                             onClick={() => navigate(`/history/${workout.id}`)}
-                            sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: 0.75,
-                              cursor: 'pointer',
-                              px: 1.5,
-                              py: 0.75,
-                              bgcolor: 'primary.main',
-                              color: 'primary.contrastText',
-                              borderRadius: 1,
-                              '&:hover': { opacity: 0.9 },
-                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                           >
                             <Dumbbell size={14} />
-                            <Typography variant="caption" fontWeight={600}>
-                              {workout.day_name}
-                            </Typography>
-                          </Box>
+                            <span className="text-xs font-bold">{workout.day_name}</span>
+                          </div>
                         )}
-                        
+
                         {/* Sleep */}
                         {hasSleep && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Moon size={14} style={{ opacity: 0.6 }} />
-                            <Typography variant="caption" color="text.secondary">
+                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
+                            <Moon size={14} className="text-muted-foreground" />
+                            <span className="text-xs font-medium text-muted-foreground">
                               {formatSleep(metric.sleep_hours)}
-                            </Typography>
-                          </Box>
+                            </span>
+                          </div>
                         )}
-                        
+
                         {/* Weight */}
                         {hasWeight && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Scale size={14} style={{ opacity: 0.6 }} />
-                            <Typography variant="caption" color="text.secondary">
+                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
+                            <Scale size={14} className="text-muted-foreground" />
+                            <span className="text-xs font-medium text-muted-foreground">
                               {metric.bodyweight} kg
-                            </Typography>
-                          </Box>
+                            </span>
+                          </div>
                         )}
-                        
+
                         {/* Calories */}
                         {hasCalories && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Flame size={14} style={{ opacity: 0.6 }} />
-                            <Typography variant="caption" color="text.secondary">
+                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
+                            <Flame size={14} className="text-muted-foreground" />
+                            <span className="text-xs font-medium text-muted-foreground">
                               {caloriesByDate[dateStr].toLocaleString()} cal
-                            </Typography>
-                          </Box>
+                            </span>
+                          </div>
                         )}
-                      </Box>
+                      </div>
                     )}
 
                     {/* Empty state */}
                     {!hasAnyData && !isEditing && (
-                      <Typography variant="caption" color="text.disabled">
+                      <p className="text-xs text-muted-foreground/50 italic">
                         No activity
-                      </Typography>
+                      </p>
                     )}
-                  </MuiCard>
+                  </div>
                 </motion.div>
               );
             })}
@@ -275,26 +265,26 @@ export default function History() {
           {/* Stats summary */}
           {workouts.length > 0 && (
             <motion.div variants={staggerItem}>
-              <MuiCard>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h3" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="card-brutalist">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold tabular-nums">
                       {workouts.length}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                    </h3>
+                    <p className="text-xs text-muted-foreground uppercase">
                       Total Sessions
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h4" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="text-xl font-bold tabular-nums">
                       {Math.max(...workouts.map((w) => w.week_number))}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
                       Weeks Completed
-                    </Typography>
-                  </Box>
-                </Box>
-              </MuiCard>
+                    </p>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
         </Box>

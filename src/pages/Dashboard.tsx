@@ -6,15 +6,14 @@ import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
-import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 
 export default function Dashboard() {
   return (
     <MainLayout title="DASHBOARD">
       <AnimatedPage>
-        <motion.div 
-          variants={staggerContainer} 
-          initial="hidden" 
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
           animate="show"
           className="pb-20"
         >
@@ -26,9 +25,9 @@ export default function Dashboard() {
 
             {/* Core Trackers */}
             <motion.div variants={staggerItem}>
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
                 gap: 2,
                 alignItems: 'stretch',
                 '& > *': { minHeight: 0 }
@@ -42,10 +41,7 @@ export default function Dashboard() {
               </Box>
             </motion.div>
 
-            {/* Personal Records */}
-            <motion.div variants={staggerItem}>
-              <PersonalRecords />
-            </motion.div>
+
           </Box>
         </motion.div>
       </AnimatedPage>

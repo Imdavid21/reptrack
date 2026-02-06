@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   Target,
   Edit3,
   Check,
@@ -35,7 +35,7 @@ function getMonthOptions() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-indexed
-  
+
   // Only show months from current year, starting from January up to current month
   for (let month = currentMonth; month >= 0; month--) {
     const date = new Date(currentYear, month, 1);
@@ -51,13 +51,13 @@ function getMonthOptions() {
 function ProgressCard() {
   const theme = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
-  
+
   // Month selection - default to current month, persist in localStorage
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const saved = localStorage.getItem('insights-selected-month');
     return saved || format(new Date(), 'yyyy-MM');
   });
-  
+
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
   // Calculate date range from selected month
@@ -87,12 +87,12 @@ function ProgressCard() {
       });
     }
   }, [preferences]);
-  
+
   // Persist month selection
   useEffect(() => {
     localStorage.setItem('insights-selected-month', selectedMonth);
   }, [selectedMonth]);
-  
+
   const handleMonthChange = (event: SelectChangeEvent<string>) => {
     setSelectedMonth(event.target.value);
   };
@@ -143,26 +143,26 @@ function ProgressCard() {
     : 0;
 
   const workoutProgress = summary ? Math.round((summary.workouts / monthlyWorkoutGoal) * 100) : 0;
-  const volumeFormatted = summary?.totalVolume 
+  const volumeFormatted = summary?.totalVolume
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
     : '—';
-  
+
   const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || summary?.month || 'This Month';
 
-  const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: { 
-    label: string; 
-    thisVal: string | number; 
-    lastVal: string | number; 
+  const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
+    label: string;
+    thisVal: string | number;
+    lastVal: string | number;
     suffix?: string;
     changeVal: number;
   }) => {
     const isPositive = changeVal > 0;
     const isNegative = changeVal < 0;
-    
+
     return (
-      <Box sx={{ 
-        p: 1.5, 
-        bgcolor: 'action.hover', 
+      <Box sx={{
+        p: 1.5,
+        bgcolor: 'action.hover',
         borderRadius: 2,
         border: 1,
         borderColor: 'divider',
@@ -175,9 +175,9 @@ function ProgressCard() {
             {thisVal}{suffix}
           </Typography>
           {changeVal !== 0 && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 0.25,
               color: isPositive ? 'success.main' : isNegative ? 'error.main' : 'text.secondary',
             }}>
@@ -230,17 +230,17 @@ function ProgressCard() {
           </IconButton>
         ) : (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <IconButton 
-              size="small" 
-              onClick={handleSave} 
+            <IconButton
+              size="small"
+              onClick={handleSave}
               disabled={isSaving}
               sx={{ p: 0.5, color: 'success.main' }}
             >
               {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={() => setIsEditing(false)} 
+            <IconButton
+              size="small"
+              onClick={() => setIsEditing(false)}
               sx={{ p: 0.5, color: 'error.main' }}
             >
               <X size={14} />
@@ -251,10 +251,10 @@ function ProgressCard() {
 
       {/* Goals editing inline */}
       <Collapse in={isEditing}>
-        <Box sx={{ 
-          p: 1.5, 
-          bgcolor: 'action.hover', 
-          borderRadius: 2, 
+        <Box sx={{
+          p: 1.5,
+          bgcolor: 'action.hover',
+          borderRadius: 2,
           mb: 1.5,
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -270,7 +270,7 @@ function ProgressCard() {
               type="number"
               value={goals.weekly_workout_goal}
               onChange={(e) => setGoals(g => ({ ...g, weekly_workout_goal: e.target.value }))}
-              InputProps={{ 
+              InputProps={{
                 endAdornment: <Typography variant="caption" color="text.secondary">/wk</Typography>,
                 sx: { fontSize: '0.875rem' }
               }}
@@ -286,7 +286,7 @@ function ProgressCard() {
               type="number"
               value={goals.sleep_goal}
               onChange={(e) => setGoals(g => ({ ...g, sleep_goal: e.target.value }))}
-              InputProps={{ 
+              InputProps={{
                 endAdornment: <Typography variant="caption" color="text.secondary">hrs</Typography>,
                 sx: { fontSize: '0.875rem' }
               }}
@@ -303,15 +303,15 @@ function ProgressCard() {
             THIS WEEK VS LAST WEEK
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 1.5 }}>
-            <StatItem 
-              label="VOLUME" 
+            <StatItem
+              label="VOLUME"
               thisVal={thisWeek.totalVolume >= 1000 ? `${(thisWeek.totalVolume / 1000).toFixed(1)}k` : thisWeek.totalVolume}
               lastVal={lastWeek?.totalVolume ? (lastWeek.totalVolume >= 1000 ? `${(lastWeek.totalVolume / 1000).toFixed(1)}k` : lastWeek.totalVolume) : 0}
               changeVal={volumeChange}
             />
-            <StatItem 
-              label="SLEEP" 
-              thisVal={thisWeek.avgSleep?.toFixed(1) || '—'} 
+            <StatItem
+              label="SLEEP"
+              thisVal={thisWeek.avgSleep?.toFixed(1) || '—'}
               lastVal={lastWeek?.avgSleep?.toFixed(1) || '—'}
               suffix="h"
               changeVal={sleepChange}
@@ -322,9 +322,9 @@ function ProgressCard() {
 
       {/* Monthly progress bar */}
       {summary && (
-        <Box sx={{ 
-          p: 1.5, 
-          bgcolor: 'action.hover', 
+        <Box sx={{
+          p: 1.5,
+          bgcolor: 'action.hover',
           borderRadius: 2,
           border: 1,
           borderColor: 'divider',
@@ -333,8 +333,8 @@ function ProgressCard() {
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
               WORKOUTS
             </Typography>
-            <Typography variant="caption" sx={{ 
-              fontWeight: 600, 
+            <Typography variant="caption" sx={{
+              fontWeight: 600,
               fontSize: '0.6rem',
               color: workoutProgress >= 100 ? 'success.main' : workoutProgress >= 75 ? 'text.primary' : 'warning.main',
             }}>
@@ -346,15 +346,15 @@ function ProgressCard() {
               {summary.workouts} <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>/ {monthlyWorkoutGoal}</Typography>
             </Typography>
           </Box>
-          <Box sx={{ 
-            height: 4, 
-            bgcolor: 'divider', 
-            borderRadius: 2, 
+          <Box sx={{
+            height: 4,
+            bgcolor: 'divider',
+            borderRadius: 2,
             mt: 0.5,
             overflow: 'hidden',
           }}>
-            <Box sx={{ 
-              height: '100%', 
+            <Box sx={{
+              height: '100%',
               width: `${Math.min(workoutProgress, 100)}%`,
               bgcolor: workoutProgress >= 100 ? 'success.main' : 'text.primary',
               borderRadius: 2,
@@ -375,14 +375,19 @@ function InsightsContent() {
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <DateRangeSelector />
         </Box>
-        
+
         {/* Main content - single scroll view */}
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            
+
             {/* Unified Progress Card */}
             <motion.div variants={staggerItem}>
               <ProgressCard />
+            </motion.div>
+
+            {/* Personal Records */}
+            <motion.div variants={staggerItem}>
+              <PersonalRecords />
             </motion.div>
 
             {/* Workout Efficiency */}
