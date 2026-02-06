@@ -315,15 +315,6 @@ export default function Settings() {
                   </Button>
                 </Box>
 
-                <Button
-                  fullWidth
-                  color="error"
-                  variant="outlined"
-                  startIcon={<LogOut size={16} />}
-                  onClick={handleSignOut}
-                >
-                  Sign Out
-                </Button>
               </Box>
             </Collapse>
           </MuiCard>
@@ -525,8 +516,17 @@ export default function Settings() {
             </Box>
           </Collapse>
 
+          {/* Sign Out */}
+          <button
+            onClick={handleSignOut}
+            className="w-full py-3 text-sm font-medium text-muted-foreground hover:text-destructive flex items-center justify-center gap-2 transition-colors"
+          >
+            <LogOut size={15} />
+            Sign Out
+          </button>
+
           {/* Version */}
-          <Box sx={{ textAlign: 'center', py: 3 }}>
+          <Box sx={{ textAlign: 'center', pb: 3 }}>
             <Logo size="sm" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               v3.2
