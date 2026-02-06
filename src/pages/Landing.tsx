@@ -251,7 +251,7 @@ export default function Landing() {
             className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.05 }}
             variants={staggerContainer}
           >
             <FeatureCard
