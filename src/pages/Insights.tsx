@@ -29,6 +29,14 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
 import { format, subMonths, startOfMonth, endOfMonth, parse } from 'date-fns';
 
+const FITNESS_GOALS = [
+  { value: 'lose_weight', label: 'Lose Weight' },
+  { value: 'build_muscle', label: 'Build Muscle' },
+  { value: 'maintain', label: 'Maintain' },
+  { value: 'improve_health', label: 'Improve Health' },
+  { value: 'increase_strength', label: 'Increase Strength' },
+];
+
 // Generate months for current year only (2026)
 function getMonthOptions() {
   const options = [];
@@ -81,6 +89,7 @@ function ProgressCard() {
     sleep_goal: '',
     weight_goal: '',
     weight_goal_type: 'maintain',
+    fitness_goal: '',
   });
 
   useEffect(() => {
@@ -92,6 +101,7 @@ function ProgressCard() {
         sleep_goal: (preferences as any).sleep_goal?.toString() || '8',
         weight_goal: (preferences as any).weight_goal?.toString() || '',
         weight_goal_type: (preferences as any).weight_goal_type || 'maintain',
+        fitness_goal: (preferences as any).fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -118,6 +128,7 @@ function ProgressCard() {
         sleep_goal: goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
         weight_goal_type: goals.weight_goal_type || null,
+        fitness_goal: goals.fitness_goal || null,
       } as any);
       toast.success('Goals updated');
       setIsEditing(false);
@@ -379,6 +390,28 @@ function ProgressCard() {
                   </Button>
                 ))}
               </Box>
+            </Box>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+              FITNESS GOAL
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5 }}>
+              {FITNESS_GOALS.map((goal) => (
+                <Button
+                  key={goal.value}
+                  size="small"
+                  variant={goals.fitness_goal === goal.value ? 'contained' : 'outlined'}
+                  onClick={() => setGoals(g => ({ ...g, fitness_goal: goal.value }))}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.7rem',
+                    py: 0.75,
+                  }}
+                >
+                  {goal.label}
+                </Button>
+              ))}
             </Box>
           </Box>
         </Box>

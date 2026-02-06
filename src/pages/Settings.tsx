@@ -45,13 +45,6 @@ const ACTIVITY_LEVELS = [
   { value: 'extra', label: 'Extra Active', description: 'Physical job + exercise' },
 ];
 
-const FITNESS_GOALS = [
-  { value: 'lose_weight', label: 'Lose Weight' },
-  { value: 'build_muscle', label: 'Build Muscle' },
-  { value: 'maintain', label: 'Maintain' },
-  { value: 'improve_health', label: 'Improve Health' },
-  { value: 'increase_strength', label: 'Increase Strength' },
-];
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -75,7 +68,6 @@ export default function Settings() {
     height_cm: '',
     gender: '',
     activity_level: '',
-    fitness_goal: '',
   });
 
   useEffect(() => {
@@ -86,7 +78,6 @@ export default function Settings() {
         height_cm: (preferences as any).height_cm?.toString() || '',
         gender: (preferences as any).gender || '',
         activity_level: (preferences as any).activity_level || '',
-        fitness_goal: (preferences as any).fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -113,7 +104,6 @@ export default function Settings() {
         height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
         gender: profile.gender || null,
         activity_level: profile.activity_level || null,
-        fitness_goal: profile.fitness_goal || null,
       } as any);
       toast.success('Profile updated');
     } catch (error) {
@@ -254,27 +244,6 @@ export default function Settings() {
                           ))}
                         </Box>
                       </Box>
-
-                      <Box>
-                        <Label className="text-xs text-muted-foreground">FITNESS GOAL</Label>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mt: 0.5 }}>
-                          {FITNESS_GOALS.map((goal) => (
-                            <button
-                              key={goal.value}
-                              onClick={() => setProfile(p => ({ ...p, fitness_goal: goal.value }))}
-                              className={cn(
-                                "border p-2 text-sm transition-colors rounded",
-                                profile.fitness_goal === goal.value
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border hover:bg-muted"
-                              )}
-                            >
-                              {goal.label}
-                            </button>
-                          ))}
-                        </Box>
-                      </Box>
-
                       <button
                         onClick={handleSaveProfile}
                         disabled={isSavingProfile}
