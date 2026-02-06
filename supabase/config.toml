@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.parse-food-text]
 verify_jwt = false
 
-[functions.workout-hints]
-verify_jwt = false
-
 [functions.api]
 verify_jwt = false
 
@@ -22,4 +19,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ai-coach]
+verify_jwt = false
+
+[functions.send-auth-email]
 verify_jwt = false
