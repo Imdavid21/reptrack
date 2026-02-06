@@ -86,7 +86,7 @@ export function DaySelectorWithCheckin({
   return (
     <div className="space-y-5">
       {/* Date & Week Row */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <button className={cn(
@@ -111,23 +111,6 @@ export function DaySelectorWithCheckin({
             />
           </PopoverContent>
         </Popover>
-
-        <div className="flex items-center gap-1 text-sm">
-          <span className="text-muted-foreground text-xs font-medium">P{phase} W</span>
-          <button
-            onClick={() => handleWeekChange(-1)}
-            className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
-          >
-            −
-          </button>
-          <span className="font-bold tabular-nums w-5 text-center">{weekNumber}</span>
-          <button
-            onClick={() => handleWeekChange(1)}
-            className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
-          >
-            +
-          </button>
-        </div>
       </div>
 
       {/* Workout Day Grid - Dark cards */}
