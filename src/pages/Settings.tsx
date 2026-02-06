@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserProfile, useUser } from '@clerk/clerk-react';
 import {
   Box,
   Typography,
@@ -18,24 +17,25 @@ import {
   Key,
   ChevronRight,
   Smartphone,
+  Code,
   User,
+  ChevronDown,
   Check,
-  Shield,
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage } from '@/components/layout/AnimatedPage';
 import { useAuth } from '@/hooks/useAuth';
-import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
-import { GoalsSection } from '@/components/settings/GoalsSection';
+import { Logo } from '@/components/layout/Logo';
+import { ApiKeySection } from '@/components/settings/ApiKeySection';
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
+import { GoalsSection } from '@/components/settings/GoalsSection';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { clerkAppearance, clerkDarkAppearance } from '@/lib/clerkTheme';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', label: 'Sedentary', description: 'Little or no exercise' },
@@ -55,16 +55,14 @@ const FITNESS_GOALS = [
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user: supabaseUser, signOut: supabaseSignOut, updateEmail, resetPassword } = useAuth();
-  const { user: unifiedUser, provider, signOut: unifiedSignOut } = useUnifiedAuth();
-  const { user: clerkUser, isSignedIn: clerkSignedIn } = useUser();
+  const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
   // All sections collapsed by default
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
-  // Account management state (for Supabase users)
+  // Account management state
   const [newEmail, setNewEmail] = useState('');
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -93,12 +91,15 @@ export default function Settings() {
     }
   }, [preferences]);
 
+  // Advanced section visibility
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
   const handleSignOut = async () => {
-    await unifiedSignOut();
+    await signOut();
     toast.success('Signed out');
     navigate('/signin', { replace: true });
   };
@@ -123,16 +124,13 @@ export default function Settings() {
   };
 
   const isProfileComplete = profile.age && profile.height_cm && profile.gender && profile.activity_level;
-  const isClerkUser = provider === 'clerk';
-  const displayEmail = isClerkUser ? clerkUser?.primaryEmailAddress?.emailAddress : supabaseUser?.email;
-  const displayName = isClerkUser ? clerkUser?.fullName : profile.name;
 
   return (
     <MainLayout title="SETTINGS">
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4 }}>
 
-          {/* Account Section */}
+          {/* Profile & Account - Merged */}
           <MuiCard>
             <Box
               onClick={() => toggleSection('profile')}
@@ -149,12 +147,7 @@ export default function Settings() {
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Account</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {displayName || displayEmail}
-                    {isClerkUser && (
-                      <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                        Clerk
-                      </span>
-                    )}
+                    {profile.name || user?.email}
                   </Typography>
                 </Box>
               </Box>
@@ -173,29 +166,10 @@ export default function Settings() {
             <Collapse in={expandedSections.profile}>
               <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-                {/* Clerk User Profile */}
-                {isClerkUser && (
-                  <Box sx={{ 
-                    borderRadius: 2, 
-                    overflow: 'hidden',
-                    '& .cl-rootBox': { width: '100%' },
-                    '& .cl-card': { 
-                      boxShadow: 'none', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '16px',
-                    },
-                  }}>
-                    <UserProfile 
-                      appearance={isDark ? clerkDarkAppearance : clerkAppearance}
-                      routing="virtual"
-                    />
-                  </Box>
-                )}
-
-                {/* Fitness Profile (for all users) */}
+                {/* Profile Info */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                   <Typography variant="body2" fontWeight={600} sx={{ mb: 2 }}>
-                    Fitness Profile
+                    Profile Details
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
                     Help AI give you better insights
@@ -207,19 +181,16 @@ export default function Settings() {
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {!isClerkUser && (
-                        <Box>
-                          <Label className="text-xs text-muted-foreground">NAME</Label>
-                          <Input
-                            type="text"
-                            placeholder="Your name"
-                            value={profile.name}
-                            onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))}
-                            className="input-terminal mt-1"
-                          />
-                        </Box>
-                      )}
-                      
+                      <Box>
+                        <Label className="text-xs text-muted-foreground">NAME</Label>
+                        <Input
+                          type="text"
+                          placeholder="Your name"
+                          value={profile.name}
+                          onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))}
+                          className="input-terminal mt-1"
+                        />
+                      </Box>
                       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                         <Box>
                           <Label className="text-xs text-muted-foreground">AGE</Label>
@@ -251,9 +222,9 @@ export default function Settings() {
                               key={g}
                               onClick={() => setProfile(p => ({ ...p, gender: g }))}
                               className={cn(
-                                "border p-2 text-sm capitalize transition-colors rounded-xl",
+                                "border p-2 text-sm capitalize transition-colors rounded",
                                 profile.gender === g
-                                  ? "border-primary bg-primary/10 font-medium"
+                                  ? "border-primary bg-primary/10"
                                   : "border-border hover:bg-muted"
                               )}
                             >
@@ -271,7 +242,7 @@ export default function Settings() {
                               key={level.value}
                               onClick={() => setProfile(p => ({ ...p, activity_level: level.value }))}
                               className={cn(
-                                "border p-2 w-full text-left transition-colors rounded-xl",
+                                "border p-2 w-full text-left transition-colors rounded",
                                 profile.activity_level === level.value
                                   ? "border-primary bg-primary/10"
                                   : "border-border hover:bg-muted"
@@ -292,9 +263,9 @@ export default function Settings() {
                               key={goal.value}
                               onClick={() => setProfile(p => ({ ...p, fitness_goal: goal.value }))}
                               className={cn(
-                                "border p-2 text-sm transition-colors rounded-xl",
+                                "border p-2 text-sm transition-colors rounded",
                                 profile.fitness_goal === goal.value
-                                  ? "border-primary bg-primary/10 font-medium"
+                                  ? "border-primary bg-primary/10"
                                   : "border-border hover:bg-muted"
                               )}
                             >
@@ -316,89 +287,85 @@ export default function Settings() {
                   )}
                 </Box>
 
-                {/* Legacy account management - only for Supabase users */}
-                {!isClerkUser && (
-                  <>
-                    {/* Change Email */}
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <Mail size={16} />
-                        <Typography variant="body2" fontWeight={600}>Change Email</Typography>
-                      </Box>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="newemail@example.com"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        sx={{ mb: 2 }}
-                      />
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        disabled={isUpdatingEmail || !newEmail.trim()}
-                        startIcon={isUpdatingEmail ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
-                        onClick={async () => {
-                          if (!newEmail.trim()) return;
-                          setIsUpdatingEmail(true);
-                          try {
-                            const { error } = await updateEmail(newEmail);
-                            if (error) throw error;
-                            toast.success('Email updated successfully');
-                            setNewEmail('');
-                          } catch (error: any) {
-                            toast.error(error.message || 'Failed to update email');
-                          } finally {
-                            setIsUpdatingEmail(false);
-                          }
-                        }}
-                      >
-                        Update Email
-                      </Button>
-                    </Box>
+                {/* Change Email */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Mail size={16} />
+                    <Typography variant="body2" fontWeight={600}>Change Email</Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="newemail@example.com"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    disabled={isUpdatingEmail || !newEmail.trim()}
+                    startIcon={isUpdatingEmail ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                    onClick={async () => {
+                      if (!newEmail.trim()) return;
+                      setIsUpdatingEmail(true);
+                      try {
+                        const { error } = await updateEmail(newEmail);
+                        if (error) throw error;
+                        toast.success('Email updated successfully');
+                        setNewEmail('');
+                      } catch (error: any) {
+                        toast.error(error.message || 'Failed to update email');
+                      } finally {
+                        setIsUpdatingEmail(false);
+                      }
+                    }}
+                  >
+                    Update Email
+                  </Button>
+                </Box>
 
-                    {/* Reset Password */}
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Key size={16} />
-                        <Typography variant="body2" fontWeight={600}>Change Password</Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        We'll send a password reset link to your email.
-                      </Typography>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        disabled={isResettingPassword}
-                        startIcon={isResettingPassword ? <Loader2 className="animate-spin" size={16} /> : <Key size={16} />}
-                        onClick={async () => {
-                          if (!supabaseUser?.email) return;
-                          setIsResettingPassword(true);
-                          try {
-                            const { error } = await resetPassword(supabaseUser.email);
-                            if (error) throw error;
-                            toast.success('Password reset email sent!');
-                          } catch (error: any) {
-                            toast.error(error.message || 'Failed to send reset email');
-                          } finally {
-                            setIsResettingPassword(false);
-                          }
-                        }}
-                      >
-                        Send Reset Link
-                      </Button>
-                    </Box>
-                  </>
-                )}
+                {/* Reset Password */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Key size={16} />
+                    <Typography variant="body2" fontWeight={600}>Change Password</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    We'll send a password reset link to your email.
+                  </Typography>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    disabled={isResettingPassword}
+                    startIcon={isResettingPassword ? <Loader2 className="animate-spin" size={16} /> : <Key size={16} />}
+                    onClick={async () => {
+                      if (!user?.email) return;
+                      setIsResettingPassword(true);
+                      try {
+                        const { error } = await resetPassword(user.email);
+                        if (error) throw error;
+                        toast.success('Password reset email sent!');
+                      } catch (error: any) {
+                        toast.error(error.message || 'Failed to send reset email');
+                      } finally {
+                        setIsResettingPassword(false);
+                      }
+                    }}
+                  >
+                    Send Reset Link
+                  </Button>
+                </Box>
 
-                {/* Sign Out */}
-                <button
+                <Button
+                  fullWidth
+                  color="error"
+                  variant="outlined"
+                  startIcon={<LogOut size={16} />}
                   onClick={handleSignOut}
-                  className="btn-brutalist w-full flex items-center justify-center gap-2 bg-destructive text-destructive-foreground"
                 >
-                  <LogOut size={16} />
-                  SIGN OUT
-                </button>
+                  Sign Out
+                </Button>
               </Box>
             </Collapse>
           </MuiCard>
@@ -463,38 +430,155 @@ export default function Settings() {
                 </Typography>
 
                 {/* iPhone Instructions */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, mb: 2 }}>
-                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                    iPhone / iPad
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    iPhone (Safari)
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    1. Tap the <strong>Share</strong> button (square with arrow)<br />
-                    2. Scroll down and tap <strong>Add to Home Screen</strong><br />
-                    3. Tap <strong>Add</strong> in the top right
-                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the Share button (square with arrow)',
+                      'Scroll down and tap "Add to Home Screen"',
+                      'Tap "Add" in the top right'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
 
                 {/* Android Instructions */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                    Android
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                    Android (Chrome)
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    1. Tap the <strong>menu</strong> (three dots)<br />
-                    2. Tap <strong>Install app</strong> or <strong>Add to Home screen</strong><br />
-                    3. Tap <strong>Install</strong>
-                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      'Tap the menu (three dots) in the top right',
+                      'Tap "Add to Home screen" or "Install app"',
+                      'Tap "Add" to confirm'
+                    ].map((step, i) => (
+                      <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 16 }}>
+                          {i + 1}.
+                        </Typography>
+                        <Typography variant="body2">{step}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             </Collapse>
           </MuiCard>
 
-          {/* Data Management */}
-          <DataManagementSection
-            isExpanded={expandedSections.data || false}
-            onToggle={() => toggleSection('data')}
-          />
+          {/* ============ ADVANCED SECTION ============ */}
+          <Box
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              py: 2,
+              cursor: 'pointer',
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary' },
+              transition: 'color 0.2s',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
+              {showAdvanced ? 'HIDE ADVANCED OPTIONS' : 'SHOW ADVANCED OPTIONS'}
+            </Typography>
+            <ChevronDown
+              size={14}
+              style={{
+                transform: showAdvanced ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s',
+              }}
+            />
+          </Box>
 
+          <Collapse in={showAdvanced}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', letterSpacing: 1, mb: -0.5 }}
+              >
+                DEVELOPER & INTEGRATIONS
+              </Typography>
+
+              {/* Data Management Section */}
+              <DataManagementSection
+                isExpanded={expandedSections.data || false}
+                onToggle={() => toggleSection('data')}
+              />
+
+              {/* API Access */}
+              <MuiCard>
+                <Box
+                  onClick={() => toggleSection('api')}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    py: 1,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Code size={18} />
+                    <Box>
+                      <Typography variant="body1" fontWeight={600}>API & AI Agents</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        REST API, MCP for Claude, webhooks
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <ChevronRight
+                    size={18}
+                    style={{
+                      transform: expandedSections.api ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}
+                  />
+                </Box>
+
+                <Collapse in={expandedSections.api}>
+                  <Box sx={{ mt: 2 }}>
+                    <ApiKeySection />
+                  </Box>
+                </Collapse>
+              </MuiCard>
+            </Box>
+          </Collapse>
+
+          {/* Version */}
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Logo size="sm" />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              v3.2
+            </Typography>
+          </Box>
         </Box>
       </AnimatedPage>
     </MainLayout>

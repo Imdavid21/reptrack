@@ -28,9 +28,8 @@ function AppRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
-        {/* Clerk auth routes - wildcard to handle SSO callbacks */}
-        <Route path="/signin/*" element={<SignIn />} />
-        <Route path="/signup/*" element={<SignUp />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
