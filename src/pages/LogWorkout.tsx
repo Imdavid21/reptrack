@@ -540,7 +540,7 @@ export default function LogWorkout() {
 
               <div className="flex gap-2 justify-center">
                 <button
-                  className="flex items-center gap-2 px-5 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-foreground text-background rounded-xl text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all"
                   onClick={() => {
                     setSelectedDay('custom');
                     setSelectedDate(new Date());
@@ -550,7 +550,7 @@ export default function LogWorkout() {
                     setStep('review');
                   }}
                 >
-                  <Plus size={14} />
+                  <Plus size={15} />
                   Freestyle
                 </button>
 
@@ -559,9 +559,9 @@ export default function LogWorkout() {
                     haptic('light');
                     setShowAIGoalPrompt(true);
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 border-2 border-foreground rounded-xl text-sm font-semibold hover:bg-foreground hover:text-background active:scale-[0.97] transition-all"
                 >
-                  <Sparkles size={14} />
+                  <Sparkles size={15} />
                   AI Routine
                 </button>
               </div>
