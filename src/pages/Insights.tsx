@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent, Button } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -9,7 +9,6 @@ import {
   Check,
   X,
   Loader2,
-  ChevronDown,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -27,7 +26,7 @@ import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
-import { format, subMonths, startOfMonth, endOfMonth, parse } from 'date-fns';
+import { format } from 'date-fns';
 
 const FITNESS_GOALS = [
   { value: 'lose_weight', label: 'Lose Weight' },
@@ -37,48 +36,14 @@ const FITNESS_GOALS = [
   { value: 'increase_strength', label: 'Increase Strength' },
 ];
 
-// Generate months for current year only (2026)
-function getMonthOptions() {
-  const options = [];
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
-
-  // Only show months from current year, starting from January up to current month
-  for (let month = currentMonth; month >= 0; month--) {
-    const date = new Date(currentYear, month, 1);
-    options.push({
-      value: format(date, 'yyyy-MM'),
-      label: format(date, 'MMMM yyyy'),
-    });
-  }
-  return options;
-}
-
-// Unified Progress Card with month selection + weekly comparison + inline editing
+// Unified Progress Card using global date range + inline editing
 function ProgressCard() {
   const theme = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+  const { dateRange } = useDateRange();
 
-  // Month selection - default to current month, persist in localStorage
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const saved = localStorage.getItem('insights-selected-month');
-    return saved || format(new Date(), 'yyyy-MM');
-  });
-
-  const monthOptions = useMemo(() => getMonthOptions(), []);
-
-  // Calculate date range from selected month
-  const monthDateRange = useMemo(() => {
-    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-    return {
-      from: startOfMonth(monthDate),
-      to: endOfMonth(monthDate),
-    };
-  }, [selectedMonth]);
-
-  // Use the selected month's date range for data
-  const { data, isLoading } = useCorrelationAnalysis(monthDateRange);
+  // Use the global date range for data
+  const { data, isLoading } = useCorrelationAnalysis(dateRange);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,15 +70,6 @@ function ProgressCard() {
       });
     }
   }, [preferences]);
-
-  // Persist month selection
-  useEffect(() => {
-    localStorage.setItem('insights-selected-month', selectedMonth);
-  }, [selectedMonth]);
-
-  const handleMonthChange = (event: SelectChangeEvent<string>) => {
-    setSelectedMonth(event.target.value);
-  };
 
   const workoutGoal = preferences?.weekly_workout_goal || 4;
   const monthlyWorkoutGoal = workoutGoal * 4;
@@ -170,8 +126,6 @@ function ProgressCard() {
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
     : '—';
 
-  const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || summary?.month || 'This Month';
-
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
     label: string;
     thisVal: string | number;
@@ -220,32 +174,13 @@ function ProgressCard() {
 
   return (
     <MuiCard>
-      {/* Header with month selector and edit button */}
+      {/* Header with title and edit button */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Target size={14} />
-          <Select
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            variant="standard"
-            disableUnderline
-            IconComponent={() => <ChevronDown size={14} style={{ marginLeft: 4 }} />}
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              color: 'text.secondary',
-              '& .MuiSelect-select': {
-                py: 0,
-                pr: '20px !important',
-              },
-            }}
-          >
-            {monthOptions.map(opt => (
-              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: '0.75rem' }}>
-                {opt.label.toUpperCase()}
-              </MenuItem>
-            ))}
-          </Select>
+          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
+            GOALS & PROGRESS
+          </Typography>
         </Box>
         {!isEditing ? (
           <IconButton size="small" onClick={() => setIsEditing(true)} sx={{ p: 0.5 }}>
