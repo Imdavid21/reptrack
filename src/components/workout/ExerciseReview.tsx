@@ -27,6 +27,7 @@ interface ExerciseReviewProps {
   availableDays?: DayOption[];
   selectedDayKey?: string;
   onSwitchDay?: (dayKey: string) => void;
+  onSkipExercises?: () => void;
 }
 
 function ExerciseItemCard({
@@ -236,6 +237,7 @@ export function ExerciseReview({
   availableDays,
   selectedDayKey,
   onSwitchDay,
+  onSkipExercises,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -442,6 +444,16 @@ export function ExerciseReview({
           <Play className="h-4 w-4" />
           Begin Session ({exercises.length} exercises)
         </button>
+
+        {/* Skip exercises — subtle under begin */}
+        {onSkipExercises && (
+          <button
+            onClick={onSkipExercises}
+            className="w-full py-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          >
+            Skip exercises →
+          </button>
+        )}
       </div>
 
       {/* Info text */}
