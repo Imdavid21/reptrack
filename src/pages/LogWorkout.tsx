@@ -10,6 +10,7 @@ import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { SplitSelector } from '@/components/workout/SplitSelector';
+import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -20,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus, Pencil } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Step = 'select-day' | 'review' | 'exercises';
@@ -110,6 +111,8 @@ export default function LogWorkout() {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
   const [skippedReview, setSkippedReview] = useState(false);
+  const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -438,6 +441,51 @@ export default function LogWorkout() {
     setExercises([]);
   };
 
+  // AI goal-based routine generation
+  const handleAIGenerate = async (goals: string, split: TrainingSplit, experience: string) => {
+    setIsAIGenerating(true);
+    try {
+      // First update the split preference
+      await updatePreferences.mutateAsync({ training_split: split });
+
+      const { data, error } = await supabase.functions.invoke('generate-workout', {
+        body: {
+          goals,
+          trainingSplit: split,
+          experienceLevel: experience,
+        },
+      });
+
+      if (error) throw error;
+
+      const routine = data?.routine;
+      if (routine?.days && Object.keys(routine.days).length > 0) {
+        // Apply the generated routine to the first day and navigate to review
+        const firstDayKey = Object.keys(routine.days)[0];
+        const firstDay = routine.days[firstDayKey] as any;
+        if (firstDay?.exercises && firstDay.exercises.length > 0) {
+          const suggested = buildExercisesFromTemplate(firstDay);
+          const newSplitDays = getSplitDays(split);
+          const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
+          setSelectedDay(dayKey);
+          setSelectedDate(new Date());
+          setExercises(suggested);
+          setShowAIGoalPrompt(false);
+          setSkippedReview(false);
+          setStep('review');
+          toast.success(`AI routine generated — review your exercises`);
+          return;
+        }
+      }
+      toast.error('AI returned no exercises. Try different goals.');
+    } catch (err) {
+      console.error('AI generation failed:', err);
+      toast.error('Failed to generate routine');
+    } finally {
+      setIsAIGenerating(false);
+    }
+  };
+
   return (
     <MainLayout>
       <AnimatedPage>
@@ -478,12 +526,11 @@ export default function LogWorkout() {
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 onSelect={handleDaySelect}
-                onQuickLog={selectedDay ? handleQuickLog : undefined}
               />
 
-              <div className="flex justify-center">
+              <div className="flex gap-2 justify-center">
                 <button
-                  className="flex items-center gap-2 px-6 py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
                   onClick={() => {
                     setSelectedDay('custom');
                     setSelectedDate(new Date());
@@ -493,10 +540,29 @@ export default function LogWorkout() {
                     setStep('review');
                   }}
                 >
-                  <Plus size={16} />
-                  Start Empty / Freestyle Session
+                  <Plus size={14} />
+                  Freestyle
+                </button>
+
+                <button
+                  onClick={() => {
+                    haptic('light');
+                    setShowAIGoalPrompt(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                >
+                  <Sparkles size={14} />
+                  AI Routine
                 </button>
               </div>
+
+              {/* AI Goal Prompt Sheet */}
+              <AIGoalPrompt
+                isOpen={showAIGoalPrompt}
+                onClose={() => setShowAIGoalPrompt(false)}
+                onGenerate={handleAIGenerate}
+                isGenerating={isAIGenerating}
+              />
             </div>
           )}
 
@@ -517,6 +583,7 @@ export default function LogWorkout() {
               availableDays={selectedDay !== 'custom' ? availableDays : undefined}
               selectedDayKey={selectedDay}
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
+              onSkipExercises={selectedDay ? handleQuickLog : undefined}
             />
           )}
 

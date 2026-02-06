@@ -23,13 +23,11 @@ function getDefaultDayForDate(date: Date, numDays: number): string | null {
 interface DaySelectorWithCheckinProps {
   selectedDay: string;
   onSelect: (day: string, date: Date, weekNumber: number) => void;
-  onQuickLog?: () => void;
 }
 
 export function DaySelectorWithCheckin({
   selectedDay,
   onSelect,
-  onQuickLog
 }: DaySelectorWithCheckinProps) {
   const { preferences } = useUserPreferences();
   const splitDays = preferences ? getSplitDays(preferences.training_split) : defaultRoutine.days;
@@ -157,15 +155,6 @@ export function DaySelectorWithCheckin({
         })}
       </div>
 
-      {/* Quick Log */}
-      {onQuickLog && (
-        <button
-          onClick={onQuickLog}
-          className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Skip exercises →
-        </button>
-      )}
     </div>
   );
 }
