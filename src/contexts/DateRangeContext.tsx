@@ -29,12 +29,12 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
   // Load saved preset from localStorage
   const [preset, setPreset] = useState(() => {
     const saved = localStorage.getItem('insights-date-range-preset');
-    return saved || '7d';
+    return saved || '30d';
   });
   
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const saved = localStorage.getItem('insights-date-range-preset');
-    const presetConfig = DATE_PRESETS.find(p => p.value === (saved || '7d'));
+    const presetConfig = DATE_PRESETS.find(p => p.value === (saved || '30d'));
     return {
       from: startOfDay(subDays(new Date(), presetConfig?.days || 6)),
       to: endOfDay(new Date()),
