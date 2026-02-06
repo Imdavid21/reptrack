@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
