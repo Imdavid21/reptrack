@@ -13,13 +13,10 @@ import {
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useWorkouts } from '@/hooks/useWorkouts';
 
-// Map weekday (0=Sun, 1=Mon, ...) to workout day key
 function getDefaultDayForDate(date: Date, numDays: number): string | null {
   const dayOfWeek = date.getDay();
-  // Simple mapping: Mon=Day 1, Tue=Day 2, etc.
-  // Adjust logic if needed for specific splits, but this is a reasonable default
-  if (dayOfWeek === 0) return null; // Sunday
-  if (dayOfWeek > numDays) return null; // If split has fewer days than weekday index
+  if (dayOfWeek === 0) return null;
+  if (dayOfWeek > numDays) return null;
   return `Day ${dayOfWeek}`;
 }
 
@@ -41,44 +38,25 @@ export function DaySelectorWithCheckin({
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Calculate week number based on past workout data
   const getWeekFromPastData = (): number => {
-    if (!workouts || workouts.length === 0) {
-      return 1; // Start at week 1 if no data
-    }
-
-    // Get the most recent workout's week number
-    const mostRecentWorkout = workouts[0]; // Already sorted desc by date
+    if (!workouts || workouts.length === 0) return 1;
+    const mostRecentWorkout = workouts[0];
     const lastWeek = mostRecentWorkout.week_number;
-
-    // Check if last workout was today - if so, same week
     const lastWorkoutDate = new Date(mostRecentWorkout.date).toDateString();
     const today = new Date().toDateString();
-
-    if (lastWorkoutDate === today) {
-      return lastWeek;
-    }
-
-    // Check if we should increment week based on new week starting
+    if (lastWorkoutDate === today) return lastWeek;
     const lastWorkoutDateObj = new Date(mostRecentWorkout.date);
     const daysSince = Math.floor((Date.now() - lastWorkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
-
-    // If it's been 7+ days, increment week
-    if (daysSince >= 7) {
-      return Math.min(12, lastWeek + 1);
-    }
-
+    if (daysSince >= 7) return Math.min(12, lastWeek + 1);
     return lastWeek;
   };
 
   const [weekNumber, setWeekNumber] = useState<number>(1);
 
-  // Update week number when workouts data loads
   useEffect(() => {
     setWeekNumber(getWeekFromPastData());
   }, [workouts]);
 
-  // Auto-select workout day based on weekday on mount
   useEffect(() => {
     const defaultDay = getDefaultDayForDate(selectedDate, days.length);
     if (defaultDay && !selectedDay && splitDays[defaultDay]) {
@@ -104,18 +82,18 @@ export function DaySelectorWithCheckin({
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const phase = Math.ceil(weekNumber / 4);
 
-  // Dynamic grid columns based on day count
-  const gridCols = days.length === 4 ? 'grid-cols-2' : 'grid-cols-3';
+  // Dynamic grid: 2 cols for 3-4 days, 3 cols for 5-6 days
+  const gridCols = days.length <= 4 ? 'grid-cols-2' : 'grid-cols-3';
 
   return (
-    <div className="space-y-4">
-      {/* Compact Header Row */}
+    <div className="space-y-5">
+      {/* Date & Week Row */}
       <div className="flex items-center justify-between gap-3">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <button className={cn(
               "flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-full transition-colors hover:bg-muted",
-              !isToday && "border-primary text-primary"
+              !isToday && "border-foreground text-foreground"
             )}>
               <Calendar className="h-3.5 w-3.5" />
               <span className="font-medium">
@@ -137,7 +115,7 @@ export function DaySelectorWithCheckin({
         </Popover>
 
         <div className="flex items-center gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">P{phase} W</span>
+          <span className="text-muted-foreground text-xs font-medium">P{phase} W</span>
           <button
             onClick={() => handleWeekChange(-1)}
             className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
@@ -154,26 +132,32 @@ export function DaySelectorWithCheckin({
         </div>
       </div>
 
-      {/* Dynamic Workout Grid */}
-      <div className={cn("grid gap-2", gridCols)}>
-        {days.map(([dayKey, dayData]) => (
-          <button
-            key={dayKey}
-            onClick={() => handleDaySelect(dayKey)}
-            className={cn(
-              'btn-brutalist text-center p-3 transition-all',
-              selectedDay === dayKey && 'btn-primary'
-            )}
-          >
-            <div className="font-bold text-sm">{dayData.name}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-              {dayData.focus}
-            </div>
-          </button>
-        ))}
+      {/* Workout Day Grid - Dark cards */}
+      <div className={cn("grid gap-2.5", gridCols)}>
+        {days.map(([dayKey, dayData]) => {
+          const isSelected = selectedDay === dayKey;
+
+          return (
+            <button
+              key={dayKey}
+              onClick={() => handleDaySelect(dayKey)}
+              className={cn(
+                'relative text-center p-4 rounded-xl transition-all active:scale-[0.97]',
+                isSelected
+                  ? 'bg-foreground text-background ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                  : 'bg-foreground text-background hover:opacity-90'
+              )}
+            >
+              <div className="font-bold text-sm">{dayData.name}</div>
+              <div className="text-[11px] opacity-60 mt-0.5 truncate">
+                {dayData.focus}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Quick Log - Minimal */}
+      {/* Quick Log */}
       {onQuickLog && (
         <button
           onClick={onQuickLog}
