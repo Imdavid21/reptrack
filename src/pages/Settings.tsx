@@ -549,13 +549,15 @@ export default function Settings() {
           </Collapse>
 
           {/* Sign Out */}
-          <button
-            onClick={handleSignOut}
-            className="w-full py-3 text-sm font-medium text-muted-foreground hover:text-destructive flex items-center justify-center gap-2 transition-colors"
-          >
-            <LogOut size={15} />
-            Sign Out
-          </button>
+          <MuiCard>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center gap-2 py-1 text-sm font-medium text-destructive hover:opacity-70 transition-opacity"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </MuiCard>
 
           {/* Version */}
           <Box sx={{ textAlign: 'center', pb: 3 }}>
