@@ -37,6 +37,10 @@ export function EfficiencyChart() {
     ? Math.round(data.history.reduce((s, h) => s + h.duration, 0) / data.history.length)
     : 0;
 
+  const avgVolume = data?.history.length
+    ? Math.round(data.history.reduce((s, h) => s + h.volume, 0) / data.history.length)
+    : 0;
+
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const dataPoint = chartData.find(d => d.date === label);
@@ -161,7 +165,7 @@ export function EfficiencyChart() {
         }}>
           <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-            {data?.today.totalVolume ? `${(data.today.totalVolume / 1000).toFixed(1)}k` : '—'}
+            {avgVolume ? `${(avgVolume / 1000).toFixed(1)}k` : '—'}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             AVG VOLUME
