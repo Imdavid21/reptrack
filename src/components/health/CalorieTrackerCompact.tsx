@@ -291,31 +291,27 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          {/* Quick Add Button Row - Input Methods */}
-          <div className="space-y-2 mt-auto pt-3">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-                className="btn-brutalist p-2.5 flex flex-col items-center justify-center gap-1"
-              >
-                <Camera className="h-4 w-4" />
-                <span className="text-[10px]">CAMERA</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
-                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="text-[10px]">GALLERY</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
-                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
-              >
-                <Utensils className="h-4 w-4" />
-                <span className="text-[10px]">DESCRIBE</span>
-              </button>
-            </div>
+          {/* Action buttons - matches Water tracker layout */}
+          <div className="flex gap-2 mt-auto pt-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
+              className="btn-brutalist flex-1 flex items-center justify-center gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              CAMERA
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
+              className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
+              className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
+            >
+              <Utensils className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Expanded Detail View */}
