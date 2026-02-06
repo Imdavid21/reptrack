@@ -415,7 +415,7 @@ export default function LogWorkout() {
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
             >
               <ChevronLeft size={16} />
-              Back
+              All Workouts
             </button>
           )}
 
