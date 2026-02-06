@@ -335,33 +335,80 @@ export function ExerciseReview({
 
       {/* Exercise list */}
       <div className="space-y-4">
-        {primaryExercises.length > 0 && (
-          <div>
-            <h4 className="section-header mb-2">COMPOUNDS</h4>
-            <div className="space-y-1.5">
-              <AnimatePresence mode="popLayout">
-                {primaryExercises.map((ex) => renderExerciseItem(ex))}
-              </AnimatePresence>
+        {isSuggesting ? (
+          <div className="space-y-4">
+            <div>
+              <div className="h-3 w-24 bg-muted rounded animate-pulse mb-2" />
+              <div className="space-y-1.5">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-24 bg-muted/70 rounded animate-pulse" />
+                    </div>
+                    <div className="h-4 w-8 bg-muted/50 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        {accessoryExercises.length > 0 && (
-          <div>
-            <h4 className="section-header mb-2">ACCESSORIES</h4>
-            <div className="space-y-1.5">
-              <AnimatePresence mode="popLayout">
-                {accessoryExercises.map((ex) => renderExerciseItem(ex))}
-              </AnimatePresence>
+            <div>
+              <div className="h-3 w-28 bg-muted rounded animate-pulse mb-2" />
+              <div className="space-y-1.5">
+                {[1, 2].map(i => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-4 w-28 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-20 bg-muted/70 rounded animate-pulse" />
+                    </div>
+                    <div className="h-4 w-8 bg-muted/50 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground text-center animate-pulse">
+              <Sparkles className="h-3 w-3 inline mr-1" />
+              Generating exercises…
+            </p>
           </div>
-        )}
+        ) : (
+          <>
+            {primaryExercises.length > 0 && (
+              <div>
+                <h4 className="section-header mb-2">COMPOUNDS</h4>
+                <div className="space-y-1.5">
+                  <AnimatePresence mode="popLayout">
+                    {primaryExercises.map((ex) => renderExerciseItem(ex))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
 
-        {exercises.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">No exercises yet</p>
-            <p className="text-xs mt-1">Add exercises manually or get AI suggestions</p>
-          </div>
+            {accessoryExercises.length > 0 && (
+              <div>
+                <h4 className="section-header mb-2">ACCESSORIES</h4>
+                <div className="space-y-1.5">
+                  <AnimatePresence mode="popLayout">
+                    {accessoryExercises.map((ex) => renderExerciseItem(ex))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {exercises.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No exercises yet</p>
+                <p className="text-xs mt-1">Add exercises manually or get AI suggestions</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
