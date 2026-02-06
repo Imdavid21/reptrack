@@ -294,13 +294,6 @@ export function CalorieTrackerCompact() {
           {/* Action buttons - matches Water tracker layout */}
           <div className="flex gap-2 mt-auto pt-3">
             <button
-              onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-              className="btn-brutalist flex-1 flex items-center justify-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              CAMERA
-            </button>
-            <button
               onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
               className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
             >
@@ -311,6 +304,13 @@ export function CalorieTrackerCompact() {
               className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
             >
               <Utensils className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
+              className="btn-brutalist flex-1 flex items-center justify-center gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              CAMERA
             </button>
           </div>
 
