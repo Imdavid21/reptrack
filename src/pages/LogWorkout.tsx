@@ -9,7 +9,6 @@ import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithChec
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
-import { defaultRoutine } from '@/lib/workoutPresets';
 import { getSplitDays } from '@/lib/splitTemplates';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -56,38 +55,36 @@ export default function LogWorkout() {
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed } = useLastUsedWeights();
 
-  const splitDays = useMemo(() => {
-    const split = preferences?.training_split || 'ppl6';
-    return getSplitDays(split);
-  }, [preferences?.training_split]);
-
+  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
   const [step, setStep] = useState<Step>('select-day');
-
-  if (prefsLoading) {
-    return (
-      <MainLayout>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-          <CircularProgress />
-        </Box>
-      </MainLayout>
-    );
-  }
-
-  // If routine is not setup, show setup flow
-  if (preferences && !preferences.routine_setup_completed) {
-    return (
-      <MainLayout title="SETUP ROUTINE">
-        <AnimatedPage>
-          <RoutineSetup onComplete={() => { }} />
-        </AnimatedPage>
-      </MainLayout>
-    );
-  }
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [weekNumber, setWeekNumber] = useState<number>(1);
+  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [habits] = useState<Habits>(defaultHabits);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
+
+  const splitDays = useMemo(() => {
+    const split = preferences?.training_split || 'ppl6';
+    return getSplitDays(split);
+  }, [preferences?.training_split]);
+
+  const { completedSets, totalSets } = useMemo(() => {
+    const total = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+    const completed = exercises.reduce(
+      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
+      0
+    );
+    return { completedSets: completed, totalSets: total };
+  }, [exercises]);
+
+  const dayType = selectedDay === 'custom' ? undefined : (selectedDay ? getDayType(splitDays[selectedDay]?.name || '') : undefined);
+  const currentExercise = exercises[currentExerciseIndex];
+  const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
 
   // Restore from draft
   useEffect(() => {
@@ -124,7 +121,29 @@ export default function LogWorkout() {
       });
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft]);
+  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
+
+  // NOW we can have conditional returns after all hooks are declared
+  if (prefsLoading) {
+    return (
+      <MainLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </MainLayout>
+    );
+  }
+
+  // If routine is not setup, show setup flow
+  if (preferences && !preferences.routine_setup_completed) {
+    return (
+      <MainLayout title="SETUP ROUTINE">
+        <AnimatedPage>
+          <RoutineSetup onComplete={() => { }} />
+        </AnimatedPage>
+      </MainLayout>
+    );
+  }
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
@@ -165,7 +184,6 @@ export default function LogWorkout() {
       toast.error('Please select a workout day first');
       return;
     }
-    // Quick log - just save an empty workout
     try {
       await createWorkout({
         day: selectedDay,
@@ -221,21 +239,15 @@ export default function LogWorkout() {
   };
 
   const handleExercisesDone = async () => {
-    const completedCount = exercises.reduce(
-      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
-      0
-    );
-    if (completedCount === 0) {
+    if (completedSets === 0) {
       toast.error('Complete at least one set');
       return;
     }
 
-    // Calculate duration
     const durationMinutes = workoutStartTime
       ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000)
       : undefined;
 
-    // Finish workout immediately
     try {
       await createWorkout({
         day: selectedDay,
@@ -250,34 +262,6 @@ export default function LogWorkout() {
           durationMinutes,
         },
         startedAt: workoutStartTime || undefined,
-        completedAt: new Date(),
-      });
-      clearDraft();
-      toast.success('Workout logged! 💪');
-      navigate('/app');
-    } catch (error) {
-      toast.error('Failed to save workout');
-    }
-  };
-
-  const handleSubmit = async () => {
-    const completedCount = exercises.reduce(
-      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
-      0
-    );
-    if (completedCount === 0) {
-      toast.error('Complete at least one set');
-      return;
-    }
-    try {
-      await createWorkout({
-        day: selectedDay,
-        day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
-        week_number: weekNumber,
-        date: selectedDate,
-        exercises: [],
-        habits,
-        startedAt: new Date(),
         completedAt: new Date(),
       });
       clearDraft();
@@ -308,19 +292,6 @@ export default function LogWorkout() {
       setStep(STEPS[currentIndex - 1]);
     }
   };
-
-  const { completedSets, totalSets } = useMemo(() => {
-    const total = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
-    const completed = exercises.reduce(
-      (sum, ex) => sum + ex.sets.filter(s => s.completed).length,
-      0
-    );
-    return { completedSets: completed, totalSets: total };
-  }, [exercises]);
-
-  const dayType = selectedDay === 'custom' ? undefined : (selectedDay ? getDayType(splitDays[selectedDay]?.name || '') : undefined);
-  const currentExercise = exercises[currentExerciseIndex];
-  const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
 
   return (
     <MainLayout title="LOG WORKOUT">

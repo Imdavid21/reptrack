@@ -18,13 +18,26 @@ interface CorrelationData {
   stepsToEnergy: { date: string; steps: number; energy: number }[];
 }
 
+// Helper function to calculate average
+function avg(arr: number[]): number {
+  if (arr.length === 0) return 0;
+  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+}
+
 export function useHealthInsights(days: number = 30) {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['healthInsights', user?.id, days],
     queryFn: async (): Promise<{ insights: HealthInsight[]; correlations: CorrelationData }> => {
-      if (!user) return { insights: [], correlations: { morningEnergy: { high: [], low: [] }, sleepHours: { good: [], poor: [] }, heartRate: { low: [], high: [] }, stepsToEnergy: [] } };
+      if (!user) return { 
+        insights: [], 
+        correlations: { 
+          morningEnergy: { high: [], low: [] }, 
+          sleepHours: { good: [], poor: [] }, 
+          stepsToEnergy: [] 
+        } 
+      };
 
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
 
@@ -85,14 +98,10 @@ export function useHealthInsights(days: number = 30) {
         }
       }
 
-      // Note: Heart rate and Oxygen level deprecated and removed.
-
-      // Recent sleep trend
-
       // Recent sleep trend
       const recentSleep = morningData.slice(-7).filter(m => m.sleep_hours);
       if (recentSleep.length >= 5) {
-        const avgSleep = avgFunc(recentSleep.map(m => m.sleep_hours)) || 0;
+        const avgSleep = avg(recentSleep.map(m => m.sleep_hours));
         if (avgSleep < 6.5) {
           insights.push({
             id: 'sleep-warning',
@@ -117,7 +126,7 @@ export function useHealthInsights(days: number = 30) {
       // Step count trends
       const recentSteps = nightData.slice(-7).filter(n => n.steps);
       if (recentSteps.length >= 5) {
-        const avgSteps = avgFunc(recentSteps.map(n => n.steps)) || 0;
+        const avgSteps = avg(recentSteps.map(n => n.steps));
         if (avgSteps < 5000) {
           insights.push({
             id: 'steps-low',
@@ -142,7 +151,7 @@ export function useHealthInsights(days: number = 30) {
       return { insights, correlations };
     },
     enabled: !!user,
-    staleTime: 60 * 1000, // Refresh every minute for latest data
+    staleTime: 60 * 1000,
     refetchOnMount: true,
   });
 }
