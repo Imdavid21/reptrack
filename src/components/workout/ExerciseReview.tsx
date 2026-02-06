@@ -6,6 +6,12 @@ import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2 } from 'l
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface DayOption {
+  key: string;
+  name: string;
+  focus: string;
+}
+
 interface ExerciseReviewProps {
   exercises: WorkoutExercise[];
   dayName: string;
@@ -18,6 +24,12 @@ interface ExerciseReviewProps {
   hasPendingSuggestions?: boolean;
   onConfirmSuggestions?: () => void;
   onDenySuggestions?: () => void;
+  /** Available days from the user's split for quick switching */
+  availableDays?: DayOption[];
+  /** Currently selected day key */
+  selectedDayKey?: string;
+  /** Callback when user switches to a different day */
+  onSwitchDay?: (dayKey: string) => void;
 }
 
 export function ExerciseReview({
@@ -32,6 +44,9 @@ export function ExerciseReview({
   hasPendingSuggestions,
   onConfirmSuggestions,
   onDenySuggestions,
+  availableDays,
+  selectedDayKey,
+  onSwitchDay,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -137,10 +152,35 @@ export function ExerciseReview({
 
   return (
     <div className="space-y-5">
-      {/* Day header */}
-      <div>
-        <h2 className="text-lg font-bold">{dayName}</h2>
-        <p className="text-sm text-muted-foreground">{dayFocus}</p>
+      {/* Day switcher + header */}
+      <div className="space-y-2">
+        {availableDays && availableDays.length > 1 && onSwitchDay && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+            {availableDays.map((day) => (
+              <button
+                key={day.key}
+                onClick={() => {
+                  if (day.key !== selectedDayKey) {
+                    haptic('light');
+                    onSwitchDay(day.key);
+                  }
+                }}
+                className={cn(
+                  'shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                  day.key === selectedDayKey
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {day.name}
+              </button>
+            ))}
+          </div>
+        )}
+        <div>
+          <h2 className="text-lg font-bold">{dayName}</h2>
+          <p className="text-sm text-muted-foreground">{dayFocus}</p>
+        </div>
       </div>
 
       {/* Exercise list */}
