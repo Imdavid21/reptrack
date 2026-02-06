@@ -279,17 +279,8 @@ export default function LogWorkout() {
 
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
-
-    // Smart skip: if user has reviewed this day before, go straight to logging
-    const reviewed = user ? getReviewedDays(user.id) : new Set<string>();
-    if (day !== 'custom' && reviewed.has(day)) {
-      setSkippedReview(true);
-      setWorkoutStartTime(new Date());
-      setStep('exercises');
-    } else {
-      setSkippedReview(false);
-      setStep('review');
-    }
+    setSkippedReview(false);
+    setStep('review');
   };
 
   // Start session from review → mark day as reviewed for future smart-skip
