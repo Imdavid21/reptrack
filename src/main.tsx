@@ -4,24 +4,13 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App.tsx";
 import "./index.css";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-// Clerk is optional - if no key is configured, the app will use legacy auth
-const AppWithOptionalClerk = () => {
-  if (!PUBLISHABLE_KEY) {
-    console.warn("Clerk Publishable Key not configured - using legacy auth only");
-    return <App />;
-  }
-
-  return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-      <App />
-    </ClerkProvider>
-  );
-};
+// Clerk publishable key (public, safe to expose)
+const CLERK_PUBLISHABLE_KEY = "pk_test_dGhvcm91Z2gtcG9ycG9pc2UtOS5jbGVyay5hY2NvdW50cy5kZXYk";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AppWithOptionalClerk />
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/">
+      <App />
+    </ClerkProvider>
   </React.StrictMode>
 );

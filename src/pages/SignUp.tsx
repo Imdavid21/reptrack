@@ -1,15 +1,22 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { SignUp as ClerkSignUp, useUser } from '@clerk/clerk-react';
 import { LegacySignUp } from '@/components/auth/LegacySignUp';
 
-const isClerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
 export default function SignUp() {
-  const [useLegacy, setUseLegacy] = useState(!isClerkAvailable);
+  const navigate = useNavigate();
+  const { isSignedIn, isLoaded } = useUser();
+  const [useLegacy, setUseLegacy] = useState(false);
 
-  if (useLegacy || !isClerkAvailable) {
-    return <LegacySignUp onBack={isClerkAvailable ? () => setUseLegacy(false) : undefined} />;
+  // Redirect if already signed in with Clerk
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      navigate('/app', { replace: true });
+    }
+  }, [isLoaded, isSignedIn, navigate]);
+
+  if (useLegacy) {
+    return <LegacySignUp onBack={() => setUseLegacy(false)} />;
   }
 
   return (
@@ -47,7 +54,7 @@ export default function SignUp() {
             onClick={() => setUseLegacy(true)}
             className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
           >
-            Use legacy signup
+            Existing user? Use legacy signup
           </button>
           
           <Link
