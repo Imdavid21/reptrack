@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
-import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus, History } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,6 +28,7 @@ interface ExerciseReviewProps {
   selectedDayKey?: string;
   onSwitchDay?: (dayKey: string) => void;
   onSkipExercises?: () => void;
+  lastUsedNames?: Set<string>;
 }
 
 function ExerciseItemCard({
@@ -35,6 +36,7 @@ function ExerciseItemCard({
   globalIndex,
   totalExercises,
   isEditing,
+  isFromHistory,
   onToggleEdit,
   onMoveUp,
   onMoveDown,
@@ -45,6 +47,7 @@ function ExerciseItemCard({
   globalIndex: number;
   totalExercises: number;
   isEditing: boolean;
+  isFromHistory: boolean;
   onToggleEdit: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -126,6 +129,11 @@ function ExerciseItemCard({
         >
           <div className="font-semibold text-sm truncate">{exercise.name}</div>
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+            {isFromHistory && (
+              <>
+                <History className="h-2.5 w-2.5 opacity-50" />
+              </>
+            )}
             <span>{totalSets} sets</span>
             <span className="opacity-40">·</span>
             <span>{targetInfo?.targetReps || '—'}</span>
@@ -238,6 +246,7 @@ export function ExerciseReview({
   selectedDayKey,
   onSwitchDay,
   onSkipExercises,
+  lastUsedNames,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -291,6 +300,7 @@ export function ExerciseReview({
         globalIndex={globalIndex}
         totalExercises={exercises.length}
         isEditing={editingIndex === globalIndex}
+        isFromHistory={lastUsedNames?.has(exercise.name) ?? false}
         onToggleEdit={() => setEditingIndex(editingIndex === globalIndex ? null : globalIndex)}
         onMoveUp={() => handleMoveUp(globalIndex)}
         onMoveDown={() => handleMoveDown(globalIndex)}

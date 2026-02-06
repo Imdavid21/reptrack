@@ -594,6 +594,7 @@ export default function LogWorkout() {
               selectedDayKey={selectedDay}
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
               onSkipExercises={selectedDay ? handleQuickLog : undefined}
+              lastUsedNames={new Set(Object.keys(lastUsedMap))}
             />
           )}
 
