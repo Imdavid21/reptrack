@@ -266,12 +266,18 @@ export default function Settings() {
                             </button>
                           )}
                           <button
-                            onClick={handleSaveProfile}
-                            disabled={isSavingProfile || !profileDirty}
+                            onClick={() => {
+                              if (profileDirty) {
+                                handleSaveProfile();
+                              } else {
+                                setIsEditingProfile(false);
+                              }
+                            }}
+                            disabled={isSavingProfile}
                             className="btn-brutalist btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
                           >
                             {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                            SAVE PROFILE
+                            {profileDirty ? 'SAVE PROFILE' : 'DONE'}
                           </button>
                         </Box>
                       </Box>
