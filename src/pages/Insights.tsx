@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -75,15 +75,23 @@ function ProgressCard() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [goals, setGoals] = useState({
+    daily_calorie_goal: '',
+    daily_water_goal: '',
     weekly_workout_goal: '',
     sleep_goal: '',
+    weight_goal: '',
+    weight_goal_type: 'maintain',
   });
 
   useEffect(() => {
     if (preferences) {
       setGoals({
+        daily_calorie_goal: (preferences as any).daily_calorie_goal?.toString() || '',
+        daily_water_goal: (preferences as any).daily_water_goal?.toString() || '',
         weekly_workout_goal: (preferences as any).weekly_workout_goal?.toString() || '4',
         sleep_goal: (preferences as any).sleep_goal?.toString() || '8',
+        weight_goal: (preferences as any).weight_goal?.toString() || '',
+        weight_goal_type: (preferences as any).weight_goal_type || 'maintain',
       });
     }
   }, [preferences]);
@@ -104,8 +112,12 @@ function ProgressCard() {
     setIsSaving(true);
     try {
       await updatePreferences.mutateAsync({
+        daily_calorie_goal: goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null,
+        daily_water_goal: goals.daily_water_goal ? parseInt(goals.daily_water_goal) : null,
         weekly_workout_goal: goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4,
         sleep_goal: goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8,
+        weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
+        weight_goal_type: goals.weight_goal_type || null,
       } as any);
       toast.success('Goals updated');
       setIsEditing(false);
@@ -256,42 +268,118 @@ function ProgressCard() {
           bgcolor: 'action.hover',
           borderRadius: 2,
           mb: 1.5,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          display: 'flex',
+          flexDirection: 'column',
           gap: 1.5,
         }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              WEEKLY WORKOUTS
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              value={goals.weekly_workout_goal}
-              onChange={(e) => setGoals(g => ({ ...g, weekly_workout_goal: e.target.value }))}
-              InputProps={{
-                endAdornment: <Typography variant="caption" color="text.secondary">/wk</Typography>,
-                sx: { fontSize: '0.875rem' }
-              }}
-            />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                WEEKLY WORKOUTS
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={goals.weekly_workout_goal}
+                onChange={(e) => setGoals(g => ({ ...g, weekly_workout_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">/wk</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                SLEEP GOAL
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={goals.sleep_goal}
+                onChange={(e) => setGoals(g => ({ ...g, sleep_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">hrs</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+                inputProps={{ step: '0.5' }}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                DAILY CALORIES
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="2500"
+                value={goals.daily_calorie_goal}
+                onChange={(e) => setGoals(g => ({ ...g, daily_calorie_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">kcal</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                DAILY WATER
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="3000"
+                value={goals.daily_water_goal}
+                onChange={(e) => setGoals(g => ({ ...g, daily_water_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">ml</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
           </Box>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              SLEEP GOAL
+              WEIGHT GOAL
             </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              value={goals.sleep_goal}
-              onChange={(e) => setGoals(g => ({ ...g, sleep_goal: e.target.value }))}
-              InputProps={{
-                endAdornment: <Typography variant="caption" color="text.secondary">hrs</Typography>,
-                sx: { fontSize: '0.875rem' }
-              }}
-              inputProps={{ step: '0.5' }}
-            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                type="number"
+                placeholder="75"
+                value={goals.weight_goal}
+                onChange={(e) => setGoals(g => ({ ...g, weight_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">kg</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+                inputProps={{ step: '0.1' }}
+                sx={{ flex: 1 }}
+              />
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {['lose', 'maintain', 'gain'].map((type) => (
+                  <Button
+                    key={type}
+                    size="small"
+                    variant={goals.weight_goal_type === type ? 'contained' : 'outlined'}
+                    onClick={() => setGoals(g => ({ ...g, weight_goal_type: type }))}
+                    sx={{
+                      minWidth: 'auto',
+                      px: 1,
+                      textTransform: 'capitalize',
+                      fontSize: '0.6rem',
+                    }}
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Collapse>
