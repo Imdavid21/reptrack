@@ -326,7 +326,7 @@ export function ExerciseReview({
                   }
                 }}
                 className={cn(
-                  'shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                  'shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors',
                   day.key === selectedDayKey
                     ? 'bg-foreground text-background'
                     : 'bg-muted text-muted-foreground hover:text-foreground'

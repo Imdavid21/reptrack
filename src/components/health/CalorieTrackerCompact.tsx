@@ -289,21 +289,21 @@ export function CalorieTrackerCompact() {
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
               >
                 <Camera className="h-4 w-4" />
                 <span className="text-[10px]">CAMERA</span>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
-                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-[10px]">GALLERY</span>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
-                className="border border-border p-2 flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
               >
                 <Utensils className="h-4 w-4" />
                 <span className="text-[10px]">DESCRIBE</span>
@@ -399,7 +399,7 @@ export function CalorieTrackerCompact() {
                     placeholder="e.g., 2 eggs, toast with butter, and a glass of orange juice"
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
-                    className="w-full mt-1 p-3 border border-border bg-background text-sm min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full mt-1 p-3 border border-border bg-background text-sm min-h-[100px] resize-none rounded-xl focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     AI will estimate calories and macros
@@ -409,7 +409,7 @@ export function CalorieTrackerCompact() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setTextMode(false); setTextInput(''); setIsDialogOpen(false); }}
-                    className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                    className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
                     CANCEL
@@ -434,7 +434,7 @@ export function CalorieTrackerCompact() {
                   </div>
                 )}
 
-                <div className="border border-border p-4">
+                <div className="border border-border rounded-xl p-4">
                   <p className="text-sm mb-3">{analysis.description}</p>
                   
                   <div className="space-y-2">
@@ -455,7 +455,7 @@ export function CalorieTrackerCompact() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setAnalysis(null); setPreviewUrl(null); }}
-                    className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                    className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
                     RETRY
@@ -497,7 +497,7 @@ export function CalorieTrackerCompact() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setManualMode(false); setManualData({ food_name: '', calories: '' }); }}
-                    className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                    className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
                     CANCEL
