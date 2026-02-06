@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
-import HowItWorksSection from '@/components/landing/HowItWorksSection';
+// HowItWorksSection removed
 import FeatureCard from '@/components/landing/FeatureCard';
 import InsightCard from '@/components/landing/InsightCard';
 import IntegrationCard from '@/components/landing/IntegrationCard';
@@ -182,8 +182,7 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* How It Works */}
-      <HowItWorksSection />
+      {/* How It Works - removed */}
 
       {/* Live Demos Section */}
       <section className="py-20 px-4 border-t border-border">

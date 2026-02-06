@@ -22,7 +22,7 @@ export default function MiniWorkoutDemo() {
   }, []);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 max-w-xs mx-auto">
+    <div className="bg-card border border-border rounded-2xl p-5 max-w-xs mx-auto h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Push Day A</span>
         <span className="text-xs text-muted-foreground">Set {Math.max(activeSet + 1, 1)} / {sets.length}</span>
