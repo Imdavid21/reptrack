@@ -1,7 +1,7 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Button, IconButton, LinearProgress, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, IconButton, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
@@ -45,8 +45,6 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
-const STEPS: Step[] = ['select-day', 'exercises'];
-
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { preferences, isLoading: prefsLoading } = useUserPreferences();
@@ -55,7 +53,6 @@ export default function LogWorkout() {
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed } = useLastUsedWeights();
 
-  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -84,7 +81,7 @@ export default function LogWorkout() {
 
   const dayType = selectedDay === 'custom' ? undefined : (selectedDay ? getDayType(splitDays[selectedDay]?.name || '') : undefined);
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
+  const progressPercent = step === 'select-day' ? 50 : 100;
 
   // Restore from draft
   useEffect(() => {
@@ -123,7 +120,6 @@ export default function LogWorkout() {
     return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
-  // NOW we can have conditional returns after all hooks are declared
   if (prefsLoading) {
     return (
       <MainLayout>
@@ -134,7 +130,6 @@ export default function LogWorkout() {
     );
   }
 
-  // If routine is not setup, show setup flow
   if (preferences && !preferences.routine_setup_completed) {
     return (
       <MainLayout title="SETUP ROUTINE">
@@ -151,7 +146,6 @@ export default function LogWorkout() {
     setWeekNumber(week);
     const dayData = splitDays[day];
     if (dayData) {
-      // Filter out warmup exercises - only include primary and accessory
       const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
       setExercises(
         workExercises.map((ex, idx) => {
@@ -273,7 +267,6 @@ export default function LogWorkout() {
   };
 
   const handleBack = () => {
-    const currentIndex = STEPS.indexOf(step);
     if (step === 'exercises') {
       if (exerciseViewMode === 'single') {
         if (currentSetIndex > 0) {
@@ -288,50 +281,42 @@ export default function LogWorkout() {
       } else {
         setStep('select-day');
       }
-    } else if (currentIndex > 0) {
-      setStep(STEPS[currentIndex - 1]);
     }
   };
 
   return (
     <MainLayout title="LOG WORKOUT">
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 10 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
           {/* Back Button */}
           {step !== 'select-day' && (
             <Button
               startIcon={<ChevronLeft size={16} />}
               onClick={handleBack}
-              sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
+              sx={{ alignSelf: 'flex-start', color: 'text.secondary', textTransform: 'none' }}
             >
               Back
             </Button>
           )}
 
-          {/* Progress indicator */}
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 4,
-              borderRadius: 2,
-              bgcolor: 'action.hover',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 2,
-              },
-            }}
-          />
+          {/* Progress Bar - thick brutalist style */}
+          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-foreground rounded-full transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
 
           {/* Weekly Progress */}
-          {(step === 'select-day' || step === 'exercises') && (
+          {step === 'select-day' && (
             <motion.div variants={staggerItem}>
               <WeeklyProgress />
             </motion.div>
           )}
 
-          {/* Step Content */}
+          {/* Step: Select Day */}
           {step === 'select-day' && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 onSelect={handleDaySelect}
@@ -339,10 +324,8 @@ export default function LogWorkout() {
               />
 
               <div className="flex justify-center">
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  sx={{ borderStyle: 'dashed', color: 'text.secondary' }}
+                <button
+                  className="flex items-center gap-2 px-6 py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
                   onClick={() => {
                     setSelectedDay('custom');
                     setSelectedDate(new Date());
@@ -351,14 +334,15 @@ export default function LogWorkout() {
                     setStep('exercises');
                     setWorkoutStartTime(new Date());
                   }}
-                  startIcon={<Plus size={16} />}
                 >
+                  <Plus size={16} />
                   Start Empty / Freestyle Session
-                </Button>
+                </button>
               </div>
             </div>
           )}
 
+          {/* Step: Exercises */}
           {step === 'exercises' && (
             <>
               {/* Header with view toggle */}
@@ -382,10 +366,10 @@ export default function LogWorkout() {
                     size="small"
                     onClick={() => setExerciseViewMode('single')}
                     sx={{
-                      bgcolor: exerciseViewMode === 'single' ? 'primary.main' : 'action.hover',
-                      color: exerciseViewMode === 'single' ? 'primary.contrastText' : 'text.primary',
+                      bgcolor: exerciseViewMode === 'single' ? 'text.primary' : 'action.hover',
+                      color: exerciseViewMode === 'single' ? 'background.default' : 'text.primary',
                       '&:hover': {
-                        bgcolor: exerciseViewMode === 'single' ? 'primary.dark' : 'action.selected',
+                        bgcolor: exerciseViewMode === 'single' ? 'text.primary' : 'action.selected',
                       },
                     }}
                   >
@@ -395,10 +379,10 @@ export default function LogWorkout() {
                     size="small"
                     onClick={() => setExerciseViewMode('overview')}
                     sx={{
-                      bgcolor: exerciseViewMode === 'overview' ? 'primary.main' : 'action.hover',
-                      color: exerciseViewMode === 'overview' ? 'primary.contrastText' : 'text.primary',
+                      bgcolor: exerciseViewMode === 'overview' ? 'text.primary' : 'action.hover',
+                      color: exerciseViewMode === 'overview' ? 'background.default' : 'text.primary',
                       '&:hover': {
-                        bgcolor: exerciseViewMode === 'overview' ? 'primary.dark' : 'action.selected',
+                        bgcolor: exerciseViewMode === 'overview' ? 'text.primary' : 'action.selected',
                       },
                     }}
                   >
@@ -439,21 +423,17 @@ export default function LogWorkout() {
                     onAddExercise={handleAddExercise}
                     dayType={dayType}
                   />
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
+                  <button
+                    className="btn-brutalist btn-primary w-full py-4 text-base font-bold disabled:opacity-50"
                     onClick={handleExercisesDone}
                     disabled={completedSets === 0}
-                    sx={{ py: 1.5, borderRadius: 3 }}
                   >
-                    Finish Exercises
-                  </Button>
+                    Finish Workout
+                  </button>
                 </>
               )}
             </>
           )}
-
         </Box>
       </AnimatedPage>
     </MainLayout>
