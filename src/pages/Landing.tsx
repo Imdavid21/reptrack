@@ -74,8 +74,8 @@ export default function Landing() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-2xl font-bold tracking-widest animate-pulse">
-          REPTRACK<span className="text-muted-foreground"> </span>FITNESS
+        <div className="animate-pulse">
+          <Logo size="lg" />
         </div>
       </div>
     );
@@ -493,7 +493,7 @@ export default function Landing() {
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            <span className="font-bold tracking-widest text-foreground">REPTRACK FITNESS</span>
+            <Logo size="sm" />
           </div>
 
 
