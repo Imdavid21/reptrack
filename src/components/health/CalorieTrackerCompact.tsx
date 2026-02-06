@@ -98,13 +98,6 @@ export function CalorieTrackerCompact() {
     setIsDialogOpen(true);
   };
 
-  const handleManualClick = () => {
-    setSelectedMealType(getMealTypeByTime());
-    resetDialogState();
-    setManualMode(true);
-    setIsDialogOpen(true);
-  };
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -309,13 +302,6 @@ export function CalorieTrackerCompact() {
                 <span className="text-[10px]">DESCRIBE</span>
               </button>
             </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleManualClick(); }}
-              className="btn-brutalist w-full flex items-center justify-center gap-2 py-3"
-            >
-              <Plus className="h-4 w-4" />
-              MANUAL ENTRY
-            </button>
           </div>
 
           {/* Expanded Detail View */}
@@ -423,6 +409,16 @@ export function CalorieTrackerCompact() {
                     ANALYZE
                   </button>
                 </div>
+
+                {/* Manual fallback */}
+                <div className="border-t border-border pt-3">
+                  <button
+                    onClick={() => { setTextMode(false); setManualMode(true); }}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                  >
+                    or enter calories manually →
+                  </button>
+                </div>
               </div>
             )}
 
@@ -496,7 +492,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => { setManualMode(false); setManualData({ food_name: '', calories: '' }); }}
+                    onClick={() => { setManualMode(false); setTextMode(true); setManualData({ food_name: '', calories: '' }); }}
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
