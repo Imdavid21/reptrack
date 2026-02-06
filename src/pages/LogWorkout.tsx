@@ -1,6 +1,6 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -98,10 +98,10 @@ export default function LogWorkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
-  const { createWorkout, isCreating } = useWorkouts();
+  const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
-  const { getLastUsed, lastUsedMap } = useLastUsedWeights();
+  const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
 
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -116,9 +116,10 @@ export default function LogWorkout() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
-  const [skippedReview, setSkippedReview] = useState(false);
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [showInlineSplitSelector, setShowInlineSplitSelector] = useState(false);
+  const autoSelectAttempted = useRef(false);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -138,8 +139,7 @@ export default function LogWorkout() {
   const dayType = dayData ? getDayType(dayData.name) : undefined;
   const currentExercise = exercises[currentExerciseIndex];
 
-  // Progress: 2 steps if review was skipped, 3 if not
-  const progressPercent = step === 'select-day' ? (skippedReview ? 50 : 33)
+  const progressPercent = step === 'select-day' ? 33
     : step === 'review' ? 66
     : 100;
 
@@ -190,7 +190,37 @@ export default function LogWorkout() {
     return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
-  if (prefsLoading) {
+  // Auto-select day for returning users — skip straight to exercises
+  useEffect(() => {
+    if (autoSelectAttempted.current) return;
+    if (draftRestored) { autoSelectAttempted.current = true; return; }
+    if (prefsLoading || workoutsLoading || weightsLoading) return;
+
+    autoSelectAttempted.current = true;
+
+    if (!preferences?.routine_setup_completed) return;
+    if (workouts.length === 0) return; // First-time: show day selector
+
+    const days = Object.keys(splitDays);
+    if (days.length === 0) return;
+
+    // Pick next day in rotation based on last workout
+    const lastDay = workouts[0]?.day;
+    const lastIndex = days.indexOf(lastDay);
+    const nextDay = days[(lastIndex + 1) % days.length] || days[0];
+
+    if (splitDays[nextDay]) {
+      setSelectedDay(nextDay);
+      setSelectedDate(new Date());
+      setExercises(buildExercisesFromTemplate(splitDays[nextDay], lastUsedMap));
+      setWorkoutStartTime(new Date());
+      setCurrentExerciseIndex(0);
+      setCurrentSetIndex(0);
+      setStep('exercises');
+    }
+  }, [draftRestored, prefsLoading, workoutsLoading, weightsLoading, preferences, workouts, splitDays, lastUsedMap]);
+
+  if (prefsLoading || (preferences?.routine_setup_completed && !autoSelectAttempted.current && (workoutsLoading || weightsLoading) && !draftRestored)) {
     return (
       <MainLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -210,7 +240,6 @@ export default function LogWorkout() {
     );
   }
 
-  // Smart-skip: check if user has reviewed this day type before
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
     setSelectedDate(date);
@@ -223,8 +252,8 @@ export default function LogWorkout() {
 
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
-    setSkippedReview(false);
-    setStep('review');
+    setWorkoutStartTime(new Date());
+    setStep('exercises');
   };
 
   // Start session from review
@@ -387,23 +416,17 @@ export default function LogWorkout() {
   };
 
   const handleBack = () => {
-    if (step === 'review') {
+    if (step === 'select-day') {
+      if (selectedDay && exercises.length > 0) {
+        setStep('exercises');
+      }
+    } else if (step === 'review') {
       setStep('select-day');
       setExercises([]);
-      setSkippedReview(false);
     } else if (step === 'exercises') {
-      // If no sets completed yet, allow going back
       if (completedSets === 0) {
-        if (skippedReview) {
-          // Smart-skipped user: go back to day selection
-          setStep('select-day');
-          setExercises([]);
-          setSkippedReview(false);
-        } else {
-          setStep('review');
-        }
+        setStep('select-day');
       } else {
-        // Has progress: navigate within exercises
         if (exerciseViewMode === 'single') {
           if (currentSetIndex > 0) {
             setCurrentSetIndex(prev => prev - 1);
@@ -465,7 +488,6 @@ export default function LogWorkout() {
           setSelectedDate(new Date());
           setExercises(suggested);
           setShowAIGoalPrompt(false);
-          setSkippedReview(false);
           setStep('review');
           toast.success(`AI routine generated — review your exercises`);
           return;
@@ -484,24 +506,25 @@ export default function LogWorkout() {
     <MainLayout>
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
-          {/* Back Button */}
-          {step !== 'select-day' && (
+          {/* Back Button - on select-day when returning from exercises */}
+          {step === 'select-day' && selectedDay && exercises.length > 0 && (
             <button
               onClick={handleBack}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
             >
               <ChevronLeft size={16} />
-              Select Splits
+              Back to Session
             </button>
           )}
-
-          {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-foreground rounded-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+          {step === 'review' && (
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
+            >
+              <ChevronLeft size={16} />
+              Select Workout
+            </button>
+          )}
 
           {/* Split selector - only on day selection */}
           {step === 'select-day' && preferences && (
@@ -530,7 +553,6 @@ export default function LogWorkout() {
                     setSelectedDate(new Date());
                     setWeekNumber(weekNumber);
                     setExercises([]);
-                    setSkippedReview(false);
                     setStep('review');
                   }}
                 >
@@ -586,9 +608,37 @@ export default function LogWorkout() {
             />
           )}
 
-          {/* Step 3: Log Sets */}
+          {/* Log Sets */}
           {step === 'exercises' && (
             <>
+              {/* Quick navigation */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setStep('select-day')}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  Select Workout
+                </button>
+                <button
+                  onClick={() => setShowInlineSplitSelector(v => !v)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  Select Split
+                </button>
+              </div>
+
+              {showInlineSplitSelector && preferences && (
+                <SplitSelector
+                  currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
+                  onChangeSplit={(newSplit) => {
+                    handleSplitChange(newSplit);
+                    setShowInlineSplitSelector(false);
+                    setStep('select-day');
+                  }}
+                  isUpdating={updatePreferences.isPending}
+                />
+              )}
+
               {/* Header with view toggle + edit exercises button */}
               <div className="flex items-center justify-between">
                 <div>
