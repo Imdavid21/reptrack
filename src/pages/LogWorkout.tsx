@@ -18,6 +18,7 @@ import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
+import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid, Plus, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -245,7 +246,7 @@ export default function LogWorkout() {
   // AI suggestions
   const handleSuggestExercises = async () => {
     if (!dayData) return;
-    setPreSuggestionExercises([...exercises]);
+    const backup = [...exercises];
     setIsSuggesting(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-workout', {
@@ -261,27 +262,33 @@ export default function LogWorkout() {
       const routine = data?.routine;
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
-        if (firstDay?.exercises) {
+        if (firstDay?.exercises && firstDay.exercises.length > 0) {
           const suggested = buildExercisesFromTemplate(firstDay);
+          // Only swap if we got valid exercises
+          setPreSuggestionExercises(backup);
           setExercises(suggested);
-          toast.success(`Loaded ${suggested.length} AI-suggested exercises — confirm or undo below`);
+          toast.success(`${suggested.length} AI exercises loaded — confirm or undo`);
+          return;
         }
       }
+      // If we get here, AI returned no usable exercises
+      toast.error('AI returned no exercises. Keeping current list.');
     } catch (err) {
       console.error('AI suggestion failed:', err);
-      toast.error('Failed to get AI suggestions. Using template exercises.');
-      setPreSuggestionExercises(null);
+      toast.error('Failed to get AI suggestions');
     } finally {
       setIsSuggesting(false);
     }
   };
 
   const handleConfirmSuggestions = () => {
+    haptic('light');
     setPreSuggestionExercises(null);
-    toast.success('AI suggestions confirmed');
+    toast.success('Exercises confirmed');
   };
 
   const handleDenySuggestions = () => {
+    haptic('light');
     if (preSuggestionExercises) {
       setExercises(preSuggestionExercises);
     }
