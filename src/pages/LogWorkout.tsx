@@ -133,6 +133,15 @@ export default function LogWorkout() {
     : step === 'review' ? 66
     : 100;
 
+  // Build available days list for the day switcher
+  const availableDays = useMemo(() => {
+    return Object.entries(splitDays).map(([key, day]) => ({
+      key,
+      name: day.name,
+      focus: day.focus,
+    }));
+  }, [splitDays]);
+
   // Restore from draft
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
@@ -404,6 +413,16 @@ export default function LogWorkout() {
     }
   };
 
+  // Switch to a different day from the review screen
+  const handleSwitchDay = (dayKey: string) => {
+    setSelectedDay(dayKey);
+    const dayInfo = splitDays[dayKey];
+    if (dayInfo) {
+      setExercises(buildExercisesFromTemplate(dayInfo));
+    }
+    setPreSuggestionExercises(null);
+  };
+
   return (
     <MainLayout title="LOG WORKOUT">
       <AnimatedPage>
@@ -476,6 +495,9 @@ export default function LogWorkout() {
               hasPendingSuggestions={preSuggestionExercises !== null}
               onConfirmSuggestions={handleConfirmSuggestions}
               onDenySuggestions={handleDenySuggestions}
+              availableDays={selectedDay !== 'custom' ? availableDays : undefined}
+              selectedDayKey={selectedDay}
+              onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
             />
           )}
 
