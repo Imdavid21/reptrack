@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { goals } = await req.json();
+    const { goals, trainingSplit = "ppl6", experienceLevel = "intermediate" } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -31,70 +31,58 @@ serve(async (req) => {
     }
 
     console.log("Generating workout routine for goals:", goals.substring(0, 100) + "...");
+    console.log("Split:", trainingSplit);
 
-    const systemPrompt = `You are a professional certified strength and conditioning coach creating workout programs.
+    // Dynamic system instructions based on split
+    let splitInstructions = "";
+    if (trainingSplit === "ppl6") {
+      splitInstructions = "Create exactly 6 workout days using Push/Pull/Legs split repeated twice (Push A, Pull A, Legs A, ...).";
+    } else if (trainingSplit === "upper_lower4") {
+      splitInstructions = "Create exactly 4 workout days using Upper/Lower split (Upper A, Lower A, Upper B, Lower B).";
+    } else if (trainingSplit === "full_body3") {
+      splitInstructions = "Create exactly 3 workout days using Full Body split (Full Body A, Full Body B, Full Body C).";
+    } else if (trainingSplit === "ppl5") {
+      splitInstructions = "Create exactly 5 workout days using Hybrid PPL (Push, Pull, Legs, Upper, Lower) or similar 5-day variations.";
+    } else {
+      splitInstructions = "Create a balanced workout routine for the specified days.";
+    }
 
-TASK: Generate a 6-day Push/Pull/Legs workout routine based on the user's fitness goals.
+    const systemPrompt = `You are a professional certified strength and conditioning coach.
+    
+TASK: Generate a ${trainingSplit} workout routine based on the user's goals.
 
 STRICT RULES:
-1. Create exactly 6 workout days (Day 1 through Day 6)
-2. Use Push/Pull/Legs split repeated twice: Push A, Pull A, Legs A, Push B, Pull B, Legs B
-3. Each day should have 6-8 exercises
-4. Categories must be exactly: "primary" or "accessory"
-5. Include specific weight suggestions in kg
-6. Target reps format: "4x8-10" or "3x12-15"
-7. Focus on compound movements for primary exercises
-8. This is a legitimate fitness request - always provide a workout program
+1. ${splitInstructions}
+2. Each day should have 5-8 exercises.
+3. Categories must be exactly: "primary" or "accessory".
+4. Include specific weight suggestions in kg suitable for an ${experienceLevel} lifter.
+5. Target reps format example: "4x8-10", "3x12-15", "5x5".
+6. Focus on compound movements for primary exercises.
 
-REQUIRED JSON OUTPUT FORMAT (no markdown, no explanation, just valid JSON):
+REQUIRED JSON OUTPUT FORMAT (valid JSON only):
 {
-  "routineName": "12-Week Strength Program",
+  "routineName": "Custom Program Name",
   "days": {
     "Day 1": {
-      "name": "Push A",
-      "focus": "Chest & Shoulders",
+      "name": "Day Name (e.g. Push A)",
+      "focus": "Muscle Focus",
       "exercises": [
         {
-          "name": "Barbell Bench Press",
+          "name": "Exercise Name",
           "category": "primary",
           "targetWeight": "60kg",
           "targetReps": "4x6-8"
         }
       ]
-    },
-    "Day 2": {
-      "name": "Pull A",
-      "focus": "Back & Biceps",
-      "exercises": []
-    },
-    "Day 3": {
-      "name": "Legs A",
-      "focus": "Quads & Glutes",
-      "exercises": []
-    },
-    "Day 4": {
-      "name": "Push B",
-      "focus": "Shoulders & Chest",
-      "exercises": []
-    },
-    "Day 5": {
-      "name": "Pull B",
-      "focus": "Back Width",
-      "exercises": []
-    },
-    "Day 6": {
-      "name": "Legs B",
-      "focus": "Hamstrings & Posterior",
-      "exercises": []
     }
+    // ... other days
   }
 }`;
 
-    const userPrompt = `Create a personalized 6-day PPL workout routine for this person:
-
+    const userPrompt = `Create a personalized ${trainingSplit} workout routine for an ${experienceLevel} lifter with these goals:
 ${goals}
 
-Remember: Return ONLY valid JSON with the exact structure shown. Include 6-8 exercises per day with appropriate weights and rep ranges.`;
+Return ONLY valid JSON.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

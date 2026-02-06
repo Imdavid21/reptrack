@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
-import { useWorkouts } from '@/hooks/useWorkouts';
+import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useMeals';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X } from 'lucide-react';
+import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 
 export default function History() {
   const { workouts } = useWorkouts();
@@ -25,15 +27,16 @@ export default function History() {
 
   // Editing state
   const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
   const [editValues, setEditValues] = useState<{
     sleepHours: string;
     sleepMinutes: string;
     bodyweight: string;
   }>({ sleepHours: '', sleepMinutes: '', bodyweight: '' });
 
-  // Build a combined timeline of the last 14 days
-  const last14Days = eachDayOfInterval({
-    start: subDays(startOfDay(new Date()), 13),
+  // Build a combined timeline of the last 30 days
+  const last30Days = eachDayOfInterval({
+    start: subDays(startOfDay(new Date()), 29),
     end: startOfDay(new Date()),
   }).reverse();
 
@@ -107,7 +110,7 @@ export default function History() {
 
           {/* Daily Timeline */}
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
-            {last14Days.map((date) => {
+            {last30Days.map((date) => {
               const dateStr = format(date, 'yyyy-MM-dd');
               const workout = workoutsByDate[dateStr];
               const metric = metricsByDate[dateStr];
@@ -118,10 +121,11 @@ export default function History() {
               const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
               const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
               const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
+              const isSkipped = (workout as any)?.is_skipped;
 
               return (
                 <motion.div key={dateStr} variants={staggerItem}>
-                  <div className={`card-brutalist mb-4 transition-opacity ${!hasAnyData && !isEditing ? 'opacity-50' : 'opacity-100'}`}>
+                  <div className={`card-brutalist mb-4 transition-opacity ${!hasAnyData && !isEditing ? 'opacity-50' : 'opacity-100'} ${isSkipped ? 'opacity-70 bg-muted/20' : ''}`}>
                     {/* Date Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -131,16 +135,33 @@ export default function History() {
                         {isToday && (
                           <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
                         )}
+                        {isSkipped && (
+                          <span className="badge-brutalist text-[10px] px-2 py-0.5 bg-muted text-muted-foreground border-dashed">SKIPPED</span>
+                        )}
                       </div>
 
-                      {!isEditing && (
-                        <button
-                          onClick={() => startEdit(dateStr)}
-                          className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {!isEditing && (
+                          <button
+                            onClick={() => startEdit(dateStr)}
+                            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+
+                        {workout && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWorkoutForEdit(workout);
+                            }}
+                            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                          >
+                            <MoreHorizontal size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Inline Edit Mode */}
@@ -208,7 +229,7 @@ export default function History() {
                     {hasAnyData && !isEditing && (
                       <div className="flex flex-wrap gap-2">
                         {/* Workout */}
-                        {workout && (
+                        {workout && !isSkipped && (
                           <div
                             onClick={() => navigate(`/history/${workout.id}`)}
                             className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
@@ -261,6 +282,12 @@ export default function History() {
               );
             })}
           </motion.div>
+
+          <WorkoutEditSheet
+            workout={selectedWorkoutForEdit}
+            open={!!selectedWorkoutForEdit}
+            onOpenChange={(open) => !open && setSelectedWorkoutForEdit(null)}
+          />
 
           {/* Stats summary */}
           {workouts.length > 0 && (

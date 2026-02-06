@@ -1,5 +1,7 @@
+import { RoutineSetup } from '@/components/workout/RoutineSetup';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Button, IconButton, LinearProgress } from '@mui/material';
+import { Box, Typography, Button, IconButton, LinearProgress, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
@@ -8,13 +10,14 @@ import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
 import { defaultRoutine } from '@/lib/workoutPresets';
+import { getSplitDays } from '@/lib/splitTemplates';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus } from 'lucide-react';
 
 type Step = 'select-day' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
@@ -47,17 +50,39 @@ const STEPS: Step[] = ['select-day', 'exercises'];
 
 export default function LogWorkout() {
   const navigate = useNavigate();
+  const { preferences, isLoading: prefsLoading } = useUserPreferences();
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed } = useLastUsedWeights();
-  
+
+  const splitDays = useMemo(() => {
+    const split = preferences?.training_split || 'ppl6';
+    return getSplitDays(split);
+  }, [preferences?.training_split]);
+
   const [step, setStep] = useState<Step>('select-day');
-  const [selectedDay, setSelectedDay] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [weekNumber, setWeekNumber] = useState<number>(1);
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [habits] = useState<Habits>(defaultHabits);
+
+  if (prefsLoading) {
+    return (
+      <MainLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </MainLayout>
+    );
+  }
+
+  // If routine is not setup, show setup flow
+  if (preferences && !preferences.routine_setup_completed) {
+    return (
+      <MainLayout title="SETUP ROUTINE">
+        <AnimatedPage>
+          <RoutineSetup onComplete={() => { }} />
+        </AnimatedPage>
+      </MainLayout>
+    );
+  }
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
@@ -87,7 +112,7 @@ export default function LogWorkout() {
     const timeoutId = setTimeout(() => {
       saveDraft({
         day: selectedDay,
-        dayName: defaultRoutine.days[selectedDay]?.name || '',
+        dayName: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || ''),
         date: selectedDate.toISOString(),
         weekNumber,
         exercises,
@@ -105,7 +130,7 @@ export default function LogWorkout() {
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
-    const dayData = defaultRoutine.days[day];
+    const dayData = splitDays[day];
     if (dayData) {
       // Filter out warmup exercises - only include primary and accessory
       const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
@@ -144,7 +169,7 @@ export default function LogWorkout() {
     try {
       await createWorkout({
         day: selectedDay,
-        day_name: defaultRoutine.days[selectedDay].name,
+        day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
         date: selectedDate,
         exercises: [],
@@ -161,7 +186,7 @@ export default function LogWorkout() {
   };
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
-    setExercises(prev => 
+    setExercises(prev =>
       prev.map((ex, idx) => idx === currentExerciseIndex ? updatedExercise : ex)
     );
   };
@@ -204,17 +229,17 @@ export default function LogWorkout() {
       toast.error('Complete at least one set');
       return;
     }
-    
+
     // Calculate duration
-    const durationMinutes = workoutStartTime 
-      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000) 
+    const durationMinutes = workoutStartTime
+      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000)
       : undefined;
-    
+
     // Finish workout immediately
     try {
       await createWorkout({
         day: selectedDay,
-        day_name: defaultRoutine.days[selectedDay].name,
+        day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
         date: selectedDate,
         exercises,
@@ -247,7 +272,7 @@ export default function LogWorkout() {
     try {
       await createWorkout({
         day: selectedDay,
-        day_name: defaultRoutine.days[selectedDay].name,
+        day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
         date: selectedDate,
         exercises: [],
@@ -293,7 +318,7 @@ export default function LogWorkout() {
     return { completedSets: completed, totalSets: total };
   }, [exercises]);
 
-  const dayType = selectedDay ? getDayType(defaultRoutine.days[selectedDay]?.name || '') : undefined;
+  const dayType = selectedDay === 'custom' ? undefined : (selectedDay ? getDayType(splitDays[selectedDay]?.name || '') : undefined);
   const currentExercise = exercises[currentExerciseIndex];
   const progress = ((STEPS.indexOf(step) + 1) / STEPS.length) * 100;
 
@@ -313,11 +338,11 @@ export default function LogWorkout() {
           )}
 
           {/* Progress indicator */}
-          <LinearProgress 
-            variant="determinate" 
+          <LinearProgress
+            variant="determinate"
             value={progress}
-            sx={{ 
-              height: 4, 
+            sx={{
+              height: 4,
               borderRadius: 2,
               bgcolor: 'action.hover',
               '& .MuiLinearProgress-bar': {
@@ -335,11 +360,32 @@ export default function LogWorkout() {
 
           {/* Step Content */}
           {step === 'select-day' && (
-            <DaySelectorWithCheckin 
-              selectedDay={selectedDay} 
-              onSelect={handleDaySelect}
-              onQuickLog={selectedDay ? handleQuickLog : undefined}
-            />
+            <div className="space-y-6">
+              <DaySelectorWithCheckin
+                selectedDay={selectedDay}
+                onSelect={handleDaySelect}
+                onQuickLog={selectedDay ? handleQuickLog : undefined}
+              />
+
+              <div className="flex justify-center">
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  sx={{ borderStyle: 'dashed', color: 'text.secondary' }}
+                  onClick={() => {
+                    setSelectedDay('custom');
+                    setSelectedDate(new Date());
+                    setWeekNumber(weekNumber);
+                    setExercises([]);
+                    setStep('exercises');
+                    setWorkoutStartTime(new Date());
+                  }}
+                  startIcon={<Plus size={16} />}
+                >
+                  Start Empty / Freestyle Session
+                </Button>
+              </div>
+            </div>
           )}
 
           {step === 'exercises' && (
@@ -348,10 +394,10 @@ export default function LogWorkout() {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="h6" fontWeight={700}>
-                    {defaultRoutine.days[selectedDay]?.name}
+                    {selectedDay === 'custom' ? 'Freestyle Workout' : splitDays[selectedDay]?.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Week {weekNumber} • {defaultRoutine.days[selectedDay]?.focus}
+                    Week {weekNumber} • {selectedDay === 'custom' ? 'Custom Session' : splitDays[selectedDay]?.focus}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

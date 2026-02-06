@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -9,7 +9,6 @@ import {
   Check,
   X,
   Loader2,
-  ChevronDown,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -27,75 +26,50 @@ import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
-import { format, subMonths, startOfMonth, endOfMonth, parse } from 'date-fns';
+import { format } from 'date-fns';
 
-// Generate months for current year only (2026)
-function getMonthOptions() {
-  const options = [];
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
+const FITNESS_GOALS = [
+  { value: 'lose_weight', label: 'Lose Weight' },
+  { value: 'build_muscle', label: 'Build Muscle' },
+  { value: 'maintain', label: 'Maintain' },
+  { value: 'improve_health', label: 'Improve Health' },
+  { value: 'increase_strength', label: 'Increase Strength' },
+];
 
-  // Only show months from current year, starting from January up to current month
-  for (let month = currentMonth; month >= 0; month--) {
-    const date = new Date(currentYear, month, 1);
-    options.push({
-      value: format(date, 'yyyy-MM'),
-      label: format(date, 'MMMM yyyy'),
-    });
-  }
-  return options;
-}
-
-// Unified Progress Card with month selection + weekly comparison + inline editing
+// Unified Progress Card using global date range + inline editing
 function ProgressCard() {
   const theme = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+  const { dateRange } = useDateRange();
 
-  // Month selection - default to current month, persist in localStorage
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const saved = localStorage.getItem('insights-selected-month');
-    return saved || format(new Date(), 'yyyy-MM');
-  });
-
-  const monthOptions = useMemo(() => getMonthOptions(), []);
-
-  // Calculate date range from selected month
-  const monthDateRange = useMemo(() => {
-    const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
-    return {
-      from: startOfMonth(monthDate),
-      to: endOfMonth(monthDate),
-    };
-  }, [selectedMonth]);
-
-  // Use the selected month's date range for data
-  const { data, isLoading } = useCorrelationAnalysis(monthDateRange);
+  // Use the global date range for data
+  const { data, isLoading } = useCorrelationAnalysis(dateRange);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [goals, setGoals] = useState({
+    daily_calorie_goal: '',
+    daily_water_goal: '',
     weekly_workout_goal: '',
     sleep_goal: '',
+    weight_goal: '',
+    weight_goal_type: 'maintain',
+    fitness_goal: '',
   });
 
   useEffect(() => {
     if (preferences) {
       setGoals({
+        daily_calorie_goal: (preferences as any).daily_calorie_goal?.toString() || '',
+        daily_water_goal: (preferences as any).daily_water_goal?.toString() || '',
         weekly_workout_goal: (preferences as any).weekly_workout_goal?.toString() || '4',
         sleep_goal: (preferences as any).sleep_goal?.toString() || '8',
+        weight_goal: (preferences as any).weight_goal?.toString() || '',
+        weight_goal_type: (preferences as any).weight_goal_type || 'maintain',
+        fitness_goal: (preferences as any).fitness_goal || '',
       });
     }
   }, [preferences]);
-
-  // Persist month selection
-  useEffect(() => {
-    localStorage.setItem('insights-selected-month', selectedMonth);
-  }, [selectedMonth]);
-
-  const handleMonthChange = (event: SelectChangeEvent<string>) => {
-    setSelectedMonth(event.target.value);
-  };
 
   const workoutGoal = preferences?.weekly_workout_goal || 4;
   const monthlyWorkoutGoal = workoutGoal * 4;
@@ -104,8 +78,13 @@ function ProgressCard() {
     setIsSaving(true);
     try {
       await updatePreferences.mutateAsync({
+        daily_calorie_goal: goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null,
+        daily_water_goal: goals.daily_water_goal ? parseInt(goals.daily_water_goal) : null,
         weekly_workout_goal: goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4,
         sleep_goal: goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8,
+        weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
+        weight_goal_type: goals.weight_goal_type || null,
+        fitness_goal: goals.fitness_goal || null,
       } as any);
       toast.success('Goals updated');
       setIsEditing(false);
@@ -146,8 +125,6 @@ function ProgressCard() {
   const volumeFormatted = summary?.totalVolume
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
     : '—';
-
-  const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || summary?.month || 'This Month';
 
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
     label: string;
@@ -197,32 +174,13 @@ function ProgressCard() {
 
   return (
     <MuiCard>
-      {/* Header with month selector and edit button */}
+      {/* Header with title and edit button */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Target size={14} />
-          <Select
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            variant="standard"
-            disableUnderline
-            IconComponent={() => <ChevronDown size={14} style={{ marginLeft: 4 }} />}
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              color: 'text.secondary',
-              '& .MuiSelect-select': {
-                py: 0,
-                pr: '20px !important',
-              },
-            }}
-          >
-            {monthOptions.map(opt => (
-              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: '0.75rem' }}>
-                {opt.label.toUpperCase()}
-              </MenuItem>
-            ))}
-          </Select>
+          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
+            GOALS & PROGRESS
+          </Typography>
         </Box>
         {!isEditing ? (
           <IconButton size="small" onClick={() => setIsEditing(true)} sx={{ p: 0.5 }}>
@@ -256,42 +214,140 @@ function ProgressCard() {
           bgcolor: 'action.hover',
           borderRadius: 2,
           mb: 1.5,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          display: 'flex',
+          flexDirection: 'column',
           gap: 1.5,
         }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              WEEKLY WORKOUTS
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              value={goals.weekly_workout_goal}
-              onChange={(e) => setGoals(g => ({ ...g, weekly_workout_goal: e.target.value }))}
-              InputProps={{
-                endAdornment: <Typography variant="caption" color="text.secondary">/wk</Typography>,
-                sx: { fontSize: '0.875rem' }
-              }}
-            />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                WEEKLY WORKOUTS
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={goals.weekly_workout_goal}
+                onChange={(e) => setGoals(g => ({ ...g, weekly_workout_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">/wk</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                SLEEP GOAL
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={goals.sleep_goal}
+                onChange={(e) => setGoals(g => ({ ...g, sleep_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">hrs</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+                inputProps={{ step: '0.5' }}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                DAILY CALORIES
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="2500"
+                value={goals.daily_calorie_goal}
+                onChange={(e) => setGoals(g => ({ ...g, daily_calorie_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">kcal</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+                DAILY WATER
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="3000"
+                value={goals.daily_water_goal}
+                onChange={(e) => setGoals(g => ({ ...g, daily_water_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">ml</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+              />
+            </Box>
           </Box>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              SLEEP GOAL
+              WEIGHT GOAL
             </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              value={goals.sleep_goal}
-              onChange={(e) => setGoals(g => ({ ...g, sleep_goal: e.target.value }))}
-              InputProps={{
-                endAdornment: <Typography variant="caption" color="text.secondary">hrs</Typography>,
-                sx: { fontSize: '0.875rem' }
-              }}
-              inputProps={{ step: '0.5' }}
-            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                type="number"
+                placeholder="75"
+                value={goals.weight_goal}
+                onChange={(e) => setGoals(g => ({ ...g, weight_goal: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">kg</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+                inputProps={{ step: '0.1' }}
+                sx={{ flex: 1 }}
+              />
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {['lose', 'maintain', 'gain'].map((type) => (
+                  <Button
+                    key={type}
+                    size="small"
+                    variant={goals.weight_goal_type === type ? 'contained' : 'outlined'}
+                    onClick={() => setGoals(g => ({ ...g, weight_goal_type: type }))}
+                    sx={{
+                      minWidth: 'auto',
+                      px: 1,
+                      textTransform: 'capitalize',
+                      fontSize: '0.6rem',
+                    }}
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+              FITNESS GOAL
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5 }}>
+              {FITNESS_GOALS.map((goal) => (
+                <Button
+                  key={goal.value}
+                  size="small"
+                  variant={goals.fitness_goal === goal.value ? 'contained' : 'outlined'}
+                  onClick={() => setGoals(g => ({ ...g, fitness_goal: goal.value }))}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.7rem',
+                    py: 0.75,
+                  }}
+                >
+                  {goal.label}
+                </Button>
+              ))}
+            </Box>
           </Box>
         </Box>
       </Collapse>
@@ -385,10 +441,6 @@ function InsightsContent() {
               <ProgressCard />
             </motion.div>
 
-            {/* Personal Records */}
-            <motion.div variants={staggerItem}>
-              <PersonalRecords />
-            </motion.div>
 
             {/* Workout Efficiency */}
             <motion.div variants={staggerItem}>

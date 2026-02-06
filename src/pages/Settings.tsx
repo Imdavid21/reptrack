@@ -32,26 +32,10 @@ import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
-import { GoalsSection } from '@/components/settings/GoalsSection';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-
-const ACTIVITY_LEVELS = [
-  { value: 'sedentary', label: 'Sedentary', description: 'Little or no exercise' },
-  { value: 'light', label: 'Lightly Active', description: '1-3 days/week' },
-  { value: 'moderate', label: 'Moderately Active', description: '3-5 days/week' },
-  { value: 'very', label: 'Very Active', description: '6-7 days/week' },
-  { value: 'extra', label: 'Extra Active', description: 'Physical job + exercise' },
-];
-
-const FITNESS_GOALS = [
-  { value: 'lose_weight', label: 'Lose Weight' },
-  { value: 'build_muscle', label: 'Build Muscle' },
-  { value: 'maintain', label: 'Maintain' },
-  { value: 'improve_health', label: 'Improve Health' },
-  { value: 'increase_strength', label: 'Increase Strength' },
-];
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -74,8 +58,6 @@ export default function Settings() {
     age: '',
     height_cm: '',
     gender: '',
-    activity_level: '',
-    fitness_goal: '',
   });
 
   useEffect(() => {
@@ -85,8 +67,6 @@ export default function Settings() {
         age: (preferences as any).age?.toString() || '',
         height_cm: (preferences as any).height_cm?.toString() || '',
         gender: (preferences as any).gender || '',
-        activity_level: (preferences as any).activity_level || '',
-        fitness_goal: (preferences as any).fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -112,8 +92,6 @@ export default function Settings() {
         age: profile.age ? parseInt(profile.age) : null,
         height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
         gender: profile.gender || null,
-        activity_level: profile.activity_level || null,
-        fitness_goal: profile.fitness_goal || null,
       } as any);
       toast.success('Profile updated');
     } catch (error) {
@@ -123,7 +101,7 @@ export default function Settings() {
     }
   };
 
-  const isProfileComplete = profile.age && profile.height_cm && profile.gender && profile.activity_level;
+  const isProfileComplete = profile.age && profile.height_cm && profile.gender;
 
   return (
     <MainLayout title="SETTINGS">
@@ -234,46 +212,6 @@ export default function Settings() {
                         </Box>
                       </Box>
 
-                      <Box>
-                        <Label className="text-xs text-muted-foreground">ACTIVITY LEVEL</Label>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0.5 }}>
-                          {ACTIVITY_LEVELS.map((level) => (
-                            <button
-                              key={level.value}
-                              onClick={() => setProfile(p => ({ ...p, activity_level: level.value }))}
-                              className={cn(
-                                "border p-2 w-full text-left transition-colors rounded",
-                                profile.activity_level === level.value
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border hover:bg-muted"
-                              )}
-                            >
-                              <div className="text-sm font-medium">{level.label}</div>
-                              <div className="text-xs text-muted-foreground">{level.description}</div>
-                            </button>
-                          ))}
-                        </Box>
-                      </Box>
-
-                      <Box>
-                        <Label className="text-xs text-muted-foreground">FITNESS GOAL</Label>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mt: 0.5 }}>
-                          {FITNESS_GOALS.map((goal) => (
-                            <button
-                              key={goal.value}
-                              onClick={() => setProfile(p => ({ ...p, fitness_goal: goal.value }))}
-                              className={cn(
-                                "border p-2 text-sm transition-colors rounded",
-                                profile.fitness_goal === goal.value
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border hover:bg-muted"
-                              )}
-                            >
-                              {goal.label}
-                            </button>
-                          ))}
-                        </Box>
-                      </Box>
 
                       <button
                         onClick={handleSaveProfile}
@@ -369,12 +307,6 @@ export default function Settings() {
               </Box>
             </Collapse>
           </MuiCard>
-
-          {/* Goals Section */}
-          <GoalsSection
-            isExpanded={expandedSections.goals || false}
-            onToggle={() => toggleSection('goals')}
-          />
 
           {/* Appearance - Dark Mode Toggle */}
           <MuiCard>

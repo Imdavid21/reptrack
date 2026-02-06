@@ -59,7 +59,7 @@ export function useWorkouts() {
     queryKey: ['workouts', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      
+
       const { data: workouts, error } = await supabase
         .from('workouts')
         .select('*')
@@ -87,7 +87,7 @@ export function useWorkouts() {
       if (!user) throw new Error('Not authenticated');
 
       // Format date for Supabase (YYYY-MM-DD)
-      const workoutDate = workout.date 
+      const workoutDate = workout.date
         ? workout.date.toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
 
@@ -115,7 +115,7 @@ export function useWorkouts() {
       const exercisesToInsert = workout.exercises.flatMap((ex, exIdx) => {
         const completedSets = ex.sets.filter(set => set.completed);
         if (completedSets.length === 0) return [];
-        
+
         return completedSets.map((set, setIdx) => ({
           workout_id: workoutData.id,
           name: `${ex.name} (Set ${set.setNumber})`,
@@ -164,11 +164,55 @@ export function useWorkouts() {
     },
   });
 
+  const updateWorkoutMutation = useMutation({
+    mutationFn: async (workout: Partial<Workout> & { id: string }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('workouts')
+        .update({
+          is_skipped: (workout as any).is_skipped, // Cast as any if column not in type yet
+          notes: (workout as any).notes,
+        })
+        .eq('id', workout.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+
+  const deleteWorkoutMutation = useMutation({
+    mutationFn: async (workoutId: string) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('id', workoutId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['habitsData'] });
+      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
+      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+    },
+  });
+
   return {
     workouts: workoutsQuery.data ?? [],
     isLoading: workoutsQuery.isLoading,
     error: workoutsQuery.error,
     createWorkout: createWorkoutMutation.mutateAsync,
     isCreating: createWorkoutMutation.isPending,
+    updateWorkout: updateWorkoutMutation.mutateAsync,
+    deleteWorkout: deleteWorkoutMutation.mutateAsync,
   };
 }

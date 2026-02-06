@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
+import { getSplitDays } from '@/lib/splitTemplates';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -12,17 +14,13 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useWorkouts } from '@/hooks/useWorkouts';
 
 // Map weekday (0=Sun, 1=Mon, ...) to workout day key
-function getDefaultDayForDate(date: Date): string | null {
+function getDefaultDayForDate(date: Date, numDays: number): string | null {
   const dayOfWeek = date.getDay();
-  const dayMap: Record<number, string> = {
-    1: 'Day 1', // Monday → Push A
-    2: 'Day 2', // Tuesday → Pull A
-    3: 'Day 3', // Wednesday → Legs A
-    4: 'Day 4', // Thursday → Push B
-    5: 'Day 5', // Friday → Pull B
-    6: 'Day 6', // Saturday → Legs B
-  };
-  return dayMap[dayOfWeek] || null; // Sunday = rest
+  // Simple mapping: Mon=Day 1, Tue=Day 2, etc.
+  // Adjust logic if needed for specific splits, but this is a reasonable default
+  if (dayOfWeek === 0) return null; // Sunday
+  if (dayOfWeek > numDays) return null; // If split has fewer days than weekday index
+  return `Day ${dayOfWeek}`;
 }
 
 interface DaySelectorWithCheckinProps {
@@ -31,48 +29,50 @@ interface DaySelectorWithCheckinProps {
   onQuickLog?: () => void;
 }
 
-export function DaySelectorWithCheckin({ 
-  selectedDay, 
-  onSelect, 
-  onQuickLog 
+export function DaySelectorWithCheckin({
+  selectedDay,
+  onSelect,
+  onQuickLog
 }: DaySelectorWithCheckinProps) {
-  const days = Object.entries(defaultRoutine.days);
+  const { preferences } = useUserPreferences();
+  const splitDays = preferences ? getSplitDays(preferences.training_split) : defaultRoutine.days;
+  const days = Object.entries(splitDays);
   const { workouts } = useWorkouts();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  
+
   // Calculate week number based on past workout data
   const getWeekFromPastData = (): number => {
     if (!workouts || workouts.length === 0) {
       return 1; // Start at week 1 if no data
     }
-    
+
     // Get the most recent workout's week number
     const mostRecentWorkout = workouts[0]; // Already sorted desc by date
     const lastWeek = mostRecentWorkout.week_number;
-    
+
     // Check if last workout was today - if so, same week
     const lastWorkoutDate = new Date(mostRecentWorkout.date).toDateString();
     const today = new Date().toDateString();
-    
+
     if (lastWorkoutDate === today) {
       return lastWeek;
     }
-    
+
     // Check if we should increment week based on new week starting
     const lastWorkoutDateObj = new Date(mostRecentWorkout.date);
     const daysSince = Math.floor((Date.now() - lastWorkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     // If it's been 7+ days, increment week
     if (daysSince >= 7) {
       return Math.min(12, lastWeek + 1);
     }
-    
+
     return lastWeek;
   };
 
   const [weekNumber, setWeekNumber] = useState<number>(1);
-  
+
   // Update week number when workouts data loads
   useEffect(() => {
     setWeekNumber(getWeekFromPastData());
@@ -80,11 +80,11 @@ export function DaySelectorWithCheckin({
 
   // Auto-select workout day based on weekday on mount
   useEffect(() => {
-    const defaultDay = getDefaultDayForDate(selectedDate);
-    if (defaultDay && !selectedDay) {
+    const defaultDay = getDefaultDayForDate(selectedDate, days.length);
+    if (defaultDay && !selectedDay && splitDays[defaultDay]) {
       onSelect(defaultDay, selectedDate, weekNumber);
     }
-  }, []); // Only on mount
+  }, [preferences]);
 
   const handleDaySelect = (dayKey: string) => {
     onSelect(dayKey, selectedDate, weekNumber);
@@ -103,6 +103,9 @@ export function DaySelectorWithCheckin({
 
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const phase = Math.ceil(weekNumber / 4);
+
+  // Dynamic grid columns based on day count
+  const gridCols = days.length === 4 ? 'grid-cols-2' : 'grid-cols-3';
 
   return (
     <div className="space-y-4">
@@ -151,8 +154,8 @@ export function DaySelectorWithCheckin({
         </div>
       </div>
 
-      {/* 3x2 Workout Grid - Primary Focus */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Dynamic Workout Grid */}
+      <div className={cn("grid gap-2", gridCols)}>
         {days.map(([dayKey, dayData]) => (
           <button
             key={dayKey}

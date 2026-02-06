@@ -132,11 +132,78 @@ export function useWorkoutDetails(workoutId: string | null) {
     },
   });
 
+  const createExerciseMutation = useMutation({
+    mutationFn: async (exercise: {
+      workout_id: string;
+      name: string;
+      category: string;
+      target_weight?: string;
+      target_reps?: string;
+      sort_order: number;
+    }) => {
+      const { error } = await supabase
+        .from('exercises')
+        .insert({
+          workout_id: exercise.workout_id,
+          name: exercise.name,
+          category: exercise.category,
+          target_weight: exercise.target_weight,
+          target_reps: exercise.target_reps,
+          sort_order: exercise.sort_order,
+          completed: false,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+
+  const deleteExerciseMutation = useMutation({
+    mutationFn: async (exerciseId: string) => {
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .eq('id', exerciseId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+
+  const reorderExercisesMutation = useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      // Supabase doesn't support bulk update easily with different values, so we loop or use upsert
+      // Upsert is better
+      const { error } = await supabase
+        .from('exercises')
+        .upsert(
+          updates.map(u => ({ id: u.id, sort_order: u.sort_order })),
+          { onConflict: 'id', ignoreDuplicates: false }
+        );
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
+    },
+  });
+
   return {
     workout: query.data,
     isLoading: query.isLoading,
     updateExercise: updateExerciseMutation.mutateAsync,
     isUpdatingExercise: updateExerciseMutation.isPending,
+    createExercise: createExerciseMutation.mutateAsync,
+    isCreatingExercise: createExerciseMutation.isPending,
+    deleteExercise: deleteExerciseMutation.mutateAsync,
+    isDeletingExercise: deleteExerciseMutation.isPending,
+    reorderExercises: reorderExercisesMutation.mutateAsync,
     updateHabits: updateHabitsMutation.mutateAsync,
     isUpdatingHabits: updateHabitsMutation.isPending,
   };

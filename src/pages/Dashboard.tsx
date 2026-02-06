@@ -7,10 +7,33 @@ import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+
 export default function Dashboard() {
+  const { preferences } = useUserPreferences();
+  const navigate = useNavigate();
+
   return (
     <MainLayout title="DASHBOARD">
       <AnimatedPage>
+        {preferences && !preferences.routine_setup_completed && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-6 border border-primary/20 bg-primary/5 rounded-xl text-center"
+          >
+            <h3 className="font-bold text-lg mb-2">Setup Your Training Plan</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose your workout split (PPL, Upper/Lower, etc.) to get personalized recommendations.
+            </p>
+            <Button onClick={() => navigate('/log')} className="gap-2">
+              Setup Now <ArrowRight size={16} />
+            </Button>
+          </motion.div>
+        )}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
