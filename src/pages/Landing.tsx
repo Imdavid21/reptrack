@@ -11,7 +11,6 @@ import {
   Activity,
   Moon,
   Zap,
-  ArrowRight,
   Bot,
   Code2,
   BarChart3,
@@ -19,12 +18,21 @@ import {
   Wifi,
   Download,
   RefreshCw,
-  Globe
+  Globe,
 } from 'lucide-react';
+
+import LiveStatTicker from '@/components/landing/LiveStatTicker';
+import HowItWorksSection from '@/components/landing/HowItWorksSection';
+import FeatureCard from '@/components/landing/FeatureCard';
+import InsightCard from '@/components/landing/InsightCard';
+import IntegrationCard from '@/components/landing/IntegrationCard';
+import PwaFeature from '@/components/landing/PwaFeature';
+import PulseDot from '@/components/landing/PulseDot';
+import AppleIcon from '@/components/landing/AppleIcon';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
+  visible: { opacity: 1, y: 0 },
 };
 
 const staggerContainer = {
@@ -32,23 +40,21 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 export default function Landing() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  // Redirect logged-in users to app
   useEffect(() => {
     if (!loading && user) {
       navigate('/app', { replace: true });
     }
   }, [user, loading, navigate]);
 
-  // Show loading state while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -95,7 +101,7 @@ export default function Landing() {
           <motion.div variants={fadeInUp} className="mb-6">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground">
               <Sparkles className="w-4 h-4" />
-              AI-Powered Health Tracking
+              Built for consistency
             </span>
           </motion.div>
 
@@ -103,18 +109,17 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
           >
-            One app to track
+            One place to track
             <br />
-            <span className="text-muted-foreground">your entire health</span>
+            <span className="text-muted-foreground">training, recovery, and intake.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Track fitness, water intake, calories, sleep, and more.
-            Get AI-powered insights and smart workout plans.
-            All in one unified dashboard.
+            Log workouts set by set. Track water, calories, sleep, and weight.
+            Reptrack turns your daily logs into weekly insights so you know what's working.
           </motion.p>
 
           <motion.div
@@ -123,9 +128,9 @@ export default function Landing() {
           >
             <Link
               to="/signup"
-              className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center gap-2"
+              className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center"
             >
-              Start Free <ArrowRight className="w-4 h-4" />
+              Get started
             </Link>
             <Link
               to="/signin"
@@ -134,8 +139,34 @@ export default function Landing() {
               Sign In
             </Link>
           </motion.div>
+
+          {/* PWA line */}
+          <motion.div
+            variants={fadeInUp}
+            className="mt-6 flex flex-col items-center gap-2 text-sm text-muted-foreground"
+          >
+            <div className="flex items-center gap-2">
+              <span>Works like an app.</span>
+              <span className="flex items-center gap-1.5">
+                <AppleIcon className="w-4 h-4" />
+                <Smartphone className="w-4 h-4" />
+              </span>
+              <span>Add to Home Screen.</span>
+            </div>
+            <div className="text-xs">
+              Free forever. No ads. No credit card.
+            </div>
+          </motion.div>
+
+          {/* Live stat ticker */}
+          <motion.div variants={fadeInUp} className="mt-8">
+            <LiveStatTicker />
+          </motion.div>
         </motion.div>
       </section>
+
+      {/* How It Works */}
+      <HowItWorksSection />
 
       {/* Features Grid */}
       <section className="py-20 px-4 border-t border-border">
@@ -147,10 +178,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Everything you need, unified
+              Everything you actually track. In one system.
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Stop juggling multiple apps. Track all your health metrics in one place.
+              Your workouts, intake, and recovery shouldn't be split across 4 different apps.
             </p>
           </motion.div>
 
@@ -164,32 +195,32 @@ export default function Landing() {
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
               title="Workout Tracking"
-              description="Log exercises set-by-set. Track personal records, volume, and progress over time."
+              description="Log workouts set by set. Track PRs, volume, and progression automatically."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
               title="Hydration Tracking"
-              description="Monitor daily water intake with quick-add buttons and visual progress."
+              description="Quick-add water in seconds. See daily progress at a glance."
             />
             <FeatureCard
               icon={<Flame className="w-6 h-6" />}
               title="Calorie Tracking"
-              description="Track meals, calculate macros, and maintain calorie awareness."
+              description="Track meals and macros without overthinking it. Stay aware, not obsessed."
             />
             <FeatureCard
               icon={<Moon className="w-6 h-6" />}
               title="Sleep & Vitals"
-              description="Log sleep hours, track energy levels, and monitor weight trends."
+              description="Log sleep and energy. Track weight trends and recovery patterns."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
               title="Advanced Analytics"
-              description="Visualize trends with charts, heatmaps, and correlation insights."
+              description="See trends across weeks. Spot what improves performance."
             />
             <FeatureCard
               icon={<Zap className="w-6 h-6" />}
               title="Smart Routines"
-              description="Create and follow structured workout routines with PPL support."
+              description="Follow structured routines like PPL. Stay consistent and progress faster."
             />
           </motion.div>
         </div>
@@ -207,44 +238,50 @@ export default function Landing() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground mb-6">
                 <Brain className="w-4 h-4" />
-                AI-Powered
+                AI Insights
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
-                Intelligence built in
+                Automatic insights from your logs.
               </h2>
               <p className="text-muted-foreground text-lg mb-8">
-                Get personalized insights, workout recommendations, and health correlations
-                powered by machine learning. Understand patterns in your data that you might miss.
+                Reptrack turns your training, sleep, and intake history into simple weekly
+                takeaways. No spreadsheets. No guesswork.
               </p>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <Activity className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>ML-powered health insights and recommendations</span>
+                  <span>Weekly insights based on your last 4 weeks</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>Auto-detect personal records and progress</span>
+                  <span>Auto-detected PRs, trends, and plateaus</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <BarChart3 className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>Correlate sleep, energy, and performance</span>
+                  <span>Shows which habits move your performance</span>
                 </li>
               </ul>
             </div>
             <div className="bg-background border border-border rounded-2xl p-8">
-              <div className="text-sm text-muted-foreground uppercase tracking-wide mb-4">AI Insights</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wide mb-4">
+                <PulseDot />
+                AI Insights
+              </div>
               <div className="space-y-4">
                 <InsightCard
-                  label="Pattern Detected"
-                  text="Your workout volume increases 23% when sleep exceeds 7 hours"
+                  label="Pattern detected"
+                  text="Your training volume is 23% higher when sleep exceeds 7 hours."
+                  meta="Based on last 28 days"
                 />
                 <InsightCard
                   label="Recommendation"
-                  text="Consider adding rest days after 3 consecutive training days"
+                  text="Consider adding rest days after 3 consecutive training days."
+                  meta="Based on last 28 days"
                 />
                 <InsightCard
                   label="Achievement"
-                  text="Bench press trending up 8% over the last 4 weeks"
+                  text="Bench press trending up 8% over the last 4 weeks."
+                  meta="Based on last 28 days"
                 />
               </div>
             </div>
@@ -269,13 +306,13 @@ export default function Landing() {
               Works with your AI assistants
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Connect with Claude, ChatGPT, and other AI agents via MCP and REST API.
-              Let your AI assistant log workouts, query your health data, and provide insights.
+              Use Claude, ChatGPT, or automations to log workouts, pull stats, and generate
+              summaries. MCP and API support are built in.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid md:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -297,6 +334,10 @@ export default function Landing() {
               description="Get notified of workouts, milestones, and goals via webhooks."
             />
           </motion.div>
+
+          <p className="text-xs text-muted-foreground text-center mt-8">
+            Developer features are optional. The core app works without any setup.
+          </p>
         </div>
       </section>
 
@@ -314,7 +355,7 @@ export default function Landing() {
               Works Like an App
             </div>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              No app store required
+              Works like an app. No app store.
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Add to your home screen and use it just like any other app.
@@ -342,7 +383,7 @@ export default function Landing() {
             <PwaFeature
               icon={<Zap className="w-5 h-5" />}
               title="Lightweight"
-              description="Under 2MB total"
+              description="Loads fast"
             />
             <PwaFeature
               icon={<RefreshCw className="w-5 h-5" />}
@@ -367,17 +408,17 @@ export default function Landing() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Start tracking today
+            Start tracking today.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Join thousands of users who have unified their health tracking.
-            Free to start, no credit card required.
+            Built for busy people who want one system for fitness.
+            Free forever. No ads. No credit card.
           </p>
           <Link
             to="/signup"
-            className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center gap-2"
+            className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center"
           >
-            Create Free Account <ArrowRight className="w-4 h-4" />
+            Create account
           </Link>
         </motion.div>
       </section>
@@ -396,59 +437,5 @@ export default function Landing() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className="bg-card border border-border rounded-2xl p-6 hover:border-muted-foreground/30 transition-colors"
-    >
-      <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground text-sm">{description}</p>
-    </motion.div>
-  );
-}
-
-function InsightCard({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="border border-border rounded-xl p-4">
-      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</div>
-      <div className="text-sm">{text}</div>
-    </div>
-  );
-}
-
-function IntegrationCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className="bg-card border border-border rounded-2xl p-8 text-center hover:border-muted-foreground/30 transition-colors"
-    >
-      <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground text-sm">{description}</p>
-    </motion.div>
-  );
-}
-
-function PwaFeature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className="text-center p-4"
-    >
-      <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-3">
-        {icon}
-      </div>
-      <h3 className="text-sm font-semibold mb-1">{title}</h3>
-      <p className="text-muted-foreground text-xs">{description}</p>
-    </motion.div>
   );
 }
