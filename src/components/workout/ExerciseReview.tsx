@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
-import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2 } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,6 +15,9 @@ interface ExerciseReviewProps {
   onStart: () => void;
   onSuggest?: () => void;
   isSuggesting?: boolean;
+  hasPendingSuggestions?: boolean;
+  onConfirmSuggestions?: () => void;
+  onDenySuggestions?: () => void;
 }
 
 export function ExerciseReview({
@@ -26,6 +29,9 @@ export function ExerciseReview({
   onStart,
   onSuggest,
   isSuggesting,
+  hasPendingSuggestions,
+  onConfirmSuggestions,
+  onDenySuggestions,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -177,6 +183,32 @@ export function ExerciseReview({
 
       {/* Action buttons */}
       <div className="space-y-2.5">
+        {/* AI suggestion confirmation banner */}
+        {hasPendingSuggestions && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 p-3 rounded-xl border-2 border-primary/30 bg-primary/5"
+          >
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-sm font-medium flex-1">AI suggestions loaded</span>
+            <button
+              onClick={onConfirmSuggestions}
+              className="h-8 px-3 rounded-lg bg-foreground text-background text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Keep
+            </button>
+            <button
+              onClick={onDenySuggestions}
+              className="h-8 px-3 rounded-lg border border-border text-xs font-semibold flex items-center gap-1.5 hover:bg-muted transition-colors"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+              Undo
+            </button>
+          </motion.div>
+        )}
+
         {/* Add exercise */}
         {showPicker ? (
           <ExercisePicker
@@ -195,7 +227,7 @@ export function ExerciseReview({
         )}
 
         {/* AI suggest */}
-        {onSuggest && (
+        {onSuggest && !hasPendingSuggestions && (
           <button
             onClick={onSuggest}
             disabled={isSuggesting}
