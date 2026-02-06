@@ -256,33 +256,33 @@ export default function Landing() {
           >
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
-              title="2-min workouts"
-              description="Pre-filled weights. Just update reps."
+              title="Log faster between sets"
+              description="Weights pre-filled from last session. Update reps, done."
             />
             <FeatureCard
               icon={<Trophy className="w-6 h-6" />}
-              title="Auto PR detection"
-              description="Beat your best. See it instantly."
+              title="Never miss a PR"
+              description="Every set compared to your history. New PR? You'll know right away."
             />
             <FeatureCard
               icon={<Camera className="w-6 h-6" />}
-              title="Snap to log calories"
-              description="Photo in, macros out. One tap."
+              title="Skip calorie guesswork"
+              description="Snap your meal. AI gives you calories and macros in seconds."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="One-tap hydration"
-              description="Quick-add water. Track all day."
+              title="Stay on top of water"
+              description="One tap after every set. Progress ring keeps you accountable."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Real correlations"
-              description="Sleep vs. lifts. Data tells the story."
+              title="Know what's working"
+              description="See how sleep, weight, and volume affect your lifts over time."
             />
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
-              title="Structured programs"
-              description="PPL, Upper/Lower, Full Body. Built in."
+              title="Follow a real program"
+              description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
             />
           </motion.div>
         </div>
