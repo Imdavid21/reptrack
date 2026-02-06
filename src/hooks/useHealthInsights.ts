@@ -15,7 +15,6 @@ interface HealthInsight {
 interface CorrelationData {
   morningEnergy: { high: number[]; low: number[] };
   sleepHours: { good: number[]; poor: number[] };
-  heartRate: { low: number[]; high: number[] };
   stepsToEnergy: { date: string; steps: number; energy: number }[];
 }
 
@@ -59,7 +58,6 @@ export function useHealthInsights(days: number = 30) {
       const correlations: CorrelationData = {
         morningEnergy: { high: [], low: [] },
         sleepHours: { good: [], poor: [] },
-        heartRate: { low: [], high: [] },
         stepsToEnergy: [],
       };
 
@@ -87,56 +85,9 @@ export function useHealthInsights(days: number = 30) {
         }
       }
 
-      // Note: Heart rate correlation removed - heart_rate is not tracked in daily_metrics
-      // Heart rate data would need to be added via wearable integration or manual entry
+      // Note: Heart rate and Oxygen level deprecated and removed.
 
-      // Steps to night energy correlation
-      for (const night of nightData) {
-        if (night.steps && night.energy_score) {
-          correlations.stepsToEnergy.push({
-            date: night.date,
-            steps: night.steps,
-            energy: night.energy_score,
-          });
-        }
-      }
-
-      // Generate insights from correlations
-      const avgFunc = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-
-      const highEnergyAvg = avgFunc(correlations.morningEnergy.high);
-      const lowEnergyAvg = avgFunc(correlations.morningEnergy.low);
-      if (highEnergyAvg && lowEnergyAvg && correlations.morningEnergy.high.length >= 3) {
-        const diff = Math.round(((highEnergyAvg - lowEnergyAvg) / lowEnergyAvg) * 100);
-        if (diff > 10) {
-          insights.push({
-            id: 'morning-energy-correlation',
-            type: 'positive',
-            title: 'Morning Energy Matters',
-            description: `You rate workouts ${diff}% higher when starting with high energy (7+) vs low energy (≤4).`,
-            metric: `+${diff}%`,
-            trend: 'up',
-          });
-        }
-      }
-
-      const goodSleepAvg = avgFunc(correlations.sleepHours.good);
-      const poorSleepAvg = avgFunc(correlations.sleepHours.poor);
-      if (goodSleepAvg && poorSleepAvg && correlations.sleepHours.good.length >= 3) {
-        const diff = Math.round(((goodSleepAvg - poorSleepAvg) / poorSleepAvg) * 100);
-        if (diff > 10) {
-          insights.push({
-            id: 'sleep-performance',
-            type: 'positive',
-            title: 'Sleep = Performance',
-            description: `7+ hours of sleep correlates with ${diff}% higher workout satisfaction.`,
-            metric: `+${diff}%`,
-            trend: 'up',
-          });
-        }
-      }
-
-      // Heart rate insights removed - not currently tracked in daily_metrics
+      // Recent sleep trend
 
       // Recent sleep trend
       const recentSleep = morningData.slice(-7).filter(m => m.sleep_hours);

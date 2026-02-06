@@ -33,6 +33,7 @@ export default function SignUp() {
       if (error) throw error;
 
       toast.success('Account created! Welcome to Reptrack Fitness.');
+      localStorage.setItem('just_signed_up', 'true');
       navigate('/app', { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account');

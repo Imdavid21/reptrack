@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 export function CalorieChart() {
   const { dateRange } = useDateRange();
   const { data: calorieData = [], isLoading } = useCalorieHistory(dateRange);
-  
+
   // Today's workout info for breakdown
   const { todayWorkout } = useCalorieBurn();
 
@@ -28,11 +28,12 @@ export function CalorieChart() {
     shortDate: format(parseISO(d.date), 'd'),
     intakeValue: d.intake,
     burnedValue: -d.burned,
+    net: d.intake - d.burned,
   }));
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
-    
+
     const data = payload[0]?.payload;
     if (!data) return null;
 
@@ -115,53 +116,53 @@ export function CalorieChart() {
       {/* Diverging Bar Chart */}
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={chartData} 
+          <BarChart
+            data={chartData}
             margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
             stackOffset="sign"
           >
-            <XAxis 
-              dataKey="shortDate" 
+            <XAxis
+              dataKey="shortDate"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               interval="preserveStartEnd"
             />
-            <YAxis 
+            <YAxis
               domain={yDomain}
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               tickFormatter={(v) => {
                 const abs = Math.abs(v);
-                return abs >= 1000 ? `${(abs/1000).toFixed(1)}k` : abs.toString();
+                return abs >= 1000 ? `${(abs / 1000).toFixed(1)}k` : abs.toString();
               }}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
-            
-            <Bar 
-              dataKey="intakeValue" 
+
+            <Bar
+              dataKey="intakeValue"
               radius={[3, 3, 0, 0]}
               maxBarSize={20}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`intake-${index}`} 
+                <Cell
+                  key={`intake-${index}`}
                   fill="hsl(var(--insight-coral))"
                   fillOpacity={0.85}
                 />
               ))}
             </Bar>
-            
-            <Bar 
-              dataKey="burnedValue" 
+
+            <Bar
+              dataKey="burnedValue"
               radius={[0, 0, 3, 3]}
               maxBarSize={20}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`burned-${index}`} 
+                <Cell
+                  key={`burned-${index}`}
                   fill="hsl(var(--insight-mint))"
                   fillOpacity={0.85}
                 />
@@ -171,27 +172,9 @@ export function CalorieChart() {
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
-      <div className="flex justify-center gap-6 mt-3">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-sm bg-insight-coral" />
-          <span className="text-xs text-muted-foreground">Intake ↑</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-sm bg-insight-mint" />
-          <span className="text-xs text-muted-foreground">Burned ↓</span>
-        </div>
-      </div>
-
       {/* Net Calorie - Period Total */}
-      <div className={cn(
-        "p-3 rounded-xl text-center mt-4",
-        isDeficit ? "bg-insight-mint/10" : isSurplus ? "bg-insight-coral/10" : "bg-muted/30"
-      )}>
-        <div className={cn(
-          "text-2xl font-bold tabular-nums",
-          isDeficit ? "text-insight-mint" : isSurplus ? "text-insight-coral" : ""
-        )}>
+      <div className="p-3 rounded-xl text-center mt-4 bg-muted/30">
+        <div className="text-2xl font-bold tabular-nums text-foreground">
           {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString()} cal
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">Net Calorie</div>

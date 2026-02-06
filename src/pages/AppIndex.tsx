@@ -5,6 +5,8 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import Dashboard from './Dashboard';
 
+import { PWAPrompt } from '@/components/pwa/PWAPrompt';
+
 export default function AppIndex() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -17,7 +19,7 @@ export default function AppIndex() {
     if (splash) {
       splash.classList.add('fade-out');
       setTimeout(() => {
-        try { splash.remove(); } catch (e) {}
+        try { splash.remove(); } catch (e) { }
       }, 300);
     }
   }, []);
@@ -62,5 +64,10 @@ export default function AppIndex() {
     return <OnboardingFlow onComplete={() => setOnboardingDismissed(true)} />;
   }
 
-  return <Dashboard />;
+  return (
+    <>
+      <Dashboard />
+      <PWAPrompt />
+    </>
+  );
 }

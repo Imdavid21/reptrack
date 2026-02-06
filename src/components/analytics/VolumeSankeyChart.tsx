@@ -37,13 +37,13 @@ export function VolumeSankeyChart() {
 
     // Aggregate volume by exercise
     const exerciseVolumes = new Map<string, { volume: number; category: string }>();
-    
+
     data.sets.forEach(set => {
       if (!set.actual_weight || !set.actual_reps) return;
-      
+
       const volume = set.actual_weight * set.actual_reps;
       const existing = exerciseVolumes.get(set.exercise_name);
-      
+
       if (existing) {
         existing.volume += volume;
       } else {
@@ -156,9 +156,9 @@ export function VolumeSankeyChart() {
     <MuiCard>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <Box sx={{ 
-          p: 1, 
-          borderRadius: 2, 
+        <Box sx={{
+          p: 1,
+          borderRadius: 2,
           bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
         }}>
           <Layers size={14} />
@@ -171,15 +171,15 @@ export function VolumeSankeyChart() {
       {/* Chart and Details Container */}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
         {/* Radial Chart */}
-        <Box 
+        <Box
           sx={{ width: 180, height: 180, flexShrink: 0, position: 'relative' }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart 
-              cx="50%" 
-              cy="50%" 
-              innerRadius="25%" 
-              outerRadius="100%" 
+            <RadialBarChart
+              cx="50%"
+              cy="50%"
+              innerRadius="25%"
+              outerRadius="100%"
               data={radialData}
               startAngle={90}
               endAngle={-270}
@@ -216,7 +216,7 @@ export function VolumeSankeyChart() {
                     px: 1,
                     borderRadius: 1,
                     cursor: 'pointer',
-                    bgcolor: selectedCategory === cat.name 
+                    bgcolor: selectedCategory === cat.name
                       ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
                       : 'transparent',
                     border: 1,
@@ -232,19 +232,19 @@ export function VolumeSankeyChart() {
                       bgcolor: cat.fill,
                     }}
                   />
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      flex: 1, 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      flex: 1,
                       textTransform: 'capitalize',
                       fontWeight: selectedCategory === cat.name ? 600 : 400,
                     }}
                   >
                     {cat.name}
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       fontWeight: 600,
                       color: 'text.secondary',
                     }}
@@ -266,17 +266,17 @@ export function VolumeSankeyChart() {
                 exit={{ opacity: 0, y: -5 }}
                 transition={{ duration: 0.15 }}
               >
-                <Box sx={{ 
-                  p: 1.5, 
-                  borderRadius: 2, 
+                <Box sx={{
+                  p: 1.5,
+                  borderRadius: 2,
                   bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                   border: 1,
                   borderColor: 'divider',
                 }}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      fontWeight: 600, 
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
                       textTransform: 'capitalize',
                       mb: 1,
                       display: 'block',
@@ -286,16 +286,16 @@ export function VolumeSankeyChart() {
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                     {selectedData.exercises.slice(0, 5).map((ex) => (
-                      <Box 
+                      <Box
                         key={ex.name}
-                        sx={{ 
-                          display: 'flex', 
+                        sx={{
+                          display: 'flex',
                           alignItems: 'center',
                           gap: 1,
                         }}
                       >
-                        <Box 
-                          sx={{ 
+                        <Box
+                          sx={{
                             width: 40,
                             height: 6,
                             borderRadius: 1,
@@ -314,9 +314,9 @@ export function VolumeSankeyChart() {
                             }}
                           />
                         </Box>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
+                        <Typography
+                          variant="caption"
+                          sx={{
                             flex: 1,
                             fontSize: '0.65rem',
                             color: 'text.primary',
@@ -327,9 +327,9 @@ export function VolumeSankeyChart() {
                         >
                           {ex.name}
                         </Typography>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
+                        <Typography
+                          variant="caption"
+                          sx={{
                             fontSize: '0.6rem',
                             color: 'text.secondary',
                             flexShrink: 0,
@@ -340,9 +340,9 @@ export function VolumeSankeyChart() {
                       </Box>
                     ))}
                     {selectedData.exercises.length > 5 && (
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
+                      <Typography
+                        variant="caption"
+                        sx={{
                           fontSize: '0.55rem',
                           color: 'text.disabled',
                           textAlign: 'center',
@@ -359,9 +359,9 @@ export function VolumeSankeyChart() {
           </AnimatePresence>
 
           {!selectedData && (
-            <Typography 
-              variant="caption" 
-              sx={{ 
+            <Typography
+              variant="caption"
+              sx={{
                 color: 'text.disabled',
                 fontSize: '0.6rem',
                 display: 'block',
