@@ -32,7 +32,7 @@ import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
-import { GoalsSection } from '@/components/settings/GoalsSection';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -369,12 +369,6 @@ export default function Settings() {
               </Box>
             </Collapse>
           </MuiCard>
-
-          {/* Goals Section */}
-          <GoalsSection
-            isExpanded={expandedSections.goals || false}
-            onToggle={() => toggleSection('goals')}
-          />
 
           {/* Appearance - Dark Mode Toggle */}
           <MuiCard>
