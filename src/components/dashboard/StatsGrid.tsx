@@ -1,11 +1,22 @@
+import { useMemo } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { SPLIT_TEMPLATES, TrainingSplit } from '@/lib/splitTemplates';
 import { TrendingUp, Flame, Moon, Zap } from 'lucide-react';
 
 export function StatsGrid() {
   const { workouts } = useWorkouts();
+  const { preferences } = useUserPreferences();
+
+  const { daysPerWeek, totalTarget } = useMemo(() => {
+    const split = (preferences?.training_split as TrainingSplit) || 'ppl6';
+    const template = SPLIT_TEMPLATES[split];
+    const dpw = template?.daysPerWeek ?? 6;
+    return { daysPerWeek: dpw, totalTarget: dpw * 12 };
+  }, [preferences?.training_split]);
 
   const totalSessions = workouts.length;
-  const currentWeek = Math.ceil(totalSessions / 6) || 1;
+  const currentWeek = Math.min(Math.ceil(totalSessions / daysPerWeek) || 1, 12);
   
   // Calculate streak (consecutive days with workouts)
   const calculateStreak = () => {
@@ -44,7 +55,7 @@ export function StatsGrid() {
     { label: 'WEEK', value: currentWeek, icon: TrendingUp },
     { label: 'SESSIONS', value: totalSessions, icon: Flame },
     { label: 'STREAK', value: streak, icon: Zap },
-    { label: 'REMAINING', value: Math.max(72 - totalSessions, 0), icon: Moon },
+    { label: 'REMAINING', value: Math.max(totalTarget - totalSessions, 0), icon: Moon },
   ];
 
   return (
