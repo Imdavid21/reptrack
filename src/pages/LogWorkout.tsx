@@ -9,8 +9,8 @@ import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithChec
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
-import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
-import { getSplitDays } from '@/lib/splitTemplates';
+import { SplitSelector } from '@/components/workout/SplitSelector';
+import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
@@ -89,7 +89,7 @@ function markDayReviewed(userId: string, dayKey: string) {
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { preferences, isLoading: prefsLoading } = useUserPreferences();
+  const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
@@ -423,6 +423,14 @@ export default function LogWorkout() {
     setPreSuggestionExercises(null);
   };
 
+  // Change training split (persists to preferences)
+  const handleSplitChange = (newSplit: TrainingSplit) => {
+    updatePreferences.mutate({ training_split: newSplit });
+    // Reset selection since days changed
+    setSelectedDay('');
+    setExercises([]);
+  };
+
   return (
     <MainLayout title="LOG WORKOUT">
       <AnimatedPage>
@@ -446,10 +454,14 @@ export default function LogWorkout() {
             />
           </div>
 
-          {/* Weekly Progress - only on day selection */}
-          {step === 'select-day' && (
+          {/* Split selector - only on day selection */}
+          {step === 'select-day' && preferences && (
             <motion.div variants={staggerItem}>
-              <WeeklyProgress />
+              <SplitSelector
+                currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
+                onChangeSplit={handleSplitChange}
+                isUpdating={updatePreferences.isPending}
+              />
             </motion.div>
           )}
 
