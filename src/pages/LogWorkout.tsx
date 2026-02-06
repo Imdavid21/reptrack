@@ -23,6 +23,7 @@ import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeExerciseName, findBestMatch } from '@/lib/exerciseMatching';
 
 type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
@@ -53,56 +54,12 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
-// Normalize exercise name for fuzzy matching across naming variations
-function normalizeExerciseName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\bdumbbell\b/g, 'db')
-    .replace(/\bbarbell\b/g, 'bb')
-    .replace(/\boverhead press\b/g, 'ohp')
-    .replace(/\bpush-?ups?\b/g, 'pushup')
-    .replace(/\bpull-?ups?\b/g, 'pullup')
-    .replace(/\bcable rope\b/g, 'cable')
-    .replace(/\bseated\b/g, '')
-    .replace(/\bstanding\b/g, '')
-    .replace(/\bpress\b/g, '')
-    .replace(/\bflyes?\b/g, 'fly')
-    .replace(/s\b/g, '') // strip trailing s (plurals)
-    .replace(/[^a-z0-9]/g, '') // strip non-alphanumeric
-    .trim();
-}
-
-// Find best match from lastUsedMap for a given exercise name
+// findLastUsed delegates to the shared findBestMatch utility
 function findLastUsed(
   exerciseName: string,
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string }>
 ): { weight: number; reps: number; sets: number; date: string } | undefined {
-  if (!lastUsedMap) return undefined;
-
-  // Exact match first
-  if (lastUsedMap[exerciseName]) return lastUsedMap[exerciseName];
-
-  // Normalized match
-  const normalizedTarget = normalizeExerciseName(exerciseName);
-  for (const [dbName, data] of Object.entries(lastUsedMap)) {
-    if (normalizeExerciseName(dbName) === normalizedTarget) {
-      return data;
-    }
-  }
-
-  // Substring containment (e.g. "Incline Barbell Bench" matches "Incline BB Bench")
-  const targetWords = normalizedTarget;
-  for (const [dbName, data] of Object.entries(lastUsedMap)) {
-    const dbNorm = normalizeExerciseName(dbName);
-    // If one contains the other (>6 chars to avoid false positives)
-    if (targetWords.length > 6 && dbNorm.length > 6) {
-      if (targetWords.includes(dbNorm) || dbNorm.includes(targetWords)) {
-        return data;
-      }
-    }
-  }
-
-  return undefined;
+  return findBestMatch(exerciseName, lastUsedMap);
 }
 
 function buildExercisesFromTemplate(
