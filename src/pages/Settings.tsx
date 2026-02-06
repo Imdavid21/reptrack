@@ -21,14 +21,14 @@ import {
   User,
   ChevronDown,
   Check,
-  Dumbbell,
+  
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage } from '@/components/layout/AnimatedPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUserPreferences, TrainingSplit } from '@/hooks/useUserPreferences';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { ApiKeySection } from '@/components/settings/ApiKeySection';
@@ -326,75 +326,8 @@ export default function Settings() {
             </Box>
           </MuiCard>
 
-          {/* Training Split */}
-          <MuiCard>
-            <Box
-              onClick={() => toggleSection('split')}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                py: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Dumbbell size={18} />
-                <Box>
-                  <Typography variant="body1" fontWeight={600}>Training Split</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {preferences?.training_split === 'ppl6' ? 'PPL × 2 (6 days)' :
-                     preferences?.training_split === 'ppl5' ? 'Hybrid PPL (5 days)' :
-                     preferences?.training_split === 'upper_lower4' ? 'Upper/Lower (4 days)' :
-                     preferences?.training_split === 'full_body3' ? 'Full Body (3 days)' : 'Custom'}
-                  </Typography>
-                </Box>
-              </Box>
-              <ChevronRight
-                size={18}
-                style={{
-                  transform: expandedSections.split ? 'rotate(90deg)' : 'none',
-                  transition: 'transform 0.2s',
-                }}
-              />
-            </Box>
 
-            <Collapse in={expandedSections.split}>
-              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {([
-                  { id: 'full_body3' as TrainingSplit, label: 'Full Body', days: 3, desc: 'Hit every muscle 3×/week' },
-                  { id: 'upper_lower4' as TrainingSplit, label: 'Upper / Lower', days: 4, desc: '2 upper, 2 lower days' },
-                  { id: 'ppl5' as TrainingSplit, label: 'Hybrid PPL', days: 5, desc: 'Push/Pull/Legs + variety' },
-                  { id: 'ppl6' as TrainingSplit, label: 'PPL × 2', days: 6, desc: 'Push/Pull/Legs twice weekly' },
-                ]).map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={async () => {
-                      try {
-                        await updatePreferences.mutateAsync({ training_split: opt.id } as any);
-                        toast.success(`Switched to ${opt.label}`);
-                      } catch { toast.error('Failed to update'); }
-                    }}
-                    className={cn(
-                      'w-full text-left p-3 rounded-xl border transition-all',
-                      preferences?.training_split === opt.id
-                        ? 'border-foreground bg-foreground/5'
-                        : 'border-border hover:bg-muted'
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-semibold text-sm">{opt.label}</span>
-                        <span className="text-xs text-muted-foreground ml-2">{opt.days} days/wk</span>
-                      </div>
-                      {preferences?.training_split === opt.id && <Check size={16} className="text-primary" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-                  </button>
-                ))}
-              </Box>
-            </Collapse>
-          </MuiCard>
+          {/* Install as App */}
           <MuiCard>
             <Box
               onClick={() => toggleSection('pwa')}
