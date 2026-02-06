@@ -86,11 +86,8 @@ export function WaterTracker() {
           <h4 className="text-xs text-muted-foreground">RECENT</h4>
           {waterLogs.slice(0, 3).map((log) => (
             <div key={log.id} className="flex justify-between text-sm">
-              <span>{format(new Date(log.timestamp), 'HH:mm')}</span>
+              <span className="tabular-nums text-muted-foreground">{format(new Date(log.timestamp), 'HH:mm')}</span>
               <span>{log.amount}L</span>
-              <span className="text-xs text-muted-foreground uppercase">
-                {log.method === 'automation' ? 'auto' : 'manual'}
-              </span>
             </div>
           ))}
         </div>
