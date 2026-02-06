@@ -74,9 +74,7 @@ export default function Landing() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse">
-          <Logo size="lg" />
-        </div>
+        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
