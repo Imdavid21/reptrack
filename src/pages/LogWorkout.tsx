@@ -89,6 +89,7 @@ export default function LogWorkout() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -196,6 +197,7 @@ export default function LogWorkout() {
   // AI suggestions for the current day type
   const handleSuggestExercises = async () => {
     if (!dayData) return;
+    setPreSuggestionExercises([...exercises]);
     setIsSuggesting(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-workout', {
@@ -214,15 +216,29 @@ export default function LogWorkout() {
         if (firstDay?.exercises) {
           const suggested = buildExercisesFromTemplate(firstDay);
           setExercises(suggested);
-          toast.success(`Loaded ${suggested.length} AI-suggested exercises`);
+          toast.success(`Loaded ${suggested.length} AI-suggested exercises — confirm or undo below`);
         }
       }
     } catch (err) {
       console.error('AI suggestion failed:', err);
       toast.error('Failed to get AI suggestions. Using template exercises.');
+      setPreSuggestionExercises(null);
     } finally {
       setIsSuggesting(false);
     }
+  };
+
+  const handleConfirmSuggestions = () => {
+    setPreSuggestionExercises(null);
+    toast.success('AI suggestions confirmed');
+  };
+
+  const handleDenySuggestions = () => {
+    if (preSuggestionExercises) {
+      setExercises(preSuggestionExercises);
+    }
+    setPreSuggestionExercises(null);
+    toast.info('Reverted to previous exercises');
   };
 
   const handleQuickLog = async () => {
@@ -407,6 +423,9 @@ export default function LogWorkout() {
               onStart={handleStartSession}
               onSuggest={selectedDay !== 'custom' ? handleSuggestExercises : undefined}
               isSuggesting={isSuggesting}
+              hasPendingSuggestions={preSuggestionExercises !== null}
+              onConfirmSuggestions={handleConfirmSuggestions}
+              onDenySuggestions={handleDenySuggestions}
             />
           )}
 
