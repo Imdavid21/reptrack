@@ -473,10 +473,6 @@ function InsightsContent() {
               <ProgressCard />
             </motion.div>
 
-            {/* Personal Records */}
-            <motion.div variants={staggerItem}>
-              <PersonalRecords />
-            </motion.div>
 
             {/* Workout Efficiency */}
             <motion.div variants={staggerItem}>
