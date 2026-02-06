@@ -133,16 +133,13 @@ export default function Settings() {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {isProfileComplete && <Check size={14} className="text-primary" />}
-                <ChevronRight
-                  size={18}
-                  style={{
-                    transform: expandedSections.profile ? 'rotate(90deg)' : 'none',
-                    transition: 'transform 0.2s',
-                  }}
-                />
-              </Box>
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: expandedSections.profile ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
             </Box>
 
             <Collapse in={expandedSections.profile}>
