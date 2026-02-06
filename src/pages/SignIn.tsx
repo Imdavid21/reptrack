@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { SignIn as ClerkSignIn, useUser } from '@clerk/clerk-react';
 import { LegacySignIn } from '@/components/auth/LegacySignIn';
+import { clerkAppearance, clerkDarkAppearance } from '@/lib/clerkTheme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useState } from 'react';
 
 export default function SignIn() {
   const navigate = useNavigate();
   const { isSignedIn, isLoaded } = useUser();
+  const { isDark } = useTheme();
   const [useLegacy, setUseLegacy] = useState(false);
 
   // Redirect if already signed in with Clerk
@@ -21,35 +25,25 @@ export default function SignIn() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center mb-6">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center mb-8">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
+          <p className="text-xs text-muted-foreground mt-2 uppercase tracking-wide">
+            Sign in to continue
+          </p>
         </div>
 
         <ClerkSignIn 
-          appearance={{
-            elements: {
-              rootBox: "w-full",
-              card: "bg-card border border-border shadow-sm rounded-xl",
-              headerTitle: "text-foreground",
-              headerSubtitle: "text-muted-foreground",
-              formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",
-              formFieldInput: "bg-background border-border text-foreground",
-              formFieldLabel: "text-muted-foreground",
-              footerActionLink: "text-primary hover:text-primary/80",
-              identityPreviewEditButton: "text-primary",
-              formFieldAction: "text-primary",
-            },
-          }}
+          appearance={isDark ? clerkDarkAppearance : clerkAppearance}
           routing="path"
           path="/signin"
           signUpUrl="/signup"
           fallbackRedirectUrl="/app"
         />
 
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-4 pt-4">
           <button
             onClick={() => setUseLegacy(true)}
             className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -57,9 +51,22 @@ export default function SignIn() {
             Existing user? Use legacy login
           </button>
           
+          <div className="flex items-center gap-3 justify-center">
+            <div className="h-px bg-border flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <div className="h-px bg-border flex-1" />
+          </div>
+          
+          <Link
+            to="/signup"
+            className="btn-brutalist btn-accent w-full py-3 block text-center"
+          >
+            CREATE ACCOUNT
+          </Link>
+          
           <Link
             to="/"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors block"
           >
             Back to home
           </Link>
