@@ -174,7 +174,7 @@ export default function Landing() {
               <span>Add to Home Screen.</span>
             </div>
             <div className="text-xs">
-              Free forever. No ads. No credit card.
+              Free forever.
             </div>
           </motion.div>
 
@@ -479,7 +479,7 @@ export default function Landing() {
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
             Built for busy people who want one system for fitness.
-            Free forever. No ads. No credit card.
+            Free forever.
           </p>
           <Link
             to="/signup"
