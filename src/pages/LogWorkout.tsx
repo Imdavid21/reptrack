@@ -192,7 +192,7 @@ export default function LogWorkout() {
 
   if (preferences && !preferences.routine_setup_completed) {
     return (
-      <MainLayout title="SETUP ROUTINE">
+      <MainLayout>
         <AnimatedPage>
           <RoutineSetup onComplete={() => { }} />
         </AnimatedPage>
@@ -432,7 +432,7 @@ export default function LogWorkout() {
   };
 
   return (
-    <MainLayout title="LOG WORKOUT">
+    <MainLayout>
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
           {/* Back Button */}

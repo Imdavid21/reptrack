@@ -167,7 +167,7 @@ export default function CreateRoutine() {
   };
 
   return (
-    <MainLayout title="CREATE ROUTINE">
+    <MainLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Tab Selector */}
         <div className="flex border border-border">

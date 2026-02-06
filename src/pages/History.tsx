@@ -105,7 +105,7 @@ export default function History() {
   });
 
   return (
-    <MainLayout title="HISTORY">
+    <MainLayout>
       <AnimatedPage>
         <div className="space-y-4 pb-10">
           {/* Monthly stats row */}
