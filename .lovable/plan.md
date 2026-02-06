@@ -1,224 +1,128 @@
 
-# Workouts & History Rework: Complete Plan with Existing User Handling
+
+# Landing Page Rework — Mobile-First with Live Elements
 
 ## Overview
 
-This plan transforms the workout system from a rigid pre-defined 6-day PPL routine into a flexible, user-centric experience. A critical addition is **smart handling of existing users** who already have workout history - they should never be forced through new onboarding flows.
+A complete content and UX overhaul of `src/pages/Landing.tsx` following your 8-point brief. Every string, section order, and micro-interaction is addressed. The page will feel alive on mobile with subtle animated elements while staying clean and honest in tone.
 
 ---
 
-## User Scenarios
+## Section-by-Section Changes
 
-### Scenario 1: Brand New User (No Workout History)
-1. Opens "Log Workout" tab
-2. **Routine Setup Flow**: "How many days can you train per week?" (3/4/5/6)
-3. **AI Option**: "Want AI to suggest exercises based on your goals?"
-4. Proceeds to workout logging with their chosen split
+### 1. Hero Section — Fix the Promise
 
-### Scenario 2: Existing User (Has Workout History) - YOUR CASE
-1. Opens "Log Workout" tab
-2. **No new onboarding** - system analyzes their past workouts
-3. **Smart Detection**: Infers their split from workout patterns (e.g., 6 workouts/week = PPL x2)
-4. Continues with their established routine, with option to customize in Settings
+**Copy changes:**
+- Badge: "Built for consistency"
+- H1: "One place to track training, recovery, and intake."
+- Paragraph: "Log workouts set by set. Track water, calories, sleep, and weight. Reptrack turns your daily logs into weekly insights so you know what's working."
+- Primary CTA: "Get started" (remove "Start Free" and the ArrowRight icon)
+- Keep "Sign In" secondary button as-is
 
-### Scenario 3: Returning User (Cleared Preferences but Has History)
-1. System detects workouts exist even if preferences are missing
-2. Auto-creates preferences based on inferred patterns
-3. Skips all onboarding, goes straight to dashboard
+**Live element:** Add a subtle animated counter/ticker in the hero that cycles through sample stats (e.g., "3 sets logged", "2.1L water", "7.5h sleep") using framer-motion AnimatePresence to give the page life.
 
----
+### 2. PWA Line Under Hero CTAs
 
-## Phase 1: Smart Existing User Detection
+Add a new motion block directly below the CTA buttons:
+- "Works like an app." with Apple + Smartphone icons + "Add to Home Screen."
+- Sub-line: "Free forever. No ads. No credit card."
+- Note: Lucide does not export an `Apple` icon. Will use a custom inline SVG for the Apple logo and `Smartphone` from lucide for Android.
 
-### Database Analysis Logic
-Create a new hook `useRoutineInference.ts` that:
-1. Queries last 30 days of workout history
-2. Counts unique workout days per week
-3. Analyzes exercise patterns (Push/Pull/Legs splits)
-4. Returns inferred configuration:
+### 3. NEW — "How It Works" Section (between Hero and Features)
 
-```text
-Example Analysis:
-- User has 24 workouts in last 30 days
-- Workouts are: Push A, Pull A, Legs A, Push B, Pull B, Legs B
-- Inference: 6-day PPL split, already configured
-- Result: No new setup needed, use existing pattern
-```
+**Title:** "Track in minutes. Learn in weeks."
 
-### Enhanced `useUserPreferences.ts`
-Extend the existing returning-user logic to also infer and store training split:
+**3-step horizontal cards:**
+1. Icon: Dumbbell | "Log workouts" | "Add sets, reps, and weight as you train."
+2. Icon: Droplets | "Track daily basics" | "Water, calories, sleep, and weight in seconds."
+3. Icon: BarChart3 | "Get weekly insights" | "See what moves your performance forward."
 
-```text
-Current Logic (lines 38-55):
-- Check if workouts exist
-- If yes, set onboarding_completed = true
+**Live element:** Each step card will have a subtle number badge (1, 2, 3) that animates in sequence with staggered delays, giving a "step-by-step" feel on scroll.
 
-Enhanced Logic:
-- Check if workouts exist
-- If yes, also analyze workout patterns
-- Infer training_split from history (ppl6, upper_lower4, etc.)
-- Store inferred split in preferences
-- Set routine_setup_completed = true (new flag)
-```
+### 4. Features Grid — Restructured Copy
 
-### New Database Columns
-Add to `user_preferences`:
-- `training_split` (text): 'ppl6', 'upper_lower4', 'full_body3', 'ppl5', 'custom'
-- `rest_days` (jsonb): Array of day indices [0, 6] for Sunday/Saturday
-- `routine_setup_completed` (boolean): Whether user has configured their routine
+**Section header:**
+- H2: "Everything you actually track. In one system."
+- Paragraph: "Your workouts, intake, and recovery shouldn't be split across 4 different apps."
 
----
+**Updated 6 cards (same layout, new copy):**
+1. Workout Tracking — "Log workouts set by set. Track PRs, volume, and progression automatically."
+2. Hydration Tracking — "Quick-add water in seconds. See daily progress at a glance."
+3. Calorie Tracking — "Track meals and macros without overthinking it. Stay aware, not obsessed."
+4. Sleep & Vitals — "Log sleep and energy. Track weight trends and recovery patterns."
+5. Advanced Analytics — "See trends across weeks. Spot what improves performance."
+6. Smart Routines — "Follow structured routines like PPL. Stay consistent and progress faster."
 
-## Phase 2: Conditional Routine Setup Flow
+**Live element:** Feature cards get a subtle hover/tap lift animation with a micro-scale transform and a gentle border glow on interaction.
 
-### New Component: `RoutineSetup.tsx`
-Only shown when:
-- User has no workout history AND no routine configured
-- User explicitly clicks "Change Split" in Settings
+### 5. AI Section — Remove "Machine Learning" Language
 
-Split options:
-- 3-day: Full Body (Mon/Wed/Fri)
-- 4-day: Upper/Lower (Mon/Tue/Thu/Fri)
-- 5-day: PPL + Upper/Lower
-- 6-day: PPL x2 (current default)
+**Changes:**
+- Pill label: "AI Insights" (was "AI-Powered")
+- H2: "Automatic insights from your logs." (was "Intelligence built in")
+- Paragraph: "Reptrack turns your training, sleep, and intake history into simple weekly takeaways. No spreadsheets. No guesswork."
+- Bullet list updated to:
+  - "Weekly insights based on your last 4 weeks"
+  - "Auto-detected PRs, trends, and plateaus"
+  - "Shows which habits move your performance"
 
-### Integration with `LogWorkout.tsx`
-```text
-if (preferencesLoading) return <LoadingSpinner />
+**InsightCard component:** Add optional `meta` prop for credibility:
+- Card 1: "Your training volume is 23% higher when sleep exceeds 7 hours." | meta: "Based on last 28 days"
+- Card 2: "Consider adding rest days after 3 consecutive training days." | meta: "Based on last 28 days"
+- Card 3: "Bench press trending up 8% over the last 4 weeks." | meta: "Based on last 28 days"
 
-if (!preferences?.routine_setup_completed && workoutCount === 0) {
-  return <RoutineSetup onComplete={() => navigate('/log')} />
-}
+**Live element:** The InsightCards panel will have a subtle pulsing dot indicator (like a live data feed) to suggest real-time intelligence.
 
-// Normal workout flow for everyone else
-return <DaySelectorWithCheckin ... />
-```
+### 6. AI Agent Section — Make it Feel Optional
+
+**Paragraph updated to:** "Use Claude, ChatGPT, or automations to log workouts, pull stats, and generate summaries. MCP and API support are built in."
+
+**Add disclaimer below the grid:** "Developer features are optional. The core app works without any setup." (styled as `text-xs text-muted-foreground text-center mt-8`)
+
+### 7. PWA Section — Fix "Under 2MB" Claim
+
+- "Lightweight" description changed from "Under 2MB total" to "Loads fast"
+- Section H2 changed from "No app store required" to "Works like an app. No app store."
+
+### 8. Final CTA — Remove Unverifiable Claims
+
+- H2: "Start tracking today." (keep as-is)
+- Paragraph: "Built for busy people who want one system for fitness. Free forever. No ads. No credit card."
+- Button: "Create account" (remove "Free" and ArrowRight icon)
 
 ---
 
-## Phase 3: Dynamic Workout Days
+## Live / Interactive Elements Summary
 
-### Refactor `DaySelectorWithCheckin.tsx`
-Currently hardcoded to 6 days (PPL x2). Change to:
-
-```text
-Based on user's training_split:
-- ppl6: Day 1-6 (Push A, Pull A, Legs A, Push B, Pull B, Legs B)
-- upper_lower4: Day 1-4 (Upper A, Lower A, Upper B, Lower B)
-- full_body3: Day 1-3 (Full Body A, Full Body B, Full Body C)
-- custom: User-defined days
-```
-
-### New File: `src/lib/splitTemplates.ts`
-Define exercise templates for each split type:
-
-```text
-export const SPLIT_TEMPLATES = {
-  ppl6: { ... current defaultRoutine },
-  upper_lower4: {
-    'Day 1': { name: 'Upper A', focus: 'Push Emphasis', exercises: [...] },
-    'Day 2': { name: 'Lower A', focus: 'Quad Focus', exercises: [...] },
-    'Day 3': { name: 'Upper B', focus: 'Pull Emphasis', exercises: [...] },
-    'Day 4': { name: 'Lower B', focus: 'Hamstring Focus', exercises: [...] },
-  },
-  full_body3: { ... },
-}
-```
+| Section | Element | Animation |
+|---|---|---|
+| Hero | Cycling stat ticker | AnimatePresence with fade/slide, 3s interval |
+| How It Works | Step number badges | Staggered fadeInUp on scroll |
+| Features | Card interactions | Scale + border glow on hover/tap |
+| AI Insights | Live pulse dot | CSS pulse animation on the panel header |
+| All sections | Scroll reveal | Existing whileInView animations retained |
 
 ---
 
-## Phase 4: ML-Assisted Exercise Selection
+## Technical Details
 
-### Enhanced Edge Function: `generate-workout/index.ts`
-Accept parameters:
-- `split_type`: The user's chosen split
-- `day_index`: Which day of the split (1, 2, 3, etc.)
-- `goal`: lose/gain/maintain (from user preferences)
-- `equipment`: gym/home/minimal
+### File modified
+- `src/pages/Landing.tsx` — full rewrite of content, add new "How It Works" section, update all sub-components
 
-Return personalized exercise recommendations.
+### Import changes
+- Remove: `Apple` (doesn't exist in lucide-react)
+- Keep all existing lucide imports
+- Add: `ClipboardList` for "How It Works" step if needed (or reuse existing icons)
 
-### Empty Session Option
-Allow users to start a workout with zero pre-filled exercises:
-- "Start Empty" button in day selector
-- Add exercises one-by-one using enhanced ExercisePicker
-- Useful for users who don't follow a structured program
+### New sub-components (inside Landing.tsx)
+- `HowItWorksStep` — numbered step card
+- `LiveStatTicker` — animated cycling stat display
+- Updated `InsightCard` — with `meta` prop
+- `PulseDot` — small CSS-animated indicator
 
----
+### Mobile-first approach
+- All grid layouts use `grid-cols-1` as base, scaling up with `md:` and `lg:` breakpoints
+- Touch-friendly tap targets (min 44px)
+- Padding optimized for mobile viewports (px-4 base)
+- "How It Works" section: single column on mobile, 3-column on desktop
 
-## Phase 5: History Editing
-
-### Enhanced `History.tsx`
-- Extend timeline from 14 to 30 days
-- Each workout day shows edit icon
-- Tap to open `WorkoutEditSheet`
-
-### New Component: `WorkoutEditSheet.tsx`
-Bottom sheet allowing:
-- Edit individual sets (weight, reps)
-- Delete sets
-- Add missed exercises
-- Mark workout as "skipped" (intentional rest)
-- Delete entire workout
-
-### Enhanced `WorkoutDetail.tsx`
-- Add "Edit Mode" toggle
-- Inline editing of all set data
-- Save changes with optimistic updates
-
----
-
-## Implementation Priority
-
-1. **Phase 1** - Existing user detection (critical - prevents breaking current users)
-2. **Phase 3** - Dynamic days (builds foundation for flexibility)
-3. **Phase 5** - History editing (high user value, independent work)
-4. **Phase 2** - Routine setup for new users
-5. **Phase 4** - ML exercise suggestions
-
----
-
-## Database Migrations
-
-```sql
--- Add routine configuration columns
-ALTER TABLE user_preferences 
-ADD COLUMN training_split text DEFAULT 'ppl6',
-ADD COLUMN rest_days jsonb DEFAULT '[0]',
-ADD COLUMN routine_setup_completed boolean DEFAULT false;
-
--- Add skip tracking to workouts
-ALTER TABLE workouts 
-ADD COLUMN is_skipped boolean DEFAULT false;
-```
-
----
-
-## Files to Create
-- `src/hooks/useRoutineInference.ts` - Analyze workout history
-- `src/components/workout/RoutineSetup.tsx` - Split selector (new users only)
-- `src/components/workout/WorkoutEditSheet.tsx` - History editing
-- `src/lib/splitTemplates.ts` - Templates for all split types
-
-## Files to Modify
-- `src/hooks/useUserPreferences.ts` - Add routine inference logic
-- `src/pages/LogWorkout.tsx` - Conditional routing based on user state
-- `src/components/workout/DaySelectorWithCheckin.tsx` - Dynamic days
-- `src/pages/History.tsx` - Add edit capabilities
-- `src/pages/WorkoutDetail.tsx` - Inline editing mode
-- `src/lib/workoutPresets.ts` - Reorganize into split templates
-
----
-
-## Key Decisions
-
-**Existing users with history will:**
-- Never see a new onboarding/setup flow
-- Have their split auto-inferred (most likely "ppl6" based on current 6-day structure)
-- Retain all their workout history unchanged
-- Get access to new editing features immediately
-
-**Settings page will include:**
-- "Training Split" option to change splits anytime
-- "Rest Days" selector for custom schedules
-- "Generate New Routine" button to use AI assistance
