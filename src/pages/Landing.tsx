@@ -240,10 +240,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              What you get.
+              Built for the gym.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Real outcomes, not feature lists.
+              Everything you need between sets.
             </p>
           </motion.div>
 
