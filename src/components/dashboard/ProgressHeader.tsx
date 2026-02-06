@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { SPLIT_TEMPLATES, TrainingSplit } from '@/lib/splitTemplates';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, Moon, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
 import { startOfWeek, format, subDays } from 'date-fns';
@@ -10,6 +12,7 @@ import { toast } from '@/lib/toast';
 
 export function ProgressHeader() {
   const { workouts } = useWorkouts();
+  const { preferences } = useUserPreferences();
   const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [showSleepDialog, setShowSleepDialog] = useState(false);
   const [weight, setWeight] = useState<string>('');
@@ -23,10 +26,17 @@ export function ProgressHeader() {
     to: new Date(),
   });
 
-  const totalSessions = workouts.length;
-  const targetSessions = 72; // 12 weeks × 6 days
-  const progressPercent = Math.min((totalSessions / targetSessions) * 100, 100);
-  const currentWeek = Math.ceil(totalSessions / 6) || 1;
+  // Dynamic program stats based on current split
+  const { daysPerWeek, totalSessions, currentWeek, progressPercent } = useMemo(() => {
+    const split = (preferences?.training_split as TrainingSplit) || 'ppl6';
+    const template = SPLIT_TEMPLATES[split];
+    const dpw = template?.daysPerWeek ?? 6;
+    const total = dpw * 12; // 12-week program
+    const sessions = workouts.length;
+    const week = Math.min(Math.ceil(sessions / dpw) || 1, 12);
+    const percent = Math.min((sessions / total) * 100, 100);
+    return { daysPerWeek: dpw, totalSessions: total, currentWeek: week, progressPercent: percent };
+  }, [workouts.length, preferences?.training_split]);
   
   // Count days with logged metrics this calendar week (Mon-Sun)
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -139,12 +149,12 @@ export function ProgressHeader() {
       <div className="card-brutalist">
         {/* Main progress */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">12-WEEK PROGRAM</span>
-            <span className="text-xs font-mono">
-              {totalSessions}/{targetSessions} SESSIONS
-            </span>
-          </div>
+           <div className="flex items-center justify-between">
+             <span className="text-xs text-muted-foreground uppercase tracking-wider">12-WEEK PROGRAM</span>
+             <span className="text-xs font-mono">
+               {workouts.length}/{totalSessions} SESSIONS
+             </span>
+           </div>
           
           <Progress value={progressPercent} className="h-3" />
           
