@@ -12,7 +12,7 @@ export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
       <img
         src={logoHeart}
         alt="Reptrack Fitness"
-        className={`${sizes[size].img} object-contain`}
+        className={`${sizes[size].img} object-contain rounded-md`}
       />
       <div className={`font-bold tracking-[0.15em] ${sizes[size].text}`}>
         <span className="text-foreground">Reptrack</span>
