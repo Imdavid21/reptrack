@@ -502,11 +502,11 @@ export function ExerciseReview({
           Begin Session ({exercises.length} exercises)
         </button>
 
-        {/* Skip exercises — subtle under begin */}
+        {/* Skip exercises */}
         {onSkipExercises && (
           <button
             onClick={onSkipExercises}
-            className="w-full py-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            className="w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
           >
             Skip exercises →
           </button>
