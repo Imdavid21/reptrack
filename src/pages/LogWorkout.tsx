@@ -53,13 +53,65 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
+// Normalize exercise name for fuzzy matching across naming variations
+function normalizeExerciseName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\bdumbbell\b/g, 'db')
+    .replace(/\bbarbell\b/g, 'bb')
+    .replace(/\boverhead press\b/g, 'ohp')
+    .replace(/\bpush-?ups?\b/g, 'pushup')
+    .replace(/\bpull-?ups?\b/g, 'pullup')
+    .replace(/\bcable rope\b/g, 'cable')
+    .replace(/\bseated\b/g, '')
+    .replace(/\bstanding\b/g, '')
+    .replace(/\bpress\b/g, '')
+    .replace(/\bflyes?\b/g, 'fly')
+    .replace(/s\b/g, '') // strip trailing s (plurals)
+    .replace(/[^a-z0-9]/g, '') // strip non-alphanumeric
+    .trim();
+}
+
+// Find best match from lastUsedMap for a given exercise name
+function findLastUsed(
+  exerciseName: string,
+  lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string }>
+): { weight: number; reps: number; sets: number; date: string } | undefined {
+  if (!lastUsedMap) return undefined;
+
+  // Exact match first
+  if (lastUsedMap[exerciseName]) return lastUsedMap[exerciseName];
+
+  // Normalized match
+  const normalizedTarget = normalizeExerciseName(exerciseName);
+  for (const [dbName, data] of Object.entries(lastUsedMap)) {
+    if (normalizeExerciseName(dbName) === normalizedTarget) {
+      return data;
+    }
+  }
+
+  // Substring containment (e.g. "Incline Barbell Bench" matches "Incline BB Bench")
+  const targetWords = normalizedTarget;
+  for (const [dbName, data] of Object.entries(lastUsedMap)) {
+    const dbNorm = normalizeExerciseName(dbName);
+    // If one contains the other (>6 chars to avoid false positives)
+    if (targetWords.length > 6 && dbNorm.length > 6) {
+      if (targetWords.includes(dbNorm) || dbNorm.includes(targetWords)) {
+        return data;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function buildExercisesFromTemplate(
   dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string }> },
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string }>
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   return workExercises.map((ex, idx) => {
-    const lastUsed = lastUsedMap?.[ex.name];
+    const lastUsed = findLastUsed(ex.name, lastUsedMap);
     const { sets: templateSets, reps: templateReps } = parseTargetReps(ex.targetReps);
 
     // Use last-used values if available, otherwise fall back to template
@@ -594,7 +646,11 @@ export default function LogWorkout() {
               selectedDayKey={selectedDay}
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
               onSkipExercises={selectedDay ? handleQuickLog : undefined}
-              lastUsedNames={new Set(Object.keys(lastUsedMap))}
+              lastUsedNames={new Set(
+                exercises
+                  .filter(ex => findLastUsed(ex.name, lastUsedMap))
+                  .map(ex => ex.name)
+              )}
             />
           )}
 

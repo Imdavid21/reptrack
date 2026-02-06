@@ -80,7 +80,40 @@ export function useLastUsedWeights() {
   });
 
   const getLastUsed = (exerciseName: string): LastUsedData | undefined => {
-    return query.data?.[exerciseName];
+    const map = query.data;
+    if (!map) return undefined;
+
+    // Exact match first
+    if (map[exerciseName]) return map[exerciseName];
+
+    // Fuzzy match: normalize and compare
+    const normalize = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/\bdumbbell\b/g, 'db')
+        .replace(/\bbarbell\b/g, 'bb')
+        .replace(/\boverhead press\b/g, 'ohp')
+        .replace(/\bpush-?ups?\b/g, 'pushup')
+        .replace(/\bpull-?ups?\b/g, 'pullup')
+        .replace(/\bcable rope\b/g, 'cable')
+        .replace(/\bseated\b/g, '')
+        .replace(/\bstanding\b/g, '')
+        .replace(/\bpress\b/g, '')
+        .replace(/\bflyes?\b/g, 'fly')
+        .replace(/s\b/g, '')
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+
+    const target = normalize(exerciseName);
+    for (const [dbName, data] of Object.entries(map)) {
+      const dbNorm = normalize(dbName);
+      if (dbNorm === target) return data;
+      if (target.length > 6 && dbNorm.length > 6) {
+        if (target.includes(dbNorm) || dbNorm.includes(target)) return data;
+      }
+    }
+
+    return undefined;
   };
 
   return {
