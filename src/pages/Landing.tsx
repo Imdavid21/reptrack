@@ -501,11 +501,8 @@ export default function Landing() {
           <div className="text-sm text-muted-foreground">
             <span className="font-bold tracking-widest text-foreground">REPTRACK FITNESS</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="hover:text-foreground transition-colors">API Docs</a>
-          </div>
+
+
         </div>
       </footer>
     </div>
