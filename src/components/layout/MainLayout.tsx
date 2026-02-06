@@ -1,17 +1,16 @@
 import { ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 
 interface MainLayoutProps {
   children: ReactNode;
-  title?: string;
   showBack?: boolean;
   backTo?: string;
 }
 
-export function MainLayout({ children, title, showBack, backTo }: MainLayoutProps) {
+export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -24,8 +23,7 @@ export function MainLayout({ children, title, showBack, backTo }: MainLayoutProp
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
-      {/* Header with optional back button and title */}
-      {(title || showBack) && (
+      {showBack && (
         <Box
           component="header"
           sx={{
@@ -34,31 +32,14 @@ export function MainLayout({ children, title, showBack, backTo }: MainLayoutProp
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
           }}
         >
-          {showBack && (
-            <button
-              onClick={handleBack}
-              className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-          {title && (
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                fontSize: '0.75rem',
-              }}
-            >
-              {title}
-            </Typography>
-          )}
+          <button
+            onClick={handleBack}
+            className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
         </Box>
       )}
       <Box component="main" sx={{ px: 2, py: 2 }}>

@@ -105,7 +105,7 @@ export default function Settings() {
   const isProfileComplete = profile.age && profile.height_cm && profile.gender;
 
   return (
-    <MainLayout title="SETTINGS">
+    <MainLayout>
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4 }}>
 

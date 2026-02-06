@@ -46,7 +46,7 @@ export default function WorkoutDetail() {
 
   if (isLoading) {
     return (
-      <MainLayout title="WORKOUT" showBack backTo="/app/history">
+      <MainLayout showBack backTo="/app/history">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -56,7 +56,7 @@ export default function WorkoutDetail() {
 
   if (!workout) {
     return (
-      <MainLayout title="WORKOUT" showBack backTo="/app/history">
+      <MainLayout showBack backTo="/app/history">
         <div className="text-center py-8">
           <p className="text-muted-foreground">Workout not found</p>
           <Button
@@ -148,7 +148,7 @@ export default function WorkoutDetail() {
   const totalCount = workout.exercises.length;
 
   return (
-    <MainLayout title={workout.day_name.toUpperCase()} showBack backTo="/app/history">
+    <MainLayout showBack backTo="/app/history">
       <div className="space-y-5 animate-fade-in pb-20">
         {/* Workout Header */}
         <div className="flex items-center justify-between">

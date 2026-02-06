@@ -17,7 +17,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   return (
-    <MainLayout title="DASHBOARD">
+    <MainLayout>
       <AnimatedPage>
         {preferences && !preferences.routine_setup_completed && (
           <motion.div

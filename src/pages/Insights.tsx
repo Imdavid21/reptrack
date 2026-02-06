@@ -487,7 +487,7 @@ function InsightsContent() {
 
 export default function Insights() {
   return (
-    <MainLayout title="INSIGHTS">
+    <MainLayout>
       <DateRangeProvider>
         <InsightsContent />
       </DateRangeProvider>
