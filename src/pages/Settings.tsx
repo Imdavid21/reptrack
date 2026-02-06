@@ -54,6 +54,7 @@ export default function Settings() {
 
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileDirty, setProfileDirty] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     age: '',
@@ -69,6 +70,7 @@ export default function Settings() {
         height_cm: (preferences as any).height_cm?.toString() || '',
         gender: (preferences as any).gender || '',
       });
+      setProfileDirty(false);
     }
   }, [preferences]);
 
@@ -95,6 +97,7 @@ export default function Settings() {
         gender: profile.gender || null,
       } as any);
       toast.success('Profile updated');
+      setProfileDirty(false);
     } catch (error) {
       toast.error('Failed to save profile');
     } finally {
@@ -166,7 +169,7 @@ export default function Settings() {
                           type="text"
                           placeholder="Your name"
                           value={profile.name}
-                          onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))}
+                          onChange={(e) => { setProfile(p => ({ ...p, name: e.target.value })); setProfileDirty(true); }}
                           className="input-terminal mt-1"
                         />
                       </Box>
@@ -177,7 +180,7 @@ export default function Settings() {
                             type="number"
                             placeholder="25"
                             value={profile.age}
-                            onChange={(e) => setProfile(p => ({ ...p, age: e.target.value }))}
+                            onChange={(e) => { setProfile(p => ({ ...p, age: e.target.value })); setProfileDirty(true); }}
                             className="input-terminal mt-1"
                           />
                         </Box>
@@ -187,7 +190,7 @@ export default function Settings() {
                             type="number"
                             placeholder="175"
                             value={profile.height_cm}
-                            onChange={(e) => setProfile(p => ({ ...p, height_cm: e.target.value }))}
+                            onChange={(e) => { setProfile(p => ({ ...p, height_cm: e.target.value })); setProfileDirty(true); }}
                             className="input-terminal mt-1"
                           />
                         </Box>
@@ -199,7 +202,7 @@ export default function Settings() {
                           {['male', 'female', 'other'].map((g) => (
                             <button
                               key={g}
-                              onClick={() => setProfile(p => ({ ...p, gender: g }))}
+                              onClick={() => { setProfile(p => ({ ...p, gender: g })); setProfileDirty(true); }}
                               className={cn(
                                 "border p-2 text-sm capitalize transition-colors rounded",
                                 profile.gender === g
@@ -214,14 +217,30 @@ export default function Settings() {
                       </Box>
 
 
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={isSavingProfile}
-                        className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
-                      >
-                        {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        SAVE PROFILE
-                      </button>
+                      {profileDirty ? (
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={isSavingProfile}
+                          className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
+                        >
+                          {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          SAVE PROFILE
+                        </button>
+                      ) : isProfileComplete ? (
+                        <div className="w-full flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                          <Check className="h-4 w-4 text-primary" />
+                          Profile saved
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={isSavingProfile}
+                          className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
+                        >
+                          {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          SAVE PROFILE
+                        </button>
+                      )}
                     </Box>
                   )}
                 </Box>
