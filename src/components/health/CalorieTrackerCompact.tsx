@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
+import { format } from 'date-fns';
 
 const MEAL_ICONS = {
   breakfast: Coffee,
@@ -276,6 +277,20 @@ export function CalorieTrackerCompact() {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+
+          {/* Recent Meals - matches Water tracker style */}
+          {meals.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-xs text-muted-foreground">RECENT</h4>
+              {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
+                <div key={meal.id} className="flex justify-between text-sm">
+                  <span className="tabular-nums text-muted-foreground">{format(new Date(meal.created_at), 'HH:mm')}</span>
+                  <span className="truncate mx-3 flex-1 text-right">{meal.food_name || 'Unnamed'}</span>
+                  <span className="tabular-nums shrink-0">{meal.calories} cal</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Quick Add Button Row - Input Methods */}
           <div className="space-y-2 mt-auto pt-3">
