@@ -29,7 +29,7 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section className="py-20 px-4 border-t border-border">
+    <section id="how-it-works" className="py-20 px-4 border-t border-border">
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="text-center mb-12"

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -55,6 +55,14 @@ export default function Landing() {
     }
   }, [user, loading, navigate]);
 
+  const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -66,13 +74,22 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background scroll-smooth">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-widest">
+          <a
+            href="#hero"
+            onClick={(e) => scrollToSection(e, 'hero')}
+            className="text-xl font-bold tracking-widest"
+          >
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
-          </Link>
+          </a>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="hover:text-foreground transition-colors">How It Works</a>
+            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
+            <a href="#insights" onClick={(e) => scrollToSection(e, 'insights')} className="hover:text-foreground transition-colors">Insights</a>
+          </nav>
           <div className="flex items-center gap-4">
             <Link
               to="/signin"
@@ -91,7 +108,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section id="hero" className="pt-32 pb-20 px-4">
         <motion.div
           className="max-w-4xl mx-auto text-center"
           initial="hidden"
@@ -169,7 +186,7 @@ export default function Landing() {
       <HowItWorksSection />
 
       {/* Features Grid */}
-      <section className="py-20 px-4 border-t border-border">
+      <section id="features" className="py-20 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -227,7 +244,7 @@ export default function Landing() {
       </section>
 
       {/* AI Section */}
-      <section className="py-20 px-4 bg-card border-y border-border">
+      <section id="insights" className="py-20 px-4 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="grid md:grid-cols-2 gap-12 items-center"
@@ -290,7 +307,7 @@ export default function Landing() {
       </section>
 
       {/* Integration Section */}
-      <section className="py-20 px-4">
+      <section id="integrations" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -342,7 +359,7 @@ export default function Landing() {
       </section>
 
       {/* PWA Benefits Section */}
-      <section className="py-20 px-4 border-t border-border">
+      <section id="pwa" className="py-20 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
