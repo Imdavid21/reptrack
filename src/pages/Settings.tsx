@@ -52,6 +52,8 @@ export default function Settings() {
   const [newEmail, setNewEmail] = useState('');
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
 
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -279,72 +281,136 @@ export default function Settings() {
 
                 {/* Change Email */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Mail size={16} />
-                    <Typography variant="body2" fontWeight={600}>Change Email</Typography>
-                  </Box>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="newemail@example.com"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    disabled={isUpdatingEmail || !newEmail.trim()}
-                    startIcon={isUpdatingEmail ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
-                    onClick={async () => {
-                      if (!newEmail.trim()) return;
-                      setIsUpdatingEmail(true);
-                      try {
-                        const { error } = await updateEmail(newEmail);
-                        if (error) throw error;
-                        toast.success('Email updated successfully');
-                        setNewEmail('');
-                      } catch (error: any) {
-                        toast.error(error.message || 'Failed to update email');
-                      } finally {
-                        setIsUpdatingEmail(false);
-                      }
-                    }}
-                  >
-                    Update Email
-                  </Button>
+                  {!isEditingEmail ? (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Mail size={16} />
+                          <Typography variant="body2" fontWeight={600}>Email</Typography>
+                        </Box>
+                        <button
+                          onClick={() => setIsEditingEmail(true)}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <Edit2 size={12} />
+                          Edit
+                        </button>
+                      </Box>
+                      <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5 inline-block">
+                        {user?.email}
+                      </span>
+                    </Box>
+                  ) : (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <Mail size={16} />
+                        <Typography variant="body2" fontWeight={600}>Change Email</Typography>
+                      </Box>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="newemail@example.com"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        sx={{ mb: 2 }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <button
+                          onClick={() => { setIsEditingEmail(false); setNewEmail(''); }}
+                          className="flex-1 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <Button
+                          sx={{ flex: 1, borderRadius: 3 }}
+                          variant="contained"
+                          disabled={isUpdatingEmail || !newEmail.trim()}
+                          startIcon={isUpdatingEmail ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+                          onClick={async () => {
+                            if (!newEmail.trim()) return;
+                            setIsUpdatingEmail(true);
+                            try {
+                              const { error } = await updateEmail(newEmail);
+                              if (error) throw error;
+                              toast.success('Email updated successfully');
+                              setNewEmail('');
+                              setIsEditingEmail(false);
+                            } catch (error: any) {
+                              toast.error(error.message || 'Failed to update email');
+                            } finally {
+                              setIsUpdatingEmail(false);
+                            }
+                          }}
+                        >
+                          Update
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
 
                 {/* Reset Password */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Key size={16} />
-                    <Typography variant="body2" fontWeight={600}>Change Password</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    We'll send a password reset link to your email.
-                  </Typography>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    disabled={isResettingPassword}
-                    startIcon={isResettingPassword ? <Loader2 className="animate-spin" size={16} /> : <Key size={16} />}
-                    onClick={async () => {
-                      if (!user?.email) return;
-                      setIsResettingPassword(true);
-                      try {
-                        const { error } = await resetPassword(user.email);
-                        if (error) throw error;
-                        toast.success('Password reset email sent!');
-                      } catch (error: any) {
-                        toast.error(error.message || 'Failed to send reset email');
-                      } finally {
-                        setIsResettingPassword(false);
-                      }
-                    }}
-                  >
-                    Send Reset Link
-                  </Button>
+                  {!isEditingPassword ? (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Key size={16} />
+                          <Typography variant="body2" fontWeight={600}>Password</Typography>
+                        </Box>
+                        <button
+                          onClick={() => setIsEditingPassword(true)}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <Edit2 size={12} />
+                          Change
+                        </button>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                        ••••••••
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Key size={16} />
+                        <Typography variant="body2" fontWeight={600}>Change Password</Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        We'll send a password reset link to your email.
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <button
+                          onClick={() => setIsEditingPassword(false)}
+                          className="flex-1 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <Button
+                          sx={{ flex: 1, borderRadius: 3 }}
+                          variant="contained"
+                          disabled={isResettingPassword}
+                          startIcon={isResettingPassword ? <Loader2 className="animate-spin" size={16} /> : <Key size={16} />}
+                          onClick={async () => {
+                            if (!user?.email) return;
+                            setIsResettingPassword(true);
+                            try {
+                              const { error } = await resetPassword(user.email);
+                              if (error) throw error;
+                              toast.success('Password reset email sent!');
+                              setIsEditingPassword(false);
+                            } catch (error: any) {
+                              toast.error(error.message || 'Failed to send reset email');
+                            } finally {
+                              setIsResettingPassword(false);
+                            }
+                          }}
+                        >
+                          Send Reset Link
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
 
               </Box>
