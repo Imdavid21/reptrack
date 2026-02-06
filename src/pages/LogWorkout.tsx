@@ -1,6 +1,6 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -118,8 +118,6 @@ export default function LogWorkout() {
   const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
-  const [showInlineSplitSelector, setShowInlineSplitSelector] = useState(false);
-  const autoSelectAttempted = useRef(false);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -190,37 +188,7 @@ export default function LogWorkout() {
     return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
-  // Auto-select day for returning users — skip straight to exercises
-  useEffect(() => {
-    if (autoSelectAttempted.current) return;
-    if (draftRestored) { autoSelectAttempted.current = true; return; }
-    if (prefsLoading || workoutsLoading || weightsLoading) return;
-
-    autoSelectAttempted.current = true;
-
-    if (!preferences?.routine_setup_completed) return;
-    if (workouts.length === 0) return; // First-time: show day selector
-
-    const days = Object.keys(splitDays);
-    if (days.length === 0) return;
-
-    // Pick next day in rotation based on last workout
-    const lastDay = workouts[0]?.day;
-    const lastIndex = days.indexOf(lastDay);
-    const nextDay = days[(lastIndex + 1) % days.length] || days[0];
-
-    if (splitDays[nextDay]) {
-      setSelectedDay(nextDay);
-      setSelectedDate(new Date());
-      setExercises(buildExercisesFromTemplate(splitDays[nextDay], lastUsedMap));
-      setWorkoutStartTime(new Date());
-      setCurrentExerciseIndex(0);
-      setCurrentSetIndex(0);
-      setStep('exercises');
-    }
-  }, [draftRestored, prefsLoading, workoutsLoading, weightsLoading, preferences, workouts, splitDays, lastUsedMap]);
-
-  if (prefsLoading || (preferences?.routine_setup_completed && !autoSelectAttempted.current && (workoutsLoading || weightsLoading) && !draftRestored)) {
+  if (prefsLoading) {
     return (
       <MainLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -252,8 +220,7 @@ export default function LogWorkout() {
 
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
-    setWorkoutStartTime(new Date());
-    setStep('exercises');
+    setStep('review');
   };
 
   // Start session from review
@@ -416,26 +383,22 @@ export default function LogWorkout() {
   };
 
   const handleBack = () => {
-    if (step === 'select-day') {
-      if (selectedDay && exercises.length > 0) {
-        setStep('exercises');
-      }
-    } else if (step === 'review') {
+    if (step === 'review') {
       setStep('select-day');
       setExercises([]);
     } else if (step === 'exercises') {
-      if (completedSets === 0) {
-        setStep('select-day');
-      } else {
-        if (exerciseViewMode === 'single') {
-          if (currentSetIndex > 0) {
-            setCurrentSetIndex(prev => prev - 1);
-          } else if (currentExerciseIndex > 0) {
-            setCurrentExerciseIndex(prev => prev - 1);
-            const prevEx = exercises[currentExerciseIndex - 1];
-            setCurrentSetIndex(prevEx.sets.length - 1);
-          }
+      if (exerciseViewMode === 'single') {
+        if (currentSetIndex > 0) {
+          setCurrentSetIndex(prev => prev - 1);
+        } else if (currentExerciseIndex > 0) {
+          setCurrentExerciseIndex(prev => prev - 1);
+          const prevEx = exercises[currentExerciseIndex - 1];
+          setCurrentSetIndex(prevEx.sets.length - 1);
+        } else {
+          setStep('review');
         }
+      } else {
+        setStep('review');
       }
     }
   };
@@ -506,50 +469,31 @@ export default function LogWorkout() {
     <MainLayout>
       <AnimatedPage>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
-          {/* Back Button - context-aware naming */}
-          {step === 'select-day' && selectedDay && exercises.length > 0 && (
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
-            >
-              <ChevronLeft size={16} />
-              Back to Session
-            </button>
-          )}
+          {/* Back Button */}
           {step === 'review' && (
             <button
               onClick={handleBack}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
             >
               <ChevronLeft size={16} />
-              Select Workout
+              Back
             </button>
           )}
 
+          {/* Split selector - only on day selection */}
+          {step === 'select-day' && preferences && (
+            <motion.div variants={staggerItem}>
+              <SplitSelector
+                currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
+                onChangeSplit={handleSplitChange}
+                isUpdating={updatePreferences.isPending}
+              />
+            </motion.div>
+          )}
 
+          {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
-              {/* Select Split toggle link */}
-              {preferences && (
-                <button
-                  onClick={() => setShowInlineSplitSelector(v => !v)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Select Split
-                </button>
-              )}
-
-              {showInlineSplitSelector && preferences && (
-                <SplitSelector
-                  currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
-                  onChangeSplit={(newSplit) => {
-                    handleSplitChange(newSplit);
-                    setShowInlineSplitSelector(false);
-                  }}
-                  isUpdating={updatePreferences.isPending}
-                />
-              )}
-
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 onSelect={handleDaySelect}
@@ -621,34 +565,6 @@ export default function LogWorkout() {
           {/* Log Sets */}
           {step === 'exercises' && (
             <>
-              {/* Quick navigation */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setStep('select-day')}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Select Workout
-                </button>
-                <button
-                  onClick={() => setShowInlineSplitSelector(v => !v)}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Select Split
-                </button>
-              </div>
-
-              {showInlineSplitSelector && preferences && (
-                <SplitSelector
-                  currentSplit={(preferences.training_split as TrainingSplit) || 'ppl6'}
-                  onChangeSplit={(newSplit) => {
-                    handleSplitChange(newSplit);
-                    setShowInlineSplitSelector(false);
-                    setStep('select-day');
-                  }}
-                  isUpdating={updatePreferences.isPending}
-                />
-              )}
-
               {/* Header with view toggle + edit exercises button */}
               <div className="flex items-center justify-between">
                 <div>
