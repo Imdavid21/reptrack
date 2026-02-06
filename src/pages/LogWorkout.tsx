@@ -28,7 +28,7 @@ import { normalizeExerciseName, findBestMatch } from '@/lib/exerciseMatching';
 type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
 
-const REVIEWED_DAYS_KEY = 'fittrack_reviewed_days';
+
 
 const defaultHabits: Habits = {
   pullups: 0,
@@ -93,19 +93,6 @@ function buildExercisesFromTemplate(
   });
 }
 
-// --- Smart-skip helpers ---
-function getReviewedDays(userId: string): Set<string> {
-  try {
-    const raw = localStorage.getItem(`${REVIEWED_DAYS_KEY}_${userId}`);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch { return new Set(); }
-}
-
-function markDayReviewed(userId: string, dayKey: string) {
-  const set = getReviewedDays(userId);
-  set.add(dayKey);
-  localStorage.setItem(`${REVIEWED_DAYS_KEY}_${userId}`, JSON.stringify([...set]));
-}
 
 export default function LogWorkout() {
   const navigate = useNavigate();
@@ -240,11 +227,8 @@ export default function LogWorkout() {
     setStep('review');
   };
 
-  // Start session from review → mark day as reviewed for future smart-skip
+  // Start session from review
   const handleStartSession = () => {
-    if (user && selectedDay !== 'custom') {
-      markDayReviewed(user.id, selectedDay);
-    }
     setWorkoutStartTime(new Date());
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
