@@ -282,7 +282,7 @@ export function CalorieTrackerCompact() {
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-                className="border border-border p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-muted transition-colors"
+                className="btn-brutalist p-2.5 flex flex-col items-center justify-center gap-1"
               >
                 <Camera className="h-4 w-4" />
                 <span className="text-[10px]">CAMERA</span>
@@ -319,13 +319,13 @@ export function CalorieTrackerCompact() {
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <div className="flex items-center gap-2 min-w-0">
                         <Icon className="h-3 w-3 shrink-0" />
-                        <span>{MEAL_LABELS[type]}</span>
+                        <span className="truncate">{MEAL_LABELS[type]}</span>
                       </div>
                       <span className="tabular-nums shrink-0">{typeCalories} cal</span>
                     </div>
                     {mealsOfType.map((meal) => (
-                      <div key={meal.id} className="flex items-center justify-between text-sm pl-5 group min-w-0 gap-2">
-                        <span className="truncate min-w-0 flex-1">{meal.food_name || 'Unnamed'}</span>
+                      <div key={meal.id} className="flex items-start justify-between text-sm pl-5 group min-w-0 gap-2">
+                        <span className="break-words min-w-0 flex-1 leading-snug">{meal.food_name || 'Unnamed'}</span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="tabular-nums text-muted-foreground">{meal.calories}</span>
                           <button
