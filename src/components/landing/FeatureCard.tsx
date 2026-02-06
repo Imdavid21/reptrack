@@ -23,7 +23,7 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="bg-card border border-border rounded-2xl p-6 cursor-default flex flex-col items-center text-center gap-4 relative overflow-hidden"
+      className="bg-background border border-border rounded-2xl p-6 cursor-default flex flex-col items-center text-center gap-4 relative overflow-hidden"
     >
       {/* Animated icon container */}
       <motion.div
