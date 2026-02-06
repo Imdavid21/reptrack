@@ -12,7 +12,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  Cell,
 } from 'recharts';
 
 const DAILY_GOAL = 3.5;
@@ -26,7 +25,7 @@ export function HydrationChart() {
   // High contrast black/white
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
-  const lightFill = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
+  
 
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
@@ -140,14 +139,7 @@ export function HydrationChart() {
               strokeDasharray="4 4"
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.metGoal ? primaryColor : lightFill}
-                />
-              ))}
-            </Bar>
+            <Bar dataKey="total" radius={[4, 4, 0, 0]} fill={primaryColor} />
           </BarChart>
         </ResponsiveContainer>
       </Box>
