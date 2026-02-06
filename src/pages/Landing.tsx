@@ -26,6 +26,7 @@ import {
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
 // HowItWorksSection removed
+import { Logo } from '@/components/layout/Logo';
 import FeatureCard from '@/components/landing/FeatureCard';
 import InsightCard from '@/components/landing/InsightCard';
 import IntegrationCard from '@/components/landing/IntegrationCard';
@@ -88,9 +89,9 @@ export default function Landing() {
           <a
             href="#hero"
             onClick={(e) => scrollToSection(e, 'hero')}
-            className="text-xl font-bold tracking-widest z-10"
+            className="z-10"
           >
-            REPTRACK<span className="text-muted-foreground"> </span>FITNESS
+            <Logo size="md" />
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
