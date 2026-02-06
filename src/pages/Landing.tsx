@@ -122,10 +122,7 @@ export default function Landing() {
           variants={staggerContainer}
         >
           <motion.div variants={fadeInUp} className="mb-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground">
-              <Sparkles className="w-4 h-4" />
-              Built for consistency
-            </span>
+            <LiveStatTicker />
           </motion.div>
 
           <motion.h1
@@ -181,10 +178,7 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* Live stat ticker */}
-          <motion.div variants={fadeInUp} className="mt-8">
-            <LiveStatTicker />
-          </motion.div>
+          {/* Spacer for removed ticker */}
         </motion.div>
       </section>
 
