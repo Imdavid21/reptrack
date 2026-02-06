@@ -240,15 +240,15 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              What you get from using Reptrack.
+              What you get.
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Not a feature list. These are the real outcomes when everything lives in one system.
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+              Real outcomes, not feature lists.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -256,33 +256,33 @@ export default function Landing() {
           >
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
-              title="Log a workout in under 2 minutes"
-              description="Pre-filled weights from your last session. Just update reps and move on. Your draft saves if you close the app mid-workout."
+              title="2-min workouts"
+              description="Pre-filled weights. Just update reps."
             />
             <FeatureCard
               icon={<Trophy className="w-6 h-6" />}
-              title="Know your PRs the moment you hit them"
-              description="Every set is checked against your history. When you beat your best, you'll see it instantly. No manual tracking needed."
+              title="Auto PR detection"
+              description="Beat your best. See it instantly."
             />
             <FeatureCard
               icon={<Camera className="w-6 h-6" />}
-              title="Snap a photo, skip the calorie math"
-              description="Take a picture of your meal. AI identifies the food, estimates calories and macros, and logs it for you in one tap."
+              title="Snap to log calories"
+              description="Photo in, macros out. One tap."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="Stay hydrated without thinking about it"
-              description="Quick-add 250ml to 1L with one tap. A progress ring fills up through the day so you always know where you stand."
+              title="One-tap hydration"
+              description="Quick-add water. Track all day."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="See what actually improves your training"
-              description="Correlations between sleep, weight, volume, and performance show up automatically. You'll know if more sleep really helps your lifts."
+              title="Real correlations"
+              description="Sleep vs. lifts. Data tells the story."
             />
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
-              title="Follow a real program, not random workouts"
-              description="Choose PPL, Upper/Lower, or Full Body. Each day has pre-loaded exercises with target weights and reps. Just show up and follow."
+              title="Structured programs"
+              description="PPL, Upper/Lower, Full Body. Built in."
             />
           </motion.div>
         </div>
