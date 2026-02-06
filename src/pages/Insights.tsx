@@ -420,10 +420,7 @@ function InsightsContent() {
               <HydrationChart />
             </motion.div>
 
-            {/* Personal Records */}
-            <motion.div variants={staggerItem}>
-              <PersonalRecords />
-            </motion.div>
+
 
             {/* AI Coach Insights */}
             <motion.div variants={staggerItem}>
