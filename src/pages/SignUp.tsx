@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 import { LegacySignUp } from '@/components/auth/LegacySignUp';
 
-export default function SignUp() {
-  const [useLegacy, setUseLegacy] = useState(false);
+const isClerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-  if (useLegacy) {
-    return <LegacySignUp onBack={() => setUseLegacy(false)} />;
+export default function SignUp() {
+  const [useLegacy, setUseLegacy] = useState(!isClerkAvailable);
+
+  if (useLegacy || !isClerkAvailable) {
+    return <LegacySignUp onBack={isClerkAvailable ? () => setUseLegacy(false) : undefined} />;
   }
 
   return (

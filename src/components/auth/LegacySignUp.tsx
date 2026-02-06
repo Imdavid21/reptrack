@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast';
 import { ChevronLeft } from 'lucide-react';
 
 interface LegacySignUpProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function LegacySignUp({ onBack }: LegacySignUpProps) {
@@ -65,7 +65,7 @@ export function LegacySignUp({ onBack }: LegacySignUpProps) {
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
-            LEGACY SIGN UP
+            CREATE YOUR ACCOUNT
           </p>
           <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
             <span>Track vitals</span>
@@ -123,14 +123,22 @@ export function LegacySignUp({ onBack }: LegacySignUpProps) {
           </Link>
         </div>
 
-        <div className="text-center">
-          <button
-            onClick={onBack}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+        <div className="text-center space-y-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <ChevronLeft size={14} />
+              Back to modern signup
+            </button>
+          )}
+          <Link
+            to="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
           >
-            <ChevronLeft size={14} />
-            Back to modern signup
-          </button>
+            Back to home
+          </Link>
         </div>
 
         <p className="text-xs text-center text-muted-foreground">

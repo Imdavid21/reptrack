@@ -9,7 +9,7 @@ import { ChevronLeft } from 'lucide-react';
 type AuthMode = 'signin' | 'forgot' | 'reset';
 
 interface LegacySignInProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function LegacySignIn({ onBack }: LegacySignInProps) {
@@ -93,7 +93,7 @@ export function LegacySignIn({ onBack }: LegacySignInProps) {
           <p className="text-sm text-muted-foreground mt-2">
             {mode === 'forgot' ? 'RESET YOUR PASSWORD' :
               mode === 'reset' ? 'ENTER NEW PASSWORD' :
-                'LEGACY SIGN IN'}
+                'SIGN IN'}
           </p>
         </div>
 
@@ -181,14 +181,22 @@ export function LegacySignIn({ onBack }: LegacySignInProps) {
           )}
         </div>
 
-        <div className="text-center">
-          <button
-            onClick={onBack}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+        <div className="text-center space-y-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <ChevronLeft size={14} />
+              Back to modern login
+            </button>
+          )}
+          <Link
+            to="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
           >
-            <ChevronLeft size={14} />
-            Back to modern login
-          </button>
+            Back to home
+          </Link>
         </div>
       </div>
     </div>
