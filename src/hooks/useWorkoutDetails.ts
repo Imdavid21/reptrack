@@ -178,15 +178,16 @@ export function useWorkoutDetails(workoutId: string | null) {
 
   const reorderExercisesMutation = useMutation({
     mutationFn: async (updates: { id: string; sort_order: number }[]) => {
-      // Supabase doesn't support bulk update easily with different values, so we loop or use upsert
-      // Upsert is better
-      const { error } = await supabase
-        .from('exercises')
-        .upsert(
-          updates.map(u => ({ id: u.id, sort_order: u.sort_order })),
-          { onConflict: 'id', ignoreDuplicates: false }
-        );
-
+      // Update each exercise's sort_order individually since we only have id and sort_order
+      const promises = updates.map(u => 
+        supabase
+          .from('exercises')
+          .update({ sort_order: u.sort_order })
+          .eq('id', u.id)
+      );
+      
+      const results = await Promise.all(promises);
+      const error = results.find(r => r.error)?.error;
       if (error) throw error;
     },
     onSuccess: () => {
