@@ -1,11 +1,12 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Button, IconButton, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
+import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
@@ -14,11 +15,13 @@ import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWo
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-type Step = 'select-day' | 'exercises';
+type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
 
 const defaultHabits: Habits = {
@@ -45,6 +48,27 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
+function buildExercisesFromTemplate(dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string }> }): WorkoutExercise[] {
+  const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
+  return workExercises.map((ex, idx) => {
+    const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
+    const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
+      setNumber: i + 1,
+      targetWeight: ex.targetWeight,
+      targetReps: reps,
+      actualWeight: '',
+      actualReps: '',
+      completed: false,
+    }));
+    return {
+      name: ex.name,
+      category: ex.category,
+      sets: setsArray,
+      sort_order: idx,
+    };
+  });
+}
+
 export default function LogWorkout() {
   const navigate = useNavigate();
   const { preferences, isLoading: prefsLoading } = useUserPreferences();
@@ -64,6 +88,7 @@ export default function LogWorkout() {
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [isSuggesting, setIsSuggesting] = useState(false);
 
   const splitDays = useMemo(() => {
     const split = preferences?.training_split || 'ppl6';
@@ -79,18 +104,22 @@ export default function LogWorkout() {
     return { completedSets: completed, totalSets: total };
   }, [exercises]);
 
-  const dayType = selectedDay === 'custom' ? undefined : (selectedDay ? getDayType(splitDays[selectedDay]?.name || '') : undefined);
+  const dayData = selectedDay !== 'custom' && selectedDay ? splitDays[selectedDay] : null;
+  const dayType = dayData ? getDayType(dayData.name) : undefined;
   const currentExercise = exercises[currentExerciseIndex];
-  const progressPercent = step === 'select-day' ? 50 : 100;
+  const progressSteps = { 'select-day': 33, 'review': 66, 'exercises': 100 };
+  const progressPercent = progressSteps[step];
 
-  // Restore from draft
+  // Restore from draft (skip directly to exercises if draft had exercises step)
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
       setSelectedDay(draft.day);
       setSelectedDate(new Date(draft.date));
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
-      const validStep: Step = draft.step === 'select-day' ? 'select-day' : 'exercises';
+      // If draft was in exercises step, go directly there; otherwise go to review
+      const validStep: Step = draft.step === 'exercises' ? 'exercises' : 
+                              draft.step === 'review' ? 'review' : 'review';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
@@ -100,7 +129,7 @@ export default function LogWorkout() {
     }
   }, [loaded, draft, draftRestored]);
 
-  // Auto-save
+  // Auto-save draft
   useEffect(() => {
     if (step === 'select-day' || !selectedDay) return;
     const timeoutId = setTimeout(() => {
@@ -140,37 +169,60 @@ export default function LogWorkout() {
     );
   }
 
+  // Step 1 → Step 2: Select day, pre-fill exercises, go to review
   const handleDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
-    const dayData = splitDays[day];
-    if (dayData) {
-      const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
-      setExercises(
-        workExercises.map((ex, idx) => {
-          const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
-          const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
-            setNumber: i + 1,
-            targetWeight: ex.targetWeight,
-            targetReps: reps,
-            actualWeight: '',
-            actualReps: '',
-            completed: false,
-          }));
-          return {
-            name: ex.name,
-            category: ex.category,
-            sets: setsArray,
-            sort_order: idx,
-          };
-        })
-      );
+
+    const dayInfo = splitDays[day];
+    if (dayInfo) {
+      setExercises(buildExercisesFromTemplate(dayInfo));
     }
+
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
+    setStep('review');
+  };
+
+  // Step 2 → Step 3: Start the actual workout logging
+  const handleStartSession = () => {
     setWorkoutStartTime(new Date());
+    setCurrentExerciseIndex(0);
+    setCurrentSetIndex(0);
     setStep('exercises');
+  };
+
+  // AI suggestions for the current day type
+  const handleSuggestExercises = async () => {
+    if (!dayData) return;
+    setIsSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-workout', {
+        body: {
+          goals: `${dayData.name} workout focusing on ${dayData.focus}. Suggest exercises for this single day only.`,
+          trainingSplit: preferences?.training_split || 'ppl6',
+          experienceLevel: 'intermediate',
+        },
+      });
+
+      if (error) throw error;
+
+      const routine = data?.routine;
+      if (routine?.days) {
+        const firstDay = Object.values(routine.days)[0] as any;
+        if (firstDay?.exercises) {
+          const suggested = buildExercisesFromTemplate(firstDay);
+          setExercises(suggested);
+          toast.success(`Loaded ${suggested.length} AI-suggested exercises`);
+        }
+      }
+    } catch (err) {
+      console.error('AI suggestion failed:', err);
+      toast.error('Failed to get AI suggestions. Using template exercises.');
+    } finally {
+      setIsSuggesting(false);
+    }
   };
 
   const handleQuickLog = async () => {
@@ -267,7 +319,10 @@ export default function LogWorkout() {
   };
 
   const handleBack = () => {
-    if (step === 'exercises') {
+    if (step === 'review') {
+      setStep('select-day');
+      setExercises([]);
+    } else if (step === 'exercises') {
       if (exerciseViewMode === 'single') {
         if (currentSetIndex > 0) {
           setCurrentSetIndex(prev => prev - 1);
@@ -276,10 +331,10 @@ export default function LogWorkout() {
           const prevEx = exercises[currentExerciseIndex - 1];
           setCurrentSetIndex(prevEx.sets.length - 1);
         } else {
-          setStep('select-day');
+          setStep('review');
         }
       } else {
-        setStep('select-day');
+        setStep('review');
       }
     }
   };
@@ -290,16 +345,16 @@ export default function LogWorkout() {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
           {/* Back Button */}
           {step !== 'select-day' && (
-            <Button
-              startIcon={<ChevronLeft size={16} />}
+            <button
               onClick={handleBack}
-              sx={{ alignSelf: 'flex-start', color: 'text.secondary', textTransform: 'none' }}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
             >
+              <ChevronLeft size={16} />
               Back
-            </Button>
+            </button>
           )}
 
-          {/* Progress Bar - thick brutalist style */}
+          {/* Progress Bar - 3 steps */}
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-foreground rounded-full transition-all duration-300"
@@ -307,14 +362,14 @@ export default function LogWorkout() {
             />
           </div>
 
-          {/* Weekly Progress */}
+          {/* Weekly Progress - only on day selection */}
           {step === 'select-day' && (
             <motion.div variants={staggerItem}>
               <WeeklyProgress />
             </motion.div>
           )}
 
-          {/* Step: Select Day */}
+          {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
               <DaySelectorWithCheckin
@@ -331,8 +386,7 @@ export default function LogWorkout() {
                     setSelectedDate(new Date());
                     setWeekNumber(weekNumber);
                     setExercises([]);
-                    setStep('exercises');
-                    setWorkoutStartTime(new Date());
+                    setStep('review');
                   }}
                 >
                   <Plus size={16} />
@@ -342,54 +396,64 @@ export default function LogWorkout() {
             </div>
           )}
 
-          {/* Step: Exercises */}
+          {/* Step 2: Review & Edit Exercises */}
+          {step === 'review' && (
+            <ExerciseReview
+              exercises={exercises}
+              dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
+              dayFocus={selectedDay === 'custom' ? 'Build your own session' : (dayData?.focus || '')}
+              dayType={dayType}
+              onChange={setExercises}
+              onStart={handleStartSession}
+              onSuggest={selectedDay !== 'custom' ? handleSuggestExercises : undefined}
+              isSuggesting={isSuggesting}
+            />
+          )}
+
+          {/* Step 3: Log Sets */}
           {step === 'exercises' && (
             <>
               {/* Header with view toggle */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h6" fontWeight={700}>
-                    {selectedDay === 'custom' ? 'Freestyle Workout' : splitDays[selectedDay]?.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Week {weekNumber} • {selectedDay === 'custom' ? 'Custom Session' : splitDays[selectedDay]?.focus}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ textAlign: 'right', mr: 1 }}>
-                    <Typography variant="h6" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Week {weekNumber} • {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right mr-1">
+                    <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">SETS</Typography>
-                  </Box>
-                  <IconButton
-                    size="small"
+                    </span>
+                    <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+                  </div>
+                  <button
                     onClick={() => setExerciseViewMode('single')}
-                    sx={{
-                      bgcolor: exerciseViewMode === 'single' ? 'text.primary' : 'action.hover',
-                      color: exerciseViewMode === 'single' ? 'background.default' : 'text.primary',
-                      '&:hover': {
-                        bgcolor: exerciseViewMode === 'single' ? 'text.primary' : 'action.selected',
-                      },
-                    }}
+                    className={cn(
+                      'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
+                      exerciseViewMode === 'single'
+                        ? 'bg-foreground text-background'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    )}
                   >
-                    <LayoutGrid size={18} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
+                    <LayoutGrid size={16} />
+                  </button>
+                  <button
                     onClick={() => setExerciseViewMode('overview')}
-                    sx={{
-                      bgcolor: exerciseViewMode === 'overview' ? 'text.primary' : 'action.hover',
-                      color: exerciseViewMode === 'overview' ? 'background.default' : 'text.primary',
-                      '&:hover': {
-                        bgcolor: exerciseViewMode === 'overview' ? 'text.primary' : 'action.selected',
-                      },
-                    }}
+                    className={cn(
+                      'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
+                      exerciseViewMode === 'overview'
+                        ? 'bg-foreground text-background'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    )}
                   >
-                    <List size={18} />
-                  </IconButton>
-                </Box>
-              </Box>
+                    <List size={16} />
+                  </button>
+                </div>
+              </div>
 
               {exerciseViewMode === 'single' && currentExercise && (
                 <SetBySetCard

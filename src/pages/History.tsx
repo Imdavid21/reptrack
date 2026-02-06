@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -8,24 +7,22 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useMeals';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal } from 'lucide-react';
+import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
+import { cn } from '@/lib/utils';
 
 export default function History() {
   const { workouts } = useWorkouts();
   const navigate = useNavigate();
 
-  // Get last 30 days of metrics
   const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
     from: subDays(new Date(), 30),
     to: new Date(),
   });
 
-  // Get calorie history for the last 30 days
   const { data: calorieHistory } = useCalorieHistory(30);
 
-  // Editing state
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
   const [editValues, setEditValues] = useState<{
@@ -34,13 +31,11 @@ export default function History() {
     bodyweight: string;
   }>({ sleepHours: '', sleepMinutes: '', bodyweight: '' });
 
-  // Build a combined timeline of the last 30 days
   const last30Days = eachDayOfInterval({
     start: subDays(startOfDay(new Date()), 29),
     end: startOfDay(new Date()),
   }).reverse();
 
-  // Create a map for quick lookup
   const workoutsByDate = workouts.reduce((acc, w) => {
     acc[w.date] = w;
     return acc;
@@ -51,7 +46,6 @@ export default function History() {
     return acc;
   }, {} as Record<string, typeof metricsData.dataPoints[0]>);
 
-  // Build calorie lookup by date
   const caloriesByDate = (calorieHistory || []).reduce((acc, entry) => {
     acc[entry.date] = entry.calories;
     return acc;
@@ -103,13 +97,37 @@ export default function History() {
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
+  // Stats
+  const thisMonthWorkouts = workouts.filter(w => {
+    const d = new Date(w.date);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
   return (
     <MainLayout title="HISTORY">
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
+        <div className="space-y-4 pb-10">
+          {/* Monthly stats row */}
+          <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
+            <div className="card-brutalist text-center py-3">
+              <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
+              <div className="text-[9px] text-muted-foreground uppercase">This Month</div>
+            </div>
+            <div className="card-brutalist text-center py-3">
+              <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
+              <div className="text-[9px] text-muted-foreground uppercase">All Time</div>
+            </div>
+            <div className="card-brutalist text-center py-3">
+              <div className="text-xl font-bold tabular-nums">
+                {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
+              </div>
+              <div className="text-[9px] text-muted-foreground uppercase">Weeks</div>
+            </div>
+          </motion.div>
 
-          {/* Daily Timeline */}
-          <motion.div variants={staggerContainer} initial="hidden" animate="show">
+          {/* Timeline */}
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
             {last30Days.map((date) => {
               const dateStr = format(date, 'yyyy-MM-dd');
               const workout = workoutsByDate[dateStr];
@@ -125,9 +143,13 @@ export default function History() {
 
               return (
                 <motion.div key={dateStr} variants={staggerItem}>
-                  <div className={`card-brutalist mb-4 transition-opacity ${!hasAnyData && !isEditing ? 'opacity-50' : 'opacity-100'} ${isSkipped ? 'opacity-70 bg-muted/20' : ''}`}>
+                  <div className={cn(
+                    'card-brutalist transition-all',
+                    !hasAnyData && !isEditing && 'opacity-40',
+                    isSkipped && 'opacity-60'
+                  )}>
                     {/* Date Header */}
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">
                           {isToday ? 'Today' : format(date, 'EEE, MMM d')}
@@ -136,29 +158,31 @@ export default function History() {
                           <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
                         )}
                         {isSkipped && (
-                          <span className="badge-brutalist text-[10px] px-2 py-0.5 bg-muted text-muted-foreground border-dashed">SKIPPED</span>
+                          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            <EyeOff className="h-2.5 w-2.5" />
+                            SKIPPED
+                          </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         {!isEditing && (
                           <button
                             onClick={() => startEdit(dateStr)}
-                            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
-                            <Edit2 size={14} />
+                            <Edit2 size={13} />
                           </button>
                         )}
-
                         {workout && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedWorkoutForEdit(workout);
                             }}
-                            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
-                            <MoreHorizontal size={14} />
+                            <MoreHorizontal size={13} />
                           </button>
                         )}
                       </div>
@@ -166,7 +190,7 @@ export default function History() {
 
                     {/* Inline Edit Mode */}
                     {isEditing && (
-                      <div className="mb-4 p-3 bg-muted/50 rounded-xl animate-fade-in">
+                      <div className="mb-3 p-3 bg-muted/50 rounded-xl animate-fade-in">
                         <div className="flex flex-wrap gap-3 mb-3">
                           <div className="flex items-center gap-2">
                             <Moon size={14} className="text-muted-foreground" />
@@ -194,17 +218,15 @@ export default function History() {
                           </div>
                           <div className="flex items-center gap-2">
                             <Scale size={14} className="text-muted-foreground" />
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                placeholder="kg"
-                                className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                value={editValues.bodyweight}
-                                onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
-                                min="0"
-                                step="0.1"
-                              />
-                            </div>
+                            <input
+                              type="number"
+                              placeholder="kg"
+                              className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                              value={editValues.bodyweight}
+                              onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
+                              min="0"
+                              step="0.1"
+                            />
                           </div>
                         </div>
                         <div className="flex justify-end gap-2">
@@ -225,44 +247,42 @@ export default function History() {
                       </div>
                     )}
 
-                    {/* Content Grid */}
+                    {/* Content */}
                     {hasAnyData && !isEditing && (
-                      <div className="flex flex-wrap gap-2">
-                        {/* Workout */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {/* Workout chip - navigates to detail */}
                         {workout && !isSkipped && (
-                          <div
+                          <button
                             onClick={() => navigate(`/history/${workout.id}`)}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-lg hover:opacity-90 transition-opacity"
                           >
-                            <Dumbbell size={14} />
+                            <Dumbbell size={13} />
                             <span className="text-xs font-bold">{workout.day_name}</span>
-                          </div>
+                            <ChevronRight size={12} className="opacity-50" />
+                          </button>
                         )}
 
-                        {/* Sleep */}
                         {hasSleep && (
-                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
-                            <Moon size={14} className="text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                            <Moon size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {formatSleep(metric.sleep_hours)}
                             </span>
                           </div>
                         )}
 
-                        {/* Weight */}
                         {hasWeight && (
-                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
-                            <Scale size={14} className="text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                            <Scale size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {metric.bodyweight} kg
                             </span>
                           </div>
                         )}
 
-                        {/* Calories */}
                         {hasCalories && (
-                          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted/50 rounded-lg">
-                            <Flame size={14} className="text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg">
+                            <Flame size={13} className="text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">
                               {caloriesByDate[dateStr].toLocaleString()} cal
                             </span>
@@ -273,9 +293,7 @@ export default function History() {
 
                     {/* Empty state */}
                     {!hasAnyData && !isEditing && (
-                      <p className="text-xs text-muted-foreground/50 italic">
-                        No activity
-                      </p>
+                      <p className="text-xs text-muted-foreground/50 italic">No activity</p>
                     )}
                   </div>
                 </motion.div>
@@ -288,33 +306,7 @@ export default function History() {
             open={!!selectedWorkoutForEdit}
             onOpenChange={(open) => !open && setSelectedWorkoutForEdit(null)}
           />
-
-          {/* Stats summary */}
-          {workouts.length > 0 && (
-            <motion.div variants={staggerItem}>
-              <div className="card-brutalist">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-2xl font-bold tabular-nums">
-                      {workouts.length}
-                    </h3>
-                    <p className="text-xs text-muted-foreground uppercase">
-                      Total Sessions
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <h4 className="text-xl font-bold tabular-nums">
-                      {Math.max(...workouts.map((w) => w.week_number))}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Weeks Completed
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </Box>
+        </div>
       </AnimatedPage>
     </MainLayout>
   );

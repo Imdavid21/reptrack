@@ -11,7 +11,7 @@ export interface DraftWorkout {
   habits: Habits;
   currentExerciseIndex: number;
   currentSetIndex: number;
-  step: 'select-day' | 'exercises';
+  step: 'select-day' | 'review' | 'exercises';
   lastSavedAt: string;
   workoutStartTime?: string;
 }

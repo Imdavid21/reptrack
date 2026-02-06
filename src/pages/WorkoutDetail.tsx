@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkoutDetails } from '@/hooks/useWorkoutDetails';
-import { EditExerciseDialog } from '@/components/workout/EditExerciseDialog';
 import { format } from 'date-fns';
-import { Check, Edit2, Loader2, Trash2, Plus, X } from 'lucide-react';
+import { Check, Edit2, Loader2, Trash2, Plus, X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import {
@@ -18,7 +18,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet'; // We need this component
+import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
+
+interface InlineEdit {
+  id: string;
+  weight: string;
+  reps: string;
+  completed: boolean;
+}
 
 export default function WorkoutDetail() {
   const { workoutId } = useParams<{ workoutId: string }>();
@@ -32,10 +39,10 @@ export default function WorkoutDetail() {
     createExercise
   } = useWorkoutDetails(workoutId || null);
 
-  const [editingExercise, setEditingExercise] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<string | null>(null);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [editingSet, setEditingSet] = useState<InlineEdit | null>(null);
 
   if (isLoading) {
     return (
@@ -64,10 +71,7 @@ export default function WorkoutDetail() {
     );
   }
 
-  // Group exercises by base name (without set number)
-  // When in Edit Mode, we visualize sets individually to allow deletion
-  // But grouping usually looks better. 
-  // Let's keep grouping but add delete buttons to individual sets
+  // Group exercises by base name
   const groupedExercises = workout.exercises.reduce((acc, ex) => {
     const baseName = ex.name.replace(/ \(Set \d+\)$/, '');
     if (!acc[baseName]) {
@@ -77,19 +81,33 @@ export default function WorkoutDetail() {
     return acc;
   }, {} as Record<string, typeof workout.exercises>);
 
-  const handleSaveExercise = async (data: {
-    id: string;
-    actual_weight: string;
-    actual_reps: string;
-    completed: boolean;
-  }) => {
+  const handleStartInlineEdit = (set: typeof workout.exercises[0]) => {
+    setEditingSet({
+      id: set.id,
+      weight: set.actual_weight || set.target_weight || '',
+      reps: set.actual_reps || set.target_reps || '',
+      completed: set.completed,
+    });
+  };
+
+  const handleSaveInlineEdit = async () => {
+    if (!editingSet) return;
     try {
-      await updateExercise(data);
-      toast.success('Exercise updated');
+      await updateExercise({
+        id: editingSet.id,
+        actual_weight: editingSet.weight,
+        actual_reps: editingSet.reps,
+        completed: editingSet.completed,
+      });
+      toast.success('Updated');
+      setEditingSet(null);
     } catch (error) {
-      toast.error('Failed to update exercise');
-      throw error;
+      toast.error('Failed to update');
     }
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingSet(null);
   };
 
   const handleDeleteExercise = async () => {
@@ -106,9 +124,7 @@ export default function WorkoutDetail() {
   const handleAddExercise = async (exercise: { name: string; category: string; targetReps: string; targetWeight: string; sets: number }) => {
     if (!workoutId) return;
     try {
-      // Add multiple sets
       const currentMaxOrder = Math.max(...workout.exercises.map(e => e.sort_order), 0);
-
       const promises = Array.from({ length: exercise.sets }).map((_, idx) => {
         return createExercise({
           workout_id: workoutId,
@@ -116,10 +132,9 @@ export default function WorkoutDetail() {
           category: exercise.category,
           target_weight: exercise.targetWeight,
           target_reps: exercise.targetReps,
-          sort_order: currentMaxOrder + 100 + idx, // Simple ordering strategy
+          sort_order: currentMaxOrder + 100 + idx,
         });
       });
-
       await Promise.all(promises);
       toast.success(`Added ${exercise.name}`);
       setIsAddSheetOpen(false);
@@ -129,193 +144,175 @@ export default function WorkoutDetail() {
     }
   };
 
+  const completedCount = workout.exercises.filter(e => e.completed).length;
+  const totalCount = workout.exercises.length;
+
   return (
     <MainLayout title={workout.day_name.toUpperCase()} showBack backTo="/app/history">
-      <div className="space-y-6 animate-fade-in pb-20">
+      <div className="space-y-5 animate-fade-in pb-20">
         {/* Workout Header */}
-        <div className="card-brutalist relative overflow-hidden">
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <h2 className="font-bold text-lg">{workout.day_name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(workout.date), 'EEEE, MMMM d, yyyy')}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={isEditMode ? "default" : "outline"}
-                className={cn("h-8 gap-2", isEditMode && "bg-primary text-primary-foreground")}
-                onClick={() => setIsEditMode(!isEditMode)}
-              >
-                {isEditMode ? <Check className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-                {isEditMode ? 'Done' : 'Edit'}
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-lg">{workout.day_name}</h2>
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(workout.date), 'EEEE, MMM d')}
+            </p>
           </div>
-          {isEditMode && (
-            <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
-          )}
+          <div className="flex items-center gap-2">
+            <div className="text-right mr-1">
+              <span className="text-lg font-bold tabular-nums">{completedCount}/{totalCount}</span>
+              <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+            </div>
+            <button
+              className={cn(
+                'h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors',
+                isEditMode
+                  ? 'bg-foreground text-background'
+                  : 'border border-border text-muted-foreground hover:text-foreground'
+              )}
+              onClick={() => setIsEditMode(!isEditMode)}
+            >
+              {isEditMode ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
+              {isEditMode ? 'Done' : 'Edit'}
+            </button>
+          </div>
         </div>
 
         {/* Exercises */}
-        <div className="space-y-4">
-          <h3 className="section-header flex justify-between items-center">
-            EXERCISES
-            {isEditMode && (
-              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setIsAddSheetOpen(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Add
-              </Button>
-            )}
-          </h3>
-
+        <div className="space-y-3">
           {Object.entries(groupedExercises).map(([baseName, sets]) => (
-            <div key={baseName} className="card-brutalist space-y-3">
+            <div key={baseName} className="card-brutalist space-y-2.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold">{baseName}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {sets[0].category} • {sets.length} set{sets.length > 1 ? 's' : ''}
+                  <h4 className="font-semibold text-sm">{baseName}</h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    {sets[0].category} · {sets.filter(s => s.completed).length}/{sets.length} done
                   </p>
-                </div>
-                <div className="text-sm">
-                  {sets.filter(s => s.completed).length}/{sets.length} done
                 </div>
               </div>
 
-              <div className="space-y-2">
-                {sets.map((set, idx) => (
-                  <div
-                    key={set.id}
-                    className={cn(
-                      'flex items-center justify-between p-2 rounded border transition-colors',
-                      set.completed ? 'bg-primary/5 border-primary/30' : 'border-border',
-                      isEditMode && "border-dashed"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
+              {/* Sets table */}
+              <div className="space-y-1">
+                {/* Header */}
+                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-[9px] text-muted-foreground uppercase tracking-wider">
+                  <span className="text-center">#</span>
+                  <span className="text-center">Weight</span>
+                  <span className="text-center">Reps</span>
+                  <span></span>
+                </div>
+
+                {sets.map((set, idx) => {
+                  const isEditing = editingSet?.id === set.id;
+
+                  return (
+                    <div
+                      key={set.id}
+                      className={cn(
+                        'grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 items-center p-1.5 rounded-lg transition-all',
+                        set.completed && !isEditing && 'bg-primary/5',
+                        isEditing && 'bg-muted ring-1 ring-ring',
+                        !isEditing && !isEditMode && 'cursor-pointer hover:bg-muted/50',
+                        isEditMode && 'border border-dashed border-border'
+                      )}
+                      onClick={() => {
+                        if (!isEditMode && !isEditing) handleStartInlineEdit(set);
+                      }}
+                    >
+                      {/* Set number */}
                       <div className={cn(
-                        'h-6 w-6 rounded-full flex items-center justify-center text-xs transition-transform',
-                        set.completed ? 'bg-primary text-primary-foreground' : 'bg-muted',
-                        isEditMode && "scale-0 w-0 h-0 overflow-hidden m-0"
+                        'h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-medium mx-auto',
+                        set.completed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                       )}>
                         {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
                       </div>
 
-                      {isEditMode && (
-                        <div className="h-6 w-6 flex items-center justify-center text-muted-foreground text-xs font-mono">
-                          #{idx + 1}
+                      {/* Weight */}
+                      {isEditing ? (
+                        <Input
+                          value={editingSet.weight}
+                          onChange={(e) => setEditingSet(prev => prev ? { ...prev, weight: e.target.value } : null)}
+                          className="h-7 text-xs text-center"
+                          inputMode="decimal"
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="text-xs text-center font-mono">
+                          {set.actual_weight || <span className="text-muted-foreground">{set.target_weight || '—'}</span>}
                         </div>
                       )}
 
-                      <div className="text-sm">
-                        <span className="font-mono">
-                          {set.actual_weight || set.target_weight || '-'}
-                        </span>
-                        <span className="text-muted-foreground mx-1">×</span>
-                        <span className="font-mono">
-                          {set.actual_reps || set.target_reps || '-'}
-                        </span>
+                      {/* Reps */}
+                      {isEditing ? (
+                        <Input
+                          value={editingSet.reps}
+                          onChange={(e) => setEditingSet(prev => prev ? { ...prev, reps: e.target.value } : null)}
+                          className="h-7 text-xs text-center"
+                          inputMode="numeric"
+                        />
+                      ) : (
+                        <div className="text-xs text-center font-mono">
+                          {set.actual_reps || <span className="text-muted-foreground">{set.target_reps || '—'}</span>}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-center">
+                        {isEditing ? (
+                          <div className="flex gap-0.5">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleSaveInlineEdit(); }}
+                              className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCancelInlineEdit(); }}
+                              className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : isEditMode ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setExerciseToDelete(set.id); }}
+                            className="h-6 w-6 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        ) : null}
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      {isEditMode ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setExerciseToDelete(set.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setEditingExercise(set)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
 
-          {groupedExercises && Object.keys(groupedExercises).length === 0 && (
-            <div className="text-center py-8 text-muted-foreground italic">
-              No exercises logged.
+          {Object.keys(groupedExercises).length === 0 && (
+            <div className="text-center py-8 text-muted-foreground italic text-sm">
+              No exercises logged
             </div>
           )}
 
+          {/* Add exercise button - always visible in edit mode */}
           {isEditMode && (
-            <Button className="w-full border-dashed" variant="outline" onClick={() => setIsAddSheetOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Add Selection
-            </Button>
+            <button
+              className="w-full py-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground flex items-center justify-center gap-2 transition-colors"
+              onClick={() => setIsAddSheetOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Exercise
+            </button>
           )}
         </div>
 
-        {/* Habits Summary */}
-        {workout.habits && (
-          <div className="space-y-4">
-            <h3 className="section-header">HABITS</h3>
-            <div className="card-brutalist">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-2xl font-bold tabular-nums">
-                    {workout.habits.pullups}
-                  </div>
-                  <div className="text-xs text-muted-foreground">PULL-UPS</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold tabular-nums">
-                    {workout.habits.water_intake}L
-                  </div>
-                  <div className="text-xs text-muted-foreground">WATER</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold tabular-nums">
-                    {workout.habits.sleep_hours}h
-                  </div>
-                  <div className="text-xs text-muted-foreground">SLEEP</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold tabular-nums">
-                    {workout.habits.energy_level}/10
-                  </div>
-                  <div className="text-xs text-muted-foreground">ENERGY</div>
-                </div>
-              </div>
-              {workout.habits.bodyweight && (
-                <div className="mt-4 pt-4 border-t">
-                  <span className="text-muted-foreground text-sm">Bodyweight: </span>
-                  <span className="font-mono">{workout.habits.bodyweight}kg</span>
-                </div>
-              )}
-              {workout.habits.notes && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">{workout.habits.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Tap to edit hint */}
+        {!isEditMode && Object.keys(groupedExercises).length > 0 && (
+          <p className="text-[11px] text-muted-foreground text-center">
+            Tap any set to edit weight & reps
+          </p>
         )}
 
-        {/* Edit Dialog */}
-        <EditExerciseDialog
-          exercise={editingExercise}
-          open={!!editingExercise}
-          onOpenChange={(open) => !open && setEditingExercise(null)}
-          onSave={handleSaveExercise}
-          isSaving={isUpdatingExercise}
-        />
-
-        {/* Add Exercise Sheet (placeholder import until implemented) */}
-        {/* We need to implement AddExerciseSheet or reuse an existing component */}
         <AddExerciseSheet
           open={isAddSheetOpen}
           onOpenChange={setIsAddSheetOpen}
@@ -328,7 +325,7 @@ export default function WorkoutDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Set?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will check off this set from your workout.
+                This will permanently remove this set from your workout.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
