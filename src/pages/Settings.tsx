@@ -21,6 +21,7 @@ import {
   User,
   ChevronDown,
   Check,
+  Edit2,
   
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -55,6 +56,7 @@ export default function Settings() {
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileDirty, setProfileDirty] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     age: '',
@@ -98,6 +100,7 @@ export default function Settings() {
       } as any);
       toast.success('Profile updated');
       setProfileDirty(false);
+      setIsEditingProfile(false);
     } catch (error) {
       toast.error('Failed to save profile');
     } finally {
@@ -147,97 +150,129 @@ export default function Settings() {
 
                 {/* Profile Info */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Typography variant="body2" fontWeight={600} sx={{ mb: 2 }}>
-                    Profile Details
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                    Help AI give you better insights
-                  </Typography>
-
                   {prefsLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
                       <Loader2 className="h-6 w-6 animate-spin" />
                     </Box>
+                  ) : isProfileComplete && !isEditingProfile ? (
+                    /* Saved state - compact summary */
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                        <Typography variant="body2" fontWeight={600}>Profile Details</Typography>
+                        <button
+                          onClick={() => setIsEditingProfile(true)}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <Edit2 size={12} />
+                          Edit
+                        </button>
+                      </Box>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {profile.name && (
+                          <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5">
+                            {profile.name}
+                          </span>
+                        )}
+                        {profile.age && (
+                          <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5">
+                            {profile.age} yrs
+                          </span>
+                        )}
+                        {profile.height_cm && (
+                          <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5">
+                            {profile.height_cm} cm
+                          </span>
+                        )}
+                        {profile.gender && (
+                          <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5 capitalize">
+                            {profile.gender}
+                          </span>
+                        )}
+                      </Box>
+                    </Box>
                   ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box>
-                        <Label className="text-xs text-muted-foreground">NAME</Label>
-                        <Input
-                          type="text"
-                          placeholder="Your name"
-                          value={profile.name}
-                          onChange={(e) => { setProfile(p => ({ ...p, name: e.target.value })); setProfileDirty(true); }}
-                          className="input-terminal mt-1"
-                        />
-                      </Box>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <Box>
-                          <Label className="text-xs text-muted-foreground">AGE</Label>
-                          <Input
-                            type="number"
-                            placeholder="25"
-                            value={profile.age}
-                            onChange={(e) => { setProfile(p => ({ ...p, age: e.target.value })); setProfileDirty(true); }}
-                            className="input-terminal mt-1"
-                          />
-                        </Box>
-                        <Box>
-                          <Label className="text-xs text-muted-foreground">HEIGHT (CM)</Label>
-                          <Input
-                            type="number"
-                            placeholder="175"
-                            value={profile.height_cm}
-                            onChange={(e) => { setProfile(p => ({ ...p, height_cm: e.target.value })); setProfileDirty(true); }}
-                            className="input-terminal mt-1"
-                          />
-                        </Box>
-                      </Box>
+                    /* Edit state - full form */
+                    <Box>
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                        Profile Details
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                        Help AI give you better insights
+                      </Typography>
 
-                      <Box>
-                        <Label className="text-xs text-muted-foreground">GENDER</Label>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
-                          {['male', 'female', 'other'].map((g) => (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box>
+                          <Label className="text-xs text-muted-foreground">NAME</Label>
+                          <Input
+                            type="text"
+                            placeholder="Your name"
+                            value={profile.name}
+                            onChange={(e) => { setProfile(p => ({ ...p, name: e.target.value })); setProfileDirty(true); }}
+                            className="input-terminal mt-1"
+                          />
+                        </Box>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                          <Box>
+                            <Label className="text-xs text-muted-foreground">AGE</Label>
+                            <Input
+                              type="number"
+                              placeholder="25"
+                              value={profile.age}
+                              onChange={(e) => { setProfile(p => ({ ...p, age: e.target.value })); setProfileDirty(true); }}
+                              className="input-terminal mt-1"
+                            />
+                          </Box>
+                          <Box>
+                            <Label className="text-xs text-muted-foreground">HEIGHT (CM)</Label>
+                            <Input
+                              type="number"
+                              placeholder="175"
+                              value={profile.height_cm}
+                              onChange={(e) => { setProfile(p => ({ ...p, height_cm: e.target.value })); setProfileDirty(true); }}
+                              className="input-terminal mt-1"
+                            />
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <Label className="text-xs text-muted-foreground">GENDER</Label>
+                          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
+                            {['male', 'female', 'other'].map((g) => (
+                              <button
+                                key={g}
+                                onClick={() => { setProfile(p => ({ ...p, gender: g })); setProfileDirty(true); }}
+                                className={cn(
+                                  "border p-2 text-sm capitalize transition-colors rounded",
+                                  profile.gender === g
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:bg-muted"
+                                )}
+                              >
+                                {g}
+                              </button>
+                            ))}
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {isProfileComplete && (
                             <button
-                              key={g}
-                              onClick={() => { setProfile(p => ({ ...p, gender: g })); setProfileDirty(true); }}
-                              className={cn(
-                                "border p-2 text-sm capitalize transition-colors rounded",
-                                profile.gender === g
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border hover:bg-muted"
-                              )}
+                              onClick={() => { setIsEditingProfile(false); setProfileDirty(false); }}
+                              className="flex-1 py-3 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
                             >
-                              {g}
+                              Cancel
                             </button>
-                          ))}
+                          )}
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={isSavingProfile || !profileDirty}
+                            className="btn-brutalist btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
+                          >
+                            {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            SAVE PROFILE
+                          </button>
                         </Box>
                       </Box>
-
-
-                      {profileDirty ? (
-                        <button
-                          onClick={handleSaveProfile}
-                          disabled={isSavingProfile}
-                          className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
-                        >
-                          {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          SAVE PROFILE
-                        </button>
-                      ) : isProfileComplete ? (
-                        <div className="w-full flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
-                          <Check className="h-4 w-4 text-primary" />
-                          Profile saved
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleSaveProfile}
-                          disabled={isSavingProfile}
-                          className="btn-brutalist btn-primary w-full flex items-center justify-center gap-2"
-                        >
-                          {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          SAVE PROFILE
-                        </button>
-                      )}
                     </Box>
                   )}
                 </Box>
