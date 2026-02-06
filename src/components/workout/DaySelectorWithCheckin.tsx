@@ -78,7 +78,10 @@ export function DaySelectorWithCheckin({
   };
 
   const isToday = selectedDate.toDateString() === new Date().toDateString();
+  const phase = Math.ceil(weekNumber / 4);
 
+  // Dynamic grid: 2 cols for 3-4 days, 3 cols for 5-6 days
+  const gridCols = days.length <= 4 ? 'grid-cols-2' : 'grid-cols-3';
 
   return (
     <div className="space-y-5">
@@ -110,8 +113,8 @@ export function DaySelectorWithCheckin({
         </Popover>
       </div>
 
-      {/* Workout Day Chips - Horizontal scrollable */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+      {/* Workout Day Grid - Dark cards */}
+      <div className={cn("grid gap-2.5", gridCols)}>
         {days.map(([dayKey, dayData]) => {
           const isSelected = selectedDay === dayKey;
 
@@ -120,25 +123,20 @@ export function DaySelectorWithCheckin({
               key={dayKey}
               onClick={() => handleDaySelect(dayKey)}
               className={cn(
-                'shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-[0.97]',
+                'relative text-center p-4 rounded-xl transition-all active:scale-[0.97]',
                 isSelected
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-foreground hover:bg-muted/80'
+                  ? 'bg-foreground text-background ring-2 ring-foreground ring-offset-2 ring-offset-background'
+                  : 'bg-foreground text-background hover:opacity-90'
               )}
             >
-              {dayData.name}
+              <div className="font-bold text-sm">{dayData.name}</div>
+              <div className="text-[11px] opacity-60 mt-0.5 truncate">
+                {dayData.focus}
+              </div>
             </button>
           );
         })}
       </div>
-
-      {/* Selected day details */}
-      {selectedDay && splitDays[selectedDay] && (
-        <div>
-          <h2 className="text-2xl font-bold">{splitDays[selectedDay].name}</h2>
-          <p className="text-sm text-muted-foreground">{splitDays[selectedDay].focus}</p>
-        </div>
-      )}
 
     </div>
   );
