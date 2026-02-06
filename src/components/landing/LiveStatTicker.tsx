@@ -29,7 +29,8 @@ export default function LiveStatTicker() {
   const current = activities[index];
 
   return (
-    <div className="inline-flex items-center justify-center px-4 py-2 rounded-full border border-border bg-card/60">
+    <div className="relative inline-flex items-center justify-center px-4 py-2 rounded-full border border-border/60 bg-card/60 shadow-soft">
+      <div className="absolute inset-0 rounded-full bg-foreground/[0.02] animate-pulse pointer-events-none" />
       <div className="h-5 flex items-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
