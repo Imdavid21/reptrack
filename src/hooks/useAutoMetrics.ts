@@ -41,7 +41,7 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['autoMetrics', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    queryKey: ['autoMetrics', user?.id, dateRange ? format(dateRange.from, 'yyyy-MM-dd') : undefined, dateRange ? format(dateRange.to, 'yyyy-MM-dd') : undefined],
     queryFn: async (): Promise<{ today: AutoMetrics; history: DailyAutoMetrics[] }> => {
       if (!user) {
         return {

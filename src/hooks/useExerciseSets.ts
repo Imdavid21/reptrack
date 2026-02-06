@@ -44,11 +44,35 @@ export interface DateRangeFilter {
   to: Date;
 }
 
+function parseWeight(weight: string | number | null): number {
+  if (weight === null || weight === undefined) return 0;
+  if (typeof weight === 'number') return weight;
+  const match = weight.match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : 0;
+}
+
+function parseReps(reps: string | number | null): number {
+  if (reps === null || reps === undefined) return 0;
+  if (typeof reps === 'number') return reps;
+  const match = reps.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+}
+
+function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' {
+  const lower = dayName.toLowerCase();
+  if (lower.includes('push')) return 'push';
+  if (lower.includes('pull')) return 'pull';
+  return 'legs';
+}
+
 export function useExerciseSets(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
+  const fromKey = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
+  const toKey = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
+
   return useQuery({
-    queryKey: ['exerciseSets', user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    queryKey: ['exerciseSets', user?.id, fromKey, toKey],
     queryFn: async () => {
       if (!user) {
         return {
@@ -59,30 +83,56 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         };
       }
 
+      // Query from the exercises table (where data actually lives)
+      // joined with workouts for date and day_name
       let query = supabase
-        .from('exercise_sets')
+        .from('exercises')
         .select(`
-          *,
-          workouts!inner (date, user_id)
+          id,
+          workout_id,
+          name,
+          category,
+          sort_order,
+          target_weight,
+          target_reps,
+          actual_weight,
+          actual_reps,
+          completed,
+          workouts!inner (date, user_id, day_name)
         `)
         .eq('workouts.user_id', user.id)
-        .eq('completed', true)
-        .order('created_at', { ascending: true });
+        .eq('completed', true);
 
       if (dateRange) {
         query = query
-          .gte('workouts.date', format(dateRange.from, 'yyyy-MM-dd'))
-          .lte('workouts.date', format(dateRange.to, 'yyyy-MM-dd'));
+          .gte('workouts.date', fromKey!)
+          .lte('workouts.date', toKey!);
       }
+
+      query = query.order('sort_order', { ascending: true });
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      const sets: ExerciseSet[] = (data || []).map((s: any) => ({
-        ...s,
-        workout_date: s.workouts?.date,
-      }));
+      // Map exercises to ExerciseSet format, deriving push/pull/legs from workout day_name
+      const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {
+        const dayName = ex.workouts?.day_name || '';
+        return {
+          id: ex.id,
+          workout_id: ex.workout_id,
+          exercise_name: ex.name,
+          exercise_category: categorizeByDayName(dayName),
+          set_number: ex.sort_order ?? idx + 1,
+          target_weight: parseWeight(ex.target_weight),
+          target_reps: parseReps(ex.target_reps),
+          actual_weight: parseWeight(ex.actual_weight),
+          actual_reps: parseReps(ex.actual_reps),
+          completed: ex.completed ?? false,
+          created_at: '',
+          workout_date: ex.workouts?.date,
+        };
+      });
 
       // Calculate volume totals
       const volumeTotals: VolumeByCategory = { push: 0, pull: 0, legs: 0, total: 0 };
@@ -158,7 +208,7 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
               volume: data.volume,
             })),
         }))
-        .filter(p => p.data.length >= 2) // Only exercises with 2+ weeks of data
+        .filter(p => p.data.length >= 1) // Show exercises with at least 1 week of data
         .sort((a, b) => {
           const aMax = Math.max(...a.data.map(d => d.weight));
           const bMax = Math.max(...b.data.map(d => d.weight));
