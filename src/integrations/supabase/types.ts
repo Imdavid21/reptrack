@@ -700,7 +700,10 @@ export type Database = {
           height_cm: number | null
           id: string
           onboarding_completed: boolean | null
+          rest_days: Json | null
+          routine_setup_completed: boolean | null
           sleep_goal: number | null
+          training_split: string | null
           units_system: string | null
           updated_at: string | null
           user_id: string
@@ -720,7 +723,10 @@ export type Database = {
           height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
+          rest_days?: Json | null
+          routine_setup_completed?: boolean | null
           sleep_goal?: number | null
+          training_split?: string | null
           units_system?: string | null
           updated_at?: string | null
           user_id: string
@@ -740,7 +746,10 @@ export type Database = {
           height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
+          rest_days?: Json | null
+          routine_setup_completed?: boolean | null
           sleep_goal?: number | null
+          training_split?: string | null
           units_system?: string | null
           updated_at?: string | null
           user_id?: string
@@ -782,6 +791,7 @@ export type Database = {
           day: string
           day_name: string
           id: string
+          is_skipped: boolean | null
           post_difficulty: number | null
           post_satisfaction: number | null
           pre_energy: number | null
@@ -799,6 +809,7 @@ export type Database = {
           day: string
           day_name: string
           id?: string
+          is_skipped?: boolean | null
           post_difficulty?: number | null
           post_satisfaction?: number | null
           pre_energy?: number | null
@@ -816,6 +827,7 @@ export type Database = {
           day?: string
           day_name?: string
           id?: string
+          is_skipped?: boolean | null
           post_difficulty?: number | null
           post_satisfaction?: number | null
           pre_energy?: number | null
