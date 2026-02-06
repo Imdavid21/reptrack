@@ -190,7 +190,7 @@ export function CalorieTrackerCompact() {
         carbs: analysis.total_carbs,
         fat: analysis.total_fat,
         food_quality: analysis.food_quality,
-      } as any);
+      });
       toast.success('Meal logged');
       setIsDialogOpen(false);
     } catch (error) {

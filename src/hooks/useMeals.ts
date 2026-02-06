@@ -47,10 +47,15 @@ export function useMeals(date?: Date) {
       meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
       food_name?: string;
       calories?: number;
+      protein?: number;
+      carbs?: number;
+      fat?: number;
+      fiber?: number;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;
       is_confirmed?: boolean;
+      food_quality?: string;
       notes?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
