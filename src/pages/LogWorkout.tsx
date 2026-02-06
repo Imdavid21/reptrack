@@ -53,13 +53,23 @@ function getDayType(dayName: string): 'Push' | 'Pull' | 'Legs' | undefined {
   return undefined;
 }
 
-function buildExercisesFromTemplate(dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string }> }): WorkoutExercise[] {
+function buildExercisesFromTemplate(
+  dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string }> },
+  lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string }>
+): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   return workExercises.map((ex, idx) => {
-    const { sets: numSets, reps } = parseTargetReps(ex.targetReps);
+    const lastUsed = lastUsedMap?.[ex.name];
+    const { sets: templateSets, reps: templateReps } = parseTargetReps(ex.targetReps);
+
+    // Use last-used values if available, otherwise fall back to template
+    const numSets = lastUsed ? lastUsed.sets : templateSets;
+    const reps = lastUsed ? String(lastUsed.reps) : templateReps;
+    const weight = lastUsed ? `${lastUsed.weight}kg` : ex.targetWeight;
+
     const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
       setNumber: i + 1,
-      targetWeight: ex.targetWeight,
+      targetWeight: weight,
       targetReps: reps,
       actualWeight: '',
       actualReps: '',
@@ -95,7 +105,7 @@ export default function LogWorkout() {
   const { createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
-  const { getLastUsed } = useLastUsedWeights();
+  const { getLastUsed, lastUsedMap } = useLastUsedWeights();
 
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -212,7 +222,7 @@ export default function LogWorkout() {
 
     const dayInfo = splitDays[day];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap));
     }
 
     setCurrentExerciseIndex(0);
@@ -266,7 +276,7 @@ export default function LogWorkout() {
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap);
           // Only swap if we got valid exercises
           setPreSuggestionExercises(backup);
           setExercises(suggested);
@@ -428,7 +438,7 @@ export default function LogWorkout() {
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap));
     }
     setPreSuggestionExercises(null);
   };
@@ -464,7 +474,7 @@ export default function LogWorkout() {
         const firstDayKey = Object.keys(routine.days)[0];
         const firstDay = routine.days[firstDayKey] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap);
           const newSplitDays = getSplitDays(split);
           const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
           setSelectedDay(dayKey);
