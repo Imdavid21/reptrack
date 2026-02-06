@@ -83,20 +83,20 @@ export default function Landing() {
     <div className="min-h-screen bg-background scroll-smooth">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
           <a
             href="#hero"
             onClick={(e) => scrollToSection(e, 'hero')}
-            className="text-xl font-bold tracking-widest"
+            className="text-xl font-bold tracking-widest z-10"
           >
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </a>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="hover:text-foreground transition-colors">How It Works</a>
             <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
             <a href="#insights" onClick={(e) => scrollToSection(e, 'insights')} className="hover:text-foreground transition-colors">Insights</a>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 z-10">
             <Link
               to="/signin"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
