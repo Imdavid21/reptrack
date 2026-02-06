@@ -19,6 +19,9 @@ import {
   Download,
   RefreshCw,
   Globe,
+  Camera,
+  Trophy,
+  Clock,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
@@ -29,6 +32,9 @@ import IntegrationCard from '@/components/landing/IntegrationCard';
 import PwaFeature from '@/components/landing/PwaFeature';
 import PulseDot from '@/components/landing/PulseDot';
 import AppleIcon from '@/components/landing/AppleIcon';
+import MiniWorkoutDemo from '@/components/landing/MiniWorkoutDemo';
+import MiniWaterDemo from '@/components/landing/MiniWaterDemo';
+import MiniCalorieDemo from '@/components/landing/MiniCalorieDemo';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -185,8 +191,54 @@ export default function Landing() {
       {/* How It Works */}
       <HowItWorksSection />
 
-      {/* Features Grid */}
-      <section id="features" className="py-20 px-4 border-t border-border">
+      {/* Live Demos Section */}
+      <section className="py-20 px-4 border-t border-border">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+              See it in action.
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Logging takes seconds, not minutes. Here's what it actually looks like.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp} className="text-center">
+              <MiniWorkoutDemo />
+              <p className="text-sm text-muted-foreground mt-4">
+                Log each set as you go. PRs are detected automatically.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="text-center">
+              <MiniWaterDemo />
+              <p className="text-sm text-muted-foreground mt-4">
+                One tap to log water. See your daily progress fill up.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="text-center">
+              <MiniCalorieDemo />
+              <p className="text-sm text-muted-foreground mt-4">
+                Snap a photo and AI breaks down calories and macros.
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Benefits Section (not features) */}
+      <section id="features" className="py-20 px-4 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -195,10 +247,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Everything you actually track. In one system.
+              What you get from using Reptrack.
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Your workouts, intake, and recovery shouldn't be split across 4 different apps.
+              Not a feature list. These are the real outcomes when everything lives in one system.
             </p>
           </motion.div>
 
@@ -210,41 +262,41 @@ export default function Landing() {
             variants={staggerContainer}
           >
             <FeatureCard
-              icon={<Dumbbell className="w-6 h-6" />}
-              title="Workout Tracking"
-              description="Log workouts set by set. Track PRs, volume, and progression automatically."
+              icon={<Clock className="w-6 h-6" />}
+              title="Log a workout in under 2 minutes"
+              description="Pre-filled weights from your last session. Just update reps and move on. Your draft saves if you close the app mid-workout."
+            />
+            <FeatureCard
+              icon={<Trophy className="w-6 h-6" />}
+              title="Know your PRs the moment you hit them"
+              description="Every set is checked against your history. When you beat your best, you'll see it instantly. No manual tracking needed."
+            />
+            <FeatureCard
+              icon={<Camera className="w-6 h-6" />}
+              title="Snap a photo, skip the calorie math"
+              description="Take a picture of your meal. AI identifies the food, estimates calories and macros, and logs it for you in one tap."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="Hydration Tracking"
-              description="Quick-add water in seconds. See daily progress at a glance."
-            />
-            <FeatureCard
-              icon={<Flame className="w-6 h-6" />}
-              title="Calorie Tracking"
-              description="Track meals and macros without overthinking it. Stay aware, not obsessed."
-            />
-            <FeatureCard
-              icon={<Moon className="w-6 h-6" />}
-              title="Sleep & Vitals"
-              description="Log sleep and energy. Track weight trends and recovery patterns."
+              title="Stay hydrated without thinking about it"
+              description="Quick-add 250ml to 1L with one tap. A progress ring fills up through the day so you always know where you stand."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Advanced Analytics"
-              description="See trends across weeks. Spot what improves performance."
+              title="See what actually improves your training"
+              description="Correlations between sleep, weight, volume, and performance show up automatically. You'll know if more sleep really helps your lifts."
             />
             <FeatureCard
-              icon={<Zap className="w-6 h-6" />}
-              title="Smart Routines"
-              description="Follow structured routines like PPL. Stay consistent and progress faster."
+              icon={<Dumbbell className="w-6 h-6" />}
+              title="Follow a real program, not random workouts"
+              description="Choose PPL, Upper/Lower, or Full Body. Each day has pre-loaded exercises with target weights and reps. Just show up and follow."
             />
           </motion.div>
         </div>
       </section>
 
       {/* AI Section */}
-      <section id="insights" className="py-20 px-4 bg-card border-y border-border">
+      <section id="insights" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="grid md:grid-cols-2 gap-12 items-center"
@@ -258,28 +310,32 @@ export default function Landing() {
                 AI Insights
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
-                Automatic insights from your logs.
+                Your data talks. Reptrack translates.
               </h2>
               <p className="text-muted-foreground text-lg mb-8">
-                Reptrack turns your training, sleep, and intake history into simple weekly
-                takeaways. No spreadsheets. No guesswork.
+                After a few weeks of logging, patterns emerge. Reptrack surfaces them as simple,
+                actionable insights. You don't need to read charts or build spreadsheets.
               </p>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <Activity className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>Weekly insights based on your last 4 weeks</span>
+                  <span>Week-over-week volume, sleep, and strength trends</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>Auto-detected PRs, trends, and plateaus</span>
+                  <span>PRs, plateaus, and streaks detected automatically</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <BarChart3 className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                  <span>Shows which habits move your performance</span>
+                  <span>Calorie balance with intake vs. workout expenditure</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Moon className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                  <span>Sleep-to-performance correlations you can act on</span>
                 </li>
               </ul>
             </div>
-            <div className="bg-background border border-border rounded-2xl p-8">
+            <div className="bg-card border border-border rounded-2xl p-8">
               <div className="flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wide mb-4">
                 <PulseDot />
                 AI Insights
@@ -307,7 +363,7 @@ export default function Landing() {
       </section>
 
       {/* Integration Section */}
-      <section id="integrations" className="py-20 px-4">
+      <section id="integrations" className="py-20 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -359,7 +415,7 @@ export default function Landing() {
       </section>
 
       {/* PWA Benefits Section */}
-      <section id="pwa" className="py-20 px-4 border-t border-border">
+      <section id="pwa" className="py-20 px-4 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -417,7 +473,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-card border-t border-border">
+      <section className="py-20 px-4 border-t border-border">
         <motion.div
           className="max-w-2xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }}
