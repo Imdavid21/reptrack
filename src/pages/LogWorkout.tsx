@@ -21,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { normalizeExerciseName, findBestMatch } from '@/lib/exerciseMatching';
 
@@ -220,6 +220,10 @@ export default function LogWorkout() {
 
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
+  };
+
+  const handleContinueToReview = () => {
+    haptic('light');
     setStep('review');
   };
 
@@ -496,6 +500,17 @@ export default function LogWorkout() {
                 selectedDay={selectedDay}
                 onSelect={handleDaySelect}
               />
+
+              {/* Continue button - only when a day is selected */}
+              {selectedDay && (
+                <button
+                  onClick={handleContinueToReview}
+                  className="w-full btn-brutalist py-3 text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  Continue
+                  <ArrowRight size={16} />
+                </button>
+              )}
 
               <div className="flex gap-2 justify-center">
                 <button
