@@ -6,8 +6,7 @@ import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 // Landing & Auth pages
 import Landing from "./pages/Landing";
-import SignIn from "./pages/SignIn";
-import SignUp from "./pages/SignUp";
+import Auth from "./pages/Auth";
 // App pages
 import AppIndex from "./pages/AppIndex";
 import LogWorkout from "./pages/LogWorkout";
@@ -28,8 +27,8 @@ function AppRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signin" element={<Auth />} />
+        <Route path="/signup" element={<Auth />} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
