@@ -194,7 +194,7 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-[10px] text-muted-foreground uppercase mt-1">
-              {!todaySleep ? 'TAP TO LOG' : 'SLEEP'}
+              {!todaySleep ? 'TAP TO ADD' : 'SLEEP'}
             </div>
           </button>
           
@@ -217,7 +217,7 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-[10px] text-muted-foreground uppercase mt-1">
-              {!todayWeight && lastLoggedWeight ? 'TAP TO LOG' : 'KG'}
+              {!todayWeight && lastLoggedWeight ? 'TAP TO ADD' : 'KG'}
             </div>
           </button>
         </div>
@@ -228,7 +228,7 @@ export function ProgressHeader() {
         <DialogContent className="border-border bg-background max-w-xs">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              LOG SLEEP
+              ADD SLEEP
             </DialogTitle>
           </DialogHeader>
 
@@ -303,7 +303,7 @@ export function ProgressHeader() {
               className="btn-brutalist w-full flex items-center justify-center gap-2"
             >
               {isUpserting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              SAVE
+              SAVE SLEEP
             </button>
           </div>
         </DialogContent>
@@ -314,7 +314,7 @@ export function ProgressHeader() {
         <DialogContent className="border-border bg-background max-w-xs">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              LOG WEIGHT
+              ADD WEIGHT
             </DialogTitle>
           </DialogHeader>
 
@@ -367,7 +367,7 @@ export function ProgressHeader() {
               className="btn-brutalist w-full flex items-center justify-center gap-2"
             >
               {isUpserting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              SAVE
+              SAVE WEIGHT
             </button>
           </div>
         </DialogContent>

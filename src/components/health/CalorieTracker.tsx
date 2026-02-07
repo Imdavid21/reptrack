@@ -216,7 +216,7 @@ export function CalorieTracker() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No meals logged</p>
+                  <p className="text-xs text-muted-foreground">No meals yet</p>
                 )}
               </div>
             );
@@ -228,7 +228,7 @@ export function CalorieTracker() {
         <DialogContent className="border-border bg-background">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              LOG {MEAL_LABELS[selectedMealType]}
+              LOG {MEAL_LABELS[selectedMealType].toUpperCase()}
             </DialogTitle>
           </DialogHeader>
 
@@ -260,7 +260,7 @@ export function CalorieTracker() {
                 {isAnalyzing ? (
                   <div className="flex flex-col items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                    <p className="text-sm text-muted-foreground">Analyzing food...</p>
+                    <p className="text-sm text-muted-foreground">Estimating calories...</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -270,14 +270,14 @@ export function CalorieTracker() {
                         className="btn-brutalist flex items-center justify-center gap-2 py-6"
                       >
                         <Camera className="h-5 w-5" />
-                        CAMERA
+                        TAKE PHOTO
                       </button>
                       <button
                         onClick={() => galleryInputRef.current?.click()}
                         className="btn-brutalist flex items-center justify-center gap-2 py-6"
                       >
                         <Image className="h-5 w-5" />
-                        GALLERY
+                        CHOOSE PHOTO
                       </button>
                     </div>
                     <button
@@ -285,7 +285,7 @@ export function CalorieTracker() {
                       className="w-full border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                     >
                       <Plus className="h-4 w-4" />
-                      MANUAL ENTRY
+                      TYPE IT IN
                     </button>
                   </div>
                 )}
@@ -331,7 +331,7 @@ export function CalorieTracker() {
                     className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
-                    RETRY
+                    TRY AGAIN
                   </button>
                   <button
                     onClick={handleConfirmAnalysis}

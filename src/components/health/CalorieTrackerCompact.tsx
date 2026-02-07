@@ -310,7 +310,7 @@ export function CalorieTrackerCompact() {
               className="btn-brutalist flex-1 flex items-center justify-center gap-2"
             >
               <Camera className="h-4 w-4" />
-              CAMERA
+              TAKE PHOTO
             </button>
           </div>
 
@@ -353,7 +353,7 @@ export function CalorieTrackerCompact() {
 
               {meals.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No meals logged yet. Tap a meal type to add.
+                  No meals yet. Tap the camera to snap your food.
                 </p>
               )}
             </div>
@@ -365,7 +365,7 @@ export function CalorieTrackerCompact() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-border bg-background">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">LOG MEAL</DialogTitle>
+            <DialogTitle className="text-sm font-medium">ADD MEAL</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -381,7 +381,7 @@ export function CalorieTrackerCompact() {
                 {isAnalyzing && (
                   <div className="flex flex-col items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                    <p className="text-sm text-muted-foreground">Analyzing food...</p>
+                    <p className="text-sm text-muted-foreground">Estimating calories...</p>
                   </div>
                 )}
               </>
@@ -390,7 +390,7 @@ export function CalorieTrackerCompact() {
             {textMode && !analysis && (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">DESCRIBE YOUR MEAL</Label>
+                  <Label className="text-xs text-muted-foreground">WHAT DID YOU EAT?</Label>
                   <textarea
                     placeholder="e.g., 2 eggs, toast with butter, and a glass of orange juice"
                     value={textInput}
@@ -416,7 +416,7 @@ export function CalorieTrackerCompact() {
                     className="btn-brutalist flex items-center justify-center gap-2"
                   >
                     {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    ANALYZE
+                    ESTIMATE CALORIES
                   </button>
                 </div>
 
@@ -426,7 +426,7 @@ export function CalorieTrackerCompact() {
                     onClick={() => { setTextMode(false); setManualMode(true); }}
                     className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
                   >
-                    or enter calories manually →
+                    or type calories manually →
                   </button>
                 </div>
               </div>
