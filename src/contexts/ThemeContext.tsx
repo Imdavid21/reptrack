@@ -17,8 +17,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (stored) {
         return stored === 'dark';
       }
-      // Default to LIGHT
-      return false;
+      // Follow OS preference when no explicit choice
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });

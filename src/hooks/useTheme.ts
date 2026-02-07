@@ -9,9 +9,8 @@ export function useTheme() {
       if (stored) {
         return stored === 'dark';
       }
-      // Default to LIGHT unless the user explicitly chose dark.
-      // (System preference often makes the app feel "randomly green" on first load.)
-      return false;
+      // Follow OS preference when no explicit choice
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });
