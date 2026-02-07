@@ -149,6 +149,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       await completeOnboarding({
         ...prefs,
         training_split,
+        routine_setup_completed: true,
       });
 
       // Save profile fields directly to user_preferences
