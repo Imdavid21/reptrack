@@ -104,202 +104,222 @@ export default function History() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
+  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.calories > 0);
+
   return (
     <MainLayout>
       <AnimatedPage>
         <div className="space-y-4 pb-10">
-          {/* Monthly stats row */}
-          <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
-            <div className="card-brutalist text-center !py-4">
-              <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
-              <div className="text-[9px] text-muted-foreground uppercase mt-1">This Month</div>
-            </div>
-            <div className="card-brutalist text-center !py-4">
-              <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
-              <div className="text-[9px] text-muted-foreground uppercase mt-1">All Time</div>
-            </div>
-            <div className="card-brutalist text-center !py-4">
-              <div className="text-xl font-bold tabular-nums">
-                {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
-              </div>
-              <div className="text-[9px] text-muted-foreground uppercase mt-1">Weeks</div>
-            </div>
-          </motion.div>
+          {!hasAnyHistory ? (
+            <motion.div variants={staggerItem} className="flex flex-col items-center justify-center py-20 px-6 text-center">
+              <Dumbbell size={40} className="text-muted-foreground/30 mb-4" />
+              <p className="text-lg font-semibold text-foreground">No workouts yet</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[240px]">
+                Your activity will show up here once you log your first session.
+              </p>
+              <button
+                onClick={() => navigate('/log')}
+                className="btn-brutalist mt-6 px-6 py-2.5 text-sm"
+              >
+                Start a Workout
+              </button>
+            </motion.div>
+          ) : (
+            <>
+              {/* Monthly stats row */}
+              <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase mt-1">This Month</div>
+                </div>
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase mt-1">All Time</div>
+                </div>
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">
+                    {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground uppercase mt-1">Weeks</div>
+                </div>
+              </motion.div>
 
-          {/* Timeline */}
-          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
-            {last30Days.map((date) => {
-              const dateStr = format(date, 'yyyy-MM-dd');
-              const workout = workoutsByDate[dateStr];
-              const metric = metricsByDate[dateStr];
-              const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
-              const isEditing = editingDate === dateStr;
+              {/* Timeline */}
+              <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
+                {last30Days.map((date) => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const workout = workoutsByDate[dateStr];
+                  const metric = metricsByDate[dateStr];
+                  const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
+                  const isEditing = editingDate === dateStr;
 
-              const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
-              const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
-              const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
-              const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
-              const isSkipped = (workout as any)?.is_skipped;
+                  const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
+                  const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
+                  const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
+                  const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
+                  const isSkipped = (workout as any)?.is_skipped;
 
-              return (
-                <motion.div key={dateStr} variants={staggerItem}>
-                  <div className={cn(
-                    'card-brutalist transition-all',
-                    !hasAnyData && !isEditing && 'opacity-40',
-                    isSkipped && 'opacity-60'
-                  )}>
-                    {/* Date Header */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">
-                          {isToday ? 'Today' : format(date, 'EEE, MMM d')}
-                        </span>
-                        {isToday && (
-                          <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
-                        )}
-                        {isSkipped && (
-                          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                            <EyeOff className="h-2.5 w-2.5" />
-                            SKIPPED
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-0.5">
-                        {!isEditing && (
-                          <button
-                            onClick={() => startEdit(dateStr)}
-                           className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                        )}
-                        {workout && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedWorkoutForEdit(workout);
-                            }}
-                            className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
-                          >
-                            <MoreHorizontal size={13} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Inline Edit Mode */}
-                    {isEditing && (
-                      <div className="mb-3 p-3 bg-muted/50 rounded-xl animate-fade-in">
-                        <div className="flex flex-wrap gap-3 mb-3">
+                  return (
+                    <motion.div key={dateStr} variants={staggerItem}>
+                      <div className={cn(
+                        'card-brutalist transition-all',
+                        !hasAnyData && !isEditing && 'opacity-40',
+                        isSkipped && 'opacity-60'
+                      )}>
+                        {/* Date Header */}
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Moon size={14} className="text-muted-foreground" />
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                placeholder="H"
-                               className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                value={editValues.sleepHours}
-                                onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
-                                min="0"
-                                max="24"
-                              />
-                              <span className="text-xs text-muted-foreground">:</span>
-                              <input
-                                type="number"
-                                placeholder="M"
-                                className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                value={editValues.sleepMinutes}
-                                onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
-                                min="0"
-                                max="59"
-                              />
+                            <span className="font-semibold text-sm">
+                              {isToday ? 'Today' : format(date, 'EEE, MMM d')}
+                            </span>
+                            {isToday && (
+                              <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
+                            )}
+                            {isSkipped && (
+                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                <EyeOff className="h-2.5 w-2.5" />
+                                SKIPPED
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-0.5">
+                            {!isEditing && (
+                              <button
+                                onClick={() => startEdit(dateStr)}
+                               className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            )}
+                            {workout && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedWorkoutForEdit(workout);
+                                }}
+                                className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
+                              >
+                                <MoreHorizontal size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Inline Edit Mode */}
+                        {isEditing && (
+                          <div className="mb-3 p-3 bg-muted/50 rounded-xl animate-fade-in">
+                            <div className="flex flex-wrap gap-3 mb-3">
+                              <div className="flex items-center gap-2">
+                                <Moon size={14} className="text-muted-foreground" />
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    placeholder="H"
+                                   className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    value={editValues.sleepHours}
+                                    onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
+                                    min="0"
+                                    max="24"
+                                  />
+                                  <span className="text-xs text-muted-foreground">:</span>
+                                  <input
+                                    type="number"
+                                    placeholder="M"
+                                    className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    value={editValues.sleepMinutes}
+                                    onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
+                                    min="0"
+                                    max="59"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Scale size={14} className="text-muted-foreground" />
+                                <input
+                                  type="number"
+                                  placeholder="kg"
+                                  className="w-20 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                  value={editValues.bodyweight}
+                                  onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
+                                  min="0"
+                                  step="0.1"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={cancelEdit}
+                                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              >
+                                <X size={16} />
+                              </button>
+                              <button
+                                onClick={saveEdit}
+                                disabled={isUpserting}
+                                className="p-1.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                              >
+                                <Check size={16} />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Scale size={14} className="text-muted-foreground" />
-                            <input
-                              type="number"
-                              placeholder="kg"
-                              className="w-20 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                              value={editValues.bodyweight}
-                              onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
-                              min="0"
-                              step="0.1"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={cancelEdit}
-                            className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                          >
-                            <X size={16} />
-                          </button>
-                          <button
-                            onClick={saveEdit}
-                            disabled={isUpserting}
-                            className="p-1.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
-                          >
-                            <Check size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    {hasAnyData && !isEditing && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {/* Workout chip - navigates to detail */}
-                        {workout && !isSkipped && (
-                          <button
-                            onClick={() => navigate(`/history/${workout.id}`)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
-                          >
-                            <Dumbbell size={13} />
-                            <span className="text-xs font-bold">{workout.day_name}</span>
-                            <ChevronRight size={12} className="opacity-50" />
-                          </button>
                         )}
 
-                        {hasSleep && (
-                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
-                            <Moon size={13} className="text-muted-foreground" />
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {formatSleep(metric.sleep_hours)}
-                            </span>
+                        {/* Content */}
+                        {hasAnyData && !isEditing && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {/* Workout chip - navigates to detail */}
+                            {workout && !isSkipped && (
+                              <button
+                                onClick={() => navigate(`/history/${workout.id}`)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
+                              >
+                                <Dumbbell size={13} />
+                                <span className="text-xs font-bold">{workout.day_name}</span>
+                                <ChevronRight size={12} className="opacity-50" />
+                              </button>
+                            )}
+
+                            {hasSleep && (
+                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
+                                <Moon size={13} className="text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {formatSleep(metric.sleep_hours)}
+                                </span>
+                              </div>
+                            )}
+
+                            {hasWeight && (
+                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
+                                <Scale size={13} className="text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {metric.bodyweight} kg
+                                </span>
+                              </div>
+                            )}
+
+                            {hasCalories && (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
+                                <Flame size={13} className="text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {caloriesByDate[dateStr].toLocaleString()} cal
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
 
-                        {hasWeight && (
-                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
-                            <Scale size={13} className="text-muted-foreground" />
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {metric.bodyweight} kg
-                            </span>
-                          </div>
-                        )}
-
-                        {hasCalories && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
-                            <Flame size={13} className="text-muted-foreground" />
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {caloriesByDate[dateStr].toLocaleString()} cal
-                            </span>
-                          </div>
+                        {/* Empty state */}
+                        {!hasAnyData && !isEditing && (
+                          <p className="text-xs text-muted-foreground/50 italic">No activity</p>
                         )}
                       </div>
-                    )}
-
-                    {/* Empty state */}
-                    {!hasAnyData && !isEditing && (
-                      <p className="text-xs text-muted-foreground/50 italic">No activity</p>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </>
+          )}
 
           <WorkoutEditSheet
             workout={selectedWorkoutForEdit}
