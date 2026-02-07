@@ -139,16 +139,10 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
-              to="/signup"
+              to="/signin"
               className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center"
             >
               Get started
-            </Link>
-            <Link
-              to="/signin"
-              className="btn-brutalist bg-secondary text-secondary-foreground px-8 py-4 text-base"
-            >
-              Sign In
             </Link>
           </motion.div>
 
@@ -479,10 +473,10 @@ export default function Landing() {
             Free forever.
           </p>
           <Link
-            to="/signup"
+            to="/signin"
             className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center"
           >
-            Create account
+            Get started
           </Link>
         </motion.div>
       </section>
