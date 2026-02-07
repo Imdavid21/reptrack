@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
@@ -41,9 +42,20 @@ export default function Auth() {
     e.preventDefault();
     if (!email.trim()) return;
     
-    // Move to password step - we'll determine new vs existing on submit
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('check_email_exists', {
+        email_input: email.trim(),
+      });
+      if (error) throw error;
+      setAccountStatus(data ? 'existing' : 'new');
+    } catch {
+      // Fallback: treat as unknown so the flow still works
+      setAccountStatus('unknown');
+    } finally {
+      setLoading(false);
+    }
     setStep('password');
-    setAccountStatus('unknown');
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -56,26 +68,18 @@ export default function Auth() {
 
     try {
       if (accountStatus === 'new') {
-        // User already tried sign-in, it failed — now creating account
+        // Email doesn't exist — create account
         const { error } = await signUp(email, password);
         if (error) throw error;
         toast.success('Account created! Welcome to Reptrack.');
         localStorage.setItem('just_signed_up', 'true');
         navigate('/app', { replace: true });
       } else {
-        // First attempt: try signing in
+        // Email exists — sign in
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message?.toLowerCase().includes('invalid')) {
-            if (accountStatus === 'existing') {
-              // Second failure — password is just wrong
-              toast.error('Wrong password. Try again or reset it below.');
-            } else {
-              // First failure — auto-switch to create account mode
-              setAccountStatus('new');
-              setPassword('');
-              toast.info('No account found. Create one below!');
-            }
+            toast.error('Wrong password. Try again or reset it below.');
           } else {
             throw error;
           }
@@ -196,9 +200,10 @@ export default function Auth() {
 
               <button
                 type="submit"
+                disabled={loading}
                 className="btn-brutalist btn-primary w-full py-4"
               >
-                CONTINUE
+                {loading ? 'CHECKING...' : 'CONTINUE'}
               </button>
             </motion.form>
           )}
@@ -267,7 +272,7 @@ export default function Auth() {
                   ? 'PLEASE WAIT...'
                   : accountStatus === 'new'
                     ? 'CREATE ACCOUNT'
-                    : 'CONTINUE'
+                    : 'SIGN IN'
                 }
               </button>
             </motion.form>
