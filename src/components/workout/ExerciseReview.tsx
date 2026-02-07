@@ -457,15 +457,16 @@ export function ExerciseReview({
 
         {/* Add exercise + AI suggest row */}
         <div className="flex gap-2">
-          {showPicker ? (
-            <div className="w-full">
-              <ExercisePicker
-                existingExercises={exercises}
-                onAddExercise={handleAddExercise}
-                dayType={dayType}
-              />
-            </div>
-          ) : (
+          {showPicker && (
+            <ExercisePicker
+              existingExercises={exercises}
+              onAddExercise={handleAddExercise}
+              dayType={dayType}
+              autoOpen
+              onClose={() => setShowPicker(false)}
+            />
+          )}
+          {!showPicker && (
             <>
               <button
                 onClick={() => setShowPicker(true)}
