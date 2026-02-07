@@ -425,8 +425,6 @@ export default function LogWorkout() {
   const handleAIGenerate = async (goals: string, split: TrainingSplit, experience: string) => {
     setIsAIGenerating(true);
     try {
-      // First update the split preference
-      await updatePreferences.mutateAsync({ training_split: split });
 
       const { data, error } = await supabase.functions.invoke('generate-workout', {
         body: {
