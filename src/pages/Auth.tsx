@@ -387,10 +387,10 @@ export default function Auth() {
                 Forgot password?
               </button>
               <button
-                onClick={switchToNewAccount}
+                onClick={goBackToEmail}
                 className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                New here? Create an account
+                Not you? Use a different email
               </button>
             </>
           )}
