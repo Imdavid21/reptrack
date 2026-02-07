@@ -1,13 +1,15 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useMeals } from '@/hooks/useMeals';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
@@ -49,6 +51,7 @@ interface FoodAnalysis {
 export function CalorieTrackerCompact() {
   const { user } = useAuth();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
+  const { preferences, updatePreferences } = useUserPreferences();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
@@ -61,9 +64,17 @@ export function CalorieTrackerCompact() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [imageMode, setImageMode] = useState(false); // NEW: Track when we're in image upload mode
+  const [imageMode, setImageMode] = useState(false);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [editGoal, setEditGoal] = useState(2000);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
+
+  useEffect(() => {
+    if (isEditingGoal) setEditGoal(dailyGoal);
+  }, [isEditingGoal, dailyGoal]);
 
   const resetDialogState = () => {
     setAnalysis(null);
@@ -229,8 +240,17 @@ export function CalorieTrackerCompact() {
     }
   };
 
-  const DAILY_GOAL = 2000;
-  const progressPercent = Math.min((totalCalories / DAILY_GOAL) * 100, 100);
+  const progressPercent = Math.min((totalCalories / dailyGoal) * 100, 100);
+
+  const handleSaveCalorieGoal = async () => {
+    try {
+      await updatePreferences.mutateAsync({ daily_calorie_goal: editGoal });
+      setIsEditingGoal(false);
+      toast.success('Calorie goal updated');
+    } catch {
+      toast.error('Failed to update goal');
+    }
+  };
 
   return (
     <>
@@ -259,16 +279,47 @@ export function CalorieTrackerCompact() {
             <Utensils className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          {/* Value Display - Matches WaterTracker */}
-          <CollapsibleTrigger className="w-full text-left">
-            <div className="flex items-center gap-2">
+          {/* Value Display */}
+          <div className="flex items-center gap-2">
+            <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
               <span className="text-4xl font-bold tabular-nums">
                 {totalCalories.toLocaleString()}
               </span>
-              <span className="text-lg text-muted-foreground">/ {DAILY_GOAL}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsEditingGoal(!isEditingGoal); }}
+                className="text-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+              >
+                / {dailyGoal.toLocaleString()}
+                <Pencil className="h-3 w-3 opacity-40" />
+              </button>
               {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+            </CollapsibleTrigger>
+          </div>
+
+          {/* Inline goal editor */}
+          {isEditingGoal && (
+            <div className="mt-3 p-3 border border-border rounded-xl bg-muted/30 space-y-3 animate-fade-in">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Daily goal</span>
+                <span className="font-bold">{editGoal.toLocaleString()} cal</span>
+              </div>
+              <Slider
+                value={[editGoal]}
+                onValueChange={([v]) => setEditGoal(v)}
+                min={1200}
+                max={4000}
+                step={50}
+                className="w-full"
+              />
+              <button
+                onClick={handleSaveCalorieGoal}
+                className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
+              >
+                <Check className="h-3 w-3" />
+                SAVE
+              </button>
             </div>
-          </CollapsibleTrigger>
+          )}
 
           {/* Progress Bar */}
           <div className="progress-bar mt-4">
