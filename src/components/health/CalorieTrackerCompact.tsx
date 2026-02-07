@@ -273,9 +273,17 @@ export function CalorieTrackerCompact() {
 
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
         <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
-          {/* Header - Matches WaterTracker */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-header mb-0">TODAY'S CALORIES</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="section-header mb-0">TODAY'S CALORIES</h3>
+              <button
+                onClick={() => setIsEditingGoal(!isEditingGoal)}
+                className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
+                title="Edit goal"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            </div>
             <Utensils className="h-4 w-4 text-muted-foreground" />
           </div>
 
@@ -285,13 +293,9 @@ export function CalorieTrackerCompact() {
               <span className="text-4xl font-bold tabular-nums">
                 {totalCalories.toLocaleString()}
               </span>
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsEditingGoal(!isEditingGoal); }}
-                className="text-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-              >
+              <span className="text-lg text-muted-foreground">
                 / {dailyGoal.toLocaleString()}
-                <Pencil className="h-3 w-3 opacity-40" />
-              </button>
+              </span>
               {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
             </CollapsibleTrigger>
           </div>

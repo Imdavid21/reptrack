@@ -86,19 +86,24 @@ export function WaterTracker() {
   return (
     <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-header mb-0">TODAY'S WATER</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="section-header mb-0">TODAY'S WATER</h3>
+          <button
+            onClick={() => setIsEditingGoal(!isEditingGoal)}
+            className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
+            title="Edit goal"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        </div>
         <Droplets className="h-4 w-4 text-muted-foreground" />
       </div>
 
       <div className="text-4xl font-bold tabular-nums">
         {totalToday.toFixed(2)}L
-        <button
-          onClick={() => setIsEditingGoal(!isEditingGoal)}
-          className="text-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 ml-1"
-        >
+        <span className="text-lg text-muted-foreground ml-1">
           / {dailyGoal}L
-          <Pencil className="h-3 w-3 opacity-40" />
-        </button>
+        </span>
       </div>
 
       {/* Inline goal editor */}
