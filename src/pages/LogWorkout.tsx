@@ -595,26 +595,10 @@ export default function LogWorkout() {
                     <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
                   </div>
                   <button
-                    onClick={() => setExerciseViewMode('single')}
-                    className={cn(
-                      'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
-                      exerciseViewMode === 'single'
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                    )}
+                    onClick={() => setExerciseViewMode(exerciseViewMode === 'single' ? 'overview' : 'single')}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <LayoutGrid size={16} />
-                  </button>
-                  <button
-                    onClick={() => setExerciseViewMode('overview')}
-                    className={cn(
-                      'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
-                      exerciseViewMode === 'overview'
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <List size={16} />
+                    {exerciseViewMode === 'single' ? <List size={16} /> : <LayoutGrid size={16} />}
                   </button>
                 </div>
               </div>
