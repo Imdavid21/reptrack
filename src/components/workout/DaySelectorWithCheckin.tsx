@@ -3,14 +3,6 @@ import { defaultRoutine } from '@/lib/workoutPresets';
 import { getSplitDays } from '@/lib/splitTemplates';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Calendar, ChevronDown } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useWorkouts } from '@/hooks/useWorkouts';
 
 function getDefaultDayForDate(date: Date, numDays: number): string | null {
@@ -33,8 +25,7 @@ export function DaySelectorWithCheckin({
   const splitDays = preferences ? getSplitDays(preferences.training_split) : defaultRoutine.days;
   const days = Object.entries(splitDays);
   const { workouts } = useWorkouts();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const selectedDate = new Date();
 
   const getWeekFromPastData = (): number => {
     if (!workouts || workouts.length === 0) return 1;
@@ -66,58 +57,13 @@ export function DaySelectorWithCheckin({
     onSelect(dayKey, selectedDate, weekNumber);
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setIsCalendarOpen(false);
-    }
-  };
-
-  const handleWeekChange = (delta: number) => {
-    setWeekNumber(prev => Math.max(1, Math.min(12, prev + delta)));
-  };
-
-  const isToday = selectedDate.toDateString() === new Date().toDateString();
-  const phase = Math.ceil(weekNumber / 4);
-
-  // Dynamic grid: 2 cols for 3-4 days, 3 cols for 5-6 days
   const gridCols = days.length <= 4 ? 'grid-cols-2' : 'grid-cols-3';
 
   return (
     <div className="space-y-5">
-      {/* Date & Week Row */}
-      <div className="flex items-center">
-        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-          <PopoverTrigger asChild>
-            <button className={cn(
-              "flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-full transition-colors hover:bg-muted",
-              !isToday && "border-foreground text-foreground"
-            )}>
-              <Calendar className="h-3.5 w-3.5" />
-              <span className="font-medium">
-                {isToday ? 'Today' : format(selectedDate, 'MMM d')}
-              </span>
-              <ChevronDown className="h-3 w-3 opacity-50" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <CalendarComponent
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              disabled={(date) => date > new Date()}
-              initialFocus
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Workout Day Grid - Dark cards */}
       <div className={cn("grid gap-2.5", gridCols)}>
         {days.map(([dayKey, dayData]) => {
           const isSelected = selectedDay === dayKey;
-
           return (
             <button
               key={dayKey}
@@ -137,7 +83,6 @@ export function DaySelectorWithCheckin({
           );
         })}
       </div>
-
     </div>
   );
 }
