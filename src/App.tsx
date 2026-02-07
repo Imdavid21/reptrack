@@ -10,7 +10,6 @@ import Auth from "./pages/Auth";
 // App pages
 import AppIndex from "./pages/AppIndex";
 import LogWorkout from "./pages/LogWorkout";
-import CreateRoutine from "./pages/CreateRoutine";
 import Insights from "./pages/Insights";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
@@ -33,7 +32,7 @@ function AppRoutes() {
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
         <Route path="/app/log" element={<LogWorkout />} />
-        <Route path="/app/create" element={<CreateRoutine />} />
+        
         <Route path="/app/insights" element={<Insights />} />
         <Route path="/app/history" element={<History />} />
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
@@ -41,7 +40,7 @@ function AppRoutes() {
 
         {/* Legacy redirects */}
         <Route path="/log" element={<Navigate to="/app/log" replace />} />
-        <Route path="/create" element={<Navigate to="/app/create" replace />} />
+        <Route path="/create" element={<Navigate to="/app/log" replace />} />
         <Route path="/insights" element={<Navigate to="/app/insights" replace />} />
         <Route path="/analytics" element={<Navigate to="/app/insights" replace />} />
         <Route path="/health" element={<Navigate to="/app/insights?tab=vitals" replace />} />
