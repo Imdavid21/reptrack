@@ -564,9 +564,13 @@ export default function LogWorkout() {
 
           {/* Log Sets */}
           {step === 'exercises' && (
-            <>
+            <div className={cn(
+              exerciseViewMode === 'single' 
+                ? 'flex flex-col min-h-[calc(100vh-10rem)] justify-center' 
+                : ''
+            )}>
               {/* Header with view toggle + edit exercises button */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold">
                     {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
@@ -656,7 +660,7 @@ export default function LogWorkout() {
                   </button>
                 </>
               )}
-            </>
+            </div>
           )}
         </Box>
       </AnimatedPage>
