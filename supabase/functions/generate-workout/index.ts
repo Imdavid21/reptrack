@@ -6,18 +6,17 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { goals, trainingSplit = "ppl6", experienceLevel = "intermediate" } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
-      throw new Error("AI service not configured");
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not configured");
+      throw new Error("AI service not configured. Please add your OpenAI API key in settings.");
     }
 
     if (!goals || typeof goals !== "string" || goals.trim().length === 0) {
@@ -84,14 +83,14 @@ ${goals}
 
 Return ONLY valid JSON.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -102,7 +101,7 @@ Return ONLY valid JSON.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("OpenAI error:", response.status, errorText);
 
       if (response.status === 429) {
         return new Response(
@@ -114,11 +113,11 @@ Return ONLY valid JSON.`;
         );
       }
 
-      if (response.status === 402) {
+      if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+          JSON.stringify({ error: "Invalid API key. Please check your OpenAI API key in settings." }),
           {
-            status: 402,
+            status: 401,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
@@ -146,7 +145,6 @@ Return ONLY valid JSON.`;
     // Parse the JSON response - handle potential markdown code blocks
     let routine;
     try {
-      // Remove markdown code blocks if present
       let cleanContent = content.trim();
       if (cleanContent.startsWith("```json")) {
         cleanContent = cleanContent.slice(7);
