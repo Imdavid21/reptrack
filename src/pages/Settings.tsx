@@ -441,7 +441,8 @@ export default function Settings() {
           </MuiCard>
 
 
-          {/* Install as App */}
+          {/* Install as App - only show when NOT running as installed PWA */}
+          {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
           <MuiCard>
             <Box
               onClick={() => toggleSection('pwa')}
@@ -538,6 +539,7 @@ export default function Settings() {
               </Box>
             </Collapse>
           </MuiCard>
+          )}
 
           {/* ============ ADVANCED SECTION ============ */}
           <Box
