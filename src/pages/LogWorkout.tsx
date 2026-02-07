@@ -576,7 +576,7 @@ export default function LogWorkout() {
                     {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Week {weekNumber} • {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
+                    {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
