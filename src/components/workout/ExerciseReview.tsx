@@ -508,7 +508,7 @@ export function ExerciseReview({
             onClick={onSkipExercises}
             className="w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors text-center"
           >
-            Log without exercises →
+            Skip exercises →
           </button>
         )}
       </div>
