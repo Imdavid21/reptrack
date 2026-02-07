@@ -79,6 +79,10 @@
     --chart-3: 0 0% 35%;  /* dark gray */
     --chart-4: 0 0% 50%;  /* mid gray */
     --chart-5: 0 0% 65%;  /* light gray */
+
+    /* Insight accent colors */
+    --insight-coral: 12 80% 55%;
+    --insight-mint: 160 60% 45%;
   }
 
   .dark {
@@ -131,6 +135,10 @@
     --chart-3: 0 0% 60%;
     --chart-4: 0 0% 44%;
     --chart-5: 0 0% 30%;
+
+    /* Insight accent colors - brighter for dark mode */
+    --insight-coral: 12 85% 62%;
+    --insight-mint: 160 65% 55%;
   }
 }
 

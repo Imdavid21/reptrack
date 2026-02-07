@@ -76,6 +76,8 @@ export default {
           background: "hsl(var(--insight-background))",
           text: "hsl(var(--insight-text))",
           warning: "hsl(var(--insight-warning))",
+          coral: "hsl(var(--insight-coral))",
+          mint: "hsl(var(--insight-mint))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
