@@ -1,10 +1,12 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
-import { Droplets, Plus, ChevronDown } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { Droplets, Plus, ChevronDown, Pencil, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
+import { Slider } from '@/components/ui/slider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const DAILY_GOAL = 3.5;
 const MILESTONES = [0.5, 1];
 
 const WATER_SIZES = [
@@ -25,16 +26,26 @@ const WATER_SIZES = [
 
 export function WaterTracker() {
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs();
+  const { preferences, updatePreferences } = useUserPreferences();
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedSize, setSelectedSize] = useState(WATER_SIZES[0]);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [editGoal, setEditGoal] = useState(3);
   const prevTotalRef = useRef(totalToday);
 
-  const progressPercent = Math.min((totalToday / DAILY_GOAL) * 100, 100);
-  const progressRatio = totalToday / DAILY_GOAL;
+  const dailyGoal = preferences?.daily_water_goal ?? 3;
+
+  // Sync edit slider when opening
+  useEffect(() => {
+    if (isEditingGoal) setEditGoal(dailyGoal);
+  }, [isEditingGoal, dailyGoal]);
+
+  const progressPercent = Math.min((totalToday / dailyGoal) * 100, 100);
+  const progressRatio = totalToday / dailyGoal;
 
   // Subtle haptic on milestone
   useEffect(() => {
-    const prevRatio = prevTotalRef.current / DAILY_GOAL;
+    const prevRatio = prevTotalRef.current / dailyGoal;
     
     for (const milestone of MILESTONES) {
       if (prevRatio < milestone && progressRatio >= milestone) {
@@ -44,7 +55,7 @@ export function WaterTracker() {
     }
     
     prevTotalRef.current = totalToday;
-  }, [totalToday, progressRatio]);
+  }, [totalToday, progressRatio, dailyGoal]);
 
   const handleLogWater = async (amount?: number) => {
     const logAmount = amount || selectedSize.value;
@@ -62,6 +73,16 @@ export function WaterTracker() {
     }
   };
 
+  const handleSaveGoal = async () => {
+    try {
+      await updatePreferences.mutateAsync({ daily_water_goal: editGoal });
+      setIsEditingGoal(false);
+      toast.success('Water goal updated');
+    } catch {
+      toast.error('Failed to update goal');
+    }
+  };
+
   return (
     <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
@@ -71,8 +92,39 @@ export function WaterTracker() {
 
       <div className="text-4xl font-bold tabular-nums">
         {totalToday.toFixed(2)}L
-        <span className="text-lg text-muted-foreground"> / {DAILY_GOAL}L</span>
+        <button
+          onClick={() => setIsEditingGoal(!isEditingGoal)}
+          className="text-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 ml-1"
+        >
+          / {dailyGoal}L
+          <Pencil className="h-3 w-3 opacity-40" />
+        </button>
       </div>
+
+      {/* Inline goal editor */}
+      {isEditingGoal && (
+        <div className="mt-3 p-3 border border-border rounded-xl bg-muted/30 space-y-3 animate-fade-in">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Daily goal</span>
+            <span className="font-bold">{editGoal}L</span>
+          </div>
+          <Slider
+            value={[editGoal]}
+            onValueChange={([v]) => setEditGoal(v)}
+            min={1}
+            max={5}
+            step={0.5}
+            className="w-full"
+          />
+          <button
+            onClick={handleSaveGoal}
+            className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
+          >
+            <Check className="h-3 w-3" />
+            SAVE
+          </button>
+        </div>
+      )}
 
       <div className="progress-bar mt-4">
         <div
