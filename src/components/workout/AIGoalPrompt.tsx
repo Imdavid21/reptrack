@@ -46,7 +46,7 @@ interface AIGoalPromptProps {
 
 export function AIGoalPrompt({ isOpen, onClose, onGenerate, isGenerating }: AIGoalPromptProps) {
   const [selections, setSelections] = useState<Record<string, string>>({});
-  const [customNote, setCustomNote] = useState('');
+  const [customNote] = useState('');
 
   const handleSelect = (categoryId: string, optionId: string) => {
     haptic('light');
@@ -145,24 +145,10 @@ export function AIGoalPrompt({ isOpen, onClose, onGenerate, isGenerating }: AIGo
                   </div>
                 </div>
               ))}
-
-              {/* Optional custom note */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Anything else? (optional)
-                </span>
-                <input
-                  type="text"
-                  value={customNote}
-                  onChange={(e) => setCustomNote(e.target.value)}
-                  placeholder="e.g. shoulder injury, home gym only…"
-                  className="w-full px-3 py-2 text-sm bg-muted rounded-xl border-none outline-none focus:ring-1 focus:ring-foreground/20 placeholder:text-muted-foreground/50"
-                />
-              </div>
             </div>
 
-            {/* Sticky generate button */}
-            <div className="px-5 pb-6 pt-3 shrink-0 border-t border-border bg-background">
+            {/* Sticky generate button - above bottom nav */}
+            <div className="px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom)+4rem)] pt-3 shrink-0 border-t border-border bg-background">
               <button
                 onClick={handleGenerate}
                 disabled={!allSelected || isGenerating}
