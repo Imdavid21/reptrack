@@ -18,6 +18,8 @@ interface ExercisePickerProps {
   existingExercises: WorkoutExercise[];
   onAddExercise: (exercise: WorkoutExercise) => void;
   dayType?: 'Push' | 'Pull' | 'Legs';
+  autoOpen?: boolean;
+  onClose?: () => void;
 }
 
 // Parse target reps like "4x8-10" into number of sets and rep range
@@ -29,8 +31,8 @@ function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   return { sets: 3, reps: targetReps };
 }
 
-export function ExercisePicker({ existingExercises, onAddExercise, dayType }: ExercisePickerProps) {
-  const [open, setOpen] = useState(false);
+export function ExercisePicker({ existingExercises, onAddExercise, dayType, autoOpen = false, onClose }: ExercisePickerProps) {
+  const [open, setOpen] = useState(autoOpen);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>(dayType || 'Push');
 
@@ -71,14 +73,21 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType }: Ex
 
   const categories = ['Push', 'Pull', 'Legs'] as const;
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen && onClose) onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full gap-2">
-          <Plus className="h-4 w-4" />
-          Add Exercise
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!autoOpen && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="w-full gap-2">
+            <Plus className="h-4 w-4" />
+            Add Exercise
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Add Exercise</DialogTitle>
