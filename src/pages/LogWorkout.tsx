@@ -532,6 +532,7 @@ export default function LogWorkout() {
                 onClose={() => setShowAIGoalPrompt(false)}
                 onGenerate={handleAIGenerate}
                 isGenerating={isAIGenerating}
+                currentSplit={(preferences?.training_split as TrainingSplit) || 'ppl6'}
               />
             </div>
           )}
