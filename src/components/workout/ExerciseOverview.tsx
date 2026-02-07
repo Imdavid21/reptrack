@@ -74,7 +74,7 @@ export function ExerciseOverview({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{exercise.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {completedSets}/{exercise.sets.length} sets done
+                          {completedSets}/{exercise.sets.length} sets logged
                         </div>
                       </div>
 

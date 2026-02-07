@@ -124,7 +124,7 @@ export function WaterTracker() {
           )}
         >
           <Plus className="h-4 w-4" />
-          LOG {selectedSize.label.toUpperCase()}
+          ADD {selectedSize.label.toUpperCase()}
         </button>
       </div>
     </div>

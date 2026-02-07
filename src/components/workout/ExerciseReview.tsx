@@ -415,7 +415,7 @@ export function ExerciseReview({
             {exercises.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="text-sm">No exercises yet</p>
-                <p className="text-xs mt-1">Add exercises manually or get AI suggestions</p>
+                <p className="text-xs mt-1">Add exercises or try AI suggestions</p>
               </div>
             )}
           </>
@@ -499,7 +499,7 @@ export function ExerciseReview({
           className="btn-brutalist btn-primary w-full py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
         >
           <Play className="h-4 w-4" />
-          Begin Session ({exercises.length} exercises)
+          Start Workout ({exercises.length} exercises)
         </button>
 
         {/* Skip exercises */}
@@ -508,14 +508,14 @@ export function ExerciseReview({
             onClick={onSkipExercises}
             className="w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors text-center"
           >
-            Skip exercises →
+            Log without exercises →
           </button>
         )}
       </div>
 
       {/* Info text */}
       <p className="text-[11px] text-muted-foreground text-center">
-        Tap an exercise to edit sets, reps & weight. Add more during the workout.
+        Tap any exercise to adjust sets, reps, or weight
       </p>
     </div>
   );
