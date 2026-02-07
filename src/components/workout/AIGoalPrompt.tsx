@@ -90,15 +90,15 @@ export function AIGoalPrompt({ isOpen, onClose, onGenerate, isGenerating }: AIGo
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] overflow-y-auto"
+            className="w-full max-w-lg bg-background rounded-t-2xl max-h-[85vh] flex flex-col"
           >
             {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1">
+            <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3">
+            <div className="flex items-center justify-between px-5 py-3 shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
                 <h3 className="text-base font-bold">AI Routine Builder</h3>
@@ -111,8 +111,8 @@ export function AIGoalPrompt({ isOpen, onClose, onGenerate, isGenerating }: AIGo
               </button>
             </div>
 
-            {/* Categories */}
-            <div className="px-5 pb-3 space-y-5">
+            {/* Scrollable content */}
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 pb-3 space-y-5">
               {GOAL_CATEGORIES.map((category) => (
                 <div key={category.id} className="space-y-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -161,8 +161,8 @@ export function AIGoalPrompt({ isOpen, onClose, onGenerate, isGenerating }: AIGo
               </div>
             </div>
 
-            {/* Generate button */}
-            <div className="px-5 pb-6 pt-2">
+            {/* Sticky generate button */}
+            <div className="px-5 pb-6 pt-3 shrink-0 border-t border-border bg-background">
               <button
                 onClick={handleGenerate}
                 disabled={!allSelected || isGenerating}
