@@ -397,10 +397,10 @@ export default function Auth() {
 
           {step === 'password' && accountStatus === 'new' && (
             <button
-              onClick={() => { setAccountStatus('unknown'); setPassword(''); }}
+              onClick={goBackToEmail}
               className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Already have an account? Sign in
+              Wrong email? Try again
             </button>
           )}
 
