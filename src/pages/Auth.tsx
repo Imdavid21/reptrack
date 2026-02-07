@@ -66,15 +66,15 @@ export default function Auth() {
         // First attempt: try signing in
         const { error } = await signIn(email, password);
         if (error) {
-          // Check if this is "invalid credentials" — could be wrong password OR no account
           if (error.message?.toLowerCase().includes('invalid')) {
             if (accountStatus === 'existing') {
-              // Already tried once, password is just wrong
+              // Second failure — password is just wrong
               toast.error('Wrong password. Try again or reset it below.');
             } else {
-              // First failure — could be no account. Offer to create one.
-              setAccountStatus('existing');
-              toast.error('Wrong password. Try again or create a new account.');
+              // First failure — auto-switch to create account mode
+              setAccountStatus('new');
+              setPassword('');
+              toast.info('No account found. Create one below!');
             }
           } else {
             throw error;
