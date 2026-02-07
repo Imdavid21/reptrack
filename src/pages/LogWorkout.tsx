@@ -579,16 +579,8 @@ export default function LogWorkout() {
                     {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Edit exercises shortcut */}
-                  <button
-                    onClick={handleEditExercises}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    title="Edit exercises"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <div className="text-right mr-1">
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
                     </span>
@@ -599,6 +591,13 @@ export default function LogWorkout() {
                     className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {exerciseViewMode === 'single' ? <List size={16} /> : <LayoutGrid size={16} />}
+                  </button>
+                  <button
+                    onClick={handleEditExercises}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Edit exercises"
+                  >
+                    <Pencil size={14} />
                   </button>
                 </div>
               </div>
