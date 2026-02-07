@@ -317,14 +317,14 @@ export function SetBySetCard({
       )}>
         <div className="text-center text-xs text-muted-foreground mb-4">
           SET {currentSetIndex + 1}
-          {lastUsed && !prevSet && (
-            <span className="ml-1 text-primary/70">
-              (last: {lastUsed.weight}{weightLabel}×{lastUsed.reps})
+          {prevSet && (prevSet.actualWeight || prevSet.targetWeight) && (
+            <span className="ml-1">
+              (prev: {String(prevSet.actualWeight || prevSet.targetWeight).replace(/[a-zA-Z]/g, '')}{weightLabel}×{prevSet.actualReps || prevSet.targetReps})
             </span>
           )}
-          {prevSet && (
-            <span className="ml-1">
-              (prev: {prevSet.actualWeight || prevSet.targetWeight}{weightLabel}×{prevSet.actualReps || prevSet.targetReps})
+          {!prevSet && lastUsed && (
+            <span className="ml-1 text-primary/70">
+              (last: {lastUsed.weight}{weightLabel}×{lastUsed.reps})
             </span>
           )}
         </div>
