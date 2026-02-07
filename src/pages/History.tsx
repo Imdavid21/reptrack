@@ -118,7 +118,7 @@ export default function History() {
                 Your activity will show up here once you log your first session.
               </p>
               <button
-                onClick={() => navigate('/log')}
+                onClick={() => navigate('/app/create')}
                 className="btn-brutalist mt-6 px-6 py-2.5 text-sm"
               >
                 Start a Workout
