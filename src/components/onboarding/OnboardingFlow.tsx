@@ -1,44 +1,140 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
-import { Droplets, Dumbbell, Moon, Target, ArrowRight, Check } from 'lucide-react';
+import { Droplets, Dumbbell, Moon, Target, ArrowRight, Check, User } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
+import { TrainingSplit } from '@/lib/splitTemplates';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
 }
 
 type GoalType = 'lose' | 'gain' | 'maintain';
+type Gender = 'male' | 'female';
+
+interface ProfileData {
+  age: number | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  gender: Gender | null;
+}
 
 interface OnboardingData {
   weight_goal_type: GoalType | null;
+  profile: ProfileData;
   daily_water_goal: number;
   weekly_workout_goal: number;
+  training_split: TrainingSplit;
   sleep_goal: number;
   daily_calorie_goal: number;
 }
 
 const STEPS = ['goal', 'hydration', 'training', 'recovery'] as const;
 
+// --- Smart default calculators ---
+
+function suggestWater(weight: number | null): number {
+  if (!weight) return 3;
+  const liters = weight * 0.033;
+  return Math.round(liters * 2) / 2; // round to nearest 0.5
+}
+
+function suggestCalories(
+  weight: number | null,
+  height: number | null,
+  age: number | null,
+  gender: Gender | null,
+  goal: GoalType | null
+): number {
+  if (!weight || !height || !age) return 2000;
+
+  // Mifflin-St Jeor
+  let bmr: number;
+  if (gender === 'female') {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  } else {
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  }
+
+  const tdee = bmr * 1.55; // moderate activity
+
+  if (goal === 'lose') return Math.round((tdee - 500) / 50) * 50;
+  if (goal === 'gain') return Math.round((tdee + 300) / 50) * 50;
+  return Math.round(tdee / 50) * 50;
+}
+
+function suggestSplit(workoutsPerWeek: number): TrainingSplit {
+  if (workoutsPerWeek <= 3) return 'full_body3';
+  if (workoutsPerWeek === 4) return 'upper_lower4';
+  if (workoutsPerWeek === 5) return 'ppl5';
+  return 'ppl6';
+}
+
+function suggestSleep(age: number | null): number {
+  if (!age) return 8;
+  if (age < 25) return 8.5;
+  if (age > 65) return 7.5;
+  return 8;
+}
+
+const SPLIT_LABELS: Record<TrainingSplit, string> = {
+  full_body3: 'Full Body (3-day)',
+  upper_lower4: 'Upper/Lower (4-day)',
+  ppl5: 'Push/Pull/Legs (5-day)',
+  ppl6: 'Push/Pull/Legs (6-day)',
+  custom: 'Custom',
+};
+
 export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
     weight_goal_type: null,
+    profile: { age: null, height_cm: null, weight_kg: null, gender: null },
     daily_water_goal: 3,
     weekly_workout_goal: 4,
+    training_split: 'upper_lower4',
     sleep_goal: 8,
     daily_calorie_goal: 2000,
   });
   const { completeOnboarding } = useUserPreferences();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // When moving to step 2, auto-suggest water based on weight
+  const applySmartDefaults = useCallback((nextStep: number, currentData: OnboardingData) => {
+    const updated = { ...currentData };
+    const { profile, weight_goal_type } = currentData;
+
+    if (nextStep === 1) {
+      updated.daily_water_goal = suggestWater(profile.weight_kg);
+    }
+    if (nextStep === 2) {
+      updated.daily_calorie_goal = suggestCalories(
+        profile.weight_kg, profile.height_cm, profile.age, profile.gender, weight_goal_type
+      );
+      updated.training_split = suggestSplit(updated.weekly_workout_goal);
+    }
+    if (nextStep === 3) {
+      updated.sleep_goal = suggestSleep(profile.age);
+    }
+
+    return updated;
+  }, []);
 
   const handleNext = () => {
     haptic('light');
     if (step < STEPS.length - 1) {
-      setStep(step + 1);
+      const nextStep = step + 1;
+      const updatedData = applySmartDefaults(nextStep, data);
+      setData(updatedData);
+      setStep(nextStep);
     } else {
       handleComplete();
     }
@@ -47,7 +143,33 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const handleComplete = async () => {
     setIsSubmitting(true);
     try {
-      await completeOnboarding(data);
+      const { profile, training_split, ...prefs } = data;
+
+      // Save preferences (standard fields)
+      await completeOnboarding({
+        ...prefs,
+        training_split,
+      });
+
+      // Save profile fields directly to user_preferences
+      if (user) {
+        await supabase.from('user_preferences').update({
+          age: profile.age,
+          height_cm: profile.height_cm,
+          gender: profile.gender,
+        }).eq('user_id', user.id);
+      }
+
+      // Save initial bodyweight to daily_metrics
+      if (profile.weight_kg && user) {
+        const today = new Date().toISOString().split('T')[0];
+        await supabase.from('daily_metrics').upsert({
+          user_id: user.id,
+          date: today,
+          bodyweight: profile.weight_kg,
+        }, { onConflict: 'user_id,date' });
+      }
+
       haptic('success');
       toast.success('Welcome to Reptrack Fitness');
       onComplete();
@@ -59,8 +181,32 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   };
 
   const canProceed = () => {
-    if (step === 0) return data.weight_goal_type !== null;
+    if (step === 0) {
+      const { weight_goal_type, profile } = data;
+      return (
+        weight_goal_type !== null &&
+        profile.gender !== null &&
+        profile.age !== null && profile.age > 0 &&
+        profile.height_cm !== null && profile.height_cm > 0 &&
+        profile.weight_kg !== null && profile.weight_kg > 0
+      );
+    }
     return true;
+  };
+
+  const updateProfile = (field: keyof ProfileData, value: any) => {
+    setData(prev => ({
+      ...prev,
+      profile: { ...prev.profile, [field]: value },
+    }));
+  };
+
+  const handleWorkoutsChange = (v: number) => {
+    setData(prev => ({
+      ...prev,
+      weekly_workout_goal: v,
+      training_split: suggestSplit(v),
+    }));
   };
 
   return (
@@ -72,8 +218,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           {STEPS.map((_, i) => (
             <div
               key={i}
-              className={`w-8 h-1 transition-colors ${i <= step ? 'bg-foreground' : 'bg-muted'
-                }`}
+              className={`w-8 h-1 transition-colors ${i <= step ? 'bg-foreground' : 'bg-muted'}`}
             />
           ))}
         </div>
@@ -82,14 +227,17 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
         {step === 0 && (
-          <GoalStep
-            selected={data.weight_goal_type}
-            onSelect={(type) => setData({ ...data, weight_goal_type: type })}
+          <GoalProfileStep
+            goalType={data.weight_goal_type}
+            profile={data.profile}
+            onGoalSelect={(type) => setData({ ...data, weight_goal_type: type })}
+            onProfileChange={updateProfile}
           />
         )}
         {step === 1 && (
           <HydrationStep
             value={data.daily_water_goal}
+            weight={data.profile.weight_kg}
             onChange={(v) => setData({ ...data, daily_water_goal: v })}
           />
         )}
@@ -97,8 +245,10 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           <TrainingStep
             workouts={data.weekly_workout_goal}
             calories={data.daily_calorie_goal}
-            onWorkoutsChange={(v) => setData({ ...data, weekly_workout_goal: v })}
+            split={data.training_split}
+            onWorkoutsChange={handleWorkoutsChange}
             onCaloriesChange={(v) => setData({ ...data, daily_calorie_goal: v })}
+            onSplitChange={(v) => setData({ ...data, training_split: v })}
           />
         )}
         {step === 3 && (
@@ -133,12 +283,18 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   );
 }
 
-function GoalStep({
-  selected,
-  onSelect,
+// --- Step 1: Goal + Profile ---
+
+function GoalProfileStep({
+  goalType,
+  profile,
+  onGoalSelect,
+  onProfileChange,
 }: {
-  selected: GoalType | null;
-  onSelect: (type: GoalType) => void;
+  goalType: GoalType | null;
+  profile: ProfileData;
+  onGoalSelect: (type: GoalType) => void;
+  onProfileChange: (field: keyof ProfileData, value: any) => void;
 }) {
   const goals: { type: GoalType; label: string; description: string }[] = [
     { type: 'lose', label: 'Lose Weight', description: 'Cut fat while preserving muscle' },
@@ -153,39 +309,111 @@ function GoalStep({
           <Target className="w-4 h-4" />
           Step 1 of 4
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">What's your goal?</h1>
+        <h1 className="text-2xl font-bold tracking-tight">About you</h1>
         <p className="text-muted-foreground">
-          This helps us personalize your tracking experience.
+          This helps us personalize your goals and targets.
         </p>
       </div>
 
-      <div className="space-y-3 pt-4">
-        {goals.map((goal) => (
-          <button
-            key={goal.type}
-            onClick={() => {
-              haptic('light');
-              onSelect(goal.type);
-            }}
-            className={`w-full p-4 text-left border transition-colors ${selected === goal.type
+      {/* Goal selection */}
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Your goal</Label>
+        <div className="space-y-2">
+          {goals.map((goal) => (
+            <button
+              key={goal.type}
+              onClick={() => {
+                haptic('light');
+                onGoalSelect(goal.type);
+              }}
+              className={`w-full p-3 text-left border rounded-xl transition-colors ${goalType === goal.type
                 ? 'border-foreground bg-accent'
                 : 'border-border hover:border-muted-foreground'
               }`}
-          >
-            <div className="font-medium">{goal.label}</div>
-            <div className="text-sm text-muted-foreground">{goal.description}</div>
-          </button>
-        ))}
+            >
+              <div className="font-medium text-sm">{goal.label}</div>
+              <div className="text-xs text-muted-foreground">{goal.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Profile fields */}
+      <div className="space-y-4 pt-2">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Profile</Label>
+
+        {/* Gender */}
+        <div className="flex gap-2">
+          {(['male', 'female'] as Gender[]).map((g) => (
+            <button
+              key={g}
+              onClick={() => {
+                haptic('light');
+                onProfileChange('gender', g);
+              }}
+              className={`flex-1 py-3 text-sm font-medium border rounded-xl transition-colors capitalize ${profile.gender === g
+                ? 'border-foreground bg-accent'
+                : 'border-border hover:border-muted-foreground'
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+
+        {/* Age, Height, Weight in a row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <Label className="text-xs text-muted-foreground">Age</Label>
+            <Input
+              type="number"
+              placeholder="25"
+              value={profile.age ?? ''}
+              onChange={(e) => onProfileChange('age', e.target.value ? Number(e.target.value) : null)}
+              className="mt-1 input-terminal text-center"
+              min={13}
+              max={100}
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Height (cm)</Label>
+            <Input
+              type="number"
+              placeholder="175"
+              value={profile.height_cm ?? ''}
+              onChange={(e) => onProfileChange('height_cm', e.target.value ? Number(e.target.value) : null)}
+              className="mt-1 input-terminal text-center"
+              min={100}
+              max={250}
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Weight (kg)</Label>
+            <Input
+              type="number"
+              placeholder="70"
+              value={profile.weight_kg ?? ''}
+              onChange={(e) => onProfileChange('weight_kg', e.target.value ? Number(e.target.value) : null)}
+              className="mt-1 input-terminal text-center"
+              min={30}
+              max={300}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
+// --- Step 2: Hydration ---
+
 function HydrationStep({
   value,
+  weight,
   onChange,
 }: {
   value: number;
+  weight: number | null;
   onChange: (v: number) => void;
 }) {
   return (
@@ -197,7 +425,9 @@ function HydrationStep({
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Daily water goal</h1>
         <p className="text-muted-foreground">
-          How much water do you want to drink each day?
+          {weight
+            ? `Based on your weight, we suggest ${suggestWater(weight)}L per day.`
+            : 'How much water do you want to drink each day?'}
         </p>
       </div>
 
@@ -225,17 +455,25 @@ function HydrationStep({
   );
 }
 
+// --- Step 3: Training & Nutrition ---
+
 function TrainingStep({
   workouts,
   calories,
+  split,
   onWorkoutsChange,
   onCaloriesChange,
+  onSplitChange,
 }: {
   workouts: number;
   calories: number;
+  split: TrainingSplit;
   onWorkoutsChange: (v: number) => void;
   onCaloriesChange: (v: number) => void;
+  onSplitChange: (v: TrainingSplit) => void;
 }) {
+  const availableSplits: TrainingSplit[] = ['full_body3', 'upper_lower4', 'ppl5', 'ppl6'];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
@@ -245,12 +483,12 @@ function TrainingStep({
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Training & nutrition</h1>
         <p className="text-muted-foreground">
-          Set your weekly training and daily calorie targets.
+          We've suggested targets based on your profile. Adjust as needed.
         </p>
       </div>
 
       <div className="pt-4 space-y-8">
-        {/* Workouts */}
+        {/* Workouts per week */}
         <div className="space-y-4">
           <div className="flex justify-between items-baseline">
             <span className="text-sm text-muted-foreground uppercase tracking-wider">Workouts per week</span>
@@ -270,6 +508,28 @@ function TrainingStep({
           </div>
         </div>
 
+        {/* Training split */}
+        <div className="space-y-3">
+          <span className="text-sm text-muted-foreground uppercase tracking-wider">Training split</span>
+          <div className="grid grid-cols-2 gap-2">
+            {availableSplits.map((s) => (
+              <button
+                key={s}
+                onClick={() => {
+                  haptic('light');
+                  onSplitChange(s);
+                }}
+                className={`p-3 text-left border rounded-xl transition-colors text-sm ${split === s
+                  ? 'border-foreground bg-accent'
+                  : 'border-border hover:border-muted-foreground'
+                }`}
+              >
+                {SPLIT_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Calories */}
         <div className="space-y-4">
           <div className="flex justify-between items-baseline">
@@ -281,7 +541,7 @@ function TrainingStep({
             onValueChange={([v]) => onCaloriesChange(v)}
             min={1200}
             max={4000}
-            step={100}
+            step={50}
             className="w-full"
           />
           <div className="flex justify-between text-sm text-muted-foreground">
@@ -293,6 +553,8 @@ function TrainingStep({
     </div>
   );
 }
+
+// --- Step 4: Recovery ---
 
 function RecoveryStep({
   value,
@@ -310,7 +572,7 @@ function RecoveryStep({
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Sleep goal</h1>
         <p className="text-muted-foreground">
-          How many hours of sleep do you aim for?
+          We recommend {value}h based on your age. Adjust if you'd like.
         </p>
       </div>
 
@@ -335,10 +597,10 @@ function RecoveryStep({
         </div>
       </div>
 
-      <div className="pt-4 p-4 border border-border bg-accent/50">
+      <div className="pt-4 p-4 border border-border bg-accent/50 rounded-xl">
         <div className="text-sm font-medium">You're all set!</div>
         <div className="text-sm text-muted-foreground mt-1">
-          You can adjust these goals anytime in Settings.
+          You can adjust these goals anytime in Insights.
         </div>
       </div>
     </div>
