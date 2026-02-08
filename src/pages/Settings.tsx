@@ -634,7 +634,7 @@ export default function Settings() {
           </MuiCard>
 
           {/* Version */}
-          <Box sx={{ textAlign: 'center', pb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3 }}>
             <Logo size="sm" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               v3.2
