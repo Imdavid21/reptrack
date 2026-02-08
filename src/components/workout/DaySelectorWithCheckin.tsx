@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { defaultRoutine } from '@/lib/workoutPresets';
 import { getSplitDays } from '@/lib/splitTemplates';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { cn } from '@/lib/utils';
 import { useWorkouts } from '@/hooks/useWorkouts';
+import { Check } from 'lucide-react';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 function getDefaultDayForDate(date: Date, numDays: number): string | null {
   const dayOfWeek = date.getDay();
@@ -26,6 +28,22 @@ export function DaySelectorWithCheckin({
   const days = Object.entries(splitDays);
   const { workouts } = useWorkouts();
   const selectedDate = new Date();
+
+  // Track which day_names have been completed this week
+  const completedDayNames = useMemo(() => {
+    if (!workouts || workouts.length === 0) return new Set<string>();
+    
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+    const thisWeek = workouts.filter(w => {
+      const d = new Date(w.date);
+      return d >= weekStart && d <= weekEnd;
+    });
+
+    return new Set(thisWeek.map(w => w.day_name));
+  }, [workouts]);
 
   const getWeekFromPastData = (): number => {
     if (!workouts || workouts.length === 0) return 1;
@@ -64,6 +82,7 @@ export function DaySelectorWithCheckin({
       <div className={cn("grid gap-2.5", gridCols)}>
         {days.map(([dayKey, dayData]) => {
           const isSelected = selectedDay === dayKey;
+          const isDoneThisWeek = completedDayNames.has(dayData.name);
           return (
             <button
               key={dayKey}
@@ -75,6 +94,12 @@ export function DaySelectorWithCheckin({
                   : 'bg-foreground text-background hover:opacity-90'
               )}
             >
+              {/* Completion badge */}
+              {isDoneThisWeek && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-background/20 flex items-center justify-center">
+                  <Check size={10} strokeWidth={3} />
+                </span>
+              )}
               <div className="font-bold text-sm">{dayData.name}</div>
               <div className="text-[11px] opacity-60 mt-0.5 truncate">
                 {dayData.focus}
