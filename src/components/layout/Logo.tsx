@@ -1,4 +1,4 @@
-import logoHeart from '@/assets/logo-heart.png';
+const logoHeart = '/favicon.png';
 
 export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizes = {
