@@ -115,7 +115,7 @@ export default function Settings() {
   return (
     <MainLayout>
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4, minHeight: 'calc(100vh - 140px)' }}>
 
           {/* Profile & Account - Merged */}
           <MuiCard>
@@ -634,7 +634,7 @@ export default function Settings() {
           </MuiCard>
 
           {/* Version */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3, mt: 'auto' }}>
             <Logo size="sm" />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               v3.2

@@ -466,7 +466,16 @@ export default function LogWorkout() {
   return (
     <MainLayout>
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pb: 10 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 2.5, 
+          pb: 10,
+          ...(step === 'select-day' && {
+            minHeight: 'calc(100vh - 140px)',
+            justifyContent: 'center',
+          }),
+        }}>
           {/* Back Button */}
           {step === 'review' && (
             <button
