@@ -3,7 +3,8 @@ import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useMeals } from '@/hooks/useMeals';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { analyzeFoodImage, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
+import { AnalysisProgress } from '@/components/health/AnalysisProgress';
 import { Droplets, Utensils, Scale, Loader2, Camera, Plus, Check, X, Minus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,12 +21,7 @@ const MEAL_LABELS: Record<MealType, string> = {
   snack: 'Snacks',
 };
 
-interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number }[];
-  total_calories: number;
-  confidence: number;
-  description: string;
-}
+// FoodAnalysis type imported from analyzeFoodImage
 
 function getMealTypeByTime(): MealType {
   const hour = new Date().getHours();
@@ -65,6 +61,7 @@ export function QuickActionsBar() {
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
+  const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('compressing');
   const [manualMode, setManualMode] = useState(false);
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -132,29 +129,12 @@ export function QuickActionsBar() {
 
     setIsAnalyzing(true);
     setAnalysis(null);
+    setAnalysisStep('compressing');
 
     try {
-      const fileName = `${user.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('meal-photos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('meal-photos')
-        .getPublicUrl(fileName);
-
-      setUploadedPhotoUrl(publicUrl);
-
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: { imageUrl: publicUrl },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      setAnalysis(data as FoodAnalysis);
+      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
+      setUploadedPhotoUrl(result.publicUrl);
+      setAnalysis(result.analysis);
     } catch (error) {
       console.error('Analysis failed:', error);
       toast.error('Could not analyze image. Try manual entry.');
@@ -347,10 +327,7 @@ export function QuickActionsBar() {
                 )}
 
                 {isAnalyzing ? (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                    <p className="text-sm text-muted-foreground">Analyzing food...</p>
-                  </div>
+                  <AnalysisProgress currentStep={analysisStep} />
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <button

@@ -2,6 +2,8 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
+import { analyzeFoodImage, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
+import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
@@ -37,16 +39,7 @@ function getMealTypeByTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
   return 'snack';
 }
 
-interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number }[];
-  total_calories: number;
-  total_protein?: number;
-  total_carbs?: number;
-  total_fat?: number;
-  confidence: number;
-  description: string;
-  food_quality?: string;
-}
+// FoodAnalysis type imported from analyzeFoodImage
 
 export function CalorieTrackerCompact() {
   const { user } = useAuth();
@@ -57,6 +50,7 @@ export function CalorieTrackerCompact() {
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
+  const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('compressing');
   const [manualMode, setManualMode] = useState(false);
   const [textMode, setTextMode] = useState(false);
   const [textInput, setTextInput] = useState('');
@@ -123,29 +117,12 @@ export function CalorieTrackerCompact() {
 
     setIsAnalyzing(true);
     setAnalysis(null);
+    setAnalysisStep('compressing');
 
     try {
-      const fileName = `${user.id}/${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('meal-photos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('meal-photos')
-        .getPublicUrl(fileName);
-
-      setUploadedPhotoUrl(publicUrl);
-
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: { imageUrl: publicUrl },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      setAnalysis(data as FoodAnalysis);
+      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
+      setUploadedPhotoUrl(result.publicUrl);
+      setAnalysis(result.analysis);
     } catch (error) {
       console.error('Analysis failed:', error);
       toast.error('Could not analyze image. Try manual entry.');
@@ -153,7 +130,6 @@ export function CalorieTrackerCompact() {
       setImageMode(false);
     } finally {
       setIsAnalyzing(false);
-      // Reset file input so same file can be selected again
       e.target.value = '';
     }
   };
@@ -434,10 +410,7 @@ export function CalorieTrackerCompact() {
                 )}
 
                 {isAnalyzing && (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                    <p className="text-sm text-muted-foreground">Estimating calories...</p>
-                  </div>
+                  <AnalysisProgress currentStep={analysisStep} />
                 )}
               </>
             )}
