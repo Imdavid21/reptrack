@@ -35,49 +35,59 @@ export async function analyzeFoodImage(
   userId: string,
   onStep: (step: AnalysisStep) => void,
 ): Promise<AnalyzeResult> {
-  // Step 1: Compress
-  onStep('compressing');
-  const compressed = await compressImage(file);
-
-  // Step 2: Upload
-  onStep('uploading');
-  const fileName = `${userId}/${Date.now()}-${compressed.name}`;
-  const { error: uploadError } = await supabase.storage
-    .from('meal-photos')
-    .upload(fileName, compressed);
-
-  if (uploadError) throw uploadError;
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('meal-photos')
-    .getPublicUrl(fileName);
-
-  // Step 3: Analyze (with 1 retry)
-  onStep('analyzing');
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < 2; attempt++) {
+  try {
+    // Step 1: Compress
+    onStep('compressing');
+    let compressed: File;
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: { imageUrl: publicUrl },
-      });
+      compressed = await compressImage(file);
+    } catch (compressErr) {
+      console.warn('Compression failed, using original file:', compressErr);
+      compressed = file; // fallback to original
+    }
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+    // Step 2: Upload
+    onStep('uploading');
+    const fileName = `${userId}/${Date.now()}-${compressed.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('meal-photos')
+      .upload(fileName, compressed);
 
-      onStep('done');
-      return { analysis: data as FoodAnalysis, publicUrl };
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(`Analysis attempt ${attempt + 1} failed:`, lastError.message);
-      if (attempt === 0) {
-        // Brief pause before retry
-        await new Promise(r => setTimeout(r, 1500));
-        onStep('analyzing'); // reset step label for retry
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('meal-photos')
+      .getPublicUrl(fileName);
+
+    // Step 3: Analyze (with 1 retry)
+    onStep('analyzing');
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data, error } = await supabase.functions.invoke('analyze-food', {
+          body: { imageUrl: publicUrl },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        onStep('done');
+        return { analysis: data as FoodAnalysis, publicUrl };
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.warn(`Analysis attempt ${attempt + 1} failed:`, lastError.message);
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 1500));
+          onStep('analyzing');
+        }
       }
     }
-  }
 
-  onStep('error');
-  throw lastError || new Error('Analysis failed');
+    onStep('error');
+    throw lastError || new Error('Analysis failed');
+  } catch (err) {
+    onStep('error');
+    throw err;
+  }
 }
