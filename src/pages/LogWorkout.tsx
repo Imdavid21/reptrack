@@ -21,7 +21,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles, Minus } from 'lucide-react';
+import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { normalizeExerciseName, findBestMatch } from '@/lib/exerciseMatching';
 
@@ -506,7 +508,6 @@ export default function LogWorkout() {
                 onSelect={handleDaySelect}
               />
 
-
               <div className="flex gap-2 justify-center">
                 <button
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -533,6 +534,12 @@ export default function LogWorkout() {
                   AI Routine
                 </button>
               </div>
+
+              {/* Divider */}
+              <Separator className="my-1" />
+
+              {/* Workout Coach */}
+              <WorkoutCoachCard />
 
               {/* AI Goal Prompt Sheet */}
               <AIGoalPrompt
