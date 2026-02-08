@@ -153,6 +153,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "liga" 1, "calt" 1;
