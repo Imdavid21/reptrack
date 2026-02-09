@@ -53,11 +53,11 @@ export function useCalorieHistory(dateRange: DateRange) {
           .select(`
             date,
             day_name,
+            started_at,
             completed_at,
             workout_duration_minutes,
-            exercise_sets (
-              created_at,
-              exercise_category
+            exercises (
+              category
             )
           `)
           .eq('user_id', user.id)
