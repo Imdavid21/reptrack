@@ -106,7 +106,7 @@ export function CalorieChart() {
                 {todayWorkout.day_name} ({todayWorkout.calculatedDuration}min)
               </span>
             </div>
-            <span className="tabular-nums font-medium text-insight-mint text-xs">
+            <span className="tabular-nums font-medium text-insight-coral text-xs">
               -{todayWorkout.calculatedCalories} cal
             </span>
           </div>
