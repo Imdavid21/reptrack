@@ -17,10 +17,10 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="bg-background border border-border rounded-2xl p-6 cursor-default flex flex-col items-center text-center gap-4 relative overflow-hidden"
+      className="bg-background border border-border rounded-2xl p-3 md:p-6 cursor-default flex flex-col items-center text-center gap-2 md:gap-4 relative overflow-hidden"
     >
       <motion.div
-        className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center"
+        className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-secondary flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 md:[&_svg]:w-6 md:[&_svg]:h-6"
         animate={{
           scale: isHovered ? 1.1 : 1,
           rotate: isHovered ? 6 : 0,
@@ -35,8 +35,8 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
         </motion.div>
       </motion.div>
 
-      <h3 className="text-sm font-semibold leading-tight">{title}</h3>
-      <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="text-[11px] md:text-sm font-semibold leading-tight">{title}</h3>
+      <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed hidden md:block">{description}</p>
 
       <motion.div
         className="absolute inset-0 rounded-2xl pointer-events-none"
