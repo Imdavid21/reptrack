@@ -166,8 +166,7 @@ export default function Landing() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground"></th>
                   <th className="py-3 px-4 font-semibold text-center">Reptrack</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">Strong</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">MyFitnessPal</th>
+                  <th className="py-3 px-4 font-medium text-muted-foreground text-center" colSpan={2}>Other popular apps</th>
                 </tr>
               </thead>
               <tbody className="text-xs md:text-sm">
