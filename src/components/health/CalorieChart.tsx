@@ -42,11 +42,11 @@ export function CalorieChart() {
         <p className="text-xs text-muted-foreground mb-2">{data.displayDate}</p>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-insight-coral">Intake</span>
+            <span className="text-xs text-insight-mint">Intake</span>
             <span className="text-sm font-semibold tabular-nums">+{data.intake.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-insight-mint">Burned</span>
+            <span className="text-xs text-insight-coral">Burned</span>
             <span className="text-sm font-semibold tabular-nums">-{data.burned.toLocaleString()}</span>
           </div>
           <div className="border-t border-border pt-1.5">
@@ -54,7 +54,7 @@ export function CalorieChart() {
               <span className="text-xs text-muted-foreground">Net</span>
               <span className={cn(
                 "text-sm font-bold tabular-nums",
-                data.net < 0 ? "text-insight-mint" : data.net > 200 ? "text-insight-coral" : ""
+                data.net < 0 ? "text-insight-coral" : data.net > 200 ? "text-insight-mint" : ""
               )}>
                 {data.net >= 0 ? '+' : ''}{data.net.toLocaleString()}
               </span>
@@ -106,7 +106,7 @@ export function CalorieChart() {
                 {todayWorkout.day_name} ({todayWorkout.calculatedDuration}min)
               </span>
             </div>
-            <span className="tabular-nums font-medium text-insight-mint text-xs">
+            <span className="tabular-nums font-medium text-insight-coral text-xs">
               -{todayWorkout.calculatedCalories} cal
             </span>
           </div>
@@ -149,7 +149,7 @@ export function CalorieChart() {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`intake-${index}`}
-                  fill="hsl(var(--insight-coral))"
+                  fill="hsl(var(--insight-mint))"
                   fillOpacity={0.85}
                 />
               ))}
@@ -163,7 +163,7 @@ export function CalorieChart() {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`burned-${index}`}
-                  fill="hsl(var(--insight-mint))"
+                  fill="hsl(var(--insight-coral))"
                   fillOpacity={0.85}
                 />
               ))}
