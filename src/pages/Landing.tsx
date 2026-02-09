@@ -114,6 +114,13 @@ export default function Landing() {
   const { user, loading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
+  // Redirect authenticated users to the app
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   useEffect(() => {
     if (!loading && user) {
       navigate('/app', { replace: true });
