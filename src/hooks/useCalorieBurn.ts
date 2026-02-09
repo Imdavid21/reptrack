@@ -122,38 +122,25 @@ export function useCalorieBurn(date?: Date) {
     },
   });
 
-  // Calculate workout duration from first set to completion
+  // Calculate workout duration
   const calculateWorkoutDuration = (): number => {
     if (!todayWorkout) return 0;
 
-    // If we have explicit duration stored, use it
+    // Use explicit duration if stored
     if (todayWorkout.workout_duration_minutes) {
       return todayWorkout.workout_duration_minutes;
     }
 
-    // Calculate from first set to completed_at
-    const sets = todayWorkout.exercise_sets || [];
-    if (sets.length === 0) return 0;
-
-    // Find earliest set timestamp
-    const sortedSets = [...sets].sort((a, b) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    
-    const firstSetTime = parseISO(sortedSets[0].created_at);
-    
-    // Use completed_at if available, otherwise use last set time + buffer
-    let endTime: Date;
-    if (todayWorkout.completed_at) {
-      endTime = parseISO(todayWorkout.completed_at);
-    } else {
-      // Use last set time + 2 min buffer for ongoing workouts
-      const lastSetTime = parseISO(sortedSets[sortedSets.length - 1].created_at);
-      endTime = lastSetTime;
+    // Fallback: calculate from started_at to completed_at
+    if (todayWorkout.started_at && todayWorkout.completed_at) {
+      const durationMinutes = differenceInMinutes(
+        parseISO(todayWorkout.completed_at),
+        parseISO(todayWorkout.started_at)
+      );
+      return Math.max(durationMinutes, 0);
     }
 
-    const durationMinutes = differenceInMinutes(endTime, firstSetTime);
-    return Math.max(durationMinutes, 0);
+    return 0;
   };
 
   // Calculate calories burned from workout duration and type
