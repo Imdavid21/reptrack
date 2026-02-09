@@ -336,11 +336,11 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            <Logo size="sm" />
-          </div>
-
-
+          <Logo size="sm" />
+          <nav className="flex items-center gap-6 text-xs text-muted-foreground">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link>
+          </nav>
         </div>
       </footer>
     </div>

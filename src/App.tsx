@@ -16,6 +16,8 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,8 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/blog" element={<Blog />} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
