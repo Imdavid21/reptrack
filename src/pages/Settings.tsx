@@ -516,6 +516,8 @@ export default function Settings() {
                         </Box>
                       );
                     })()}
+                  </Box>
+                </Box>
 
               </Box>
             </Collapse>
