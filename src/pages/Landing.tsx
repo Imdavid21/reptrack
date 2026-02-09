@@ -331,7 +331,7 @@ export default function Landing() {
             You train hard. Now track it.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Free forever. No credit card. No catch.
+            Free forever.
           </p>
           <Link
             to="/signin"
