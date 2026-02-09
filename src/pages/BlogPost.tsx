@@ -2,7 +2,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { getBlogPostBySlug, blogPosts } from '@/data/blogPosts';
-import { Helmet } from 'react-helmet-async';
+
 
 function renderMarkdown(content: string) {
   const lines = content.split('\n');
