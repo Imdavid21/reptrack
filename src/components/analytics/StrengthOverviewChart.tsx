@@ -276,56 +276,47 @@ export function StrengthOverviewChart() {
             >
               <Box sx={{ height: chartHeight, mx: -1 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
+                  <AreaChart
                     data={activeGroup.stackedWeekly}
-                    layout="vertical"
-                    margin={{ top: 4, right: 8, bottom: 16, left: 0 }}
-                    barCategoryGap="20%"
+                    margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
                   >
                     <XAxis
-                      type="number"
+                      dataKey="week"
                       tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
                       axisLine={false}
                       tickLine={false}
-                      tickFormatter={(v: number) => `${v}`}
-                      label={{ value: 'kg', position: 'insideBottomRight', offset: -4, fontSize: 9, fill: isDark ? '#666' : '#999' }}
                     />
                     <YAxis
-                      type="category"
-                      dataKey="week"
-                      tick={{ fontSize: 9, fill: isDark ? '#aaa' : '#555' }}
+                      tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
                       axisLine={false}
                       tickLine={false}
-                      width={42}
+                      width={36}
+                      tickFormatter={(v: number) => `${v}`}
                     />
                     <Tooltip
-                      cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}
                       contentStyle={{
                         backgroundColor: isDark ? '#1a1a1a' : '#fff',
                         border: 'none', borderRadius: 8,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                         fontSize: '0.7rem',
                         padding: '6px 10px',
-                        maxWidth: 200,
                       }}
                       formatter={(value: number, name: string) => [`${value} kg`, name]}
-                      wrapperStyle={{ zIndex: 10 }}
                     />
                     {activeGroup.exerciseNames.map((name, idx) => (
-                      <Bar
+                      <Area
                         key={name}
+                        type="monotone"
                         dataKey={name}
                         stackId="strength"
+                        stroke={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
                         fill={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
+                        fillOpacity={0.6}
+                        strokeWidth={1.5}
                         hide={hiddenExercises.has(name)}
-                        radius={
-                          idx === activeGroup.exerciseNames.length - 1
-                            ? [0, 4, 4, 0]
-                            : undefined
-                        }
                       />
                     ))}
-                  </BarChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </Box>
             </motion.div>
