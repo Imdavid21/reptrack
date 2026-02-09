@@ -51,9 +51,9 @@ export function useCalorieBurn(date?: Date) {
   // Get user's weight for calculations (default 70kg if not set)
   const weightKg = preferences?.weight_goal || 70;
 
-  // Fetch today's workout with exercise sets for accurate duration calculation
+  // Fetch today's workout with exercises for category inference
   const { data: todayWorkout } = useQuery({
-    queryKey: ['workout-with-sets', user?.id, dateStr],
+    queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
       if (!user) return null;
 
@@ -66,9 +66,8 @@ export function useCalorieBurn(date?: Date) {
           started_at,
           completed_at,
           workout_duration_minutes,
-          exercise_sets (
-            created_at,
-            exercise_category
+          exercises (
+            category
           )
         `)
         .eq('user_id', user.id)
@@ -76,7 +75,7 @@ export function useCalorieBurn(date?: Date) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as WorkoutWithSets | null;
+      return data as WorkoutWithExercises | null;
     },
     enabled: !!user,
   });
