@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/useTheme';
 export default function SignUp() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signUp } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
