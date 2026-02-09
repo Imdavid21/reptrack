@@ -56,6 +56,7 @@ export default function Settings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
