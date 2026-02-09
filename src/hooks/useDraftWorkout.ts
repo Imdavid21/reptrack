@@ -43,13 +43,14 @@ export function useDraftWorkout() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as DraftWorkout;
-        // Check if draft is from today (don't restore old drafts)
-        const draftDate = new Date(parsed.date).toDateString();
-        const today = new Date().toDateString();
-        if (draftDate === today) {
+        // Restore drafts from today OR yesterday (covers midnight rollover & force-close scenarios)
+        const draftTime = new Date(parsed.date).getTime();
+        const now = Date.now();
+        const hoursSinceDraft = (now - draftTime) / (1000 * 60 * 60);
+        if (hoursSinceDraft < 24) {
           setDraft(parsed);
         } else {
-          // Clear old drafts
+          // Clear stale drafts older than 24h
           localStorage.removeItem(key);
         }
       } catch (e) {
@@ -60,43 +61,51 @@ export function useDraftWorkout() {
     setLoaded(true);
   }, [user, getKey]);
 
-  // iOS visibility handler - save immediately when app is backgrounded
+  // Aggressive persistence — save immediately when app is backgrounded, closed, or killed
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && pendingSaveRef.current) {
-        const key = getKey();
-        if (key) {
-          // Synchronous save - critical for iOS which may kill the app
-          try {
-            localStorage.setItem(key, JSON.stringify(pendingSaveRef.current));
-          } catch (e) {
-            console.error('Failed to save draft on visibility change:', e);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also handle pagehide for iOS Safari
-    const handlePageHide = () => {
+    const flushDraft = () => {
       if (pendingSaveRef.current) {
         const key = getKey();
         if (key) {
           try {
             localStorage.setItem(key, JSON.stringify(pendingSaveRef.current));
           } catch (e) {
-            console.error('Failed to save draft on pagehide:', e);
+            console.error('Failed to persist draft:', e);
           }
         }
       }
     };
 
+    // iOS: app backgrounded
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushDraft();
+    };
+
+    // Safari iOS: page being unloaded
+    const handlePageHide = () => flushDraft();
+
+    // Desktop/Android: tab or browser being closed
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      flushDraft();
+      // Show browser confirmation dialog if there's an active workout
+      if (pendingSaveRef.current && pendingSaveRef.current.step === 'exercises') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    // Periodic background save every 5s as a safety net against force kills
+    const intervalId = setInterval(flushDraft, 5000);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
+      clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [getKey]);
 
