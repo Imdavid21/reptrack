@@ -33,6 +33,11 @@ const PASTEL_COLORS = [
   '#F7E8B5', '#B5F0E8', '#F7B5C8', '#D6D6F0',
 ];
 
+/** Strip set identifiers like "(Set 1)", "(Set 2)" from exercise names */
+function normalizeExerciseName(name: string): string {
+  return name.replace(/\s*\(set\s*\d+\)\s*/gi, '').trim();
+}
+
 function getMuscleGroup(exerciseName: string): string {
   const lower = exerciseName.toLowerCase();
   for (const group of MUSCLE_GROUPS) {
