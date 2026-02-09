@@ -18,6 +18,7 @@ import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
