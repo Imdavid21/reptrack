@@ -160,12 +160,24 @@ function renderInline(text: string): React.ReactNode {
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
+  const [showBar, setShowBar] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useSEO({
     title: post?.metaTitle ?? 'RepTrack Blog',
     description: post?.metaDescription ?? '',
     canonical: post ? `https://reps-and-reminders.lovable.app/blog/${post.slug}` : undefined,
   });
+
+  useEffect(() => {
+    if (dismissed) return;
+    const onScroll = () => {
+      const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      setShowBar(scrolled > 0.3);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [dismissed]);
 
   if (!post) {
     return <Navigate to="/blog" replace />;
