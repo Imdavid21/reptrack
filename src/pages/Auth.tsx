@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Loader2, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail, User, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 type AuthStep = 'email' | 'password' | 'forgot' | 'reset';
 type AccountStatus = 'unknown' | 'existing' | 'new';
@@ -35,6 +36,7 @@ function LastUsedBadge() {
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isDark, toggleTheme } = useTheme();
   const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
 
   const [step, setStep] = useState<AuthStep>('email');
@@ -208,7 +210,15 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute top-5 right-5 p-2.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95"
+        aria-label="Toggle theme"
+      >
+        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
       <motion.div
         className="w-full max-w-sm space-y-8"
         variants={containerVariants}
