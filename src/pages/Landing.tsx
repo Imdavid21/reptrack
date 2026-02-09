@@ -82,7 +82,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section id="hero" className="pt-32 pb-20 px-4">
+      <section id="hero" className="pt-32 pb-20 px-6 md:px-4">
         <motion.div
           className="max-w-4xl mx-auto text-center"
           initial="hidden"
@@ -141,7 +141,7 @@ export default function Landing() {
       </section>
 
       {/* Reptrack vs Others */}
-      <section className="py-16 md:py-24 px-4 border-t border-border">
+      <section className="py-16 md:py-24 px-6 md:px-4 border-t border-border">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -192,7 +192,7 @@ export default function Landing() {
 
 
       {/* Live Demos Section */}
-      <section className="py-20 px-4 border-t border-border">
+      <section className="py-20 px-6 md:px-4 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-12"
@@ -200,16 +200,16 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
               Logging takes seconds.
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto">
               No complicated menus. No wasted time. Just tap and move on.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch"
+            className="grid grid-cols-3 gap-3 md:gap-8 items-stretch"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -219,24 +219,24 @@ export default function Landing() {
               <div className="flex-1">
                 <MiniWorkoutDemo />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Tap weight, tap reps, done. PRs caught automatically.
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
+                Tap weight, tap reps, done.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
               <div className="flex-1">
                 <MiniWaterDemo />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                One tap between sets. Hit your daily goal without thinking.
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
+                One tap between sets.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
               <div className="flex-1">
                 <MiniCalorieDemo />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Snap a photo. Get calories and macros instantly.
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
+                Snap a photo. Get macros.
               </p>
             </motion.div>
           </motion.div>
@@ -244,7 +244,7 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 bg-card border-y border-border">
+      <section id="features" className="py-20 px-6 md:px-4 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -252,15 +252,15 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
               One app. Zero excuses.
             </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Workouts, nutrition, hydration, and recovery all live here. No more juggling 4 apps.
+            <p className="text-muted-foreground text-sm md:text-lg max-w-xl mx-auto">
+              Workouts, nutrition, hydration, and recovery all live here.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-3 gap-3 md:gap-6">
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
               title="2-second logging"
@@ -311,7 +311,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 border-t border-border">
+      <section className="py-20 px-6 md:px-4 border-t border-border">
         <motion.div
           className="max-w-2xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }}
