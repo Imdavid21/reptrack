@@ -109,7 +109,7 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Reptrack logs your sets, food, water, and sleep in one app. So you train smarter, not just harder.
+            Logs your sets, food, water, and sleep in one app. So you train smarter and better.
           </motion.p>
 
           <motion.div
