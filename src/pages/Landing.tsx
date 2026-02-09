@@ -289,13 +289,7 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          <motion.div
-            className="grid grid-cols-2 md:grid-cols-3 gap-3"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={staggerContainer}
-          >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
               { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
               { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
@@ -304,18 +298,17 @@ export default function Landing() {
               { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
               { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
             ].map((item) => (
-              <motion.div
+              <div
                 key={item.label}
-                variants={fadeInUp}
                 className="flex items-center gap-2.5 px-4 py-3.5 bg-card border border-border rounded-2xl text-sm"
               >
                 <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
                   {item.icon}
                 </div>
                 <span className="font-medium text-xs md:text-sm">{item.label}</span>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
