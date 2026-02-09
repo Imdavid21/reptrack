@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
@@ -16,9 +16,11 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/Privacy";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
+
+// Lazy-loaded public pages (not needed in PWA)
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 const queryClient = new QueryClient();
 
@@ -32,9 +34,9 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
+        <Route path="/blog" element={<Suspense fallback={null}><Blog /></Suspense>} />
+        <Route path="/blog/:slug" element={<Suspense fallback={null}><BlogPost /></Suspense>} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
