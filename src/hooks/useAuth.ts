@@ -90,6 +90,16 @@ export function useAuth() {
     return { data, error };
   };
 
+  const linkOAuthProvider = async (provider: 'google' | 'apple') => {
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin + '/settings',
+    });
+    if (result.error) {
+      return { error: result.error };
+    }
+    return { error: null };
+  };
+
   return {
     user,
     session,
@@ -100,5 +110,6 @@ export function useAuth() {
     resetPassword,
     updateEmail,
     updatePassword,
+    linkOAuthProvider,
   };
 }
