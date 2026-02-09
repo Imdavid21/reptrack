@@ -171,22 +171,19 @@ export default function Landing() {
               </thead>
               <tbody className="text-xs md:text-sm">
                 {[
-                  { feature: "Set-by-set logging", reptrack: true, strong: true, mfp: false },
-                  { feature: "Calorie tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Water tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Sleep and recovery", reptrack: true, strong: false, mfp: false },
-                  { feature: "AI food scanning", reptrack: true, strong: false, mfp: false },
-                  { feature: "Weekly insights", reptrack: true, strong: false, mfp: false },
-                  { feature: "Free forever", reptrack: true, strong: false, mfp: false },
+                  { feature: "Set-by-set logging", reptrack: true, others: true },
+                  { feature: "Calorie tracking", reptrack: true, others: true },
+                  { feature: "Water tracking", reptrack: true, others: true },
+                  { feature: "Sleep and recovery", reptrack: true, others: false },
+                  { feature: "AI food scanning", reptrack: true, others: false },
+                  { feature: "Weekly insights", reptrack: true, others: false },
+                  { feature: "Free forever", reptrack: true, others: false },
                 ].map((row) => (
                   <tr key={row.feature} className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
                     <td className="py-3 px-4 text-center font-medium text-foreground">Yes</td>
-                    <td className="py-3 px-4 text-center text-muted-foreground">
-                      {row.strong ? 'Yes' : 'No'}
-                    </td>
-                    <td className="py-3 px-4 text-center text-muted-foreground">
-                      {row.mfp ? 'Yes' : 'No'}
+                    <td className="py-3 px-4 text-center text-muted-foreground" colSpan={2}>
+                      {row.others ? 'Some' : 'No'}
                     </td>
                   </tr>
                 ))}
