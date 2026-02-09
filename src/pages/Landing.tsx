@@ -127,7 +127,7 @@ export default function Landing() {
               to="/signin"
               className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center"
             >
-              Get started
+              Start for free
             </Link>
           </motion.div>
 
