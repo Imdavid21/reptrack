@@ -1,39 +1,51 @@
 
-## Auth Page UX Optimization + "Last Used" Sign-in Method
 
-### Changes (all in `src/pages/Auth.tsx`)
+# Link Google/Apple Accounts from Settings
 
-**1. "Last used" badge on sign-in method**
-- Save the last successful sign-in method (`google`, `apple`, or `email`) to `localStorage` when a user signs in successfully.
-- On the email step, show a subtle "Last used" badge/chip next to the method the user previously used (e.g., a small pill saying "Last used" below the Google button, or next to the email input).
-- This helps returning users instantly remember how they signed in before.
+## Overview
+Add a "Linked Accounts" section to the Settings page so users can connect Google or Apple logins to their existing email/password account -- even if the social account uses a different email address.
 
-**2. Loading spinner icons**
-- Import `Loader2` from lucide-react.
-- Replace plain "Checking...", "Signing in...", "Please wait..." text with a spinning `Loader2` icon alongside the text for better visual feedback.
+## How It Works
+1. User signs in with their existing email/password
+2. Opens Settings > Account section
+3. Sees a new "Linked Accounts" subsection showing Google and Apple
+4. Taps "Link" next to a provider
+5. Completes the OAuth flow and returns to Settings
+6. Can now sign in with either email or the linked social account
 
-**3. Mail icon in email input**
-- Import `Mail` from lucide-react.
-- Add a `Mail` icon inside the email input (left-positioned) for visual polish.
+## Changes
 
-**4. Password strength indicator (new accounts only)**
-- When `accountStatus === 'new'`, show a simple colored bar below the password input:
-  - Red (weak): < 8 chars
-  - Yellow (medium): 8+ chars
-  - Green (strong): 10+ chars with mixed case/numbers
-- Replaces the static "Minimum 6 characters" text with dynamic feedback.
+### 1. `src/hooks/useAuth.ts`
+- Add a `linkOAuthProvider(provider: "google" | "apple")` method
+- Imports `lovable` from `@/integrations/lovable/index`
+- Calls `lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin + '/settings' })` so the user lands back on Settings after linking
 
-**5. User icon in email chip (step 2)**
-- Import `User` from lucide-react.
-- Add a small `User` icon before the email text in the chip on the password step.
+### 2. `src/pages/Settings.tsx`
+- Add a new "Linked Accounts" subsection inside the Account collapse (after the Password section, around line 420)
+- Show two rows: Google and Apple
+- Read `user?.identities` to check which providers are already connected
+- For each provider:
+  - If linked: show a green checkmark and the associated email from `identity_data.email`
+  - If not linked: show a "Link" button that calls `linkOAuthProvider`
+- Add loading state for the linking process
+- Show a toast on success/failure after redirect
 
-**6. Terms/Privacy footer always visible**
-- Move the Terms/Privacy text outside the `accountStatus === 'new'` conditional so it shows for all users as a trust signal.
+### 3. UI Layout (inside Account collapse)
 
-### Technical Details
+```text
++-------------------------------------------+
+| Linked Accounts                           |
++-------------------------------------------+
+|  [G] Google   user@gmail.com    [Linked]  |
+|  [] Apple    [Link]                      |
++-------------------------------------------+
+```
 
-- **localStorage key**: `reptrack_last_auth_method` with values `"google"`, `"apple"`, or `"email"`
-- Save on successful sign-in (after `handleGoogleSignIn`, Apple handler, and `handlePasswordSubmit`)
-- Read on mount to determine which method gets the "Last used" badge
-- Password strength is computed inline (no new dependencies) based on length and character variety
-- All changes contained to `src/pages/Auth.tsx` -- no new files or dependencies
+- Follows the same `bgcolor: 'action.hover', borderRadius: 2, p: 2` pattern as the Email and Password subsections
+- Google icon (colored SVG) and Apple icon (currentColor SVG) reused from Auth.tsx
+- "Linked" shown as a muted green badge; "Link" as a small outlined button
+
+### Edge Cases
+- If linking fails because the OAuth account is already tied to a different app account, show a clear error toast: "This account is already linked to another user"
+- The linking works even when the Google/Apple email differs from the sign-up email, because the auth system links by authenticated session, not by email matching
+
