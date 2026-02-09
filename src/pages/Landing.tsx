@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
-// HowItWorksSection removed
 import { Logo } from '@/components/layout/Logo';
 import FeatureCard from '@/components/landing/FeatureCard';
 import AppleIcon from '@/components/landing/AppleIcon';
@@ -26,11 +25,89 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
+    transition: { staggerChildren: 0.1 },
   },
 };
+
+const DEMO_ITEMS = [
+  { label: 'Tap weight, tap reps, done.' },
+  { label: 'One tap between sets.' },
+  { label: 'Snap a photo. Get macros.' },
+];
+
+function DemoCarousel() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const scrollToIndex = useCallback((index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const child = container.children[index] as HTMLElement;
+    if (child) {
+      container.scrollTo({ left: child.offsetLeft - container.offsetLeft, behavior: 'smooth' });
+    }
+  }, []);
+
+  useEffect(() => {
+    autoScrollRef.current = setInterval(() => {
+      setActiveIndex(prev => {
+        const next = (prev + 1) % 3;
+        scrollToIndex(next);
+        return next;
+      });
+    }, 3500);
+    return () => { if (autoScrollRef.current) clearInterval(autoScrollRef.current); };
+  }, [scrollToIndex]);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      const childWidth = (container.children[0] as HTMLElement)?.offsetWidth || 1;
+      const index = Math.round(scrollLeft / (childWidth + 16));
+      setActiveIndex(Math.min(index, 2));
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const pauseAutoScroll = useCallback(() => {
+    if (autoScrollRef.current) { clearInterval(autoScrollRef.current); autoScrollRef.current = null; }
+  }, []);
+
+  const demos = [<MiniWorkoutDemo />, <MiniWaterDemo />, <MiniCalorieDemo />];
+
+  return (
+    <div className="md:hidden">
+      <div
+        ref={scrollRef}
+        onTouchStart={pauseAutoScroll}
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-6 px-6 scrollbar-hide"
+      >
+        {DEMO_ITEMS.map((item, i) => (
+          <div key={i} className="snap-center shrink-0 w-[80vw] max-w-xs text-center flex flex-col">
+            <div className="flex-1">{demos[i]}</div>
+            <p className="text-xs text-muted-foreground mt-2">{item.label}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-center gap-1.5 mt-2">
+        {DEMO_ITEMS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => { pauseAutoScroll(); scrollToIndex(i); setActiveIndex(i); }}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === activeIndex ? 'w-6 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
+            }`}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -64,11 +141,7 @@ export default function Landing() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
-          <a
-            href="#hero"
-            onClick={(e) => scrollToSection(e, 'hero')}
-            className="z-10"
-          >
+          <a href="#hero" onClick={(e) => scrollToSection(e, 'hero')} className="z-10">
             <Logo size="md" />
           </a>
           <button
@@ -121,7 +194,6 @@ export default function Landing() {
             </Link>
           </motion.div>
 
-          {/* PWA line */}
           <motion.div
             variants={fadeInUp}
             className="mt-6 flex flex-col items-center gap-2 text-sm text-muted-foreground"
@@ -135,8 +207,6 @@ export default function Landing() {
               <span>Add to Home Screen.</span>
             </div>
           </motion.div>
-
-          {/* Spacer for removed ticker */}
         </motion.div>
       </section>
 
@@ -190,7 +260,6 @@ export default function Landing() {
         </div>
       </section>
 
-
       {/* Live Demos Section */}
       <section className="py-20 px-6 md:px-4 border-t border-border">
         <div className="max-w-6xl mx-auto">
@@ -208,7 +277,7 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          {/* Mobile: horizontal scroll, Desktop: 3-col grid */}
+          {/* Desktop: 3-col grid */}
           <motion.div
             className="hidden md:grid md:grid-cols-3 gap-8 items-stretch"
             initial="hidden"
@@ -230,18 +299,8 @@ export default function Landing() {
             </motion.div>
           </motion.div>
 
-          <div className="md:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-6 px-6 scrollbar-hide">
-            {[
-              { demo: <MiniWorkoutDemo />, label: 'Tap weight, tap reps, done.' },
-              { demo: <MiniWaterDemo />, label: 'One tap between sets.' },
-              { demo: <MiniCalorieDemo />, label: 'Snap a photo. Get macros.' },
-            ].map((item, i) => (
-              <div key={i} className="snap-center shrink-0 w-[80vw] max-w-xs text-center flex flex-col">
-                <div className="flex-1">{item.demo}</div>
-                <p className="text-xs text-muted-foreground mt-2">{item.label}</p>
-              </div>
-            ))}
-          </div>
+          {/* Mobile: carousel */}
+          <DemoCarousel />
         </div>
       </section>
 
@@ -263,51 +322,15 @@ export default function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-3 gap-3 md:gap-6">
-            <FeatureCard
-              icon={<Clock className="w-6 h-6" />}
-              title="2-second logging"
-              description="Last session's weights pre-filled. Just update reps and go."
-            />
-            <FeatureCard
-              icon={<Trophy className="w-6 h-6" />}
-              title="PRs you'd miss"
-              description="Hit a new max? Reptrack catches it before you forget."
-            />
-            <FeatureCard
-              icon={<Camera className="w-6 h-6" />}
-              title="Photo-to-calories"
-              description="Take a photo of your plate. AI handles the math."
-            />
-            <FeatureCard
-              icon={<Droplets className="w-6 h-6" />}
-              title="Water accountability"
-              description="Tap between sets. See your progress ring fill up."
-            />
-            <FeatureCard
-              icon={<BarChart3 className="w-6 h-6" />}
-              title="Patterns you can't see"
-              description="Correlates sleep, weight, and volume so you stop guessing."
-            />
-            <FeatureCard
-              icon={<Dumbbell className="w-6 h-6" />}
-              title="Programs that work"
-              description="PPL, Upper/Lower, Full Body. Pick one and start lifting."
-            />
-            <FeatureCard
-              icon={<Moon className="w-6 h-6" />}
-              title="Recovery matters"
-              description="Sleep and energy tracked. Know when to push, when to rest."
-            />
-            <FeatureCard
-              icon={<Bot className="w-6 h-6" />}
-              title="AI that knows you"
-              description="Coaching tips based on your data, not generic advice."
-            />
-            <FeatureCard
-              icon={<Smartphone className="w-6 h-6" />}
-              title="No app store needed"
-              description="Install from browser. Works offline. Feels native."
-            />
+            <FeatureCard icon={<Clock className="w-6 h-6" />} title="2-second logging" description="Last session's weights pre-filled. Just update reps and go." />
+            <FeatureCard icon={<Trophy className="w-6 h-6" />} title="PRs you'd miss" description="Hit a new max? Reptrack catches it before you forget." />
+            <FeatureCard icon={<Camera className="w-6 h-6" />} title="Photo-to-calories" description="Take a photo of your plate. AI handles the math." />
+            <FeatureCard icon={<Droplets className="w-6 h-6" />} title="Water accountability" description="Tap between sets. See your progress ring fill up." />
+            <FeatureCard icon={<BarChart3 className="w-6 h-6" />} title="Patterns you can't see" description="Correlates sleep, weight, and volume so you stop guessing." />
+            <FeatureCard icon={<Dumbbell className="w-6 h-6" />} title="Programs that work" description="PPL, Upper/Lower, Full Body. Pick one and start lifting." />
+            <FeatureCard icon={<Moon className="w-6 h-6" />} title="Recovery matters" description="Sleep and energy tracked. Know when to push, when to rest." />
+            <FeatureCard icon={<Bot className="w-6 h-6" />} title="AI that knows you" description="Coaching tips based on your data, not generic advice." />
+            <FeatureCard icon={<Smartphone className="w-6 h-6" />} title="No app store needed" description="Install from browser. Works offline. Feels native." />
           </div>
         </div>
       </section>
