@@ -267,62 +267,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Why Reptrack */}
-      <section className="py-16 md:py-24 px-4 border-t border-border">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-10 md:mb-14"
-          >
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              Why Reptrack over the rest?
-            </h2>
-            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-              Most fitness apps do one thing well and charge you for it. Reptrack does it all.
-            </p>
-          </motion.div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground"></th>
-                  <th className="py-3 px-4 font-semibold text-center">Reptrack</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">Strong</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">MyFitnessPal</th>
-                </tr>
-              </thead>
-              <tbody className="text-xs md:text-sm">
-                {[
-                  { feature: "Set-by-set logging", reptrack: true, strong: true, mfp: false },
-                  { feature: "Calorie tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Water tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Sleep and recovery", reptrack: true, strong: false, mfp: false },
-                  { feature: "AI food scanning", reptrack: true, strong: false, mfp: false },
-                  { feature: "Weekly insights", reptrack: true, strong: false, mfp: false },
-                  { feature: "Free forever", reptrack: true, strong: false, mfp: false },
-                ].map((row) => (
-                  <tr key={row.feature} className="border-b border-border/50">
-                    <td className="py-3 px-4 font-medium">{row.feature}</td>
-                    <td className="py-3 px-4 text-center">
-                      <Check className="w-4 h-4 text-primary mx-auto" />
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {row.strong ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {row.mfp ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 px-4 border-t border-border">
         <motion.div
