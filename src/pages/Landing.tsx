@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   Sun, Moon, Dumbbell, Droplets, Bot, BarChart3,
-  Smartphone, Camera, Trophy, Clock, Check, X,
+  Smartphone, Camera, Trophy, Clock,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
