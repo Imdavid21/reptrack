@@ -107,8 +107,8 @@ export function StrengthOverviewChart() {
       sortedWeeks.forEach(([, exMap]) => exMap.forEach((_, name) => allExerciseNames.add(name)));
       const exerciseNames = Array.from(allExerciseNames).sort();
 
-      // Build stacked weekly data
-      const stackedWeekly = sortedWeeks.map(([weekKey, exMap]) => {
+      // Build stacked weekly data (newest first so progress reads top-down)
+      const stackedWeekly = [...sortedWeeks].reverse().map(([weekKey, exMap]) => {
         const entry: Record<string, string | number> = { week: format(parseISO(weekKey), 'MMM d') };
         exerciseNames.forEach(name => {
           entry[name] = exMap.get(name) || 0;
