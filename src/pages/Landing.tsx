@@ -298,6 +298,7 @@ export default function Landing() {
               title="Free forever"
               description="No subscriptions, no paywalls. Every feature, always free."
             />
+          </motion.div>
         </div>
       </section>
 
