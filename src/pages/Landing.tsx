@@ -339,10 +339,10 @@ export default function Landing() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            You're already putting in the work.
+            You train hard. Now track it.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Now track it. Free forever. No credit card.
+            Free forever. No credit card. No catch.
           </p>
           <Link
             to="/signin"
