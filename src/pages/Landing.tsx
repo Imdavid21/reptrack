@@ -225,13 +225,7 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          <motion.div
-            className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.05 }}
-            variants={staggerContainer}
-          >
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
               title="Log faster between sets"
@@ -277,7 +271,7 @@ export default function Landing() {
               title="Installable PWA"
               description="Add to Home Screen. Works offline. Feels like a native app."
             />
-          </motion.div>
+          </div>
         </div>
       </section>
 
