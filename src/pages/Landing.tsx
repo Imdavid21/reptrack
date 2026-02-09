@@ -71,9 +71,6 @@ export default function Landing() {
           >
             <Logo size="md" />
           </a>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
-          </nav>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl border border-border hover:bg-secondary transition-colors z-10"
