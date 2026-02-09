@@ -212,6 +212,17 @@ export default function BlogPost() {
             {renderMarkdown(post.content)}
           </article>
 
+          {/* Subtle inline CTA */}
+          <div className="my-12 py-6 border-y border-border">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Ready to put this into practice?{' '}
+              <Link to="/sign-up" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
+                Start logging with RepTrack
+              </Link>
+              {' '}and see your progression automatically.
+            </p>
+          </div>
+
           {/* Internal links */}
           {relatedPosts.length > 0 && (
             <div className="mt-16 pt-8 border-t border-border">
