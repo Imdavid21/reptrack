@@ -42,11 +42,11 @@ export function CalorieChart() {
         <p className="text-xs text-muted-foreground mb-2">{data.displayDate}</p>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-insight-coral">Intake</span>
+            <span className="text-xs text-insight-mint">Intake</span>
             <span className="text-sm font-semibold tabular-nums">+{data.intake.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-insight-mint">Burned</span>
+            <span className="text-xs text-insight-coral">Burned</span>
             <span className="text-sm font-semibold tabular-nums">-{data.burned.toLocaleString()}</span>
           </div>
           <div className="border-t border-border pt-1.5">
