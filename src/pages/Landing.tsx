@@ -156,7 +156,7 @@ export default function Landing() {
               Reptrack vs Others
             </h2>
             <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-              Most fitness apps do one thing well and charge you for it. Reptrack does it all.
+              Most fitness apps do one thing. Reptrack does it all.
             </p>
           </motion.div>
 
