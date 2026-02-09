@@ -107,16 +107,16 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
           >
-            Stop guessing.
+            Track your lifts.
             <br />
-            <span className="text-muted-foreground">Start progressing.</span>
+            <span className="text-muted-foreground">See what's actually working.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Most people train hard but track nothing. Reptrack logs your sets, food, water, and sleep in one app — so you actually know what's working.
+            Reptrack logs your sets, food, water, and sleep in one app. So you train smarter, not just harder.
           </motion.p>
 
           <motion.div
