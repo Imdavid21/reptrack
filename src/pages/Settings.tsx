@@ -454,7 +454,7 @@ export default function Settings() {
                             </Box>
                           </Box>
                           {googleIdentity ? (
-                            <span className="text-xs text-green-500 font-medium flex items-center gap-1">
+                            <span className="text-xs text-primary font-medium flex items-center gap-1">
                               <Check size={12} /> Linked
                             </span>
                           ) : (
