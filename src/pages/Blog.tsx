@@ -65,6 +65,5 @@ export default function Blog() {
           </div>
         </footer>
       </div>
-    </>
   );
 }

@@ -34,6 +34,7 @@ function AppRoutes() {
         <Route path="/signup" element={<Auth />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
