@@ -38,69 +38,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blood_pressure_readings: {
-        Row: {
-          created_at: string | null
-          diastolic: number
-          id: string
-          measured_at: string | null
-          notes: string | null
-          pulse: number | null
-          systolic: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          diastolic: number
-          id?: string
-          measured_at?: string | null
-          notes?: string | null
-          pulse?: number | null
-          systolic: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          diastolic?: number
-          id?: string
-          measured_at?: string | null
-          notes?: string | null
-          pulse?: number | null
-          systolic?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
-      blood_sugar_readings: {
-        Row: {
-          created_at: string | null
-          glucose_level: number
-          id: string
-          measured_at: string | null
-          notes: string | null
-          reading_type: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          glucose_level: number
-          id?: string
-          measured_at?: string | null
-          notes?: string | null
-          reading_type?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          glucose_level?: number
-          id?: string
-          measured_at?: string | null
-          notes?: string | null
-          reading_type?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       calorie_burns: {
         Row: {
           activity_type: string | null
