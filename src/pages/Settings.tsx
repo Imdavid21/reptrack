@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -23,7 +23,9 @@ import {
   Check,
   Edit2,
   
+  Link2,
 } from 'lucide-react';
+import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage } from '@/components/layout/AnimatedPage';
@@ -41,7 +43,7 @@ import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, signOut, updateEmail, resetPassword } = useAuth();
+  const { user, signOut, updateEmail, resetPassword, linkOAuthProvider } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
@@ -54,6 +56,7 @@ export default function Settings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -417,6 +420,103 @@ export default function Settings() {
                       </Box>
                     </Box>
                   )}
+                </Box>
+
+                {/* Linked Accounts */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Link2 size={16} />
+                    <Typography variant="body2" fontWeight={600}>Linked Accounts</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                    Link social accounts to sign in faster
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {/* Google */}
+                    {(() => {
+                      const googleIdentity = user?.identities?.find(i => i.provider === 'google');
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'background.paper', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <svg className="w-4 h-4" viewBox="0 0 24 24">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                            <Box>
+                              <Typography variant="body2" fontWeight={500}>Google</Typography>
+                              {googleIdentity && (
+                                <Typography variant="caption" color="text.secondary">
+                                  {(googleIdentity.identity_data as any)?.email || 'Connected'}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                          {googleIdentity ? (
+                            <span className="text-xs text-primary font-medium flex items-center gap-1">
+                              <Check size={12} /> Linked
+                            </span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                setLinkingProvider('google');
+                                const { error } = await linkOAuthProvider('google');
+                                if (error) {
+                                  toast.error(error.message || 'Failed to link Google');
+                                  setLinkingProvider(null);
+                                }
+                              }}
+                              disabled={linkingProvider === 'google'}
+                              className="text-xs font-medium border border-border rounded-lg px-3 py-1.5 hover:bg-muted transition-colors disabled:opacity-50"
+                            >
+                              {linkingProvider === 'google' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Link'}
+                            </button>
+                          )}
+                        </Box>
+                      );
+                    })()}
+
+                    {/* Apple */}
+                    {(() => {
+                      const appleIdentity = user?.identities?.find(i => i.provider === 'apple');
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'background.paper', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <AppleIcon className="w-4 h-4" />
+                            <Box>
+                              <Typography variant="body2" fontWeight={500}>Apple</Typography>
+                              {appleIdentity && (
+                                <Typography variant="caption" color="text.secondary">
+                                  {(appleIdentity.identity_data as any)?.email || 'Connected'}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                          {appleIdentity ? (
+                            <span className="text-xs text-primary font-medium flex items-center gap-1">
+                              <Check size={12} /> Linked
+                            </span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                setLinkingProvider('apple');
+                                const { error } = await linkOAuthProvider('apple');
+                                if (error) {
+                                  toast.error(error.message || 'Failed to link Apple');
+                                  setLinkingProvider(null);
+                                }
+                              }}
+                              disabled={linkingProvider === 'apple'}
+                              className="text-xs font-medium border border-border rounded-lg px-3 py-1.5 hover:bg-muted transition-colors disabled:opacity-50"
+                            >
+                              {linkingProvider === 'apple' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Link'}
+                            </button>
+                          )}
+                        </Box>
+                      );
+                    })()}
+                  </Box>
                 </Box>
 
               </Box>
