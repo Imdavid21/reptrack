@@ -145,8 +145,13 @@ export function SetBySetCard({
     onChange(updated);
 
     if (isLastSet) {
-      if (isLastExercise) onComplete();
-      else onNextExercise();
+      // Always move to next exercise or overview — never auto-finish the session
+      if (isLastExercise) {
+        // Go to overview so user can review and explicitly finish
+        onComplete();
+      } else {
+        onNextExercise();
+      }
     } else {
       const nextSetIndex = currentSetIndex + 1;
       updated.sets[nextSetIndex] = {
@@ -451,7 +456,7 @@ export function SetBySetCard({
         >
           <Check className="h-3.5 w-3.5" />
           {currentSet.completed 
-            ? (isLastSet && isLastExercise ? 'Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
+            ? (isLastSet && isLastExercise ? 'Review & Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
             : `Log ${selectedWeight}${weightLabel} × ${selectedReps}`
           }
         </button>

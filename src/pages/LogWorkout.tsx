@@ -658,7 +658,7 @@ export default function LogWorkout() {
                   onNextExercise={handleNextExercise}
                   onPrevExercise={handlePrevExercise}
                   onSkipExercise={handleSkipExercise}
-                  onComplete={handleExercisesDone}
+                  onComplete={() => setExerciseViewMode('overview')}
                   isFirstExercise={currentExerciseIndex === 0}
                   isLastExercise={currentExerciseIndex === exercises.length - 1}
                   personalRecord={getPRForExercise(currentExercise.name)}
