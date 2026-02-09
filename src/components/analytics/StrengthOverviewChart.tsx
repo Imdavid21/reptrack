@@ -15,6 +15,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { haptic } from '@/lib/haptics';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MUSCLE_GROUPS = [
   { key: 'chest', label: 'Chest', patterns: ['chest', 'bench', 'fly', 'flye', 'dip'] },
@@ -25,12 +26,8 @@ const MUSCLE_GROUPS = [
   { key: 'core', label: 'Core', patterns: ['ab', 'core', 'plank', 'crunch', 'wheel'] },
 ];
 
-const PASTEL_COLORS = [
-  '#B5D8F7', '#F7C8B5', '#C5E8C1', '#F0D6F7',
-  '#F7E8B5', '#B5F0E8', '#F7B5C8', '#D6D6F0',
-];
+const BODY_PART_COLORS = ['#7EB8DA', '#DA8F7E', '#82C991'];
 
-/** Strip set identifiers like "(Set 1)", "(Set 2)" from exercise names */
 function normalizeExerciseName(name: string): string {
   return name.replace(/\s*\(set\s*\d+\)\s*/gi, '').trim();
 }
@@ -51,22 +48,20 @@ interface MuscleGroupData {
   currentWeight: number;
   growthPercent: number;
   exercises: { name: string; maxWeight: number; recentWeight: number }[];
-  // Stacked data: each entry = { week, [exerciseName]: maxWeight }
-  stackedWeekly: Record<string, string | number>[];
-  exerciseNames: string[];
+  // Per-week exercise breakdown for tooltip
+  weeklyExerciseBreakdown: Map<string, { name: string; weight: number }[]>;
 }
 
 export function StrengthOverviewChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const isMobile = useIsMobile();
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
-  const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
-  const [hiddenExercises, setHiddenExercises] = useState<Set<string>>(new Set());
   const [dialogGroup, setDialogGroup] = useState<MuscleGroupData | null>(null);
 
-  const { muscleGroups, totalStrength, overallGrowth } = useMemo(() => {
-    if (!data?.sets) return { muscleGroups: [], totalStrength: 0, overallGrowth: 0 };
+  const { muscleGroups, top3, chartData, totalStrength, overallGrowth } = useMemo(() => {
+    if (!data?.sets) return { muscleGroups: [], top3: [], chartData: [], totalStrength: 0, overallGrowth: 0 };
 
     const filteredSets = data.sets.filter(set => {
       if (!set.workout_date) return false;
@@ -99,21 +94,15 @@ export function StrengthOverviewChart() {
 
       const sortedWeeks = Array.from(weekMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
-      // Collect all exercise names for this group
-      const allExerciseNames = new Set<string>();
-      sortedWeeks.forEach(([, exMap]) => exMap.forEach((_, name) => allExerciseNames.add(name)));
-      const exerciseNames = Array.from(allExerciseNames).sort();
-
-      // Build stacked weekly data (chronological for area chart)
-      const stackedWeekly = sortedWeeks.map(([weekKey, exMap]) => {
-        const entry: Record<string, string | number> = { week: format(parseISO(weekKey), 'MMM d') };
-        exerciseNames.forEach(name => {
-          entry[name] = exMap.get(name) || 0;
-        });
-        return entry;
+      // Per-week exercise breakdown for tooltip
+      const weeklyExerciseBreakdown = new Map<string, { name: string; weight: number }[]>();
+      sortedWeeks.forEach(([weekKey, exMap]) => {
+        const exercises = Array.from(exMap.entries())
+          .map(([name, weight]) => ({ name, weight }))
+          .sort((a, b) => b.weight - a.weight);
+        weeklyExerciseBreakdown.set(format(parseISO(weekKey), 'MMM d'), exercises);
       });
 
-      // Weekly total = sum of all exercise maxes (total group strength)
       const weeklyMaxWeights = sortedWeeks.map(([weekKey, exerciseMap]) => ({
         week: format(parseISO(weekKey), 'MMM d'),
         weekKey,
@@ -142,38 +131,40 @@ export function StrengthOverviewChart() {
       return {
         key: group.key, label: group.label, weeklyMaxWeights,
         startWeight, currentWeight, growthPercent, exercises,
-        stackedWeekly, exerciseNames,
+        weeklyExerciseBreakdown,
       };
     }).filter((g): g is MuscleGroupData => g !== null && g.weeklyMaxWeights.length >= 1);
+
+    // Top 3 by current weight
+    const sorted = [...groups].sort((a, b) => b.currentWeight - a.currentWeight);
+    const top3Groups = sorted.slice(0, 3);
+
+    // Build unified chart data
+    const allWeeks = new Set<string>();
+    top3Groups.forEach(g => g.weeklyMaxWeights.forEach(w => allWeeks.add(w.week)));
+    const weeksSorted = Array.from(allWeeks).sort();
+
+    const unified = weeksSorted.map(week => {
+      const entry: Record<string, string | number> = { week };
+      top3Groups.forEach(g => {
+        const found = g.weeklyMaxWeights.find(w => w.week === week);
+        entry[g.key] = found ? found.weight : 0;
+      });
+      return entry;
+    });
 
     const total = groups.reduce((sum, g) => sum + g.currentWeight, 0);
     const startTotal = groups.reduce((sum, g) => sum + g.startWeight, 0);
     const growth = startTotal > 0 ? Math.round(((total - startTotal) / startTotal) * 100) : 0;
 
-    return { muscleGroups: groups, totalStrength: total, overallGrowth: growth };
+    return { muscleGroups: groups, top3: top3Groups, chartData: unified, totalStrength: total, overallGrowth: growth };
   }, [data?.sets, dateRange]);
 
-  // Default selected group
-  const activeGroupKey = selectedGroupKey && muscleGroups.some(g => g.key === selectedGroupKey)
-    ? selectedGroupKey
-    : muscleGroups[0]?.key || null;
-
-  const activeGroup = muscleGroups.find(g => g.key === activeGroupKey) || null;
-
-  const handleGroupChipClick = useCallback((key: string) => {
+  const handleAreaClick = useCallback((groupKey: string) => {
     haptic('light');
-    setSelectedGroupKey(key);
-    setHiddenExercises(new Set());
-  }, []);
-
-  const toggleExercise = useCallback((name: string) => {
-    haptic('light');
-    setHiddenExercises(prev => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name); else next.add(name);
-      return next;
-    });
-  }, []);
+    const group = muscleGroups.find(g => g.key === groupKey);
+    if (group) setDialogGroup(group);
+  }, [muscleGroups]);
 
   if (isLoading) {
     return (
@@ -200,10 +191,6 @@ export function StrengthOverviewChart() {
     );
   }
 
-  const visibleExercises = activeGroup
-    ? activeGroup.exerciseNames.filter(n => !hiddenExercises.has(n))
-    : [];
-
   const chartHeight = 180;
 
   return (
@@ -217,109 +204,108 @@ export function StrengthOverviewChart() {
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>Strength Overview</Typography>
           </Box>
-          {activeGroup && activeGroup.growthPercent !== 0 && (
+          {overallGrowth !== 0 && (
             <Chip
               size="small"
-              icon={activeGroup.growthPercent > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-              label={`${activeGroup.growthPercent > 0 ? '+' : ''}${activeGroup.growthPercent}%`}
+              icon={overallGrowth > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              label={`${overallGrowth > 0 ? '+' : ''}${overallGrowth}%`}
               sx={{
                 height: 24, fontSize: '0.7rem', fontWeight: 600,
-                bgcolor: activeGroup.growthPercent > 0 ? 'action.selected' : 'action.hover',
-                color: activeGroup.growthPercent > 0 ? 'text.primary' : 'error.main',
+                bgcolor: overallGrowth > 0 ? 'action.selected' : 'action.hover',
+                color: overallGrowth > 0 ? 'text.primary' : 'error.main',
                 '& .MuiChip-icon': { color: 'inherit' },
               }}
             />
           )}
         </Box>
 
-        {/* Muscle Group Chips */}
-        <Box sx={{
-          display: 'flex', gap: 0.75, mb: 2, overflowX: 'auto',
-          pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
-        }}>
-          {muscleGroups.map(g => (
+        {/* Top 3 body part chips (labels only) */}
+        <Box sx={{ display: 'flex', gap: 0.75, mb: 2 }}>
+          {top3.map((g, idx) => (
             <Chip
               key={g.key}
               label={g.label}
               size="small"
-              onClick={() => handleGroupChipClick(g.key)}
+              onClick={() => handleAreaClick(g.key)}
               sx={{
-                flexShrink: 0,
-                height: 28, fontSize: '0.72rem', fontWeight: 600,
-                bgcolor: g.key === activeGroupKey
-                  ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)')
-                  : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
+                height: 24, fontSize: '0.68rem', fontWeight: 600,
+                bgcolor: 'transparent',
                 border: 1,
-                borderColor: g.key === activeGroupKey
-                  ? (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)')
-                  : 'transparent',
-                '&:hover': {
-                  bgcolor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
-                },
+                borderColor: BODY_PART_COLORS[idx],
+                color: BODY_PART_COLORS[idx],
+                '&:hover': { bgcolor: `${BODY_PART_COLORS[idx]}22` },
               }}
             />
           ))}
         </Box>
 
-        {/* Horizontal Stacked Bar Chart */}
+        {/* Multi-body-part Area Chart */}
         <AnimatePresence mode="wait">
-          {activeGroup && (
-            <motion.div
-              key={activeGroup.key}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Box sx={{ height: chartHeight, mx: -1 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={activeGroup.stackedWeekly}
-                    margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
-                  >
-                    <XAxis
-                      dataKey="week"
-                      tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={36}
-                      tickFormatter={(v: number) => `${v}`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                        border: 'none', borderRadius: 8,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        fontSize: '0.7rem',
-                        padding: '6px 10px',
-                      }}
-                      formatter={(value: number, name: string) => [`${value} kg`, name]}
-                    />
-                    {activeGroup.exerciseNames.map((name, idx) => (
-                      <Area
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stackId="strength"
-                        stroke={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                        fill={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                        fillOpacity={0.6}
-                        strokeWidth={1.5}
-                        hide={hiddenExercises.has(name)}
+          <motion.div
+            key="body-parts-chart"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Box sx={{ height: chartHeight, mx: -1 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
+                  onClick={(e) => {
+                    if (e?.activeLabel && isMobile) {
+                      // On mobile tap, find which body part has highest value at this point
+                      const point = chartData.find(d => d.week === e.activeLabel);
+                      if (point) {
+                        const best = top3.reduce((a, b) =>
+                          (point[a.key] as number) >= (point[b.key] as number) ? a : b
+                        );
+                        handleAreaClick(best.key);
+                      }
+                    }
+                  }}
+                >
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={36}
+                    tickFormatter={(v: number) => `${v}`}
+                  />
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        top3={top3}
+                        isDark={isDark}
+                        onGroupClick={handleAreaClick}
                       />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Box>
-            </motion.div>
-          )}
+                    }
+                  />
+                  {top3.map((g, idx) => (
+                    <Area
+                      key={g.key}
+                      type="monotone"
+                      dataKey={g.key}
+                      stroke={BODY_PART_COLORS[idx]}
+                      fill={BODY_PART_COLORS[idx]}
+                      fillOpacity={0.15}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4, strokeWidth: 0, fill: BODY_PART_COLORS[idx] }}
+                    />
+                  ))}
+                </AreaChart>
+              </ResponsiveContainer>
+            </Box>
+          </motion.div>
         </AnimatePresence>
-
 
         {/* Strength Index */}
         {totalStrength > 0 && (
@@ -358,6 +344,79 @@ export function StrengthOverviewChart() {
   );
 }
 
+// Custom tooltip showing exercise breakdown per body part
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  top3: MuscleGroupData[];
+  isDark: boolean;
+  onGroupClick: (key: string) => void;
+}
+
+function CustomTooltip({ active, payload, label, top3, isDark, onGroupClick }: CustomTooltipProps) {
+  if (!active || !payload || !label) return null;
+
+  return (
+    <Box sx={{
+      bgcolor: isDark ? '#1a1a1a' : '#fff',
+      borderRadius: 2, p: 1.5,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+      minWidth: 160, maxWidth: 220,
+    }}>
+      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', mb: 0.5, display: 'block' }}>
+        {label}
+      </Typography>
+      {payload.map((entry: any, idx: number) => {
+        const group = top3.find(g => g.key === entry.dataKey);
+        if (!group || !entry.value) return null;
+
+        // Get exercise breakdown for this week
+        const exercises = group.weeklyExerciseBreakdown.get(label as string) || [];
+
+        return (
+          <Box
+            key={entry.dataKey}
+            onClick={() => onGroupClick(entry.dataKey)}
+            sx={{
+              mb: idx < payload.length - 1 ? 1 : 0,
+              cursor: 'pointer',
+              '&:hover': { opacity: 0.8 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: BODY_PART_COLORS[top3.indexOf(group)] }} />
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.72rem' }}>
+                {group.label}
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 600, ml: 'auto', fontSize: '0.72rem' }}>
+                {entry.value} kg
+              </Typography>
+            </Box>
+            {exercises.slice(0, 3).map(ex => (
+              <Typography key={ex.name} variant="caption" sx={{
+                display: 'block', color: 'text.secondary',
+                fontSize: '0.62rem', pl: 2, lineHeight: 1.4,
+              }}>
+                {ex.name}: {ex.weight}kg
+              </Typography>
+            ))}
+            {exercises.length > 3 && (
+              <Typography variant="caption" sx={{
+                display: 'block', color: 'text.secondary',
+                fontSize: '0.58rem', pl: 2, fontStyle: 'italic',
+              }}>
+                +{exercises.length - 3} more
+              </Typography>
+            )}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+// Drill-down dialog
 interface ExerciseBreakdownDialogProps {
   group: MuscleGroupData | null;
   isDark: boolean;
