@@ -194,11 +194,29 @@ export default function Auth() {
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-sm space-y-8">
+      <motion.div
+        className="w-full max-w-sm space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Header */}
-        <div className="text-center space-y-2">
+        <motion.div variants={itemVariants} className="text-center space-y-2">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
@@ -209,9 +227,9 @@ export default function Auth() {
             {step === 'forgot' && 'Reset your password'}
             {step === 'reset' && 'Set a new password'}
           </p>
-        </div>
+        </motion.div>
 
-        {/* Forms */}
+        <motion.div variants={itemVariants}>
         <AnimatePresence mode="wait">
           {/* Step 1: Email */}
           {step === 'email' && (
@@ -504,9 +522,10 @@ export default function Auth() {
             </motion.form>
           )}
         </AnimatePresence>
+        </motion.div>
 
         {/* Bottom actions */}
-        <div className="space-y-3">
+        <motion.div variants={itemVariants} className="space-y-3">
           {step === 'password' && accountStatus !== 'new' && (
             <>
               <button
@@ -541,21 +560,23 @@ export default function Auth() {
               Back
             </button>
           )}
-        </div>
+        </motion.div>
 
-        <div className="text-center">
-          <Link
-            to="/"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Back to home
-          </Link>
-        </div>
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="text-center">
+            <Link
+              to="/"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back to home
+            </Link>
+          </div>
 
-        <p className="text-xs text-center text-muted-foreground">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
-        </p>
-      </div>
+          <p className="text-xs text-center text-muted-foreground">
+            By continuing, you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
