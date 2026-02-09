@@ -227,7 +227,7 @@ export default function Landing() {
               Built for the gym.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Everything you need between sets.
+              Everything you need between sets -- and beyond.
             </p>
           </motion.div>
 
@@ -269,45 +269,30 @@ export default function Landing() {
               description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
             />
           </motion.div>
-        </div>
-      </section>
 
-      {/* More than a tracker */}
-      <section id="insights" className="py-16 md:py-24 px-4 border-t border-border">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-10 md:mb-14"
-          >
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              More than a tracker.
-            </h2>
-            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-              Everything you need to train smarter, in one place.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
-              { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
-              { icon: <Moon className="w-4 h-4" />, label: "Sleep insights" },
-              { icon: <Bot className="w-4 h-4" />, label: "AI compatible" },
-              { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
-              { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-2.5 px-4 py-3.5 bg-card border border-border rounded-2xl text-sm"
-              >
-                <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
-                  {item.icon}
+          {/* And more pills */}
+          <div className="mt-12 pt-12 border-t border-border/50">
+            <p className="text-sm font-medium text-muted-foreground mb-6 text-center">And more</p>
+            <div id="insights" className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
+                { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
+                { icon: <Moon className="w-4 h-4" />, label: "Sleep insights" },
+                { icon: <Bot className="w-4 h-4" />, label: "AI compatible" },
+                { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
+                { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-2.5 px-4 py-3.5 bg-background border border-border rounded-2xl text-sm"
+                >
+                  <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
+                    {item.icon}
+                  </div>
+                  <span className="font-medium text-xs md:text-sm">{item.label}</span>
                 </div>
-                <span className="font-medium text-xs md:text-sm">{item.label}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
