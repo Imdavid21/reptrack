@@ -14,16 +14,15 @@ interface CalorieBurn {
   activity_type?: string;
 }
 
-interface WorkoutWithSets {
+interface WorkoutWithExercises {
   id: string;
   date: string;
   day_name: string;
   started_at?: string;
   completed_at?: string;
   workout_duration_minutes?: number;
-  exercise_sets: {
-    created_at: string;
-    exercise_category: string;
+  exercises: {
+    category: string;
   }[];
 }
 
