@@ -79,14 +79,6 @@ export function useAuth() {
       email: newEmail,
     });
     
-    if (!error && user) {
-      // Also update the profiles table
-      await supabase
-        .from('profiles')
-        .update({ email: newEmail })
-        .eq('id', user.id);
-    }
-    
     return { data, error };
   };
 
