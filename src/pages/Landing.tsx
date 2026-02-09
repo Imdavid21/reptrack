@@ -208,38 +208,40 @@ export default function Landing() {
             </p>
           </motion.div>
 
+          {/* Mobile: horizontal scroll, Desktop: 3-col grid */}
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch max-w-sm md:max-w-none mx-auto"
+            className="hidden md:grid md:grid-cols-3 gap-8 items-stretch"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
-              <div className="flex-1">
-                <MiniWorkoutDemo />
-              </div>
-              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
-                Tap weight, tap reps, done.
-              </p>
+              <div className="flex-1"><MiniWorkoutDemo /></div>
+              <p className="text-xs text-muted-foreground mt-3">Tap weight, tap reps, done.</p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
-              <div className="flex-1">
-                <MiniWaterDemo />
-              </div>
-              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
-                One tap between sets.
-              </p>
+              <div className="flex-1"><MiniWaterDemo /></div>
+              <p className="text-xs text-muted-foreground mt-3">One tap between sets.</p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
-              <div className="flex-1">
-                <MiniCalorieDemo />
-              </div>
-              <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3">
-                Snap a photo. Get macros.
-              </p>
+              <div className="flex-1"><MiniCalorieDemo /></div>
+              <p className="text-xs text-muted-foreground mt-3">Snap a photo. Get macros.</p>
             </motion.div>
           </motion.div>
+
+          <div className="md:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-6 px-6 scrollbar-hide">
+            {[
+              { demo: <MiniWorkoutDemo />, label: 'Tap weight, tap reps, done.' },
+              { demo: <MiniWaterDemo />, label: 'One tap between sets.' },
+              { demo: <MiniCalorieDemo />, label: 'Snap a photo. Get macros.' },
+            ].map((item, i) => (
+              <div key={i} className="snap-center shrink-0 w-[80vw] max-w-xs text-center flex flex-col">
+                <div className="flex-1">{item.demo}</div>
+                <p className="text-xs text-muted-foreground mt-2">{item.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
