@@ -16,6 +16,8 @@ import {
   Camera,
   Trophy,
   Clock,
+  TrendingUp,
+  Wifi,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
@@ -270,9 +272,9 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* More than a tracker */}
       <section id="insights" className="py-16 md:py-24 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -280,74 +282,39 @@ export default function Landing() {
             className="text-center mb-10 md:mb-14"
           >
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              Your data talks. Reptrack translates.
+              More than a tracker.
             </h2>
-            <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
-              Patterns emerge after a few weeks. Reptrack surfaces them as simple, actionable insights.
+            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
+              Everything you need to train smarter, in one place.
             </p>
           </motion.div>
 
-          {/* Insight cards */}
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-12 md:mb-16"
+            className="grid grid-cols-2 md:grid-cols-3 gap-3"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
             {[
-              { icon: <Activity className="w-4 h-4" />, text: "Volume, sleep & strength trends weekly" },
-              { icon: <Sparkles className="w-4 h-4" />, text: "PRs, plateaus & streaks auto-detected" },
-              { icon: <Moon className="w-4 h-4" />, text: "Sleep-to-performance correlations" },
+              { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
+              { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
+              { icon: <Moon className="w-4 h-4" />, label: "Sleep insights" },
+              { icon: <Bot className="w-4 h-4" />, label: "AI compatible" },
+              { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
+              { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
             ].map((item) => (
-              <motion.div key={item.text} variants={fadeInUp} className="flex items-start gap-3 p-4 bg-card border border-border rounded-xl text-sm">
-                <div className="w-7 h-7 bg-secondary rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+              <motion.div
+                key={item.label}
+                variants={fadeInUp}
+                className="flex items-center gap-2.5 px-4 py-3.5 bg-card border border-border rounded-2xl text-sm"
+              >
+                <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
                   {item.icon}
                 </div>
-                <span>{item.text}</span>
+                <span className="font-medium text-xs md:text-sm">{item.label}</span>
               </motion.div>
             ))}
-          </motion.div>
-
-          {/* Integrations + PWA row */}
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {/* AI Assistants */}
-            <motion.div variants={fadeInUp} id="integrations" className="p-5 bg-card border border-border rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Bot className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">AI Assistants</span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Use Claude, ChatGPT, or automations to log workouts and pull stats.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["MCP Server", "REST API", "Webhooks"].map((label) => (
-                  <span key={label} className="px-2.5 py-1 bg-secondary rounded-md text-xs font-medium">{label}</span>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* PWA */}
-            <motion.div variants={fadeInUp} id="pwa" className="p-5 bg-card border border-border rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">Works like an app</span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Add to home screen. Lightweight, fast, always up to date.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["No Install", "Offline", "Auto Updates", "Cross Platform"].map((label) => (
-                  <span key={label} className="px-2.5 py-1 bg-secondary rounded-md text-xs font-medium">{label}</span>
-                ))}
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </section>
