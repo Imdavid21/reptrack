@@ -31,6 +31,8 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/blog" element={<Blog />} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
