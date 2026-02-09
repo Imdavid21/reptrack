@@ -33,6 +33,11 @@ const PASTEL_COLORS = [
   '#F7E8B5', '#B5F0E8', '#F7B5C8', '#D6D6F0',
 ];
 
+/** Strip set identifiers like "(Set 1)", "(Set 2)" from exercise names */
+function normalizeExerciseName(name: string): string {
+  return name.replace(/\s*\(set\s*\d+\)\s*/gi, '').trim();
+}
+
 function getMuscleGroup(exerciseName: string): string {
   const lower = exerciseName.toLowerCase();
   for (const group of MUSCLE_GROUPS) {
@@ -77,7 +82,8 @@ export function StrengthOverviewChart() {
 
     filteredSets.forEach(set => {
       if (!set.workout_date || !set.actual_weight) return;
-      const muscleGroup = getMuscleGroup(set.exercise_name);
+      const exName = normalizeExerciseName(set.exercise_name);
+      const muscleGroup = getMuscleGroup(exName);
       const weekStart = startOfWeek(parseISO(set.workout_date), { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
 
@@ -86,8 +92,8 @@ export function StrengthOverviewChart() {
       if (!weekMap.has(weekKey)) weekMap.set(weekKey, new Map());
       const exerciseMap = weekMap.get(weekKey)!;
 
-      const currentMax = exerciseMap.get(set.exercise_name) || 0;
-      exerciseMap.set(set.exercise_name, Math.max(currentMax, set.actual_weight));
+      const currentMax = exerciseMap.get(exName) || 0;
+      exerciseMap.set(exName, Math.max(currentMax, set.actual_weight));
     });
 
     const groups: MuscleGroupData[] = MUSCLE_GROUPS.map(group => {
