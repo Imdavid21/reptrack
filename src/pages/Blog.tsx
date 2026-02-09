@@ -8,13 +8,7 @@ export default function Blog() {
   const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
 
   return (
-    <>
-      <Helmet>
-        <title>RepTrack Blog | Training Tips & Progression</title>
-        <meta name="description" content="Training tips, progressive overload guides, and workout logging insights from RepTrack. Get stronger with systems, not guesswork." />
-      </Helmet>
-
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <header className="border-b border-border">
           <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
