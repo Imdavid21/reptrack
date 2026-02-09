@@ -208,8 +208,8 @@ export function StrengthOverviewChart() {
     : [];
 
   const chartHeight = activeGroup
-    ? Math.max(120, activeGroup.stackedWeekly.length * 40 + 40)
-    : 160;
+    ? Math.max(100, activeGroup.stackedWeekly.length * 36 + 32)
+    : 140;
 
   return (
     <>
