@@ -182,14 +182,12 @@ export default function Landing() {
                 ].map((row) => (
                   <tr key={row.feature} className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
-                    <td className="py-3 px-4 text-center">
-                      <Check className="w-4 h-4 text-primary mx-auto" />
+                    <td className="py-3 px-4 text-center font-medium text-foreground">Yes</td>
+                    <td className="py-3 px-4 text-center text-muted-foreground">
+                      {row.strong ? 'Yes' : 'No'}
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      {row.strong ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {row.mfp ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                    <td className="py-3 px-4 text-center text-muted-foreground">
+                      {row.mfp ? 'Yes' : 'No'}
                     </td>
                   </tr>
                 ))}
