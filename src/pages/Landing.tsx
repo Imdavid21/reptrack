@@ -3,16 +3,9 @@ import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
 import {
-  Dumbbell,
-  Droplets,
-  Bot,
-  BarChart3,
-  Smartphone,
-  Camera,
-  Trophy,
-  Clock,
+  Sun, Moon, Dumbbell, Droplets, Bot, BarChart3,
+  Smartphone, Camera, Trophy, Clock, Check, X,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
@@ -107,16 +100,16 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
           >
-            Stop guessing.
+            Track your lifts.
             <br />
-            <span className="text-muted-foreground">Start progressing.</span>
+            <span className="text-muted-foreground">See what's actually working.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Most people train hard but track nothing. Reptrack logs your sets, food, water, and sleep in one app — so you actually know what's working.
+            Reptrack logs your sets, food, water, and sleep in one app. So you train smarter, not just harder.
           </motion.p>
 
           <motion.div
@@ -217,10 +210,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Everything in one app.
+              One app. Zero excuses.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              No more switching between 4 apps. Workouts, nutrition, hydration, and recovery — all here.
+              Workouts, nutrition, hydration, and recovery all live here. No more juggling 4 apps.
             </p>
           </motion.div>
 
@@ -274,6 +267,62 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Why Reptrack */}
+      <section className="py-16 md:py-24 px-4 border-t border-border">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-10 md:mb-14"
+          >
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
+              Why Reptrack over the rest?
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
+              Most fitness apps do one thing well and charge you for it. Reptrack does it all.
+            </p>
+          </motion.div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground"></th>
+                  <th className="py-3 px-4 font-semibold text-center">Reptrack</th>
+                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">Strong</th>
+                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">MyFitnessPal</th>
+                </tr>
+              </thead>
+              <tbody className="text-xs md:text-sm">
+                {[
+                  { feature: "Set-by-set logging", reptrack: true, strong: true, mfp: false },
+                  { feature: "Calorie tracking", reptrack: true, strong: false, mfp: true },
+                  { feature: "Water tracking", reptrack: true, strong: false, mfp: true },
+                  { feature: "Sleep and recovery", reptrack: true, strong: false, mfp: false },
+                  { feature: "AI food scanning", reptrack: true, strong: false, mfp: false },
+                  { feature: "Weekly insights", reptrack: true, strong: false, mfp: false },
+                  { feature: "Free forever", reptrack: true, strong: false, mfp: false },
+                ].map((row) => (
+                  <tr key={row.feature} className="border-b border-border/50">
+                    <td className="py-3 px-4 font-medium">{row.feature}</td>
+                    <td className="py-3 px-4 text-center">
+                      <Check className="w-4 h-4 text-primary mx-auto" />
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {row.strong ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {row.mfp ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 border-t border-border">
         <motion.div
@@ -283,10 +332,10 @@ export default function Landing() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            You're already putting in the work.
+            You train hard. Now track it.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Now track it. Free forever. No credit card.
+            Free forever. No credit card. No catch.
           </p>
           <Link
             to="/signin"
