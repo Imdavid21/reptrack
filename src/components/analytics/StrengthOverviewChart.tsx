@@ -329,50 +329,6 @@ export function StrengthOverviewChart() {
           )}
         </AnimatePresence>
 
-        {/* Exercise Legend (toggleable) */}
-        {activeGroup && (
-          <Box sx={{
-            display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1.5,
-          }}>
-            {activeGroup.exerciseNames.map((name, idx) => {
-              const isHidden = hiddenExercises.has(name);
-              const color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
-              return (
-                <motion.div
-                  key={name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.03 }}
-                >
-                  <Chip
-                    size="small"
-                    label={name}
-                    onClick={() => toggleExercise(name)}
-                    sx={{
-                      height: 24, fontSize: '0.65rem', fontWeight: 500,
-                      opacity: isHidden ? 0.35 : 1,
-                      textDecoration: isHidden ? 'line-through' : 'none',
-                      bgcolor: isHidden
-                        ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)')
-                        : `${color}22`,
-                      border: `1.5px solid ${isHidden ? 'transparent' : color}`,
-                      color: isDark ? '#ddd' : '#333',
-                      '&:hover': {
-                        bgcolor: `${color}33`,
-                      },
-                    }}
-                    icon={
-                      <Box sx={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        bgcolor: color, ml: 0.5, flexShrink: 0,
-                      }} />
-                    }
-                  />
-                </motion.div>
-              );
-            })}
-          </Box>
-        )}
 
         {/* Strength Index */}
         {totalStrength > 0 && (
