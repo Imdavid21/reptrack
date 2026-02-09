@@ -89,6 +89,7 @@ export default function SignIn() {
       >
         {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
