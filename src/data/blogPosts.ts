@@ -14,7 +14,9 @@ export interface BlogPost {
   publishDate: string;
 }
 
-export const blogPosts: BlogPost[] = [
+import { blogPostsExtra } from './blogPostsExtra';
+
+const blogPostsBase: BlogPost[] = [
   // ===== TOFU 1 =====
   {
     slug: 'why-you-are-not-getting-stronger',
@@ -1485,6 +1487,8 @@ RepTrack turns your training data into motivation. Your progression charts updat
     internalLinks: ['gym-consistency-how-to-not-quit', 'how-to-track-workouts-properly', 'how-to-stop-random-workouts'],
   },
 ];
+
+export const blogPosts: BlogPost[] = [...blogPostsBase, ...blogPostsExtra];
 
 // Helper to get a post by slug
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
