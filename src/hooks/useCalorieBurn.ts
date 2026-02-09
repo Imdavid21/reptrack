@@ -14,16 +14,15 @@ interface CalorieBurn {
   activity_type?: string;
 }
 
-interface WorkoutWithSets {
+interface WorkoutWithExercises {
   id: string;
   date: string;
   day_name: string;
   started_at?: string;
   completed_at?: string;
   workout_duration_minutes?: number;
-  exercise_sets: {
-    created_at: string;
-    exercise_category: string;
+  exercises: {
+    category: string;
   }[];
 }
 
@@ -52,9 +51,9 @@ export function useCalorieBurn(date?: Date) {
   // Get user's weight for calculations (default 70kg if not set)
   const weightKg = preferences?.weight_goal || 70;
 
-  // Fetch today's workout with exercise sets for accurate duration calculation
+  // Fetch today's workout with exercises for category inference
   const { data: todayWorkout } = useQuery({
-    queryKey: ['workout-with-sets', user?.id, dateStr],
+    queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
       if (!user) return null;
 
@@ -67,9 +66,8 @@ export function useCalorieBurn(date?: Date) {
           started_at,
           completed_at,
           workout_duration_minutes,
-          exercise_sets (
-            created_at,
-            exercise_category
+          exercises (
+            category
           )
         `)
         .eq('user_id', user.id)
@@ -77,7 +75,7 @@ export function useCalorieBurn(date?: Date) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as WorkoutWithSets | null;
+      return data as WorkoutWithExercises | null;
     },
     enabled: !!user,
   });
@@ -124,38 +122,25 @@ export function useCalorieBurn(date?: Date) {
     },
   });
 
-  // Calculate workout duration from first set to completion
+  // Calculate workout duration
   const calculateWorkoutDuration = (): number => {
     if (!todayWorkout) return 0;
 
-    // If we have explicit duration stored, use it
+    // Use explicit duration if stored
     if (todayWorkout.workout_duration_minutes) {
       return todayWorkout.workout_duration_minutes;
     }
 
-    // Calculate from first set to completed_at
-    const sets = todayWorkout.exercise_sets || [];
-    if (sets.length === 0) return 0;
-
-    // Find earliest set timestamp
-    const sortedSets = [...sets].sort((a, b) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    
-    const firstSetTime = parseISO(sortedSets[0].created_at);
-    
-    // Use completed_at if available, otherwise use last set time + buffer
-    let endTime: Date;
-    if (todayWorkout.completed_at) {
-      endTime = parseISO(todayWorkout.completed_at);
-    } else {
-      // Use last set time + 2 min buffer for ongoing workouts
-      const lastSetTime = parseISO(sortedSets[sortedSets.length - 1].created_at);
-      endTime = lastSetTime;
+    // Fallback: calculate from started_at to completed_at
+    if (todayWorkout.started_at && todayWorkout.completed_at) {
+      const durationMinutes = differenceInMinutes(
+        parseISO(todayWorkout.completed_at),
+        parseISO(todayWorkout.started_at)
+      );
+      return Math.max(durationMinutes, 0);
     }
 
-    const durationMinutes = differenceInMinutes(endTime, firstSetTime);
-    return Math.max(durationMinutes, 0);
+    return 0;
   };
 
   // Calculate calories burned from workout duration and type
@@ -165,19 +150,28 @@ export function useCalorieBurn(date?: Date) {
     return Math.round(met * weightKg * (durationMinutes / 60));
   };
 
-  // Get primary workout category from sets
+  // Get primary workout category from exercises or day_name
   const getPrimaryCategory = (): string => {
-    if (!todayWorkout?.exercise_sets?.length) return 'strength';
-    
-    const categoryCounts: Record<string, number> = {};
-    todayWorkout.exercise_sets.forEach(set => {
-      const cat = set.exercise_category.toLowerCase();
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-    });
-    
-    // Return most common category
-    return Object.entries(categoryCounts)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
+    if (!todayWorkout) return 'strength';
+
+    // Try from exercises table
+    const exercises = todayWorkout.exercises || [];
+    if (exercises.length > 0) {
+      const categoryCounts: Record<string, number> = {};
+      exercises.forEach(ex => {
+        const cat = ex.category.toLowerCase();
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+      const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (top) return top;
+    }
+
+    // Fallback: infer from day_name
+    const dayNameLower = todayWorkout.day_name.toLowerCase();
+    if (dayNameLower.includes('push')) return 'push';
+    if (dayNameLower.includes('pull')) return 'pull';
+    if (dayNameLower.includes('leg')) return 'legs';
+    return 'strength';
   };
 
   // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)
