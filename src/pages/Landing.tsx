@@ -107,17 +107,16 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
           >
-            One place to track
+            Stop guessing.
             <br />
-            <span className="text-muted-foreground">training, recovery, and intake.</span>
+            <span className="text-muted-foreground">Start progressing.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Log workouts set by set. Track water, calories, sleep, and weight.
-            Reptrack turns your daily logs into weekly insights so you know what's working.
+            Most people train hard but track nothing. Reptrack logs your sets, food, water, and sleep in one app — so you actually know what's working.
           </motion.p>
 
           <motion.div
