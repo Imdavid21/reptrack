@@ -1,10 +1,5 @@
-import { motion } from 'framer-motion';
 import { useState } from 'react';
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
-};
+import { motion } from 'framer-motion';
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -17,7 +12,6 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
 
   return (
     <motion.div
-      variants={fadeInUp}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       whileHover={{ y: -4 }}
@@ -25,7 +19,6 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className="bg-background border border-border rounded-2xl p-6 cursor-default flex flex-col items-center text-center gap-4 relative overflow-hidden"
     >
-      {/* Animated icon container */}
       <motion.div
         className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center"
         animate={{
@@ -42,13 +35,9 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
         </motion.div>
       </motion.div>
 
-      {/* Short title only */}
       <h3 className="text-sm font-semibold leading-tight">{title}</h3>
-
-      {/* One-liner description, muted */}
       <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
 
-      {/* Subtle hover glow */}
       <motion.div
         className="absolute inset-0 rounded-2xl pointer-events-none"
         style={{
