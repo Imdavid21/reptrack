@@ -322,8 +322,21 @@ export default function LogWorkout() {
   };
 
   const handleAddExercise = (newExercise: WorkoutExercise) => {
-    setExercises(prev => [...prev, newExercise]);
+    setExercises(prev => [...prev, { ...newExercise, sort_order: prev.length }]);
     toast.success(`Added ${newExercise.name}`);
+  };
+
+  const handleRemoveExercise = (indexToRemove: number) => {
+    setExercises(prev => {
+      const updated = prev.filter((_, i) => i !== indexToRemove);
+      updated.forEach((ex, i) => (ex.sort_order = i));
+      return updated;
+    });
+    // Adjust currentExerciseIndex if needed to avoid pointing at wrong exercise
+    setCurrentExerciseIndex(prev => {
+      if (prev >= indexToRemove && prev > 0) return prev - 1;
+      return prev;
+    });
   };
 
   const handleNextExercise = () => {
@@ -386,8 +399,12 @@ export default function LogWorkout() {
 
   const handleBack = () => {
     if (step === 'review') {
+      // Going back to day selection — only clear exercises if nothing has been completed
+      const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
+      if (!hasCompletedSets) {
+        setExercises([]);
+      }
       setStep('select-day');
-      setExercises([]);
     } else if (step === 'exercises') {
       if (exerciseViewMode === 'single') {
         if (currentSetIndex > 0) {
@@ -405,8 +422,14 @@ export default function LogWorkout() {
     }
   };
 
-  // Switch to a different day from the review screen
+  // Switch to a different day from the review screen — preserve any completed progress
   const handleSwitchDay = (dayKey: string) => {
+    const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
+    if (hasCompletedSets) {
+      // Don't wipe exercises that have progress — warn the user
+      toast.error('Finish or discard current progress first');
+      return;
+    }
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
@@ -559,7 +582,13 @@ export default function LogWorkout() {
               dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
               dayFocus={selectedDay === 'custom' ? 'Build your own session' : (dayData?.focus || '')}
               dayType={dayType}
-              onChange={setExercises}
+              onChange={(updated) => {
+                // If exercises were removed, clamp the currentExerciseIndex
+                setExercises(updated);
+                if (updated.length > 0) {
+                  setCurrentExerciseIndex(prev => Math.min(prev, updated.length - 1));
+                }
+              }}
               onStart={handleStartSession}
               onSuggest={selectedDay !== 'custom' ? handleSuggestExercises : undefined}
               isSuggesting={isSuggesting}
