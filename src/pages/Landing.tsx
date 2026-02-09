@@ -348,111 +348,91 @@ export default function Landing() {
       </section>
 
       {/* Integration Section */}
-      <section id="integrations" className="py-20 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto">
+      <section id="integrations" className="py-16 px-4 border-t border-border">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground mb-6">
-              <Bot className="w-4 h-4" />
-              AI Agent Ready
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
               Works with your AI assistants
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Use Claude, ChatGPT, or automations to log workouts, pull stats, and generate
-              summaries. MCP and API support are built in.
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto mb-8">
+              Use Claude, ChatGPT, or automations to log workouts, pull stats, and generate summaries.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className="flex flex-wrap justify-center gap-8 md:gap-12"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <IntegrationCard
-              icon={<Bot className="w-8 h-8" />}
-              title="MCP Server"
-              description="Native Model Context Protocol support for Claude and compatible AI assistants."
-            />
-            <IntegrationCard
-              icon={<Code2 className="w-8 h-8" />}
-              title="REST API"
-              description="Full-featured API to integrate with any app, automation, or AI workflow."
-            />
-            <IntegrationCard
-              icon={<Zap className="w-8 h-8" />}
-              title="Webhooks"
-              description="Get notified of workouts, milestones, and goals via webhooks."
-            />
+            <motion.div variants={fadeInUp} className="flex items-center gap-2.5 text-sm">
+              <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
+                <Bot className="w-4 h-4" />
+              </div>
+              <span className="font-medium">MCP Server</span>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="flex items-center gap-2.5 text-sm">
+              <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
+                <Code2 className="w-4 h-4" />
+              </div>
+              <span className="font-medium">REST API</span>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="flex items-center gap-2.5 text-sm">
+              <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
+                <Zap className="w-4 h-4" />
+              </div>
+              <span className="font-medium">Webhooks</span>
+            </motion.div>
           </motion.div>
 
-          <p className="text-xs text-muted-foreground text-center mt-8">
+          <p className="text-xs text-muted-foreground mt-6">
             Developer features are optional. The core app works without any setup.
           </p>
         </div>
       </section>
 
       {/* PWA Benefits Section */}
-      <section id="pwa" className="py-20 px-4 bg-card border-y border-border">
-        <div className="max-w-6xl mx-auto">
+      <section id="pwa" className="py-16 px-4 bg-card border-y border-border">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-sm text-muted-foreground mb-6">
-              <Smartphone className="w-4 h-4" />
-              Works Like an App
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
               Works like an app. No app store.
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Add to your home screen and use it just like any other app.
-              Lightweight, fast, and always up to date.
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto mb-8">
+              Add to your home screen. Lightweight, fast, and always up to date.
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6"
+            className="flex flex-wrap justify-center gap-6 md:gap-10"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <PwaFeature
-              icon={<Download className="w-5 h-5" />}
-              title="No Installation"
-              description="Skip the app store"
-            />
-            <PwaFeature
-              icon={<Wifi className="w-5 h-5" />}
-              title="Works Offline"
-              description="Use without internet"
-            />
-            <PwaFeature
-              icon={<Zap className="w-5 h-5" />}
-              title="Lightweight"
-              description="Loads fast"
-            />
-            <PwaFeature
-              icon={<RefreshCw className="w-5 h-5" />}
-              title="Auto Updates"
-              description="Always latest version"
-            />
-            <PwaFeature
-              icon={<Globe className="w-5 h-5" />}
-              title="Cross Platform"
-              description="iPhone, Android, Desktop"
-            />
+            {[
+              { icon: <Download className="w-4 h-4" />, label: "No Installation" },
+              { icon: <Wifi className="w-4 h-4" />, label: "Works Offline" },
+              { icon: <Zap className="w-4 h-4" />, label: "Lightweight" },
+              { icon: <RefreshCw className="w-4 h-4" />, label: "Auto Updates" },
+              { icon: <Globe className="w-4 h-4" />, label: "Cross Platform" },
+            ].map((item) => (
+              <motion.div key={item.label} variants={fadeInUp} className="flex items-center gap-2 text-sm">
+                <div className="w-7 h-7 bg-secondary rounded-lg flex items-center justify-center">
+                  {item.icon}
+                </div>
+                <span className="font-medium">{item.label}</span>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
