@@ -88,14 +88,6 @@ export function ExerciseOverview({
         );
       })}
 
-      {/* Add exercise button */}
-      <div className="pt-2">
-        <ExercisePicker
-          existingExercises={exercises}
-          onAddExercise={onAddExercise}
-          dayType={dayType}
-        />
-      </div>
     </div>
   );
 }
