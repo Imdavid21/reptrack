@@ -14,7 +14,9 @@ export interface BlogPost {
   publishDate: string;
 }
 
-export const blogPosts: BlogPost[] = [
+import { blogPostsExtra } from './blogPostsExtra';
+
+const blogPostsBase: BlogPost[] = [
   // ===== TOFU 1 =====
   {
     slug: 'why-you-are-not-getting-stronger',
