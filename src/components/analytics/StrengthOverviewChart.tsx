@@ -116,10 +116,11 @@ export function StrengthOverviewChart() {
         return entry;
       });
 
+      // Weekly total = sum of all exercise maxes (total group strength)
       const weeklyMaxWeights = sortedWeeks.map(([weekKey, exerciseMap]) => ({
         week: format(parseISO(weekKey), 'MMM d'),
         weekKey,
-        weight: Math.max(...Array.from(exerciseMap.values())),
+        weight: Array.from(exerciseMap.values()).reduce((s, v) => s + v, 0),
       }));
 
       const exerciseMaxes = new Map<string, { max: number; recent: number }>();
