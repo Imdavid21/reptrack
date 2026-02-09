@@ -149,7 +149,7 @@ export function CalorieChart() {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`intake-${index}`}
-                  fill="hsl(var(--insight-coral))"
+                  fill="hsl(var(--insight-mint))"
                   fillOpacity={0.85}
                 />
               ))}
