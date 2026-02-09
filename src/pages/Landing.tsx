@@ -209,7 +209,7 @@ export default function Landing() {
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-3 gap-3 md:gap-8 items-stretch"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch max-w-sm md:max-w-none mx-auto"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
