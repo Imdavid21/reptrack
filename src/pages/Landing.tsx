@@ -184,7 +184,7 @@ export default function Landing() {
                 <MiniWorkoutDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Log sets. PRs detected automatically.
+                Tap weight, tap reps, done. PRs caught automatically.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
