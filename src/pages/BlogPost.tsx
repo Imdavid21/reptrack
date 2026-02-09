@@ -1,5 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Tag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Calendar, Tag, ArrowRight, X } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { getBlogPostBySlug, blogPosts } from '@/data/blogPosts';
 import { useSEO } from '@/hooks/useSEO';
