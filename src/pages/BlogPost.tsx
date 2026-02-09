@@ -2,7 +2,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { getBlogPostBySlug, blogPosts } from '@/data/blogPosts';
-
+import { useSEO } from '@/hooks/useSEO';
 
 function renderMarkdown(content: string) {
   const lines = content.split('\n');
@@ -159,6 +159,12 @@ function renderInline(text: string): React.ReactNode {
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
+
+  useSEO({
+    title: post?.metaTitle ?? 'RepTrack Blog',
+    description: post?.metaDescription ?? '',
+    canonical: post ? `https://reps-and-reminders.lovable.app/blog/${post.slug}` : undefined,
+  });
 
   if (!post) {
     return <Navigate to="/blog" replace />;

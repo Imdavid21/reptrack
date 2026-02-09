@@ -2,9 +2,14 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { blogPosts } from '@/data/blogPosts';
-
+import { useSEO } from '@/hooks/useSEO';
 
 export default function Blog() {
+  useSEO({
+    title: 'RepTrack Blog | Training Tips & Progressive Overload',
+    description: 'Practical guides on progressive overload, workout logging, and building a training system that lasts. Get stronger with systems, not guesswork.',
+    canonical: 'https://reps-and-reminders.lovable.app/blog',
+  });
   const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
 
   return (
