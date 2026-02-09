@@ -293,7 +293,7 @@ export default function Landing() {
             className="grid grid-cols-2 md:grid-cols-3 gap-3"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             variants={staggerContainer}
           >
             {[
