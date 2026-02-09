@@ -271,7 +271,7 @@ export default function BlogPost() {
               <p className="text-xs sm:text-sm font-medium truncate">Track your workouts. See your progress.</p>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Link
-                  to="/sign-up"
+                  to="/signup"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-background text-foreground text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
                 >
                   Try RepTrack
