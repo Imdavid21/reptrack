@@ -217,10 +217,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Everything in one app.
+              One app. Zero excuses.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              No more switching between 4 apps. Workouts, nutrition, hydration, and recovery — all here.
+              Workouts, nutrition, hydration, and recovery all live here. No more juggling 4 apps.
             </p>
           </motion.div>
 
