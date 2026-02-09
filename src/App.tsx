@@ -16,6 +16,8 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
