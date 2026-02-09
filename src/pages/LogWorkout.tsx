@@ -364,6 +364,7 @@ export default function LogWorkout() {
   };
 
   const handleExercisesDone = async () => {
+    if (isCreating) return; // Prevent double-tap
     if (completedSets === 0) {
       toast.error('Complete at least one set');
       return;
@@ -374,6 +375,7 @@ export default function LogWorkout() {
       : undefined;
 
     try {
+      console.log('[FinishWorkout] Saving…', { completedSets, totalSets, exerciseCount: exercises.length });
       await createWorkout({
         day: selectedDay,
         day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
@@ -392,8 +394,9 @@ export default function LogWorkout() {
       clearDraft();
       toast.success('Workout logged! 💪');
       navigate('/app');
-    } catch (error) {
-      toast.error('Failed to save workout');
+    } catch (error: any) {
+      console.error('[FinishWorkout] Error:', error);
+      toast.error(`Failed to save: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -682,9 +685,9 @@ export default function LogWorkout() {
                   <button
                     className="btn-brutalist btn-primary w-full py-4 text-base font-bold disabled:opacity-50"
                     onClick={handleExercisesDone}
-                    disabled={completedSets === 0}
+                    disabled={completedSets === 0 || isCreating}
                   >
-                    Finish Workout
+                    {isCreating ? 'Saving…' : 'Finish Workout'}
                   </button>
                 </>
               )}
