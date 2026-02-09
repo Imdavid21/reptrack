@@ -145,7 +145,7 @@ export default function Landing() {
               <span>Add to Home Screen.</span>
             </div>
             <div className="text-xs">
-              Free forever.
+              No account needed to explore. Free forever.
             </div>
           </motion.div>
 
