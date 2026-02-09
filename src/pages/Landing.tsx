@@ -217,10 +217,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Built for the gym.
+              Everything in one app.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Everything you need to train smarter, in one place.
+              No more switching between 4 apps. Workouts, nutrition, hydration, and recovery — all here.
             </p>
           </motion.div>
 
