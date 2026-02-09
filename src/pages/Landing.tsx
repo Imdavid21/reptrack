@@ -307,13 +307,13 @@ export default function Landing() {
                   <tr key={row.feature} className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
                     <td className="py-3 px-4 text-center">
-                      <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <Check className="w-4 h-4 text-primary mx-auto" />
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {row.strong ? <Check className="w-4 h-4 text-green-500 mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                      {row.strong ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {row.mfp ? <Check className="w-4 h-4 text-green-500 mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                      {row.mfp ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
                     </td>
                   </tr>
                 ))}
