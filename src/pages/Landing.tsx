@@ -13,7 +13,6 @@ import {
   Camera,
   Trophy,
   Clock,
-  Moon,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
