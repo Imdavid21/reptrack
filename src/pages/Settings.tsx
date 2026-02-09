@@ -23,7 +23,9 @@ import {
   Check,
   Edit2,
   
+  Link2,
 } from 'lucide-react';
+import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage } from '@/components/layout/AnimatedPage';
