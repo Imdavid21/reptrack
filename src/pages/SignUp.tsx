@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function SignUp() {
   const navigate = useNavigate();
