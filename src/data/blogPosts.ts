@@ -1488,6 +1488,8 @@ RepTrack turns your training data into motivation. Your progression charts updat
   },
 ];
 
+export const blogPosts: BlogPost[] = [...blogPostsBase, ...blogPostsExtra];
+
 // Helper to get a post by slug
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find(p => p.slug === slug);
