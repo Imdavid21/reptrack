@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, signOut, updateEmail, resetPassword } = useAuth();
+  const { user, signOut, updateEmail, resetPassword, linkOAuthProvider } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
