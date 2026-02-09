@@ -150,19 +150,28 @@ export function useCalorieBurn(date?: Date) {
     return Math.round(met * weightKg * (durationMinutes / 60));
   };
 
-  // Get primary workout category from sets
+  // Get primary workout category from exercises or day_name
   const getPrimaryCategory = (): string => {
-    if (!todayWorkout?.exercise_sets?.length) return 'strength';
-    
-    const categoryCounts: Record<string, number> = {};
-    todayWorkout.exercise_sets.forEach(set => {
-      const cat = set.exercise_category.toLowerCase();
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-    });
-    
-    // Return most common category
-    return Object.entries(categoryCounts)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
+    if (!todayWorkout) return 'strength';
+
+    // Try from exercises table
+    const exercises = todayWorkout.exercises || [];
+    if (exercises.length > 0) {
+      const categoryCounts: Record<string, number> = {};
+      exercises.forEach(ex => {
+        const cat = ex.category.toLowerCase();
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+      const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (top) return top;
+    }
+
+    // Fallback: infer from day_name
+    const dayNameLower = todayWorkout.day_name.toLowerCase();
+    if (dayNameLower.includes('push')) return 'push';
+    if (dayNameLower.includes('pull')) return 'pull';
+    if (dayNameLower.includes('leg')) return 'legs';
+    return 'strength';
   };
 
   // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)

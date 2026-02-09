@@ -84,39 +84,32 @@ export function useCalorieHistory(dateRange: DateRange) {
         // Skip if we already have manual burns for this date
         if (burnsByDate[date]) return;
 
-        const sets = workout.exercise_sets || [];
+        const exercises = workout.exercises || [];
         
-        // Calculate duration - prioritize stored duration, then calculate from sets
+        // Calculate duration - prioritize stored duration, then started_at/completed_at
         let durationMinutes = workout.workout_duration_minutes;
         
-        if (!durationMinutes && sets.length > 0) {
-          const sortedSets = [...sets].sort((a: any, b: any) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        if (!durationMinutes && workout.started_at && workout.completed_at) {
+          durationMinutes = Math.max(
+            differenceInMinutes(parseISO(workout.completed_at), parseISO(workout.started_at)),
+            0
           );
-          
-          const firstSetTime = parseISO(sortedSets[0].created_at);
-          const endTime = workout.completed_at 
-            ? parseISO(workout.completed_at) 
-            : parseISO(sortedSets[sortedSets.length - 1].created_at);
-          
-          durationMinutes = Math.max(differenceInMinutes(endTime, firstSetTime), 0);
         }
 
         // If we have duration, calculate calories
         if (durationMinutes && durationMinutes > 0) {
-          // Get primary category from sets, or infer from day_name
+          // Get primary category from exercises, or infer from day_name
           let primaryCategory = 'strength';
           
-          if (sets.length > 0) {
+          if (exercises.length > 0) {
             const categoryCounts: Record<string, number> = {};
-            sets.forEach((set: any) => {
-              const cat = set.exercise_category.toLowerCase();
+            exercises.forEach((ex: any) => {
+              const cat = ex.category.toLowerCase();
               categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
             });
             primaryCategory = Object.entries(categoryCounts)
               .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
           } else if (workout.day_name) {
-            // Infer category from day name (e.g., "Push Day" -> "push")
             const dayNameLower = workout.day_name.toLowerCase();
             if (dayNameLower.includes('push')) primaryCategory = 'push';
             else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
