@@ -84,7 +84,7 @@ export default function SignIn() {
       <button
         type="button"
         onClick={toggleTheme}
-        className="absolute top-5 right-5 p-2.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95"
+        className="fixed top-4 right-4 p-2.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 z-50"
         aria-label="Toggle theme"
       >
         {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
