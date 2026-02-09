@@ -228,7 +228,7 @@ export default function BlogPost() {
           <div className="my-12 py-6 border-y border-border">
             <p className="text-sm text-muted-foreground leading-relaxed">
               Ready to put this into practice?{' '}
-              <Link to="/sign-up" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
+              <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
                 Start logging with RepTrack
               </Link>
               {' '}and see your progression automatically.
@@ -271,7 +271,7 @@ export default function BlogPost() {
               <p className="text-xs sm:text-sm font-medium truncate">Track your workouts. See your progress.</p>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Link
-                  to="/sign-up"
+                  to="/signup"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-background text-foreground text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
                 >
                   Try RepTrack
