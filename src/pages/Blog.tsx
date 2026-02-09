@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { blogPosts } from '@/data/blogPosts';
-import { Helmet } from 'react-helmet-async';
+
 
 export default function Blog() {
   const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
