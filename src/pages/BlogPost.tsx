@@ -1,5 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Tag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Calendar, Tag, ArrowRight, X } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { getBlogPostBySlug, blogPosts } from '@/data/blogPosts';
 import { useSEO } from '@/hooks/useSEO';
@@ -159,12 +160,24 @@ function renderInline(text: string): React.ReactNode {
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
+  const [showBar, setShowBar] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useSEO({
     title: post?.metaTitle ?? 'RepTrack Blog',
     description: post?.metaDescription ?? '',
     canonical: post ? `https://reps-and-reminders.lovable.app/blog/${post.slug}` : undefined,
   });
+
+  useEffect(() => {
+    if (dismissed) return;
+    const onScroll = () => {
+      const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      setShowBar(scrolled > 0.3);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [dismissed]);
 
   if (!post) {
     return <Navigate to="/blog" replace />;
@@ -211,6 +224,17 @@ export default function BlogPost() {
             {renderMarkdown(post.content)}
           </article>
 
+          {/* Subtle inline CTA */}
+          <div className="my-12 py-6 border-y border-border">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Ready to put this into practice?{' '}
+              <Link to="/sign-up" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
+                Start logging with RepTrack
+              </Link>
+              {' '}and see your progression automatically.
+            </p>
+          </div>
+
           {/* Internal links */}
           {relatedPosts.length > 0 && (
             <div className="mt-16 pt-8 border-t border-border">
@@ -239,6 +263,31 @@ export default function BlogPost() {
             </Link>
           </div>
         </footer>
+
+        {/* Sticky bottom CTA */}
+        {showBar && !dismissed && (
+          <div className="fixed bottom-0 inset-x-0 z-50 bg-foreground text-background border-t border-border animate-in slide-in-from-bottom-4 duration-300">
+            <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <p className="text-xs sm:text-sm font-medium truncate">Track your workouts. See your progress.</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to="/sign-up"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-background text-foreground text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+                >
+                  Try RepTrack
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                <button
+                  onClick={() => setDismissed(true)}
+                  className="p-1.5 rounded-md hover:bg-background/10 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }
