@@ -3,13 +3,10 @@ import { Box, Typography, Chip, Skeleton, useTheme, Dialog, DialogTitle, DialogC
 import { Trophy, TrendingUp, TrendingDown, X } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   AreaChart,
   Area,
 } from 'recharts';
