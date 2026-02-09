@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 
 type AuthMode = 'signin' | 'forgot' | 'reset';
 
@@ -16,16 +18,15 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/app', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
-  // Check for recovery mode from URL
   useEffect(() => {
     if (searchParams.get('type') === 'recovery') {
       setMode('reset');
@@ -66,107 +67,119 @@ export default function SignIn() {
     }
   };
 
-  const getTitle = () => {
-    switch (mode) {
-      case 'forgot': return 'FORGOT PASSWORD';
-      case 'reset': return 'SET NEW PASSWORD';
-      default: return 'SIGN IN';
-    }
-  };
-
-  const getButtonText = () => {
-    if (loading) return 'LOADING...';
-    switch (mode) {
-      case 'forgot': return 'SEND RESET LINK';
-      case 'reset': return 'UPDATE PASSWORD';
-      default: return 'SIGN IN';
-    }
-  };
-
-  // Show loading while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="text-2xl font-bold tracking-widest animate-pulse">
-            REPTRACK<span className="text-muted-foreground"> </span>FITNESS
-          </div>
+        <div className="text-2xl font-bold tracking-widest animate-pulse">
+          REPTRACK<span className="text-muted-foreground"> </span>FITNESS
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
-          <p className="text-sm text-muted-foreground mt-2">
-            {mode === 'forgot' ? 'RESET YOUR PASSWORD' :
-              mode === 'reset' ? 'ENTER NEW PASSWORD' :
-                'WELCOME BACK'}
+          <p className="text-xs text-muted-foreground tracking-wider uppercase">
+            {mode === 'forgot' ? 'Reset your password' :
+              mode === 'reset' ? 'Enter new password' :
+                'Welcome back'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {mode !== 'reset' && (
-            <div>
-              <Label className="text-xs text-muted-foreground">EMAIL</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="input-terminal mt-1"
-              />
-            </div>
-          )}
-
-          {(mode === 'signin' || mode === 'reset') && (
-            <div>
-              <Label className="text-xs text-muted-foreground">
-                {mode === 'reset' ? 'NEW PASSWORD' : 'PASSWORD'}
-              </Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="input-terminal mt-1"
-              />
-            </div>
-          )}
-
-          {mode === 'reset' && (
-            <div>
-              <Label className="text-xs text-muted-foreground">CONFIRM PASSWORD</Label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="input-terminal mt-1"
-              />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-brutalist btn-primary w-full py-4"
+        <AnimatePresence mode="wait">
+          <motion.form
+            key={mode}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            onSubmit={handleSubmit}
+            className="space-y-4"
           >
-            {getButtonText()}
-          </button>
-        </form>
+            {mode !== 'reset' && (
+              <div>
+                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">Email</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoFocus
+                  className="mt-1.5 h-14 rounded-2xl border-2 border-border bg-background px-4 text-sm focus:border-foreground transition-colors"
+                />
+              </div>
+            )}
 
-        <div className="space-y-2">
+            {(mode === 'signin' || mode === 'reset') && (
+              <div>
+                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+                  {mode === 'reset' ? 'New Password' : 'Password'}
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    className="mt-1.5 h-14 rounded-2xl border-2 border-border bg-background px-4 pr-12 text-sm focus:border-foreground transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPassword(!showPassword); }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 mt-0.5 z-10 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'reset' && (
+              <div>
+                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    className="mt-1.5 h-14 rounded-2xl border-2 border-border bg-background px-4 pr-12 text-sm focus:border-foreground transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPassword(!showPassword); }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 mt-0.5 z-10 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold tracking-wide hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {loading ? 'Please wait...' :
+                mode === 'forgot' ? 'Send Reset Link' :
+                mode === 'reset' ? 'Update Password' :
+                'Sign In'}
+            </button>
+          </motion.form>
+        </AnimatePresence>
+
+        <div className="space-y-3">
           {mode === 'signin' && (
             <>
               <button
