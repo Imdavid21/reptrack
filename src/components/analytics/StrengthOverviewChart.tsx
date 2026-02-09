@@ -207,9 +207,7 @@ export function StrengthOverviewChart() {
     ? activeGroup.exerciseNames.filter(n => !hiddenExercises.has(n))
     : [];
 
-  const chartHeight = activeGroup
-    ? Math.max(100, activeGroup.stackedWeekly.length * 36 + 32)
-    : 140;
+  const chartHeight = 180;
 
   return (
     <>
