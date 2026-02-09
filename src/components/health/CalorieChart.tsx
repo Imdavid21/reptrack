@@ -54,7 +54,7 @@ export function CalorieChart() {
               <span className="text-xs text-muted-foreground">Net</span>
               <span className={cn(
                 "text-sm font-bold tabular-nums",
-                data.net < 0 ? "text-insight-mint" : data.net > 200 ? "text-insight-coral" : ""
+                data.net < 0 ? "text-insight-coral" : data.net > 200 ? "text-insight-mint" : ""
               )}>
                 {data.net >= 0 ? '+' : ''}{data.net.toLocaleString()}
               </span>
