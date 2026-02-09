@@ -137,9 +137,6 @@ export default function Landing() {
               </span>
               <span>Add to Home Screen.</span>
             </div>
-            <div className="text-xs">
-              No account needed to explore. Free forever.
-            </div>
           </motion.div>
 
           {/* Spacer for removed ticker */}
