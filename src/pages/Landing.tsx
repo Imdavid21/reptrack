@@ -165,10 +165,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              See it in action.
+              Logging takes seconds.
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Logging takes seconds, not minutes. Here's what it actually looks like.
+              No complicated menus. No wasted time. Just tap and move on.
             </p>
           </motion.div>
 
