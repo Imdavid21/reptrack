@@ -7,17 +7,13 @@ import { Sun, Moon } from 'lucide-react';
 import {
   Dumbbell,
   Droplets,
-  Sparkles,
-  Activity,
   Bot,
   BarChart3,
-  Globe,
   Smartphone,
   Camera,
   Trophy,
   Clock,
-  TrendingUp,
-  Wifi,
+  Moon,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
