@@ -107,17 +107,16 @@ export default function Landing() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
           >
-            One place to track
+            Stop guessing.
             <br />
-            <span className="text-muted-foreground">training, recovery, and intake.</span>
+            <span className="text-muted-foreground">Start progressing.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Log workouts set by set. Track water, calories, sleep, and weight.
-            Reptrack turns your daily logs into weekly insights so you know what's working.
+            Most people train hard but track nothing. Reptrack logs your sets, food, water, and sleep in one app — so you actually know what's working.
           </motion.p>
 
           <motion.div
@@ -128,7 +127,7 @@ export default function Landing() {
               to="/signin"
               className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center"
             >
-              Get started
+              Start for free
             </Link>
           </motion.div>
 
@@ -146,7 +145,7 @@ export default function Landing() {
               <span>Add to Home Screen.</span>
             </div>
             <div className="text-xs">
-              Free forever.
+              No account needed to explore. Free forever.
             </div>
           </motion.div>
 
@@ -166,10 +165,10 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              See it in action.
+              Logging takes seconds.
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Logging takes seconds, not minutes. Here's what it actually looks like.
+              No complicated menus. No wasted time. Just tap and move on.
             </p>
           </motion.div>
 
@@ -185,7 +184,7 @@ export default function Landing() {
                 <MiniWorkoutDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Log sets. PRs detected automatically.
+                Tap weight, tap reps, done. PRs caught automatically.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
@@ -193,7 +192,7 @@ export default function Landing() {
                 <MiniWaterDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                One tap to log water.
+                One tap between sets. Hit your daily goal without thinking.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
@@ -201,7 +200,7 @@ export default function Landing() {
                 <MiniCalorieDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                AI breaks down calories from photos.
+                Snap a photo. Get calories and macros instantly.
               </p>
             </motion.div>
           </motion.div>
@@ -218,58 +217,58 @@ export default function Landing() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Built for the gym.
+              Everything in one app.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Everything you need to train smarter, in one place.
+              No more switching between 4 apps. Workouts, nutrition, hydration, and recovery — all here.
             </p>
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
-              title="Log faster between sets"
-              description="Weights pre-filled from last session. Update reps, done."
+              title="2-second logging"
+              description="Last session's weights pre-filled. Just update reps and go."
             />
             <FeatureCard
               icon={<Trophy className="w-6 h-6" />}
-              title="Auto-detected PRs"
-              description="Every set compared to your history. New PR? You'll know right away."
+              title="PRs you'd miss"
+              description="Hit a new max? Reptrack catches it before you forget."
             />
             <FeatureCard
               icon={<Camera className="w-6 h-6" />}
-              title="AI calorie tracking"
-              description="Snap your meal. AI gives you calories and macros in seconds."
+              title="Photo-to-calories"
+              description="Take a photo of your plate. AI handles the math."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="One-tap water logging"
-              description="Tap after every set. Progress ring keeps you accountable all day."
+              title="Water accountability"
+              description="Tap between sets. See your progress ring fill up."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Weekly trends and insights"
-              description="See how sleep, weight, and volume affect your lifts over time."
+              title="Patterns you can't see"
+              description="Correlates sleep, weight, and volume so you stop guessing."
             />
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
-              title="Real training programs"
-              description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
+              title="Programs that work"
+              description="PPL, Upper/Lower, Full Body. Pick one and start lifting."
             />
             <FeatureCard
               icon={<Moon className="w-6 h-6" />}
-              title="Sleep and recovery"
-              description="Track sleep hours and energy so you know when to push or rest."
+              title="Recovery matters"
+              description="Sleep and energy tracked. Know when to push, when to rest."
             />
             <FeatureCard
               icon={<Bot className="w-6 h-6" />}
-              title="AI coaching"
-              description="Get data-driven tips based on your actual training and recovery patterns."
+              title="AI that knows you"
+              description="Coaching tips based on your data, not generic advice."
             />
             <FeatureCard
               icon={<Smartphone className="w-6 h-6" />}
-              title="Installable PWA"
-              description="Add to Home Screen. Works offline. Feels like a native app."
+              title="No app store needed"
+              description="Install from browser. Works offline. Feels native."
             />
           </div>
         </div>
@@ -284,17 +283,16 @@ export default function Landing() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Start tracking today.
+            You're already putting in the work.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Built for busy people who want one system for fitness.
-            Free forever.
+            Now track it. Free forever. No credit card.
           </p>
           <Link
             to="/signin"
             className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center"
           >
-            Get started
+            Start for free
           </Link>
         </motion.div>
       </section>
