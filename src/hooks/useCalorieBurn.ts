@@ -51,7 +51,7 @@ export function useCalorieBurn(date?: Date) {
   // Get user's weight for calculations (default 70kg if not set)
   const weightKg = preferences?.weight_goal || 70;
 
-  // Fetch today's workout with exercises for category inference
+  // Fetch today's workouts (may have multiple) and pick the longest
   const { data: todayWorkout } = useQuery({
     queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
@@ -72,10 +72,19 @@ export function useCalorieBurn(date?: Date) {
         `)
         .eq('user_id', user.id)
         .eq('date', dateStr)
-        .maybeSingle();
+        .order('workout_duration_minutes', { ascending: false });
 
       if (error) throw error;
-      return data as WorkoutWithExercises | null;
+      if (!data || data.length === 0) return null;
+
+      // Pick the workout with the longest duration
+      const best = data.reduce((longest, w) => {
+        const dur = w.workout_duration_minutes || 0;
+        const longestDur = longest.workout_duration_minutes || 0;
+        return dur > longestDur ? w : longest;
+      }, data[0]);
+
+      return best as WorkoutWithExercises;
     },
     enabled: !!user,
   });

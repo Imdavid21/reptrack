@@ -71,18 +71,20 @@ export function useCalorieHistory(dateRange: DateRange) {
         intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (meal.calories || 0);
       });
 
-      // Group burns by date
+      // Group manual burns by date (from calorie_burns table only)
+      const manualBurnDates = new Set<string>();
       const burnsByDate: Record<string, number> = {};
       (burnsRes.data || []).forEach((burn: any) => {
         burnsByDate[burn.date] = (burnsByDate[burn.date] || 0) + (burn.calories || 0);
+        manualBurnDates.add(burn.date);
       });
 
       // Calculate workout calories from workout data
       (workoutsRes.data || []).forEach((workout: any) => {
         const date = workout.date;
         
-        // Skip if we already have manual burns for this date
-        if (burnsByDate[date]) return;
+        // Skip only if we have MANUAL burns for this date (from calorie_burns table)
+        if (manualBurnDates.has(date)) return;
 
         const exercises = workout.exercises || [];
         
