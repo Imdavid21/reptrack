@@ -57,8 +57,15 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute top-5 right-5 p-2.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95"
+        aria-label="Toggle theme"
+      >
+        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
         <div className="text-center space-y-2">
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
