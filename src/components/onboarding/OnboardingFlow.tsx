@@ -253,8 +253,9 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           />
         )}
         {step === 3 && (
-          <RecoveryStep
+        <RecoveryStep
             value={data.sleep_goal}
+            age={data.profile.age}
             onChange={(v) => setData({ ...data, sleep_goal: v })}
           />
         )}
@@ -559,9 +560,11 @@ function TrainingStep({
 
 function RecoveryStep({
   value,
+  age,
   onChange,
 }: {
   value: number;
+  age: number | null;
   onChange: (v: number) => void;
 }) {
   return (
@@ -573,7 +576,7 @@ function RecoveryStep({
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Sleep goal</h1>
         <p className="text-muted-foreground">
-          We recommend {value}h based on your age. Adjust if you'd like.
+          We recommend {suggestSleep(age)}h based on your age. Adjust if you'd like.
         </p>
       </div>
 
