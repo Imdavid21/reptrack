@@ -3,16 +3,9 @@ import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
 import {
-  Dumbbell,
-  Droplets,
-  Bot,
-  BarChart3,
-  Smartphone,
-  Camera,
-  Trophy,
-  Clock,
+  Sun, Moon, Dumbbell, Droplets, Bot, BarChart3,
+  Smartphone, Camera, Trophy, Clock, Check, X,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
