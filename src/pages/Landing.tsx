@@ -200,7 +200,7 @@ export default function Landing() {
                 <MiniCalorieDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                AI breaks down calories from photos.
+                Snap a photo. Get calories and macros instantly.
               </p>
             </motion.div>
           </motion.div>
