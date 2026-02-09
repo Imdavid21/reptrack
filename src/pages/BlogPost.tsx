@@ -169,14 +169,7 @@ export default function BlogPost() {
     .filter(Boolean) as typeof blogPosts;
 
   return (
-    <>
-      <Helmet>
-        <title>{post.metaTitle}</title>
-        <meta name="description" content={post.metaDescription} />
-        <link rel="canonical" href={`https://reps-and-reminders.lovable.app/blog/${post.slug}`} />
-      </Helmet>
-
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <header className="border-b border-border">
           <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
             <Link to="/blog" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
