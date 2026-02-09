@@ -268,32 +268,36 @@ export default function Landing() {
               title="Follow a real program"
               description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
             />
-          </motion.div>
-
-          {/* And more pills */}
-          <div className="mt-12 pt-12 border-t border-border/50">
-            <p className="text-sm font-medium text-muted-foreground mb-6 text-center">And more</p>
-            <div id="insights" className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {[
-                { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
-                { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
-                { icon: <Moon className="w-4 h-4" />, label: "Sleep insights" },
-                { icon: <Bot className="w-4 h-4" />, label: "AI compatible" },
-                { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
-                { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-2.5 px-4 py-3.5 bg-background border border-border rounded-2xl text-sm"
-                >
-                  <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-xs md:text-sm">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+            <FeatureCard
+              icon={<TrendingUp className="w-6 h-6" />}
+              title="Weekly trends"
+              description="Volume, frequency, and progress charted week over week."
+            />
+            <FeatureCard
+              icon={<Moon className="w-6 h-6" />}
+              title="Sleep & recovery insights"
+              description="Track sleep hours and energy to see how recovery impacts your lifts."
+            />
+            <FeatureCard
+              icon={<Bot className="w-6 h-6" />}
+              title="AI-powered coaching"
+              description="Get workout suggestions and food analysis powered by AI models."
+            />
+            <FeatureCard
+              icon={<Smartphone className="w-6 h-6" />}
+              title="Installable PWA"
+              description="Add to your home screen. Opens instantly, feels native."
+            />
+            <FeatureCard
+              icon={<Wifi className="w-6 h-6" />}
+              title="Works offline"
+              description="No signal in the gym? No problem. Logs sync when you're back online."
+            />
+            <FeatureCard
+              icon={<Globe className="w-6 h-6" />}
+              title="Free forever"
+              description="No subscriptions, no paywalls. Every feature, always free."
+            />
         </div>
       </section>
 
