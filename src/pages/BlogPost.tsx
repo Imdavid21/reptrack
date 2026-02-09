@@ -228,7 +228,7 @@ export default function BlogPost() {
           <div className="my-12 py-6 border-y border-border">
             <p className="text-sm text-muted-foreground leading-relaxed">
               Ready to put this into practice?{' '}
-              <Link to="/sign-up" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
+              <Link to="/signup" className="text-foreground underline underline-offset-4 hover:opacity-70 transition-opacity">
                 Start logging with RepTrack
               </Link>
               {' '}and see your progression automatically.
