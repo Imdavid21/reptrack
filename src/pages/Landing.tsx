@@ -227,48 +227,48 @@ export default function Landing() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <FeatureCard
               icon={<Clock className="w-6 h-6" />}
-              title="Log faster between sets"
-              description="Weights pre-filled from last session. Update reps, done."
+              title="2-second logging"
+              description="Last session's weights pre-filled. Just update reps and go."
             />
             <FeatureCard
               icon={<Trophy className="w-6 h-6" />}
-              title="Auto-detected PRs"
-              description="Every set compared to your history. New PR? You'll know right away."
+              title="PRs you'd miss"
+              description="Hit a new max? Reptrack catches it before you forget."
             />
             <FeatureCard
               icon={<Camera className="w-6 h-6" />}
-              title="AI calorie tracking"
-              description="Snap your meal. AI gives you calories and macros in seconds."
+              title="Photo-to-calories"
+              description="Take a photo of your plate. AI handles the math."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="One-tap water logging"
-              description="Tap after every set. Progress ring keeps you accountable all day."
+              title="Water accountability"
+              description="Tap between sets. See your progress ring fill up."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Weekly trends and insights"
-              description="See how sleep, weight, and volume affect your lifts over time."
+              title="Patterns you can't see"
+              description="Correlates sleep, weight, and volume so you stop guessing."
             />
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
-              title="Real training programs"
-              description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
+              title="Programs that work"
+              description="PPL, Upper/Lower, Full Body. Pick one and start lifting."
             />
             <FeatureCard
               icon={<Moon className="w-6 h-6" />}
-              title="Sleep and recovery"
-              description="Track sleep hours and energy so you know when to push or rest."
+              title="Recovery matters"
+              description="Sleep and energy tracked. Know when to push, when to rest."
             />
             <FeatureCard
               icon={<Bot className="w-6 h-6" />}
-              title="AI coaching"
-              description="Get data-driven tips based on your actual training and recovery patterns."
+              title="AI that knows you"
+              description="Coaching tips based on your data, not generic advice."
             />
             <FeatureCard
               icon={<Smartphone className="w-6 h-6" />}
-              title="Installable PWA"
-              description="Add to Home Screen. Works offline. Feels like a native app."
+              title="No app store needed"
+              description="Install from browser. Works offline. Feels native."
             />
           </div>
         </div>
