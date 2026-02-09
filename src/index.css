@@ -136,9 +136,9 @@
     --chart-4: 0 0% 44%;
     --chart-5: 0 0% 30%;
 
-    /* Insight accent colors - brighter for dark mode */
-    --insight-coral: 12 85% 62%;
-    --insight-mint: 160 65% 55%;
+    /* Insight accent colors - soft pastels for dark */
+    --insight-coral: 0 60% 68%;
+    --insight-mint: 145 40% 60%;
   }
 }
 

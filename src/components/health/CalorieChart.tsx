@@ -163,7 +163,7 @@ export function CalorieChart() {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`burned-${index}`}
-                  fill="hsl(var(--insight-mint))"
+                  fill="hsl(var(--insight-coral))"
                   fillOpacity={0.85}
                 />
               ))}
