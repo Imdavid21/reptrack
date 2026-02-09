@@ -192,7 +192,7 @@ export default function Landing() {
                 <MiniWaterDemo />
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                One tap to log water.
+                One tap between sets. Hit your daily goal without thinking.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="text-center flex flex-col">
