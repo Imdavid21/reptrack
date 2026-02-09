@@ -208,8 +208,8 @@ export function StrengthOverviewChart() {
     : [];
 
   const chartHeight = activeGroup
-    ? Math.max(120, activeGroup.stackedWeekly.length * 40 + 40)
-    : 160;
+    ? Math.max(100, activeGroup.stackedWeekly.length * 36 + 32)
+    : 140;
 
   return (
     <>
@@ -276,27 +276,29 @@ export function StrengthOverviewChart() {
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <Box sx={{ height: chartHeight }}>
+              <Box sx={{ height: chartHeight, mx: -1 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={activeGroup.stackedWeekly}
                     layout="vertical"
-                    margin={{ top: 4, right: 12, bottom: 4, left: 4 }}
+                    margin={{ top: 4, right: 8, bottom: 16, left: 0 }}
+                    barCategoryGap="20%"
                   >
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 10, fill: isDark ? '#888' : '#666' }}
+                      tick={{ fontSize: 9, fill: isDark ? '#888' : '#666' }}
                       axisLine={false}
                       tickLine={false}
-                      unit=" kg"
+                      tickFormatter={(v: number) => `${v}`}
+                      label={{ value: 'kg', position: 'insideBottomRight', offset: -4, fontSize: 9, fill: isDark ? '#666' : '#999' }}
                     />
                     <YAxis
                       type="category"
                       dataKey="week"
-                      tick={{ fontSize: 10, fill: isDark ? '#aaa' : '#555' }}
+                      tick={{ fontSize: 9, fill: isDark ? '#aaa' : '#555' }}
                       axisLine={false}
                       tickLine={false}
-                      width={50}
+                      width={42}
                     />
                     <Tooltip
                       cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}
@@ -304,9 +306,12 @@ export function StrengthOverviewChart() {
                         backgroundColor: isDark ? '#1a1a1a' : '#fff',
                         border: 'none', borderRadius: 8,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
+                        padding: '6px 10px',
+                        maxWidth: 200,
                       }}
                       formatter={(value: number, name: string) => [`${value} kg`, name]}
+                      wrapperStyle={{ zIndex: 10 }}
                     />
                     {activeGroup.exerciseNames.map((name, idx) => (
                       <Bar
