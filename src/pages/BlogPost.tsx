@@ -263,6 +263,31 @@ export default function BlogPost() {
             </Link>
           </div>
         </footer>
+
+        {/* Sticky bottom CTA */}
+        {showBar && !dismissed && (
+          <div className="fixed bottom-0 inset-x-0 z-50 bg-foreground text-background border-t border-border animate-in slide-in-from-bottom-4 duration-300">
+            <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <p className="text-xs sm:text-sm font-medium truncate">Track your workouts. See your progress.</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to="/sign-up"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-background text-foreground text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+                >
+                  Try RepTrack
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                <button
+                  onClick={() => setDismissed(true)}
+                  className="p-1.5 rounded-md hover:bg-background/10 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }
