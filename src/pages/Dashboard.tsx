@@ -1,13 +1,17 @@
 import { Box } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
-
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
+import { useDraftWorkout } from '@/hooks/useDraftWorkout';
+import { Dumbbell, ChevronRight } from 'lucide-react';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { draft, hasProgress } = useDraftWorkout();
 
   return (
     <MainLayout>
@@ -20,6 +24,32 @@ export default function Dashboard() {
           style={{ minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+
+            {/* Resume workout banner */}
+            {draft && hasProgress && (
+              <motion.div
+                variants={staggerItem}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <button
+                  onClick={() => navigate('/app/log')}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-foreground text-background active:scale-[0.98] transition-transform"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-background/15 flex items-center justify-center shrink-0">
+                    <Dumbbell className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-sm font-bold tracking-wide">Resume Workout</div>
+                    <div className="text-[11px] opacity-70 truncate">
+                      {draft.dayName} — {draft.exercises.filter(e => e.sets.some(s => s.completed)).length}/{draft.exercises.length} exercises started
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 opacity-50 shrink-0" />
+                </button>
+              </motion.div>
+            )}
+
             {/* Progress Overview */}
             <motion.div variants={staggerItem}>
               <ProgressHeader />
