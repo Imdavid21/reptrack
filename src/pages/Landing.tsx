@@ -283,17 +283,16 @@ export default function Landing() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Start tracking today.
+            You're already putting in the work.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Built for busy people who want one system for fitness.
-            Free forever.
+            Now track it. Free forever. No credit card.
           </p>
           <Link
             to="/signin"
             className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center"
           >
-            Get started
+            Start for free
           </Link>
         </motion.div>
       </section>
