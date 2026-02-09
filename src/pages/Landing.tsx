@@ -153,7 +153,7 @@ export default function Landing() {
             className="text-center mb-10 md:mb-14"
           >
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              Reptrack vs Others
+              Why Reptrack?
             </h2>
             <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
               Most fitness apps do one thing. Reptrack does it all.
