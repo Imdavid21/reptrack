@@ -153,7 +153,7 @@ export default function Landing() {
             className="text-center mb-10 md:mb-14"
           >
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              Reptrack vs Others
+              Why Reptrack?
             </h2>
             <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
               Most fitness apps do one thing. Reptrack does it all.
@@ -166,28 +166,24 @@ export default function Landing() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground"></th>
                   <th className="py-3 px-4 font-semibold text-center">Reptrack</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">Strong</th>
-                  <th className="py-3 px-4 font-medium text-muted-foreground text-center">MyFitnessPal</th>
+                  <th className="py-3 px-4 font-medium text-muted-foreground text-center" colSpan={2}>Other popular apps</th>
                 </tr>
               </thead>
               <tbody className="text-xs md:text-sm">
                 {[
-                  { feature: "Set-by-set logging", reptrack: true, strong: true, mfp: false },
-                  { feature: "Calorie tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Water tracking", reptrack: true, strong: false, mfp: true },
-                  { feature: "Sleep and recovery", reptrack: true, strong: false, mfp: false },
-                  { feature: "AI food scanning", reptrack: true, strong: false, mfp: false },
-                  { feature: "Weekly insights", reptrack: true, strong: false, mfp: false },
-                  { feature: "Free forever", reptrack: true, strong: false, mfp: false },
+                  { feature: "Set-by-set logging", reptrack: true, others: true },
+                  { feature: "Calorie tracking", reptrack: true, others: true },
+                  { feature: "Water tracking", reptrack: true, others: true },
+                  { feature: "Sleep and recovery", reptrack: true, others: false },
+                  { feature: "AI food scanning", reptrack: true, others: false },
+                  { feature: "Weekly insights", reptrack: true, others: false },
+                  { feature: "Free forever", reptrack: true, others: false },
                 ].map((row) => (
                   <tr key={row.feature} className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
                     <td className="py-3 px-4 text-center font-medium text-foreground">Yes</td>
-                    <td className="py-3 px-4 text-center text-muted-foreground">
-                      {row.strong ? 'Yes' : 'No'}
-                    </td>
-                    <td className="py-3 px-4 text-center text-muted-foreground">
-                      {row.mfp ? 'Yes' : 'No'}
+                    <td className="py-3 px-4 text-center text-muted-foreground" colSpan={2}>
+                      {row.others ? 'Some' : 'No'}
                     </td>
                   </tr>
                 ))}
