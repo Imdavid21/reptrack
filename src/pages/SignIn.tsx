@@ -14,6 +14,7 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading, signIn, resetPassword, updatePassword } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
