@@ -145,19 +145,21 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background scroll-smooth">
+      {/* Theme toggle - fixed position to match auth pages */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-4 right-4 p-2.5 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 z-50 shadow-sm"
+        aria-label="Toggle theme"
+      >
+        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between relative">
           <a href="#hero" onClick={(e) => scrollToSection(e, 'hero')} className="z-10">
             <Logo size="md" />
           </a>
-          <button
-            onClick={toggleTheme}
-            className="p-2.5 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 shadow-sm"
-            aria-label="Toggle theme"
-          >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
         </div>
       </header>
 
