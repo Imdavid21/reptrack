@@ -7,17 +7,12 @@ import { Sun, Moon } from 'lucide-react';
 import {
   Dumbbell,
   Droplets,
-  Sparkles,
-  Activity,
   Bot,
   BarChart3,
-  Globe,
   Smartphone,
   Camera,
   Trophy,
   Clock,
-  TrendingUp,
-  Wifi,
 } from 'lucide-react';
 
 import LiveStatTicker from '@/components/landing/LiveStatTicker';
@@ -85,7 +80,6 @@ export default function Landing() {
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-foreground transition-colors">Features</a>
-            <a href="#insights" onClick={(e) => scrollToSection(e, 'insights')} className="hover:text-foreground transition-colors">Insights</a>
           </nav>
           <button
             onClick={toggleTheme}
@@ -214,7 +208,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Benefits Section (not features) */}
+      {/* Features Section */}
       <section id="features" className="py-20 px-4 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -227,7 +221,7 @@ export default function Landing() {
               Built for the gym.
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Everything you need between sets.
+              Everything you need to train smarter, in one place.
             </p>
           </motion.div>
 
@@ -245,70 +239,45 @@ export default function Landing() {
             />
             <FeatureCard
               icon={<Trophy className="w-6 h-6" />}
-              title="Never miss a PR"
+              title="Auto-detected PRs"
               description="Every set compared to your history. New PR? You'll know right away."
             />
             <FeatureCard
               icon={<Camera className="w-6 h-6" />}
-              title="Skip calorie guesswork"
+              title="AI calorie tracking"
               description="Snap your meal. AI gives you calories and macros in seconds."
             />
             <FeatureCard
               icon={<Droplets className="w-6 h-6" />}
-              title="Stay on top of water"
-              description="One tap after every set. Progress ring keeps you accountable."
+              title="One-tap water logging"
+              description="Tap after every set. Progress ring keeps you accountable all day."
             />
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Know what's working"
+              title="Weekly trends and insights"
               description="See how sleep, weight, and volume affect your lifts over time."
             />
             <FeatureCard
               icon={<Dumbbell className="w-6 h-6" />}
-              title="Follow a real program"
+              title="Real training programs"
               description="Pick PPL, Upper/Lower, or Full Body. Exercises and targets ready to go."
             />
+            <FeatureCard
+              icon={<Moon className="w-6 h-6" />}
+              title="Sleep and recovery"
+              description="Track sleep hours and energy so you know when to push or rest."
+            />
+            <FeatureCard
+              icon={<Bot className="w-6 h-6" />}
+              title="AI coaching"
+              description="Get data-driven tips based on your actual training and recovery patterns."
+            />
+            <FeatureCard
+              icon={<Smartphone className="w-6 h-6" />}
+              title="Installable PWA"
+              description="Add to Home Screen. Works offline. Feels like a native app."
+            />
           </motion.div>
-        </div>
-      </section>
-
-      {/* More than a tracker */}
-      <section id="insights" className="py-16 md:py-24 px-4 border-t border-border">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-10 md:mb-14"
-          >
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
-              More than a tracker.
-            </h2>
-            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-              Everything you need to train smarter, in one place.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              { icon: <TrendingUp className="w-4 h-4" />, label: "Weekly trends" },
-              { icon: <Trophy className="w-4 h-4" />, label: "Auto-detected PRs" },
-              { icon: <Moon className="w-4 h-4" />, label: "Sleep insights" },
-              { icon: <Bot className="w-4 h-4" />, label: "AI compatible" },
-              { icon: <Smartphone className="w-4 h-4" />, label: "Installable PWA" },
-              { icon: <Wifi className="w-4 h-4" />, label: "Works offline" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-2.5 px-4 py-3.5 bg-card border border-border rounded-2xl text-sm"
-              >
-                <div className="w-8 h-8 bg-secondary rounded-xl flex items-center justify-center shrink-0">
-                  {item.icon}
-                </div>
-                <span className="font-medium text-xs md:text-sm">{item.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
