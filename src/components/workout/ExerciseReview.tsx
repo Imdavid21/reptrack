@@ -423,7 +423,7 @@ export function ExerciseReview({
       </div>
 
       {/* Action buttons */}
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 flex flex-col items-center w-full">
         {/* AI suggestion confirmation banner */}
         <AnimatePresence>
           {hasPendingSuggestions && (
@@ -497,7 +497,7 @@ export function ExerciseReview({
         <button
           onClick={onStart}
           disabled={exercises.length === 0}
-          className="btn-brutalist btn-primary w-full py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+          className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
         >
           <Play className="h-4 w-4" />
           Start Workout ({exercises.length} exercises)
