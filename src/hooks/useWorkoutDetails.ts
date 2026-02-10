@@ -48,9 +48,10 @@ export function useWorkoutDetails(workoutId: string | null) {
         .select('*')
         .eq('id', workoutId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (workoutError) throw workoutError;
+      if (!workout) return null;
 
       // Fetch exercises
       const { data: exercises, error: exercisesError } = await supabase
