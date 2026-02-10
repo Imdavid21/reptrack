@@ -58,6 +58,15 @@ STRICT RULES:
 5. Target reps format example: "4x8-10", "3x12-15", "5x5".
 6. Focus on compound movements for primary exercises.
 
+MUSCLE COVERAGE RULES:
+- For Push days: Ensure exercises collectively target upper chest (incline), mid chest (flat), front delts (pressing), side delts (lateral raises), and triceps (pushdowns/extensions). If there are two Push days (A & B), vary the emphasis — e.g., Push A = chest-heavy, Push B = shoulder-heavy — but both must include at least one exercise for each sub-group across the pair.
+- For Pull days: Cover upper back/lats (vertical pulls like pulldowns/pull-ups), mid back/rhomboids (horizontal rows), rear delts (face pulls/reverse fly), biceps (curls with varied grip — supinated, neutral/hammer), and forearms. If two Pull days, alternate between back thickness (rows/deadlifts) and back width (pulldowns/pull-ups) emphasis.
+- For Legs days: Include quad-dominant (squats, leg press, extensions), hamstring-dominant (RDLs, leg curls), glutes (hip thrusts, lunges), and calves. If two Legs days, alternate squat-pattern vs hinge-pattern as the primary movement.
+- For Upper days: Balance push and pull movements. Include at least one horizontal push, one vertical push, one horizontal pull, one vertical pull, plus isolation for side delts and arms.
+- For Full Body days: Each session must include a squat pattern, a hinge pattern, an upper push, and an upper pull. Vary the specific exercises across days.
+
+VARIATION RULE: When creating paired days (A & B), use different exercises for the same muscle group. For example, if Push A has Barbell Bench Press, Push B should use Dumbbell Press or Incline Press as the primary chest movement. Do NOT repeat the same exercise across paired days.
+
 REQUIRED JSON OUTPUT FORMAT (valid JSON only):
 {
   "routineName": "Custom Program Name",
