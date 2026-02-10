@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
+import { OfflineBanner } from "./components/pwa/OfflineBanner";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
@@ -78,6 +79,7 @@ function MuiThemedApp() {
     <MuiThemeProvider theme={isDark ? darkTheme : lightTheme}>
       <CssBaseline />
       <BrowserRouter>
+        <OfflineBanner />
         <AppRoutes />
       </BrowserRouter>
     </MuiThemeProvider>

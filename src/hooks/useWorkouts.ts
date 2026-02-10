@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { enqueueOperation } from '@/lib/offlineSyncQueue';
 
 export interface ExerciseSet {
   setNumber: number;
@@ -91,33 +92,24 @@ export function useWorkouts() {
         ? workout.date.toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
 
-      // Create workout with check-in data
-      const { data: workoutData, error: workoutError } = await supabase
-        .from('workouts')
-        .insert({
-          user_id: user.id,
-          day: workout.day,
-          day_name: workout.day_name,
-          week_number: workout.week_number,
-          date: workoutDate,
-          post_difficulty: workout.postCheckin?.difficulty,
-          post_satisfaction: workout.postCheckin?.satisfaction,
-          workout_duration_minutes: workout.postCheckin?.durationMinutes,
-          started_at: workout.startedAt?.toISOString(),
-          completed_at: workout.completedAt?.toISOString(),
-        })
-        .select()
-        .single();
+      const workoutPayload = {
+        user_id: user.id,
+        day: workout.day,
+        day_name: workout.day_name,
+        week_number: workout.week_number,
+        date: workoutDate,
+        post_difficulty: workout.postCheckin?.difficulty,
+        post_satisfaction: workout.postCheckin?.satisfaction,
+        workout_duration_minutes: workout.postCheckin?.durationMinutes,
+        started_at: workout.startedAt?.toISOString(),
+        completed_at: workout.completedAt?.toISOString(),
+      };
 
-      if (workoutError) throw workoutError;
-
-      // Create exercises - flatten sets into individual exercise records
-      const exercisesToInsert = workout.exercises.flatMap((ex, exIdx) => {
+      // Build exercise rows
+      const exerciseRows = workout.exercises.flatMap((ex, exIdx) => {
         const completedSets = ex.sets.filter(set => set.completed);
         if (completedSets.length === 0) return [];
-
         return completedSets.map((set, setIdx) => ({
-          workout_id: workoutData.id,
           name: `${ex.name} (Set ${set.setNumber})`,
           category: ex.category,
           target_weight: set.targetWeight,
@@ -129,33 +121,86 @@ export function useWorkouts() {
         }));
       });
 
-      if (exercisesToInsert.length > 0) {
-        const { error: exercisesError } = await supabase
-          .from('exercises')
-          .insert(exercisesToInsert);
+      const habitsPayload = {
+        pullups: workout.habits.pullups,
+        water_intake: workout.habits.water_intake,
+        sleep_hours: workout.habits.sleep_hours,
+        energy_level: workout.habits.energy_level,
+        bodyweight: workout.habits.bodyweight,
+        notes: workout.habits.notes,
+      };
 
-        if (exercisesError) throw exercisesError;
+      try {
+        // Try online first
+        const { data: workoutData, error: workoutError } = await supabase
+          .from('workouts')
+          .insert(workoutPayload)
+          .select()
+          .single();
+
+        if (workoutError) throw workoutError;
+
+        if (exerciseRows.length > 0) {
+          const { error: exercisesError } = await supabase
+            .from('exercises')
+            .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
+          if (exercisesError) throw exercisesError;
+        }
+
+        const { error: habitsError } = await supabase
+          .from('habits')
+          .insert({ workout_id: workoutData.id, ...habitsPayload });
+        if (habitsError) throw habitsError;
+
+        return workoutData;
+      } catch (error: any) {
+        // If offline or network failure, queue for background sync
+        const isNetworkError = !navigator.onLine ||
+          error?.message?.includes('Failed to fetch') ||
+          error?.message?.includes('NetworkError') ||
+          error?.message?.includes('ERR_INTERNET_DISCONNECTED');
+
+        if (isNetworkError) {
+          console.log('[OfflineSync] Network unavailable, queuing workout');
+          const groupId = crypto.randomUUID();
+          const tempWorkoutId = crypto.randomUUID();
+
+          await enqueueOperation({
+            table: 'workouts',
+            operation: 'insert',
+            payload: { id: tempWorkoutId, ...workoutPayload },
+            groupId,
+            groupOrder: 0,
+          });
+
+          if (exerciseRows.length > 0) {
+            for (let i = 0; i < exerciseRows.length; i++) {
+              await enqueueOperation({
+                table: 'exercises',
+                operation: 'insert',
+                payload: { workout_id: tempWorkoutId, ...exerciseRows[i] },
+                groupId,
+                groupOrder: i + 1,
+              });
+            }
+          }
+
+          await enqueueOperation({
+            table: 'habits',
+            operation: 'insert',
+            payload: { workout_id: tempWorkoutId, ...habitsPayload },
+            groupId,
+            groupOrder: exerciseRows.length + 1,
+          });
+
+          // Return a fake result so the UI flow continues
+          return { id: tempWorkoutId, ...workoutPayload } as any;
+        }
+
+        throw error;
       }
-
-      // Create habits
-      const { error: habitsError } = await supabase
-        .from('habits')
-        .insert({
-          workout_id: workoutData.id,
-          pullups: workout.habits.pullups,
-          water_intake: workout.habits.water_intake,
-          sleep_hours: workout.habits.sleep_hours,
-          energy_level: workout.habits.energy_level,
-          bodyweight: workout.habits.bodyweight,
-          notes: workout.habits.notes,
-        });
-
-      if (habitsError) throw habitsError;
-
-      return workoutData;
     },
     onSuccess: () => {
-      // Keep analytics in sync immediately after logging a workout
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       queryClient.invalidateQueries({ queryKey: ['volumeData'] });
