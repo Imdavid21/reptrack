@@ -1,60 +1,119 @@
 
 
-## Enhance AI Workout Generator for Full Muscle Sub-Group Coverage
+# Combined Plan: Log Exercises, Fix Reverse Curls, and Add All New Exercises + Variants
 
-### Problem
-The current AI prompt in the workout generator is generic — it says "focus on compound movements" but doesn't guide the AI to ensure comprehensive sub-muscle-group coverage across paired days. For example, Push A and Push B together should collectively target:
-- **Chest**: upper (incline), mid (flat), lower (decline/dips)
-- **Shoulders**: front delts, side delts, rear delts
-- **Triceps**: long head, lateral head, medial head
+## Summary
 
-Similarly for Pull and Legs days. Right now, the AI might generate two nearly identical days or miss important sub-groups like rear delts or hamstrings.
+This plan combines the previous two tasks into one implementation:
 
-### Solution
-Update the system prompt in the `generate-workout` edge function to include explicit muscle sub-group coverage requirements for each split type.
+1. Insert 6 new exercise rows into the database (Back Extension + Lever Seated Row)
+2. Rename "Reverse Curls" to "Barbell Reverse Curls" in the database
+3. Add all new exercises (back extensions, lever rows, reverse curl variations) to the three exercise data files
 
-### Changes
+---
 
-**1. `supabase/functions/generate-workout/index.ts`** — Enhanced system prompt
+## Part 1: Database Changes
 
-Add a new section to the system prompt with split-specific sub-group coverage rules:
+### Insert Back Extension 90 Degree (3 sets)
 
-```
-MUSCLE COVERAGE RULES:
-- For Push days: Ensure exercises collectively target upper chest (incline), mid chest (flat), 
-  front delts (pressing), side delts (lateral raises), and triceps (pushdowns/extensions). 
-  If there are two Push days (A & B), vary the emphasis — e.g., Push A = chest-heavy, Push B = shoulder-heavy — 
-  but both must include at least one exercise for each sub-group across the pair.
+Workout ID: `0c36ec63-bf3c-4e75-b2c5-28293a311a44`
 
-- For Pull days: Cover upper back/lats (vertical pulls like pulldowns/pull-ups), mid back/rhomboids 
-  (horizontal rows), rear delts (face pulls/reverse fly), biceps (curls with varied grip — supinated, 
-  neutral/hammer), and forearms. If two Pull days, alternate between back thickness (rows/deadlifts) 
-  and back width (pulldowns/pull-ups) emphasis.
+| Name | Sort Order | Actual Weight | Actual Reps | Category | Completed |
+|---|---|---|---|---|---|
+| Back Extension 90 Degree (Set 1) | 600 | 80 | 21 | accessory | true |
+| Back Extension 90 Degree (Set 2) | 601 | 80 | 21 | accessory | true |
+| Back Extension 90 Degree (Set 3) | 602 | 80 | 21 | accessory | true |
 
-- For Legs days: Include quad-dominant (squats, leg press, extensions), hamstring-dominant 
-  (RDLs, leg curls), glutes (hip thrusts, lunges), and calves. If two Legs days, alternate 
-  squat-pattern vs hinge-pattern as the primary movement.
+### Insert Lever Seated Row Machine (3 sets)
 
-- For Upper days: Balance push and pull movements. Include at least one horizontal push, one vertical push, 
-  one horizontal pull, one vertical pull, plus isolation for side delts and arms.
+| Name | Sort Order | Actual Weight | Actual Reps | Category | Completed |
+|---|---|---|---|---|---|
+| Lever Seated Row Machine (Set 1) | 700 | 30 | 12 | accessory | true |
+| Lever Seated Row Machine (Set 2) | 701 | 30 | 12 | accessory | true |
+| Lever Seated Row Machine (Set 3) | 702 | 30 | 12 | accessory | true |
 
-- For Full Body days: Each session must include a squat pattern, a hinge pattern, an upper push, 
-  and an upper pull. Vary the specific exercises across days.
-```
+### Rename Reverse Curls to Barbell Reverse Curls
 
-Also add a rule ensuring variation between A/B day pairs:
-```
-VARIATION RULE: When creating paired days (A & B), use different exercises for the same muscle group. 
-For example, if Push A has Barbell Bench Press, Push B should use Dumbbell Press or Incline Press as 
-the primary chest movement. Do NOT repeat the same exercise across paired days.
-```
+Update 3 existing rows (weights stay the same since they're already total barbell weight):
 
-### Technical Details
+| ID | Old Name | New Name |
+|---|---|---|
+| ce4aafc7... | Reverse Curls (Set 1) | Barbell Reverse Curls (Set 1) |
+| fa8f2d15... | Reverse Curls (Set 2) | Barbell Reverse Curls (Set 2) |
+| 5d3e3683... | Reverse Curls (Set 3) | Barbell Reverse Curls (Set 3) |
 
-- Only the edge function prompt changes — no frontend or database changes needed
-- The existing JSON output format stays the same
-- The AI model (gpt-4o-mini) already supports these detailed instructions within context limits
-- This is backward compatible — the response structure is unchanged
+No duration change needed.
 
-### Outcome
-AI-generated routines will ensure every muscle sub-group is covered across paired training days, producing more balanced and effective programs.
+---
+
+## Part 2: Code Changes
+
+### File 1: `src/lib/exerciseClassification.ts`
+
+**Update existing entries** (lines 149-152):
+- Change `'reverse curl'` and `'reverse curls'` from `Biceps` to `Forearms` (more anatomically accurate)
+- Change `'wrist curl'` and `'wrist curls'` from `Biceps` to `Forearms`
+
+**Add new entries** to the classification map:
+
+Under a new **ARMS -- Forearms** section:
+- `'barbell reverse curls'` / `'barbell reverse curl'` -> Forearms / arms
+- `'dumbbell reverse curls'` / `'dumbbell reverse curl'` -> Forearms / arms
+- `'ez bar reverse curls'` / `'ez bar reverse curl'` -> Forearms / arms
+- `'cable reverse curls'` / `'cable reverse curl'` -> Forearms / arms
+
+Under the **BACK** section:
+- `'back extension 90 degree'` / `'back extension'` / `'back extensions'` / `'hyperextension'` / `'hyperextensions'` / `'back extension machine'` -> Back / back
+- `'lever seated row machine'` / `'lever seated row'` / `'plate loaded row'` / `'plate loaded rows'` -> Back / back
+
+**Add fallback patterns**:
+- `'back extension'` -> Back / back (multi-word, before single-word patterns)
+- `'reverse curl'` -> Forearms / arms (multi-word, before the generic `'curl'` -> Biceps fallback)
+- `'lever row'` -> Back / back (multi-word)
+
+### File 2: `src/lib/exerciseLibrary.ts`
+
+Add to the `'Pull'` array:
+
+| Exercise | Category | Default Weight | Default Reps | Muscle Group |
+|---|---|---|---|---|
+| Back Extension 90 Degree | accessory | BW | 3x15-20 | Lower Back |
+| Back Extension | accessory | BW | 3x15-20 | Lower Back |
+| Hyperextension | accessory | BW | 3x12-15 | Lower Back |
+| Lever Seated Row Machine | primary | 30kg | 3x10-12 | Back |
+| Reverse Curls | accessory | 10kg | 3x12-15 | Forearms |
+| Barbell Reverse Curls | accessory | 20kg | 3x12-15 | Forearms |
+| Dumbbell Reverse Curls | accessory | 10kg | 3x12-15 | Forearms |
+| EZ Bar Reverse Curls | accessory | 20kg | 3x12-15 | Forearms |
+| Cable Reverse Curls | accessory | 15kg | 3x12-15 | Forearms |
+
+### File 3: `src/lib/exerciseVariants.ts`
+
+Add new variant groups under a labeled **Forearms -- Reverse Curls** section and **Back -- Extensions / Lever Rows** section:
+
+**Reverse Curls group** (each entry lists the other variations as swappable alternatives):
+- `'Reverse Curls'` (dumbbell) <-> Barbell Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
+- `'Barbell Reverse Curls'` (barbell) <-> Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
+- `'Dumbbell Reverse Curls'` (dumbbell) <-> Reverse Curls, Barbell Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls
+- `'EZ Bar Reverse Curls'` (barbell) <-> Reverse Curls, Barbell Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
+- `'Cable Reverse Curls'` (cable) <-> Reverse Curls, Barbell Reverse Curls, EZ Bar Reverse Curls, Dumbbell Reverse Curls
+
+**Back Extension group**:
+- `'Back Extension 90 Degree'` (bodyweight) <-> Back Extension, Hyperextension
+- `'Back Extension'` (bodyweight) <-> Back Extension 90 Degree, Hyperextension
+- `'Hyperextension'` (bodyweight) <-> Back Extension 90 Degree, Back Extension
+
+**Lever Seated Row group**:
+- `'Lever Seated Row Machine'` (machine) <-> Seated Cable Row, T-Bar Row
+
+---
+
+## Files Modified
+
+| File | Change |
+|---|---|
+| Database (`exercises` table) | 6 INSERTs + 3 UPDATEs |
+| `src/lib/exerciseClassification.ts` | ~20 new entries + 3 fallback patterns + fix Forearms labeling |
+| `src/lib/exerciseLibrary.ts` | 9 new exercises in Pull array |
+| `src/lib/exerciseVariants.ts` | ~10 new variant entries with proper section labels |
+
