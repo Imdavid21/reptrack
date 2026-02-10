@@ -470,7 +470,7 @@ export function ExerciseReview({
             <>
               <button
                 onClick={() => setShowPicker(true)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Add Exercise
