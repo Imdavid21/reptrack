@@ -12,6 +12,7 @@ import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
+import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
@@ -104,6 +105,7 @@ export default function LogWorkout() {
   const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
+  const { customDays, hasCustomRoutine, isLoading: routineLoading } = useCustomRoutine();
 
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -122,9 +124,10 @@ export default function LogWorkout() {
   const [isAIGenerating, setIsAIGenerating] = useState(false);
 
   const splitDays = useMemo(() => {
+    if (hasCustomRoutine && customDays) return customDays;
     const split = preferences?.training_split || 'ppl6';
     return getSplitDays(split);
-  }, [preferences?.training_split]);
+  }, [preferences?.training_split, hasCustomRoutine, customDays]);
 
   const { completedSets, totalSets } = useMemo(() => {
     const total = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
@@ -190,7 +193,7 @@ export default function LogWorkout() {
     return () => clearTimeout(timeoutId);
   }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
-  if (prefsLoading) {
+  if (prefsLoading || routineLoading) {
     return (
       <MainLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
