@@ -91,11 +91,16 @@ export function useAuth() {
   };
 
   const linkOAuthProvider = async (provider: 'google' | 'apple') => {
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin + '/settings',
+    // Use linkIdentity to associate the OAuth provider with the current user
+    // instead of signInWithOAuth which creates a new user
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider,
+      options: {
+        redirectTo: window.location.origin + '/app/settings',
+      },
     });
-    if (result.error) {
-      return { error: result.error };
+    if (error) {
+      return { error };
     }
     return { error: null };
   };
