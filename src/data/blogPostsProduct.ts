@@ -366,8 +366,8 @@ A: Your full training history is accessible through the history page.
 **Q: What counts as a "workout" for the heatmap?**
 A: Any logged session with at least one completed set.
 
-**Q: Does logging a daily check-in count?**
-A: Morning and evening check-ins are tracked separately. The heatmap reflects actual training sessions.
+**Q: Does logging a rest day count?**
+A: No. The heatmap reflects actual training sessions with at least one completed set.
 
 ## Build Your Streak
 
@@ -475,7 +475,7 @@ Stop bouncing between a workout tracker and a calorie counter. RepTrack puts bot
     metaDescription: 'The RepTrack Insights page turns your raw workout data into actionable charts. Volume trends, strength curves, body part balance, and AI coaching tips.',
     funnel: 'bofu',
     heroImage: '/blog/insights-analytics.jpg',
-    tldr: 'Your Insights page shows strength overview charts, body part volume distribution, sleep and energy correlations, weekly summaries, and AI-powered coaching tips. It turns months of logged data into clear visual trends you can act on.',
+    tldr: 'Your Insights page shows strength overview charts, body part volume distribution, sleep and bodyweight trends, weekly summaries, and AI-powered coaching tips. It turns months of logged data into clear visual trends you can act on.',
     publishDate: '2026-05-31',
     content: `## The Problem
 
@@ -507,12 +507,12 @@ A visual breakdown of how much volume (sets) each muscle group receives per week
 
 The chart uses your exercise data to automatically classify volume by body part.
 
-### Sleep and Energy Correlation
+### Sleep and Bodyweight Trends
 
-If you log your morning check-ins (sleep hours, energy level), the Insights page shows how these correlate with your training performance:
+Your Insights page tracks sleep hours and bodyweight over time, showing how they relate to your training:
 
 - Better sleep = stronger sessions?
-- Low energy days = missed reps?
+- Bodyweight trending in the right direction?
 - Your personal patterns emerge after 4-6 weeks of data
 
 ### Weekly and Monthly Summaries
@@ -547,7 +547,7 @@ These are not generic tips. They come from your actual data.
 ## Tips for Getting Better Insights
 
 1. **Log consistently.** Gaps in data create gaps in charts. Even a 3-exercise session counts.
-2. **Log morning check-ins.** Sleep and energy data make your insights dramatically more useful.
+2. **Track sleep and bodyweight.** These metrics make your insights dramatically more useful.
 3. **Use a date range longer than 30 days.** Short ranges show noise. Long ranges show trends.
 4. **Act on what you see.** If the chart shows a plateau, change something. Data without action is decoration.
 
@@ -767,98 +767,90 @@ One tap per glass. That is the entire system. Open your dashboard, log your wate
 
   // ===== PRODUCT 9 =====
   {
-    slug: 'how-to-use-reptrack-morning-evening-checkins',
-    title: 'How to Use RepTrack Morning and Evening Check-ins',
-    primaryKeyword: 'daily check-in workout app',
-    secondaryKeywords: ['morning health check-in', 'sleep tracking for lifters', 'energy tracking gym app', 'recovery check-in app', 'daily wellness tracker'],
+    slug: 'how-reptrack-auto-saves-your-workout',
+    title: 'How RepTrack Auto-Saves Your Workout (So You Never Lose Data)',
+    primaryKeyword: 'workout auto save app',
+    secondaryKeywords: ['workout draft save', 'never lose workout data', 'gym app auto save', 'workout session recovery', 'crash proof workout log'],
     intent: 'transactional',
-    metaTitle: 'RepTrack Morning & Evening Check-ins | Guide',
-    metaDescription: 'RepTrack morning and evening check-ins track sleep, energy, bodyweight, and recovery. Here is how to use them to optimize training readiness.',
+    metaTitle: 'RepTrack Auto-Save | Never Lose a Set',
+    metaDescription: 'RepTrack auto-saves your workout draft every few seconds. Phone dies? App crashes? Your session is right where you left it when you reopen.',
     funnel: 'bofu',
     heroImage: '/blog/morning-checkin-guide.jpg',
-    tldr: 'RepTrack offers morning check-ins (sleep hours, energy level, bodyweight, heart rate) and evening check-ins (performance score, steps, notes). Logging these daily gives you recovery data that correlates directly with your training performance over time.',
+    tldr: 'RepTrack saves your workout draft automatically as you log each set. If the app closes, your phone dies, or you get a call mid-session, reopen RepTrack and your workout is exactly where you left it. No data lost, ever.',
     publishDate: '2026-06-06',
     content: `## The Problem
 
-You train hard but ignore everything outside the gym. Sleep, energy, and recovery data go untracked. Then you wonder why some weeks you feel unstoppable and others you can barely finish your warm-up.
+You are three exercises deep into a session. Your phone dies. Or the app crashes. Or you accidentally close it. You reopen and everything is gone. You have to guess what you already did, retype weights from memory, and start from scratch.
 
-The gym is where you apply stress. Recovery is where you adapt. You track one but not the other.
+This is the number one reason people stop using workout trackers.
 
-## How Check-ins Work in RepTrack
+## How RepTrack Handles This
 
-**RepTrack has two daily check-in types: morning and evening.** Together, they capture the recovery data that explains your training performance.
+**RepTrack automatically saves your workout draft every few seconds while you are logging.** Every completed set, every weight entry, every exercise is persisted locally. If anything interrupts your session, your data survives.
 
-### Morning Check-in
+### What Gets Auto-Saved
 
-Log when you wake up:
+| Data | Saved? |
+|------|--------|
+| Exercises in the session | Yes |
+| Completed sets with weights/reps | Yes |
+| Current exercise position | Yes |
+| Target weights pre-filled | Yes |
+| Session start time | Yes |
 
-| Field | What to Log | Why It Matters |
-|-------|------------|---------------|
-| Sleep hours | How long you slept | 7+ hours correlates with better training |
-| Sleep time | When you went to bed | Consistency matters more than duration |
-| Wake time | When you woke up | Tracks your rhythm |
-| Energy level | 1-10 scale | Predicts session quality |
-| Bodyweight | Morning weight, post-bathroom | Most accurate daily measurement |
-| Heart rate | Resting HR | Elevated = under-recovered |
-| Notes | Anything notable | Illness, stress, travel |
+### How It Works
 
-### Evening Check-in
+1. You start a workout session
+2. As you complete each set, the draft updates automatically
+3. If the app closes for any reason, the draft persists
+4. When you reopen RepTrack, it detects the unfinished session
+5. You pick up exactly where you left off
 
-Log at the end of your day:
+No "save" button. No manual backup. It just works.
 
-| Field | What to Log | Why It Matters |
-|-------|------------|---------------|
-| Performance score | Rate your day 1-10 | Tracks overall productivity |
-| Energy score | End-of-day energy | Chronic fatigue shows up here |
-| Steps | Daily step count | Activity outside the gym |
-| Rest day toggle | Was today a rest day? | Keeps rest patterns visible |
-| Notes | Reflections | Stress, diet quality, mood |
+### Real Scenarios Where This Saves You
 
-### What You Get From Consistent Check-ins
+- **Phone call mid-set.** Come back to the app, your set is still there
+- **Battery dies at the gym.** Charge up, reopen, continue logging
+- **Accidentally swipe the app closed.** Reopen and your session is waiting
+- **Switch to another app** (music, timer, messaging). Come back and nothing is lost
 
-After 2-4 weeks of daily check-ins, your Insights page reveals:
+## Why This Matters More Than You Think
 
-1. **Sleep-performance correlation:** Do you lift better after 8 hours vs 6?
-2. **Bodyweight trends:** Weekly averages smooth out daily fluctuations
-3. **Energy patterns:** Which days of the week are your lowest? Highest?
-4. **Recovery readiness:** Elevated resting HR often means you need a lighter session
+The average gym session has 15-25 sets. Each set has a weight and rep count. That is 30-50 data points per session. Losing even one session means:
 
-### How to Build the Check-in Habit
+- Lost PR data that cannot be recreated
+- Broken consistency streak on your heatmap
+- Missing volume data that skews your weekly totals
+- Frustration that makes you less likely to log next time
 
-1. **Morning:** Log right after you wake up. Set your phone on the nightstand with RepTrack open
-2. **Evening:** Log before bed as part of your wind-down routine
-3. **Keep it fast:** Each check-in takes 30-60 seconds
-4. **Do not skip weekends.** Recovery does not take days off
+Auto-save eliminates this entire category of problems.
 
-## Real Example: Using Check-in Data
+## Tips for a Smooth Logging Experience
 
-Say your training log shows your squat dropped from 95kg x 6 to 90kg x 5 over two weeks. Without check-in data, you might think your program is bad.
-
-With check-in data, you see:
-- Sleep dropped from 7.5h to 5.5h average
-- Energy ratings dropped from 7/10 to 4/10
-- Bodyweight dropped 1.5kg (possible under-eating)
-
-The answer is not "change your program." It is "sleep more and eat more." Your data tells you this. Without it, you are guessing.
+1. **Do not worry about saving.** RepTrack handles it automatically
+2. **Log sets as you complete them.** Do not batch everything at the end
+3. **If you need to leave mid-workout,** just close the app. It will be there when you get back
+4. **Finish your session properly** by tapping "Complete Workout" when done, so it saves as a full session in your history
 
 ## Common Questions
 
-**Q: Do I have to log both morning and evening?**
-A: No. Morning alone gives you the most valuable data (sleep, weight, energy).
+**Q: How long does the draft persist?**
+A: Until you either complete the workout or manually discard it.
 
-**Q: How accurate does bodyweight need to be?**
-A: Weigh yourself the same way each morning (after bathroom, before food). The trend matters more than any single number.
+**Q: Can I have multiple drafts?**
+A: One active draft at a time. Complete or discard the current one to start a new session.
 
-**Q: What if I forget a day?**
-A: Skip it. One missed day does not ruin weeks of data.
+**Q: Does it work offline?**
+A: The draft saves locally. Your completed workout syncs to the cloud when you have a connection.
 
-**Q: Can I see check-in data on the Insights page?**
-A: Yes. Sleep, energy, and bodyweight charts appear alongside your training analytics.
+**Q: What if I want to discard a session?**
+A: You can cancel the workout to clear the draft and start fresh.
 
-## Track the Full Picture
+## Never Lose a Rep
 
-Training data alone tells you what happened. Check-in data tells you why. Two minutes a day of morning logging gives you the recovery insights that separate good training from great training.`,
-    internalLinks: ['rest-day-workout-recovery', 'how-to-use-reptrack-insights-page', 'data-driven-lifters-get-stronger'],
+The best workout tracker is the one you trust with your data. RepTrack's auto-save means you never have to worry about losing a session. Just lift, log, and let the app handle the rest.`,
+    internalLinks: ['how-to-log-your-first-workout-in-reptrack', 'how-reptrack-tracks-personal-records', 'how-to-review-workout-history-in-reptrack'],
   },
 
   // ===== PRODUCT 10 =====
@@ -898,10 +890,8 @@ Tap any workout to see the full breakdown:
 
 - Every exercise performed that session
 - Set-by-set data: weight, reps, completed or not
-- Pre-workout energy and motivation ratings
-- Post-workout difficulty and satisfaction scores
 - Session duration
-- Any notes you added
+- Total volume lifted
 
 This is the equivalent of a detailed coaching report for every session you have ever done.
 
