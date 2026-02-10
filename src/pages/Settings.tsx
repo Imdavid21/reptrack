@@ -714,7 +714,7 @@ export default function Settings() {
           {/* Version */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3, mt: 'auto' }}>
             <Logo size="sm" />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontFamily: '"Space Grotesk", sans-serif' }}>
               v3.2
             </Typography>
           </Box>
