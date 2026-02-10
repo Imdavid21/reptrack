@@ -13,52 +13,111 @@ serve(async (req) => {
 
   try {
     const { summary } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not configured");
-      throw new Error("AI service not configured. Please add your OpenAI API key in settings.");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
+      throw new Error("AI service not configured");
     }
 
     if (!summary) {
       return new Response(
-        JSON.stringify({ error: "No workout summary provided" }),
+        JSON.stringify({ error: "No data provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const systemPrompt = `You are a concise, data-driven strength & conditioning coach. Analyze the workout data and return 3-5 short, actionable insights.
+    const systemPrompt = `You are a brutally honest, data-driven strength & conditioning coach. You analyze a user's complete fitness picture – training, nutrition, hydration, sleep, and body composition – and deliver 4-6 specific, actionable insights.
 
 RULES:
-- Each insight must be 1 sentence max, direct and specific
-- Reference actual numbers from the data (weights, percentages, days)
-- Prioritize: regressions > plateaus > imbalances > positive trends
-- Categories: "strength", "recovery", "balance", "consistency", "progress"
+- Each insight MUST be 1-2 sentences max, direct and specific
+- Reference actual numbers from the data (weights, calories, percentages, days)
+- Prioritize: regressions > nutritional gaps > plateaus > imbalances > recovery issues > positive trends
+- Categories: "strength", "recovery", "nutrition", "hydration", "balance", "consistency", "progress"
 - Priority 1-5 (5 = most urgent)
-- Be brutally honest but constructive
-- Never use filler phrases like "Great job!" or "Keep it up!"`;
+- Cross-reference data: e.g. if sleep is low AND strength plateaued, connect them
+- If calorie data exists, comment on protein/calorie adequacy for their goals
+- If water data exists, assess hydration relative to training intensity
+- Be brutally honest but constructive. No filler phrases.
+- If user profile data is available, tailor advice to their age, weight, goals`;
 
-    const userPrompt = `Analyze this training data and provide coaching insights:
+    // Build a rich context prompt
+    const sections: string[] = [];
 
-EXERCISE PROGRESS (weight changes):
-${summary.exerciseProgress?.length > 0
-  ? summary.exerciseProgress.map((e: any) => `- ${e.name}: ${e.startWeight}kg → ${e.currentWeight}kg (${e.change > 0 ? '+' : ''}${e.change.toFixed(1)}kg)`).join('\n')
-  : 'No exercise progression data yet.'}
+    // User profile
+    if (summary.userProfile) {
+      const p = summary.userProfile;
+      const profileParts: string[] = [];
+      if (p.age) profileParts.push(`Age: ${p.age}`);
+      if (p.gender) profileParts.push(`Gender: ${p.gender}`);
+      if (p.height_cm) profileParts.push(`Height: ${p.height_cm}cm`);
+      if (p.fitness_goal) profileParts.push(`Goal: ${p.fitness_goal}`);
+      if (p.daily_calorie_goal) profileParts.push(`Calorie goal: ${p.daily_calorie_goal} kcal`);
+      if (p.daily_water_goal) profileParts.push(`Water goal: ${p.daily_water_goal} ml`);
+      if (p.weekly_workout_goal) profileParts.push(`Workout goal: ${p.weekly_workout_goal}/week`);
+      if (profileParts.length > 0) sections.push(`USER PROFILE:\n${profileParts.join(' | ')}`);
+    }
 
-VOLUME SPLIT: Push ${summary.volumeBreakdown?.push || 0}kg / Pull ${summary.volumeBreakdown?.pull || 0}kg / Legs ${summary.volumeBreakdown?.legs || 0}kg
-WORKOUTS: ${summary.totalWorkouts || 0} total, ${summary.daysActive || 0} active days
-SLEEP: ${summary.avgSleep ? summary.avgSleep.toFixed(1) + 'h avg' : 'Not tracked'}
-ENERGY: ${summary.avgEnergy ? summary.avgEnergy.toFixed(1) + '/10 avg' : 'Not tracked'}
-PULL-UPS: ${summary.pullupTotal || 0} total`;
+    // Exercise progress
+    if (summary.exerciseProgress?.length > 0) {
+      sections.push(`EXERCISE PROGRESS (weight changes):\n${
+        summary.exerciseProgress.map((e: any) =>
+          `- ${e.name}: ${e.startWeight}kg → ${e.currentWeight}kg (${e.change > 0 ? '+' : ''}${e.change.toFixed(1)}kg)`
+        ).join('\n')
+      }`);
+    } else {
+      sections.push('EXERCISE PROGRESS: No progression data yet.');
+    }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Volume
+    const vb = summary.volumeBreakdown || {};
+    sections.push(`VOLUME SPLIT: Push ${vb.push || 0}kg / Pull ${vb.pull || 0}kg / Legs ${vb.legs || 0}kg`);
+
+    // Workout frequency
+    sections.push(`WORKOUTS: ${summary.totalWorkouts || 0} sessions, ${summary.daysActive || 0} active days in period`);
+
+    // Sleep
+    sections.push(`SLEEP: ${summary.avgSleep ? summary.avgSleep.toFixed(1) + 'h avg' : 'Not tracked'}`);
+
+    // Nutrition
+    if (summary.nutrition) {
+      const n = summary.nutrition;
+      const nutritionParts: string[] = [];
+      if (n.avgCalories) nutritionParts.push(`Avg calories: ${Math.round(n.avgCalories)} kcal`);
+      if (n.avgProtein) nutritionParts.push(`Avg protein: ${Math.round(n.avgProtein)}g`);
+      if (n.avgCarbs) nutritionParts.push(`Avg carbs: ${Math.round(n.avgCarbs)}g`);
+      if (n.avgFat) nutritionParts.push(`Avg fat: ${Math.round(n.avgFat)}g`);
+      if (n.daysTracked) nutritionParts.push(`Tracked ${n.daysTracked} days`);
+      if (n.calorieGoal) nutritionParts.push(`Goal: ${n.calorieGoal} kcal`);
+      sections.push(`NUTRITION:\n${nutritionParts.join(' | ') || 'Not tracked'}`);
+    } else {
+      sections.push('NUTRITION: Not tracked');
+    }
+
+    // Hydration
+    if (summary.hydration) {
+      const h = summary.hydration;
+      sections.push(`HYDRATION: Avg ${Math.round(h.avgIntake || 0)}ml/day, tracked ${h.daysTracked || 0} days${h.waterGoal ? `, goal ${h.waterGoal}ml` : ''}`);
+    } else {
+      sections.push('HYDRATION: Not tracked');
+    }
+
+    // Bodyweight trend
+    if (summary.bodyweightTrend) {
+      const bw = summary.bodyweightTrend;
+      sections.push(`BODYWEIGHT: ${bw.start ? bw.start + 'kg' : '?'} → ${bw.current ? bw.current + 'kg' : '?'} (${bw.change > 0 ? '+' : ''}${bw.change?.toFixed(1) || '0'}kg over period)`);
+    }
+
+    const userPrompt = `Analyze this complete fitness profile and provide coaching insights:\n\n${sections.join('\n\n')}`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -68,7 +127,7 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
             type: "function",
             function: {
               name: "provide_coaching_insights",
-              description: "Return 3-5 actionable coaching insights based on workout data analysis.",
+              description: "Return 4-6 actionable coaching insights based on comprehensive fitness data analysis.",
               parameters: {
                 type: "object",
                 properties: {
@@ -79,7 +138,7 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
                       properties: {
                         category: {
                           type: "string",
-                          enum: ["strength", "recovery", "balance", "consistency", "progress"],
+                          enum: ["strength", "recovery", "nutrition", "hydration", "balance", "consistency", "progress"],
                         },
                         priority: {
                           type: "integer",
@@ -87,7 +146,7 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
                         },
                         text: {
                           type: "string",
-                          description: "One concise sentence with specific data references",
+                          description: "1-2 concise sentences with specific data references",
                         },
                       },
                       required: ["category", "priority", "text"],
@@ -108,7 +167,7 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI error:", response.status, errorText);
+      console.error("AI gateway error:", response.status, errorText);
 
       if (response.status === 429) {
         return new Response(
@@ -116,10 +175,10 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402 || response.status === 401) {
+      if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Invalid API key. Please check your OpenAI API key in settings." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "AI credits exhausted. Please add credits in workspace settings." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
@@ -155,11 +214,11 @@ PULL-UPS: ${summary.pullupTotal || 0} total`;
       .map((i: any) => ({
         category: i.category,
         priority: Math.min(Math.max(i.priority, 1), 5),
-        text: i.text.slice(0, 200),
+        text: i.text.slice(0, 250),
         icon: "",
       }))
       .sort((a: any, b: any) => b.priority - a.priority)
-      .slice(0, 5);
+      .slice(0, 6);
 
     console.log("Generated", validInsights.length, "AI coaching insights");
 
