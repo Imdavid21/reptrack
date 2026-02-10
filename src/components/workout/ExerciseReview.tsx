@@ -213,7 +213,7 @@ function ExerciseItemCard({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={targetInfo?.targetReps || ''}
+                  value={displayReps(targetInfo?.targetReps)}
                   onChange={(e) => handleRepsChange(e.target.value)}
                   className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
                 />
