@@ -7,7 +7,7 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useMeals';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Edit2, Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
+import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,7 @@ export default function History() {
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
+  const [selectedEditDate, setSelectedEditDate] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
     sleepHours: string;
     sleepMinutes: string;
@@ -183,27 +184,18 @@ export default function History() {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-0.5">
-                            {!isEditing && (
-                              <button
-                                onClick={() => startEdit(dateStr)}
-                               className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
-                              >
-                                <Edit2 size={13} />
-                              </button>
-                            )}
-                            {workout && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedWorkoutForEdit(workout);
-                                }}
-                                className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
-                              >
-                                <MoreHorizontal size={13} />
-                              </button>
-                            )}
-                          </div>
+                          {!isEditing && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedWorkoutForEdit(workout || null);
+                                setSelectedEditDate(dateStr);
+                              }}
+                              className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
+                            >
+                              <MoreHorizontal size={13} />
+                            </button>
+                          )}
                         </div>
 
                         {/* Inline Edit Mode */}
@@ -323,8 +315,21 @@ export default function History() {
 
           <WorkoutEditSheet
             workout={selectedWorkoutForEdit}
-            open={!!selectedWorkoutForEdit}
-            onOpenChange={(open) => !open && setSelectedWorkoutForEdit(null)}
+            open={!!selectedWorkoutForEdit || !!selectedEditDate}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedWorkoutForEdit(null);
+                setSelectedEditDate(null);
+              }
+            }}
+            onEditVitals={() => {
+              if (selectedEditDate) {
+                startEdit(selectedEditDate);
+                setSelectedWorkoutForEdit(null);
+                setSelectedEditDate(null);
+              }
+            }}
+            dateStr={selectedEditDate || undefined}
           />
         </div>
       </AnimatedPage>

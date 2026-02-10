@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/drawer';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { toast } from '@/lib/toast';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Moon } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,26 +22,30 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
 
 interface WorkoutEditSheetProps {
     workout: Workout | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onEditVitals?: () => void;
+    dateStr?: string;
 }
 
-export function WorkoutEditSheet({ workout, open, onOpenChange }: WorkoutEditSheetProps) {
+export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, dateStr }: WorkoutEditSheetProps) {
     const navigate = useNavigate();
     const { deleteWorkout } = useWorkouts();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
-    if (!workout) return null;
-
     const handleEdit = () => {
-        navigate(`/app/history/${workout.id}`);
-        onOpenChange(false);
+        if (workout) {
+            navigate(`/app/history/${workout.id}`);
+            onOpenChange(false);
+        }
     };
 
     const handleDelete = async () => {
+        if (!workout) return;
         try {
             await deleteWorkout(workout.id);
             toast.success('Workout deleted');
@@ -52,34 +56,58 @@ export function WorkoutEditSheet({ workout, open, onOpenChange }: WorkoutEditShe
         }
     };
 
+    const displayDate = workout
+        ? format(new Date(workout.date), 'MMM d, yyyy')
+        : dateStr
+            ? format(new Date(dateStr), 'MMM d, yyyy')
+            : '';
+
+    const title = workout ? workout.day_name : 'Edit Day';
+
     return (
         <>
             <Drawer open={open} onOpenChange={onOpenChange}>
                 <DrawerContent>
                     <div className="mx-auto w-full max-w-md">
                         <DrawerHeader className="pb-2">
-                            <DrawerTitle className="text-base font-bold">{workout.day_name}</DrawerTitle>
+                            <DrawerTitle className="text-base font-bold">{title}</DrawerTitle>
                             <DrawerDescription className="text-xs text-muted-foreground">
-                                {new Date(workout.date).toLocaleDateString()}
+                                {displayDate}
                             </DrawerDescription>
                         </DrawerHeader>
 
                         <div className="px-4 pb-2 space-y-2">
-                            <button
-                                onClick={handleEdit}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
-                            >
-                                <Edit className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium">Edit Details & Exercises</span>
-                            </button>
+                            {/* Edit Vitals — always available */}
+                            {onEditVitals && (
+                                <button
+                                    onClick={onEditVitals}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                                >
+                                    <Moon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Edit Sleep & Weight</span>
+                                </button>
+                            )}
 
-                            <button
-                                onClick={() => setShowDeleteAlert(true)}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
-                            >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                                <span className="text-sm font-medium text-destructive">Delete Entry</span>
-                            </button>
+                            {/* Workout-specific actions */}
+                            {workout && (
+                                <>
+                                    <button
+                                        onClick={handleEdit}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                                    >
+                                        <Edit className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Edit Exercises</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setShowDeleteAlert(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+                                    >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                        <span className="text-sm font-medium text-destructive">Delete Workout</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
 
                         <DrawerFooter className="pt-2">
