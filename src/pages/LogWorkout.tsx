@@ -395,7 +395,11 @@ export default function LogWorkout() {
         completedAt: new Date(),
       });
       clearDraft();
-      toast.success('Workout logged! 💪');
+      if (!navigator.onLine) {
+        toast.success('Workout saved offline — will sync when back online 📴');
+      } else {
+        toast.success('Workout logged! 💪');
+      }
       navigate('/app');
     } catch (error: any) {
       console.error('[FinishWorkout] Error:', error);
