@@ -2,7 +2,7 @@
   "name": "Reptrack Fitness",
   "short_name": "Reptrack",
   "description": "Your Personal Health & Fitness Tracker",
-  "start_url": "/signin",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
