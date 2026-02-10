@@ -17,7 +17,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { haptic } from '@/lib/haptics';
-import { getMuscleGroup } from '@/lib/exerciseClassification';
+import { getMuscleGroup, stripSetSuffix } from '@/lib/exerciseClassification';
 
 // Labels for chip rendering
 const MUSCLE_GROUP_LABELS = [
@@ -76,8 +76,9 @@ export function StrengthOverviewChart() {
       }
       const exerciseMap = weekMap.get(weekKey)!;
       
-      const currentMax = exerciseMap.get(set.exercise_name) || 0;
-      exerciseMap.set(set.exercise_name, Math.max(currentMax, set.actual_weight));
+      const exerciseName = stripSetSuffix(set.exercise_name);
+      const currentMax = exerciseMap.get(exerciseName) || 0;
+      exerciseMap.set(exerciseName, Math.max(currentMax, set.actual_weight));
     });
 
     // Build muscle group objects
