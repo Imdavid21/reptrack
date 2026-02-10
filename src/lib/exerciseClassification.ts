@@ -357,7 +357,7 @@ const CATEGORY_FALLBACK: Record<string, Classification> = {
 
 // ── Lookup logic ─────────────────────────────────────────────────────────────
 function classify(name: string): Classification | undefined {
-  const lower = name.toLowerCase().trim();
+  const lower = stripSetSuffix(name).toLowerCase().trim();
 
   // 1 — exact match
   if (EXERCISE_CLASSIFICATION[lower]) return EXERCISE_CLASSIFICATION[lower];
@@ -392,4 +392,9 @@ export function getBodyPart(name: string, fallbackCategory?: string): string {
 export function getMuscleGroup(name: string): string {
   const cls = classify(name);
   return cls?.muscleGroup ?? 'other';
+}
+
+/** Strip "(Set N)" suffix from exercise names for grouping purposes */
+export function stripSetSuffix(name: string): string {
+  return name.replace(/\s*\(set\s*\d+\)\s*$/i, '').trim();
 }

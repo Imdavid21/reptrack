@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, startOfWeek, parseISO } from 'date-fns';
+import { stripSetSuffix } from '@/lib/exerciseClassification';
 
 export interface ExerciseSet {
   id: string;
@@ -121,7 +122,7 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         return {
           id: ex.id,
           workout_id: ex.workout_id,
-          exercise_name: ex.name,
+          exercise_name: stripSetSuffix(ex.name),
           exercise_category: categorizeByDayName(dayName),
           set_number: ex.sort_order ?? idx + 1,
           target_weight: parseWeight(ex.target_weight),
