@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography, Skeleton, Chip, Collapse, useTheme, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Moon, Scale, Calendar, Zap, Sparkles, ChevronDown, ChevronUp, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { Brain, TrendingUp, Moon, Scale, Calendar, Zap, Sparkles, ChevronDown, ChevronUp, RefreshCw, Loader2, AlertCircle, Droplets, Utensils } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useMLInsights } from '@/hooks/useMLInsights';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -11,6 +11,8 @@ import { toast } from '@/lib/toast';
 const categoryIcons: Record<string, React.ReactNode> = {
   strength: <TrendingUp size={14} />,
   recovery: <Moon size={14} />,
+  nutrition: <Utensils size={14} />,
+  hydration: <Droplets size={14} />,
   balance: <Scale size={14} />,
   consistency: <Calendar size={14} />,
   progress: <Zap size={14} />,
@@ -19,6 +21,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
 const categoryColors: Record<string, string> = {
   strength: 'success.main',
   recovery: 'info.main',
+  nutrition: 'warning.main',
+  hydration: 'info.light',
   balance: 'warning.main',
   consistency: 'primary.main',
   progress: 'secondary.main',
