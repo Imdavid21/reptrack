@@ -1,16 +1,29 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { blogPosts } from '@/data/blogPosts';
 import { useSEO } from '@/hooks/useSEO';
 
+const categories = [
+  { key: 'all', label: 'All' },
+  { key: 'tofu', label: 'Fundamentals' },
+  { key: 'mofu', label: 'Systems' },
+  { key: 'bofu', label: 'Tools' },
+] as const;
+
 export default function Blog() {
+  const [active, setActive] = useState<string>('all');
+
   useSEO({
     title: 'RepTrack Blog | Training Tips & Progressive Overload',
     description: 'Practical guides on progressive overload, workout logging, and building a training system that lasts. Get stronger with systems, not guesswork.',
     canonical: 'https://reps-and-reminders.lovable.app/blog',
   });
-  const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+
+  const sortedPosts = [...blogPosts]
+    .filter(p => active === 'all' || p.funnel === active)
+    .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,7 +38,23 @@ export default function Blog() {
 
         <main className="max-w-4xl mx-auto px-4 py-12 md:py-20">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Blog</h1>
-          <p className="text-muted-foreground mb-12">Practical guides on progressive overload, workout logging, and building a training system that lasts.</p>
+          <p className="text-muted-foreground mb-6">Practical guides on progressive overload, workout logging, and building a training system that lasts.</p>
+
+          <div className="flex gap-2 mb-10 flex-wrap">
+            {categories.map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => setActive(cat.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  active === cat.key
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             {sortedPosts.map(post => (
