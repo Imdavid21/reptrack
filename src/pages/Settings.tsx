@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, signOut, updateEmail, resetPassword, linkOAuthProvider, unlinkOAuthProvider } = useAuth();
+  const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
@@ -56,7 +56,7 @@ export default function Settings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+  
 
   // Profile state
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -426,15 +426,29 @@ export default function Settings() {
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                     <Link2 size={16} />
-                    <Typography variant="body2" fontWeight={600}>Linked Accounts</Typography>
+                    <Typography variant="body2" fontWeight={600}>Sign-in Methods</Typography>
                   </Box>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                    Link social accounts to sign in faster
+                    Accounts used to sign in
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {/* Email */}
+                    {user?.identities?.some(i => i.provider === 'email') && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'background.paper', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Mail size={16} />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>Email</Typography>
+                            <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
+                          </Box>
+                        </Box>
+                        <span className="text-xs text-primary font-medium">Active</span>
+                      </Box>
+                    )}
                     {/* Google */}
                     {(() => {
                       const googleIdentity = user?.identities?.find(i => i.provider === 'google');
+                      if (!googleIdentity) return null;
                       return (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'background.paper', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -446,98 +460,40 @@ export default function Settings() {
                             </svg>
                             <Box>
                               <Typography variant="body2" fontWeight={500}>Google</Typography>
-                              {googleIdentity && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {(googleIdentity.identity_data as any)?.email || 'Connected'}
-                                </Typography>
-                              )}
+                              <Typography variant="caption" color="text.secondary">
+                                {(googleIdentity.identity_data as any)?.email || 'Connected'}
+                              </Typography>
                             </Box>
                           </Box>
-                          {googleIdentity ? (
-                            <button
-                              onClick={async () => {
-                                setLinkingProvider('google');
-                                const { error } = await unlinkOAuthProvider(googleIdentity.id);
-                                if (error) {
-                                  toast.error(error.message || 'Failed to unlink Google');
-                                }
-                                setLinkingProvider(null);
-                              }}
-                              disabled={linkingProvider === 'google'}
-                              className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                            >
-                              {linkingProvider === 'google' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Unlink'}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={async () => {
-                                setLinkingProvider('google');
-                                const { error } = await linkOAuthProvider('google');
-                                if (error) {
-                                  toast.error(error.message || 'Failed to link Google');
-                                  setLinkingProvider(null);
-                                }
-                              }}
-                              disabled={linkingProvider === 'google'}
-                              className="text-xs font-medium border border-border rounded-lg px-3 py-1.5 hover:bg-muted transition-colors disabled:opacity-50"
-                            >
-                              {linkingProvider === 'google' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Link'}
-                            </button>
-                          )}
+                          <span className="text-xs text-primary font-medium">Active</span>
                         </Box>
                       );
                     })()}
-
                     {/* Apple */}
                     {(() => {
                       const appleIdentity = user?.identities?.find(i => i.provider === 'apple');
+                      if (!appleIdentity) return null;
                       return (
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'background.paper', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                             <AppleIcon className="w-4 h-4" />
                             <Box>
                               <Typography variant="body2" fontWeight={500}>Apple</Typography>
-                              {appleIdentity && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {(appleIdentity.identity_data as any)?.email || 'Connected'}
-                                </Typography>
-                              )}
+                              <Typography variant="caption" color="text.secondary">
+                                {(appleIdentity.identity_data as any)?.email || 'Connected'}
+                              </Typography>
                             </Box>
                           </Box>
-                          {appleIdentity ? (
-                            <button
-                              onClick={async () => {
-                                setLinkingProvider('apple');
-                                const { error } = await unlinkOAuthProvider(appleIdentity.id);
-                                if (error) {
-                                  toast.error(error.message || 'Failed to unlink Apple');
-                                }
-                                setLinkingProvider(null);
-                              }}
-                              disabled={linkingProvider === 'apple'}
-                              className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                            >
-                              {linkingProvider === 'apple' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Unlink'}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={async () => {
-                                setLinkingProvider('apple');
-                                const { error } = await linkOAuthProvider('apple');
-                                if (error) {
-                                  toast.error(error.message || 'Failed to link Apple');
-                                  setLinkingProvider(null);
-                                }
-                              }}
-                              disabled={linkingProvider === 'apple'}
-                              className="text-xs font-medium border border-border rounded-lg px-3 py-1.5 hover:bg-muted transition-colors disabled:opacity-50"
-                            >
-                              {linkingProvider === 'apple' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Link'}
-                            </button>
-                          )}
+                          <span className="text-xs text-primary font-medium">Active</span>
                         </Box>
                       );
                     })()}
+                    {/* Show message if only email */}
+                    {!user?.identities?.some(i => i.provider === 'google' || i.provider === 'apple') && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Sign in with Google or Apple from the login page to add them here.
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
 
