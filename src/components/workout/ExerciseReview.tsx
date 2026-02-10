@@ -29,6 +29,7 @@ interface ExerciseReviewProps {
   onSwitchDay?: (dayKey: string) => void;
   onSkipExercises?: () => void;
   lastUsedNames?: Set<string>;
+  isResuming?: boolean;
 }
 
 function ExerciseItemCard({
@@ -247,6 +248,7 @@ export function ExerciseReview({
   onSwitchDay,
   onSkipExercises,
   lastUsedNames,
+  isResuming,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -500,7 +502,7 @@ export function ExerciseReview({
           className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
         >
           <Play className="h-4 w-4" />
-          Start Workout ({exercises.length} exercises)
+          {isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`}
         </button>
 
         {/* Skip exercises */}
