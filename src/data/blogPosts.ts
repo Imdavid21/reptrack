@@ -15,6 +15,7 @@ export interface BlogPost {
 }
 
 import { blogPostsExtra } from './blogPostsExtra';
+import { blogPostsProduct } from './blogPostsProduct';
 
 const blogPostsBase: BlogPost[] = [
   // ===== TOFU 1 =====
@@ -1488,7 +1489,7 @@ RepTrack turns your training data into motivation. Your progression charts updat
   },
 ];
 
-export const blogPosts: BlogPost[] = [...blogPostsBase, ...blogPostsExtra];
+export const blogPosts: BlogPost[] = [...blogPostsBase, ...blogPostsExtra, ...blogPostsProduct];
 
 // Helper to get a post by slug
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
