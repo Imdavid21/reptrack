@@ -137,7 +137,7 @@ export function useMeals(date?: Date) {
   };
 }
 
-export function useCalorieHistory(days: number = 30) {
+export function useDailyCalorieTotals(days: number = 30) {
   const { user } = useAuth();
 
   return useQuery({

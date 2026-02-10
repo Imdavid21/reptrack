@@ -13,7 +13,7 @@ import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
-import { useWorkouts, WorkoutExercise, Habits, ExerciseSet } from '@/hooks/useWorkouts';
+import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
@@ -32,15 +32,6 @@ type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
 
 
-
-const defaultHabits: Habits = {
-  pullups: 0,
-  water_intake: 0,
-  sleep_hours: 0,
-  energy_level: 5,
-  bodyweight: undefined,
-  notes: '',
-};
 
 function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   const match = targetReps.match(/^(\d+)x(.+)$/);
@@ -112,7 +103,6 @@ export default function LogWorkout() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [habits] = useState<Habits>(defaultHabits);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
@@ -179,7 +169,6 @@ export default function LogWorkout() {
         date: selectedDate.toISOString(),
         weekNumber,
         exercises,
-        habits,
         currentExerciseIndex,
         currentSetIndex,
         step,
@@ -187,7 +176,7 @@ export default function LogWorkout() {
       });
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [exercises, habits, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
+  }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
   if (prefsLoading || routineLoading) {
     return (
@@ -302,7 +291,6 @@ export default function LogWorkout() {
         week_number: weekNumber,
         date: selectedDate,
         exercises: [],
-        habits,
         startedAt: new Date(),
         completedAt: new Date(),
       });
@@ -381,7 +369,6 @@ export default function LogWorkout() {
         week_number: weekNumber,
         date: selectedDate,
         exercises,
-        habits,
         postCheckin: {
           difficulty: 5,
           satisfaction: 7,

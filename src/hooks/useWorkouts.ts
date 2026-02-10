@@ -80,7 +80,7 @@ export function useWorkouts() {
       week_number: number;
       date?: Date;
       exercises: WorkoutExercise[];
-      habits: Habits;
+      habits?: Habits;
       postCheckin?: PostCheckin;
       startedAt?: Date;
       completedAt?: Date;
@@ -121,14 +121,14 @@ export function useWorkouts() {
         }));
       });
 
-      const habitsPayload = {
+      const habitsPayload = workout.habits ? {
         pullups: workout.habits.pullups,
         water_intake: workout.habits.water_intake,
         sleep_hours: workout.habits.sleep_hours,
         energy_level: workout.habits.energy_level,
         bodyweight: workout.habits.bodyweight,
         notes: workout.habits.notes,
-      };
+      } : null;
 
       try {
         // Try online first
@@ -147,10 +147,12 @@ export function useWorkouts() {
           if (exercisesError) throw exercisesError;
         }
 
-        const { error: habitsError } = await supabase
-          .from('habits')
-          .insert({ workout_id: workoutData.id, ...habitsPayload });
-        if (habitsError) throw habitsError;
+        if (habitsPayload) {
+          const { error: habitsError } = await supabase
+            .from('habits')
+            .insert({ workout_id: workoutData.id, ...habitsPayload });
+          if (habitsError) throw habitsError;
+        }
 
         return workoutData;
       } catch (error: any) {
@@ -185,13 +187,15 @@ export function useWorkouts() {
             }
           }
 
-          await enqueueOperation({
-            table: 'habits',
-            operation: 'insert',
-            payload: { workout_id: tempWorkoutId, ...habitsPayload },
-            groupId,
-            groupOrder: exerciseRows.length + 1,
-          });
+          if (habitsPayload) {
+            await enqueueOperation({
+              table: 'habits',
+              operation: 'insert',
+              payload: { workout_id: tempWorkoutId, ...habitsPayload },
+              groupId,
+              groupOrder: exerciseRows.length + 1,
+            });
+          }
 
           // Return a fake result so the UI flow continues
           return { id: tempWorkoutId, ...workoutPayload } as any;

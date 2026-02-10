@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { analyzeFoodImage, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
 import { 
@@ -30,6 +31,7 @@ const MEAL_LABELS = {
 
 export function CalorieTracker() {
   const { user } = useAuth();
+  const { preferences } = useUserPreferences();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
@@ -128,8 +130,8 @@ export function CalorieTracker() {
     }
   };
 
-  const DAILY_GOAL = 2000;
-  const progressPercent = Math.min((totalCalories / DAILY_GOAL) * 100, 100);
+  const dailyGoal = preferences?.daily_calorie_goal || 2000;
+  const progressPercent = Math.min((totalCalories / dailyGoal) * 100, 100);
 
   return (
     <>
@@ -141,7 +143,7 @@ export function CalorieTracker() {
 
         <div className="text-4xl font-bold tabular-nums">
           {totalCalories.toLocaleString()}
-          <span className="text-lg text-muted-foreground"> / {DAILY_GOAL}</span>
+          <span className="text-lg text-muted-foreground"> / {dailyGoal}</span>
         </div>
 
         <div className="progress-bar mt-4">
