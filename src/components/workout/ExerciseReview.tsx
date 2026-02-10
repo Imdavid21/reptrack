@@ -58,6 +58,14 @@ function ExerciseItemCard({
   const totalSets = exercise.sets.length;
   const targetInfo = exercise.sets[0];
 
+  // Extract max from rep ranges like "10-12" → "12"
+  const displayReps = (reps: string | undefined) => {
+    if (!reps) return '—';
+    const match = reps.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (match) return match[2];
+    return reps;
+  };
+
   const handleSetsChange = (delta: number) => {
     haptic('light');
     const newCount = Math.max(1, Math.min(10, totalSets + delta));
@@ -137,7 +145,7 @@ function ExerciseItemCard({
             )}
             <span>{totalSets} sets</span>
             <span className="opacity-40">·</span>
-            <span>{targetInfo?.targetReps || '—'}</span>
+            <span>{displayReps(targetInfo?.targetReps)}</span>
             {targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
               <>
                 <span className="opacity-40">·</span>
