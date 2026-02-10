@@ -1,6 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, Tag, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, Calendar, ArrowRight, X } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { getBlogPostBySlug, blogPosts } from '@/data/blogPosts';
 import { useSEO } from '@/hooks/useSEO';
@@ -202,7 +202,6 @@ export default function BlogPost() {
           {/* Meta */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground mb-6">
             <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(post.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{post.funnel.toUpperCase()}</span>
           </div>
 
           {/* Title */}
