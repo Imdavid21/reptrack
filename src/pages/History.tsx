@@ -271,7 +271,7 @@ export default function History() {
                             {/* Workout chip - navigates to detail */}
                             {workout && !isSkipped && (
                               <button
-                                onClick={() => navigate(`/history/${workout.id}`)}
+                                onClick={() => navigate(`/app/history/${workout.id}`)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
                               >
                                 <Dumbbell size={13} />
