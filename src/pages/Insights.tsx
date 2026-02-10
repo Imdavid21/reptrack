@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
@@ -20,13 +20,11 @@ import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
 import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
-import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { CalorieChart } from '@/components/health/CalorieChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
-import { format } from 'date-fns';
 
 const FITNESS_GOALS = [
   { value: 'lose_weight', label: 'Lose Weight' },

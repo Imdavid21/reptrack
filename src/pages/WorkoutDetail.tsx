@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkoutDetails } from '@/hooks/useWorkoutDetails';
 import { format } from 'date-fns';
-import { Check, Edit2, Loader2, Trash2, Plus, X, Save } from 'lucide-react';
+import { Check, Edit2, Loader2, Trash2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';

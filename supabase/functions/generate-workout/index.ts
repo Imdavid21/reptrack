@@ -11,21 +11,36 @@ serve(async (req) => {
   }
 
   try {
-    const { goals, trainingSplit = "ppl6", experienceLevel = "intermediate" } = await req.json();
+    const body = await req.json();
+    const goals = body.goals;
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+
+    // Validate and sanitize inputs
+    const VALID_SPLITS = ["ppl6", "ppl5", "upper_lower4", "full_body3", "custom"];
+    const VALID_EXPERIENCE = ["beginner", "intermediate", "advanced"];
+    const trainingSplit = VALID_SPLITS.includes(body.trainingSplit) ? body.trainingSplit : "ppl6";
+    const experienceLevel = VALID_EXPERIENCE.includes(body.experienceLevel) ? body.experienceLevel : "intermediate";
 
     if (!OPENAI_API_KEY) {
       console.error("OPENAI_API_KEY is not configured");
-      throw new Error("AI service not configured. Please add your OpenAI API key in settings.");
+      return new Response(
+        JSON.stringify({ error: "AI service not configured" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (!goals || typeof goals !== "string" || goals.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Please provide your fitness goals" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Limit goals length to prevent token abuse
+    if (goals.length > 1000) {
+      return new Response(
+        JSON.stringify({ error: "Goals description is too long (max 1000 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

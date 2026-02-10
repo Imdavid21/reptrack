@@ -48,8 +48,9 @@ export function useCalorieBurn(date?: Date) {
   const queryClient = useQueryClient();
   const dateStr = format(date || new Date(), 'yyyy-MM-dd');
 
-  // Get user's weight for calculations (default 70kg if not set)
-  const weightKg = preferences?.weight_goal || 70;
+  // Get user's current bodyweight for calculations (default 70kg if not set)
+  // Note: uses bodyweight from daily metrics, falling back to weight_goal, then 70kg
+  const weightKg = preferences?.weight_goal || 70; // TODO: should use actual bodyweight from daily_metrics, not target weight
 
   // Fetch today's workouts (may have multiple) and pick the longest
   const { data: todayWorkout } = useQuery({

@@ -102,7 +102,7 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
     
     // Retry on 5xx errors or rate limits
     if ((response.status >= 500 || response.status === 429) && attempt <= MAX_RETRIES) {
-      const delay = RETRY_DELAY_MS * attempt; // Exponential backoff
+      const delay = RETRY_DELAY_MS * attempt; // Linear backoff
       console.log(`Retrying in ${delay}ms...`);
       await sleep(delay);
       return callOpenAI(imageUrl, apiKey, attempt + 1);

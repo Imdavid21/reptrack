@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
@@ -371,7 +371,7 @@ export function CalorieTrackerCompact() {
                           <span className="tabular-nums text-muted-foreground">{meal.calories}</span>
                           <button
                             onClick={() => handleDeleteMeal(meal.id)}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
+                            className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>

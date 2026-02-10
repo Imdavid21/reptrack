@@ -1,7 +1,6 @@
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Check, ChevronRight, GripVertical } from 'lucide-react';
-import { ExercisePicker } from './ExercisePicker';
+import { Check, ChevronRight } from 'lucide-react';
 
 interface ExerciseOverviewProps {
   exercises: WorkoutExercise[];

@@ -1,6 +1,6 @@
 import { RoutineSetup } from '@/components/workout/RoutineSetup';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -22,11 +22,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles, Minus } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { normalizeExerciseName, findBestMatch } from '@/lib/exerciseMatching';
+import { findBestMatch } from '@/lib/exerciseMatching';
 
 type Step = 'select-day' | 'review' | 'exercises';
 type ExerciseViewMode = 'single' | 'overview';
@@ -142,10 +142,6 @@ export default function LogWorkout() {
   const dayType = dayData ? getDayType(dayData.name) : undefined;
   const currentExercise = exercises[currentExerciseIndex];
 
-  const progressPercent = step === 'select-day' ? 33
-    : step === 'review' ? 66
-    : 100;
-
   // Build available days list for the day switcher
   const availableDays = useMemo(() => {
     return Object.entries(splitDays).map(([key, day]) => ({
@@ -163,7 +159,7 @@ export default function LogWorkout() {
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       const validStep: Step = draft.step === 'exercises' ? 'exercises' :
-                              draft.step === 'review' ? 'review' : 'review';
+                              draft.step === 'review' ? 'review' : 'exercises';
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);

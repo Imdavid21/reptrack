@@ -24,7 +24,7 @@ const MET_VALUES: Record<string, number> = {
 export function useCalorieHistory(dateRange: DateRange) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
-  const weightKg = preferences?.weight_goal || 70;
+  const weightKg = preferences?.weight_goal || 70; // TODO: should use actual bodyweight from daily_metrics, not target weight
 
   const startDateStr = format(dateRange.from, 'yyyy-MM-dd');
   const endDateStr = format(dateRange.to, 'yyyy-MM-dd');
