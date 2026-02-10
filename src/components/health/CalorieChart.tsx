@@ -150,7 +150,7 @@ export function CalorieChart() {
                 <Cell
                   key={`intake-${index}`}
                   fill="hsl(var(--insight-mint))"
-                  fillOpacity={0.85}
+                  fillOpacity={0.7}
                 />
               ))}
             </Bar>
@@ -164,7 +164,7 @@ export function CalorieChart() {
                 <Cell
                   key={`burned-${index}`}
                   fill="hsl(var(--insight-coral))"
-                  fillOpacity={0.85}
+                  fillOpacity={0.7}
                 />
               ))}
             </Bar>
