@@ -8,45 +8,95 @@ export interface DateRangeFilter {
   to: Date;
 }
 
-// Map exercises to body parts
-const exerciseToBodyPart: Record<string, string> = {
-  // Push
-  'Bench Press': 'Chest',
-  'Incline Press': 'Chest',
-  'Shoulder Press': 'Shoulders',
-  'Overhead Press': 'Shoulders',
-  'Tricep Pushdown': 'Triceps',
-  'Dips': 'Chest',
-  'Lateral Raises': 'Shoulders',
-  'Cable Fly': 'Chest',
-  
-  // Pull
-  'Pull-ups': 'Back',
-  'Lat Pulldown': 'Back',
-  'Rows': 'Back',
-  'Barbell Row': 'Back',
-  'Cable Row': 'Back',
-  'Face Pulls': 'Rear Delts',
-  'Bicep Curls': 'Biceps',
-  'Hammer Curls': 'Biceps',
-  
-  // Legs
-  'Squats': 'Quads',
-  'Leg Press': 'Quads',
-  'Romanian Deadlift': 'Hamstrings',
-  'Deadlift': 'Glutes',
-  'Leg Curl': 'Hamstrings',
-  'Leg Extension': 'Quads',
-  'Calf Raises': 'Calves',
-  'Hip Thrust': 'Glutes',
-  'Lunges': 'Quads',
+// Explicit overrides for ambiguous exercises
+const BODY_PART_OVERRIDES: Record<string, string> = {
+  'overhead tricep extension': 'Triceps',
+  'dumbbell overhead extension': 'Triceps',
+  'cable rope overhead tricep extension': 'Triceps',
+  'close grip bench press': 'Triceps',
+  'close grip push-ups': 'Chest',
+  'rear delt fly + lat raise': 'Shoulders',
+  'rear delt fly': 'Rear Delts',
+  'bent over rear delt flyes': 'Rear Delts',
+  'face pull': 'Rear Delts',
+  'face pulls': 'Rear Delts',
+  'negative pull-ups': 'Lats',
+  'close grip chest press': 'Chest',
+  'skull crushers': 'Triceps',
+  'cable pushdown': 'Triceps',
 };
+
+// Map exercises to body parts via pattern matching
+const exerciseToBodyPart: [string, string][] = [
+  // Chest
+  ['bench press', 'Chest'],
+  ['bench', 'Chest'],
+  ['chest', 'Chest'],
+  ['fly', 'Chest'],
+  ['flye', 'Chest'],
+  ['dip', 'Chest'],
+  ['push-up', 'Chest'],
+  ['pushup', 'Chest'],
+  ['incline db press', 'Chest'],
+  ['db press', 'Chest'],
+  ['db bench', 'Chest'],
+  // Back
+  ['pull-up', 'Lats'],
+  ['pullup', 'Lats'],
+  ['lat pulldown', 'Lats'],
+  ['pulldown', 'Lats'],
+  ['row', 'Back'],
+  ['deadlift', 'Posterior Chain'],
+  ['chin', 'Back'],
+  // Shoulders
+  ['shoulder', 'Shoulders'],
+  ['overhead press', 'Shoulders'],
+  ['ohp', 'Shoulders'],
+  ['lateral', 'Side Delts'],
+  ['raise', 'Side Delts'],
+  ['delt', 'Rear Delts'],
+  ['arnold', 'Shoulders'],
+  // Arms
+  ['curl', 'Biceps'],
+  ['bicep', 'Biceps'],
+  ['hammer', 'Biceps'],
+  ['tricep', 'Triceps'],
+  ['pushdown', 'Triceps'],
+  ['extension', 'Triceps'],
+  ['skull', 'Triceps'],
+  // Legs
+  ['squat', 'Quads'],
+  ['leg press', 'Quads'],
+  ['leg extension', 'Quads'],
+  ['leg curl', 'Hamstrings'],
+  ['leg', 'Quads'],
+  ['lunge', 'Quads'],
+  ['calf', 'Calves'],
+  ['thrust', 'Glutes'],
+  ['glute', 'Glutes'],
+  ['romanian', 'Hamstrings'],
+  ['hamstring', 'Hamstrings'],
+  ['hip', 'Glutes'],
+  ['goblet', 'Quads'],
+];
 
 // Guess body part from exercise name
 function guessBodyPart(exerciseName: string, category: string): string {
-  // Check direct match first
-  for (const [pattern, bodyPart] of Object.entries(exerciseToBodyPart)) {
-    if (exerciseName.toLowerCase().includes(pattern.toLowerCase())) {
+  const lower = exerciseName.toLowerCase();
+  
+  // Check explicit overrides first
+  if (BODY_PART_OVERRIDES[lower]) {
+    return BODY_PART_OVERRIDES[lower];
+  }
+  
+  // Priority check: "overhead extension" → Triceps (not Shoulders)
+  if ((lower.includes('overhead') || lower.includes('cable')) && (lower.includes('extension') || lower.includes('tricep'))) {
+    return 'Triceps';
+  }
+  
+  // Pattern matching
+  for (const [pattern, bodyPart] of exerciseToBodyPart) {
+    if (lower.includes(pattern)) {
       return bodyPart;
     }
   }
@@ -54,34 +104,21 @@ function guessBodyPart(exerciseName: string, category: string): string {
   // Fallback by category
   switch (category) {
     case 'push':
-      if (exerciseName.toLowerCase().includes('shoulder') || exerciseName.toLowerCase().includes('lateral')) {
-        return 'Shoulders';
-      }
-      if (exerciseName.toLowerCase().includes('tricep')) {
-        return 'Triceps';
-      }
+      if (lower.includes('shoulder') || lower.includes('lateral')) return 'Shoulders';
+      if (lower.includes('tricep')) return 'Triceps';
       return 'Chest';
     case 'pull':
-      if (exerciseName.toLowerCase().includes('curl') || exerciseName.toLowerCase().includes('bicep')) {
-        return 'Biceps';
-      }
+      if (lower.includes('curl') || lower.includes('bicep')) return 'Biceps';
       return 'Back';
     case 'legs':
-      if (exerciseName.toLowerCase().includes('calf')) {
-        return 'Calves';
-      }
-      if (exerciseName.toLowerCase().includes('curl') || exerciseName.toLowerCase().includes('hamstring')) {
-        return 'Hamstrings';
-      }
-      if (exerciseName.toLowerCase().includes('glute') || exerciseName.toLowerCase().includes('hip')) {
-        return 'Glutes';
-      }
+      if (lower.includes('calf')) return 'Calves';
+      if (lower.includes('curl') || lower.includes('hamstring')) return 'Hamstrings';
+      if (lower.includes('glute') || lower.includes('hip')) return 'Glutes';
       return 'Quads';
     default:
       return 'Other';
   }
 }
-
 export interface BodyPartProgress {
   bodyPart: string;
   weeks: {

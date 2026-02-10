@@ -18,18 +18,45 @@ import { format, parseISO, startOfWeek, isWithinInterval } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { haptic } from '@/lib/haptics';
 
+// Explicit overrides for ambiguous exercises
+const EXERCISE_OVERRIDES: Record<string, string> = {
+  'overhead tricep extension': 'arms',
+  'dumbbell overhead extension': 'arms',
+  'cable rope overhead tricep extension': 'arms',
+  'close grip bench press': 'arms',
+  'close grip push-ups': 'chest',
+  'rear delt fly + lat raise': 'shoulders',
+  'rear delt fly': 'shoulders',
+  'bent over rear delt flyes': 'shoulders',
+  'face pull': 'shoulders',
+  'face pulls': 'shoulders',
+  'negative pull-ups': 'back',
+  'close grip chest press': 'chest',
+};
+
 // Muscle group definitions with pattern matching
 const MUSCLE_GROUPS = [
-  { key: 'chest', label: 'Chest', patterns: ['chest', 'bench', 'fly', 'flye', 'dip'] },
-  { key: 'back', label: 'Back', patterns: ['row', 'pulldown', 'pull-up', 'pullup', 'chin', 'lat', 'deadlift'] },
-  { key: 'shoulders', label: 'Shoulders', patterns: ['shoulder', 'overhead', 'ohp', 'lateral', 'raise', 'delt', 'arnold'] },
+  { key: 'chest', label: 'Chest', patterns: ['chest', 'bench press', 'bench', 'fly', 'flye', 'dip', 'push-up', 'pushup', 'incline db press', 'incline press', 'db press', 'db bench'] },
+  { key: 'back', label: 'Back', patterns: ['row', 'pulldown', 'pull-up', 'pullup', 'chin-up', 'chinup', 'chin', 'deadlift', 'lat pull'] },
+  { key: 'shoulders', label: 'Shoulders', patterns: ['shoulder', 'ohp', 'lateral', 'raise', 'delt', 'arnold', 'overhead press', 'barbell ohp'] },
   { key: 'arms', label: 'Arms', patterns: ['curl', 'tricep', 'bicep', 'pushdown', 'extension', 'skull', 'hammer'] },
-  { key: 'legs', label: 'Legs', patterns: ['squat', 'leg', 'lunge', 'calf', 'thrust', 'rdl', 'romanian', 'glute', 'ham'] },
+  { key: 'legs', label: 'Legs', patterns: ['squat', 'leg', 'lunge', 'calf', 'thrust', 'rdl', 'romanian', 'glute', 'ham', 'goblet', 'split squat'] },
   { key: 'core', label: 'Core', patterns: ['ab', 'core', 'plank', 'crunch', 'wheel'] },
 ];
 
 function getMuscleGroup(exerciseName: string): string {
   const lower = exerciseName.toLowerCase();
+  
+  // Check explicit overrides first
+  if (EXERCISE_OVERRIDES[lower]) {
+    return EXERCISE_OVERRIDES[lower];
+  }
+  
+  // Check for compound keywords that need priority (arms before shoulders for "overhead extension")
+  if ((lower.includes('overhead') || lower.includes('cable')) && (lower.includes('extension') || lower.includes('tricep'))) {
+    return 'arms';
+  }
+  
   for (const group of MUSCLE_GROUPS) {
     if (group.patterns.some(p => lower.includes(p))) {
       return group.key;
@@ -37,7 +64,6 @@ function getMuscleGroup(exerciseName: string): string {
   }
   return 'other';
 }
-
 interface MuscleGroupData {
   key: string;
   label: string;
