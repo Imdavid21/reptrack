@@ -91,8 +91,6 @@ export function useAuth() {
   };
 
   const linkOAuthProvider = async (provider: 'google' | 'apple') => {
-    // Use linkIdentity to associate the OAuth provider with the current user
-    // instead of signInWithOAuth which creates a new user
     const { data, error } = await supabase.auth.linkIdentity({
       provider,
       options: {
@@ -103,6 +101,20 @@ export function useAuth() {
       return { error };
     }
     return { error: null };
+  };
+
+  const unlinkOAuthProvider = async (identityId: string) => {
+    const identity = user?.identities?.find(i => i.id === identityId);
+    if (!identity) return { error: new Error('Identity not found') };
+    
+    // Prevent unlinking if it's the only identity (no password set)
+    const hasEmailIdentity = user?.identities?.some(i => i.provider === 'email');
+    if (!hasEmailIdentity && (user?.identities?.length ?? 0) <= 1) {
+      return { error: new Error('Cannot unlink your only sign-in method') };
+    }
+
+    const { error } = await supabase.auth.unlinkIdentity(identity);
+    return { error };
   };
 
   return {
@@ -116,5 +128,6 @@ export function useAuth() {
     updateEmail,
     updatePassword,
     linkOAuthProvider,
+    unlinkOAuthProvider,
   };
 }

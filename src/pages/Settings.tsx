@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, signOut, updateEmail, resetPassword, linkOAuthProvider } = useAuth();
+  const { user, signOut, updateEmail, resetPassword, linkOAuthProvider, unlinkOAuthProvider } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
@@ -454,9 +454,20 @@ export default function Settings() {
                             </Box>
                           </Box>
                           {googleIdentity ? (
-                            <span className="text-xs text-primary font-medium flex items-center gap-1">
-                              <Check size={12} /> Linked
-                            </span>
+                            <button
+                              onClick={async () => {
+                                setLinkingProvider('google');
+                                const { error } = await unlinkOAuthProvider(googleIdentity.id);
+                                if (error) {
+                                  toast.error(error.message || 'Failed to unlink Google');
+                                }
+                                setLinkingProvider(null);
+                              }}
+                              disabled={linkingProvider === 'google'}
+                              className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                            >
+                              {linkingProvider === 'google' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Unlink'}
+                            </button>
                           ) : (
                             <button
                               onClick={async () => {
@@ -494,9 +505,20 @@ export default function Settings() {
                             </Box>
                           </Box>
                           {appleIdentity ? (
-                            <span className="text-xs text-primary font-medium flex items-center gap-1">
-                              <Check size={12} /> Linked
-                            </span>
+                            <button
+                              onClick={async () => {
+                                setLinkingProvider('apple');
+                                const { error } = await unlinkOAuthProvider(appleIdentity.id);
+                                if (error) {
+                                  toast.error(error.message || 'Failed to unlink Apple');
+                                }
+                                setLinkingProvider(null);
+                              }}
+                              disabled={linkingProvider === 'apple'}
+                              className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                            >
+                              {linkingProvider === 'apple' ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Unlink'}
+                            </button>
                           ) : (
                             <button
                               onClick={async () => {
