@@ -181,7 +181,7 @@ export function CalorieTracker() {
                           <span className="tabular-nums">{meal.calories}</span>
                           <button
                             onClick={() => handleDeleteMeal(meal.id)}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
+                            className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>

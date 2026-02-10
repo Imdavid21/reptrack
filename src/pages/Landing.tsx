@@ -121,12 +121,6 @@ export default function Landing() {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/app', { replace: true });
-    }
-  }, [user, loading, navigate]);
-
   const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     const el = document.getElementById(id);

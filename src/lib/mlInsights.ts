@@ -138,8 +138,6 @@ export function generateMLInsights(summary: WorkoutSummary): Insight[] {
 
   // === CONSISTENCY ANALYSIS ===
   if (summary.daysActive > 0 && summary.totalWorkouts > 0) {
-    const consistency = (summary.daysActive / Math.max(summary.totalWorkouts, 1)) * 100;
-    
     if (summary.daysActive >= 4) {
       insights.push({
         category: 'consistency',
@@ -204,11 +202,3 @@ export function generateMLInsights(summary: WorkoutSummary): Insight[] {
     .slice(0, 5);
 }
 
-/**
- * Format insights as bullet points for display
- */
-export function formatInsightsAsBullets(insights: Insight[]): string {
-  return insights
-    .map(i => `- ${i.icon} ${i.text}`)
-    .join('\n');
-}

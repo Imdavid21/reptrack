@@ -13,6 +13,26 @@ interface AuthEmailRequest {
   newEmail?: string;
 }
 
+// Allowed redirect URL origins for security
+const ALLOWED_ORIGINS = [
+  "https://reps-and-reminders.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,7 +42,42 @@ const handler = async (req: Request): Promise<Response> => {
     const { type, email, redirectUrl, newEmail }: AuthEmailRequest = await req.json();
 
     if (!email || !redirectUrl) {
-      throw new Error("Missing required fields: email and redirectUrl");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: email and redirectUrl" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate redirectUrl against allowed origins to prevent open redirect / phishing
+    try {
+      const url = new URL(redirectUrl);
+      const origin = url.origin;
+      if (!ALLOWED_ORIGINS.includes(origin)) {
+        console.error("Rejected redirect URL with untrusted origin:", origin);
+        return new Response(
+          JSON.stringify({ error: "Invalid redirect URL" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid redirect URL format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (type !== "password_reset" && type !== "email_change") {
+      return new Response(
+        JSON.stringify({ error: "Invalid email type" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     let subject: string;
@@ -37,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
           <p style="font-size: 14px; color: #666; margin-bottom: 24px;">
             You requested to reset your password. Click the button below to set a new password:
           </p>
-          <a href="${redirectUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
+          <a href="${escapeHtml(redirectUrl)}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
             RESET PASSWORD
           </a>
           <p style="font-size: 12px; color: #999; margin-top: 32px;">
@@ -53,9 +108,9 @@ const handler = async (req: Request): Promise<Response> => {
           <h1 style="font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-bottom: 24px;">Reptrack Fitness</h1>
           <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">EMAIL CHANGE CONFIRMATION</h2>
           <p style="font-size: 14px; color: #666; margin-bottom: 24px;">
-            You requested to change your email${newEmail ? ` to ${newEmail}` : ''}. Click the button below to confirm:
+            You requested to change your email${newEmail ? ` to ${escapeHtml(newEmail)}` : ''}. Click the button below to confirm:
           </p>
-          <a href="${redirectUrl}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
+          <a href="${escapeHtml(redirectUrl)}" style="display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
             CONFIRM EMAIL CHANGE
           </a>
           <p style="font-size: 12px; color: #999; margin-top: 32px;">
@@ -63,8 +118,6 @@ const handler = async (req: Request): Promise<Response> => {
           </p>
         </div>
       `;
-    } else {
-      throw new Error("Invalid email type");
     }
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");

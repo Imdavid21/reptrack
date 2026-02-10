@@ -38,7 +38,10 @@ export default function History() {
   }).reverse();
 
   const workoutsByDate = workouts.reduce((acc, w) => {
-    acc[w.date] = w;
+    // Keep the first workout per date (most recently created), don't overwrite duplicates
+    if (!acc[w.date]) {
+      acc[w.date] = w;
+    }
     return acc;
   }, {} as Record<string, typeof workouts[0]>);
 

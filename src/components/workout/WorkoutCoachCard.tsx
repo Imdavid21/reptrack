@@ -4,11 +4,9 @@ import { motion } from 'framer-motion';
 import { Brain, Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, Moon, Scale, Calendar } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { useExerciseSets } from '@/hooks/useExerciseSets';
-import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { supabase } from '@/integrations/supabase/client';
 import { haptic } from '@/lib/haptics';
-import { startOfWeek, endOfWeek, format, differenceInDays } from 'date-fns';
+import { startOfWeek, endOfWeek, differenceInDays } from 'date-fns';
 
 const categoryIcons: Record<string, React.ReactNode> = {
   strength: <TrendingUp size={14} />,

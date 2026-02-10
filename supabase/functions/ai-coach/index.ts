@@ -17,14 +17,22 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY is not configured");
-      throw new Error("AI service not configured");
+      return new Response(
+        JSON.stringify({ error: "AI service not configured" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    if (!summary) {
+    if (!summary || typeof summary !== "object") {
       return new Response(
         JSON.stringify({ error: "No data provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Limit exerciseProgress array size to prevent token abuse
+    if (Array.isArray(summary.exerciseProgress) && summary.exerciseProgress.length > 50) {
+      summary.exerciseProgress = summary.exerciseProgress.slice(0, 50);
     }
 
     const systemPrompt = `You are a brutally honest, data-driven strength & conditioning coach. You analyze a user's complete fitness picture – training, nutrition, hydration, sleep, and body composition – and deliver 4-6 specific, actionable insights.

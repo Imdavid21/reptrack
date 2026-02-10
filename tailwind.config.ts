@@ -71,24 +71,8 @@ export default {
           4: "hsl(var(--heat-4))",
         },
         insight: {
-          primary: "hsl(var(--insight-primary))",
-          success: "hsl(var(--insight-success))",
-          neutral: "hsl(var(--insight-neutral))",
-          background: "hsl(var(--insight-background))",
-          text: "hsl(var(--insight-text))",
-          warning: "hsl(var(--insight-warning))",
           coral: "hsl(var(--insight-coral))",
           mint: "hsl(var(--insight-mint))",
-        },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
         },
         // Direct color references - grayscale only
         gray: {

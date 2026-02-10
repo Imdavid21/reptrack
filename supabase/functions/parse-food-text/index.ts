@@ -12,10 +12,18 @@ serve(async (req) => {
 
   try {
     const { text } = await req.json();
-    
-    if (!text) {
+
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Text description is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Limit input length to prevent token abuse
+    if (text.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Text description is too long (max 500 characters)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
