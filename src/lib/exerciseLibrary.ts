@@ -74,6 +74,18 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Cable Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12-15', muscleGroup: 'Biceps' },
     { name: 'EZ Bar Preacher Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x10-12', muscleGroup: 'Biceps' },
     { name: 'Concentration Curls', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x10-12', muscleGroup: 'Biceps' },
+    // Forearms
+    { name: 'Reverse Curls', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x12-15', muscleGroup: 'Forearms' },
+    { name: 'Barbell Reverse Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12-15', muscleGroup: 'Forearms' },
+    { name: 'Dumbbell Reverse Curls', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x12-15', muscleGroup: 'Forearms' },
+    { name: 'EZ Bar Reverse Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12-15', muscleGroup: 'Forearms' },
+    { name: 'Cable Reverse Curls', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12-15', muscleGroup: 'Forearms' },
+    // Lower Back
+    { name: 'Back Extension 90 Degree', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Lower Back' },
+    { name: 'Back Extension', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Lower Back' },
+    { name: 'Hyperextension', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Lower Back' },
+    // Lever Rows
+    { name: 'Lever Seated Row Machine', category: 'primary', defaultWeight: '30kg', defaultReps: '3x10-12', muscleGroup: 'Back' },
   ],
   'Legs': [
     // Primary Quads
