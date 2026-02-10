@@ -146,10 +146,20 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'concentration curl':         { bodyPart: 'Biceps', muscleGroup: 'arms' },
   'spider curl':                { bodyPart: 'Biceps', muscleGroup: 'arms' },
   'spider curls':               { bodyPart: 'Biceps', muscleGroup: 'arms' },
-  'reverse curl':               { bodyPart: 'Biceps', muscleGroup: 'arms' },
-  'reverse curls':              { bodyPart: 'Biceps', muscleGroup: 'arms' },
-  'wrist curl':                 { bodyPart: 'Biceps', muscleGroup: 'arms' },
-  'wrist curls':                { bodyPart: 'Biceps', muscleGroup: 'arms' },
+  'reverse curl':               { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'reverse curls':              { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'wrist curl':                 { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'wrist curls':                { bodyPart: 'Forearms', muscleGroup: 'arms' },
+
+  // ─── ARMS — Forearms ──────────────────────────────────────────────────────
+  'barbell reverse curls':      { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'barbell reverse curl':       { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'dumbbell reverse curls':     { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'dumbbell reverse curl':      { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'ez bar reverse curls':       { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'ez bar reverse curl':        { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'cable reverse curls':        { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'cable reverse curl':         { bodyPart: 'Forearms', muscleGroup: 'arms' },
 
   // ─── BACK ─────────────────────────────────────────────────────────────────
   'pull-ups':                   { bodyPart: 'Back', muscleGroup: 'back' },
@@ -197,6 +207,16 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'sumo deadlift':              { bodyPart: 'Back', muscleGroup: 'back' },
   'rack pull':                  { bodyPart: 'Back', muscleGroup: 'back' },
   'rack pulls':                 { bodyPart: 'Back', muscleGroup: 'back' },
+  'back extension 90 degree':   { bodyPart: 'Back', muscleGroup: 'back' },
+  'back extension':             { bodyPart: 'Back', muscleGroup: 'back' },
+  'back extensions':            { bodyPart: 'Back', muscleGroup: 'back' },
+  'hyperextension':             { bodyPart: 'Back', muscleGroup: 'back' },
+  'hyperextensions':            { bodyPart: 'Back', muscleGroup: 'back' },
+  'back extension machine':     { bodyPart: 'Back', muscleGroup: 'back' },
+  'lever seated row machine':   { bodyPart: 'Back', muscleGroup: 'back' },
+  'lever seated row':           { bodyPart: 'Back', muscleGroup: 'back' },
+  'plate loaded row':           { bodyPart: 'Back', muscleGroup: 'back' },
+  'plate loaded rows':          { bodyPart: 'Back', muscleGroup: 'back' },
 
   // ─── LEGS — Quads ─────────────────────────────────────────────────────────
   'barbell squat':              { bodyPart: 'Quads', muscleGroup: 'legs' },
@@ -301,7 +321,11 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['calf raise',     { bodyPart: 'Calves',     muscleGroup: 'legs' }],
   ['hip thrust',     { bodyPart: 'Glutes',     muscleGroup: 'legs' }],
   ['good morning',   { bodyPart: 'Hamstrings',  muscleGroup: 'legs' }],
+  // Back multi-word
+  ['back extension',   { bodyPart: 'Back',      muscleGroup: 'back' }],
+  ['lever row',        { bodyPart: 'Back',      muscleGroup: 'back' }],
   // Arms multi-word
+  ['reverse curl',     { bodyPart: 'Forearms',  muscleGroup: 'arms' }],
   ['tricep extension', { bodyPart: 'Triceps', muscleGroup: 'arms' }],
   ['overhead extension', { bodyPart: 'Triceps', muscleGroup: 'arms' }],
   ['bench press',    { bodyPart: 'Chest',      muscleGroup: 'chest' }],

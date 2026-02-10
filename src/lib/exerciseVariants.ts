@@ -274,6 +274,67 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Concentration Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
   ],
 
+  // Forearms -- Reverse Curls
+  'Reverse Curls': [
+    { name: 'Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'EZ Bar Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Cable Reverse Curls', defaultWeight: '15kg', equipmentType: 'cable' },
+    { name: 'Dumbbell Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+  ],
+  'Barbell Reverse Curls': [
+    { name: 'Barbell Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'EZ Bar Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Cable Reverse Curls', defaultWeight: '15kg', equipmentType: 'cable' },
+    { name: 'Dumbbell Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+  ],
+  'Dumbbell Reverse Curls': [
+    { name: 'Dumbbell Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'EZ Bar Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Cable Reverse Curls', defaultWeight: '15kg', equipmentType: 'cable' },
+  ],
+  'EZ Bar Reverse Curls': [
+    { name: 'EZ Bar Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Cable Reverse Curls', defaultWeight: '15kg', equipmentType: 'cable' },
+    { name: 'Dumbbell Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+  ],
+  'Cable Reverse Curls': [
+    { name: 'Cable Reverse Curls', defaultWeight: '15kg', equipmentType: 'cable' },
+    { name: 'Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'EZ Bar Reverse Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
+    { name: 'Dumbbell Reverse Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+  ],
+
+  // Back -- Extensions
+  'Back Extension 90 Degree': [
+    { name: 'Back Extension 90 Degree', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Back Extension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Hyperextension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+  ],
+  'Back Extension': [
+    { name: 'Back Extension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Back Extension 90 Degree', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Hyperextension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+  ],
+  'Hyperextension': [
+    { name: 'Hyperextension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Back Extension 90 Degree', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Back Extension', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+  ],
+
+  // Back -- Lever Rows
+  'Lever Seated Row Machine': [
+    { name: 'Lever Seated Row Machine', defaultWeight: '30kg', equipmentType: 'machine' },
+    { name: 'Seated Cable Row', defaultWeight: '50kg', equipmentType: 'cable' },
+    { name: 'T-Bar Row', defaultWeight: '50kg', equipmentType: 'machine' },
+  ],
+
   // ==================== LEGS EXERCISES ====================
   
   // Quads - Squats
