@@ -9,10 +9,9 @@ import {
     DrawerFooter,
     DrawerClose
 } from '@/components/ui/drawer';
-import { Button } from '@/components/ui/button';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { toast } from '@/lib/toast';
-import { Edit, Trash2, Ban, AlertTriangle, EyeOff } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,39 +24,21 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface WorkoutEditSheetProps {
-    workout: Workout | null; // Expected full workout object
+    workout: Workout | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
 export function WorkoutEditSheet({ workout, open, onOpenChange }: WorkoutEditSheetProps) {
     const navigate = useNavigate();
-    const { deleteWorkout, updateWorkout } = useWorkouts();
+    const { deleteWorkout } = useWorkouts();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
     if (!workout) return null;
 
     const handleEdit = () => {
-        navigate(`/history/${workout.id}`);
+        navigate(`/app/history/${workout.id}`);
         onOpenChange(false);
-    };
-
-    const handleToggleSkip = async () => {
-        try {
-            // Assuming is_skipped is a field we want to toggle. 
-            // Need to cast to any if TS definition isn't updated yet or update the type.
-            const isSkipped = (workout as any).is_skipped;
-
-            await updateWorkout({
-                id: workout.id,
-                is_skipped: !isSkipped
-            } as any);
-
-            toast.success(isSkipped ? 'Marked as completed' : 'Marked as skipped');
-            onOpenChange(false);
-        } catch (e) {
-            toast.error('Failed to update workout');
-        }
     };
 
     const handleDelete = async () => {
@@ -71,73 +52,53 @@ export function WorkoutEditSheet({ workout, open, onOpenChange }: WorkoutEditShe
         }
     };
 
-    const isSkipped = (workout as any).is_skipped;
-
     return (
         <>
             <Drawer open={open} onOpenChange={onOpenChange}>
                 <DrawerContent>
-                    <DrawerHeader>
-                        <DrawerTitle>Manage Workout</DrawerTitle>
-                        <DrawerDescription>
-                            {workout.day_name} • {new Date(workout.date).toLocaleDateString()}
-                        </DrawerDescription>
-                    </DrawerHeader>
+                    <div className="mx-auto w-full max-w-md">
+                        <DrawerHeader className="pb-2">
+                            <DrawerTitle className="text-base font-bold">{workout.day_name}</DrawerTitle>
+                            <DrawerDescription className="text-xs text-muted-foreground">
+                                {new Date(workout.date).toLocaleDateString()}
+                            </DrawerDescription>
+                        </DrawerHeader>
 
-                    <div className="p-4 space-y-3">
-                        <Button
-                            variant="outline"
-                            className="w-full justify-start h-12 text-lg"
-                            onClick={handleEdit}
-                        >
-                            <Edit className="mr-3 h-5 w-5" />
-                            Edit Details & Exercises
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            className="w-full justify-start h-12 text-lg"
-                            onClick={handleToggleSkip}
-                        >
-                            {isSkipped ? (
-                                <>
-                                    <Ban className="mr-3 h-5 w-5 text-green-500" />
-                                    Unmark as Skipped
-                                </>
-                            ) : (
-                                <>
-                                    <EyeOff className="mr-3 h-5 w-5 text-orange-500" />
-                                    Mark as Skipped / Rest
-                                </>
-                            )}
-                        </Button>
-
-                        <div className="pt-4 mt-2 border-t">
-                            <Button
-                                variant="destructive"
-                                className="w-full justify-start h-12 text-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-600"
-                                onClick={() => setShowDeleteAlert(true)}
+                        <div className="px-4 pb-2 space-y-2">
+                            <button
+                                onClick={handleEdit}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
                             >
-                                <Trash2 className="mr-3 h-5 w-5" />
-                                Delete Entry
-                            </Button>
-                        </div>
-                    </div>
+                                <Edit className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">Edit Details & Exercises</span>
+                            </button>
 
-                    <DrawerFooter>
-                        <DrawerClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DrawerClose>
-                    </DrawerFooter>
+                            <button
+                                onClick={() => setShowDeleteAlert(true)}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+                            >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="text-sm font-medium text-destructive">Delete Entry</span>
+                            </button>
+                        </div>
+
+                        <DrawerFooter className="pt-2">
+                            <DrawerClose asChild>
+                                <button className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                    Cancel
+                                </button>
+                            </DrawerClose>
+                        </DrawerFooter>
+                    </div>
                 </DrawerContent>
             </Drawer>
 
             <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete workout?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this workout record.
+                            This will permanently remove this workout and all its exercises.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
