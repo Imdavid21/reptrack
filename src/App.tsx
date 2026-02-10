@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Changelog = lazy(() => import("./pages/Changelog"));
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
         <Route path="/blog" element={<Suspense fallback={null}><Blog /></Suspense>} />
         <Route path="/blog/:slug" element={<Suspense fallback={null}><BlogPost /></Suspense>} />
+        <Route path="/changelog" element={<Suspense fallback={null}><Changelog /></Suspense>} />
 
         {/* App routes (authenticated) */}
         <Route path="/app" element={<AppIndex />} />
