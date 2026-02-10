@@ -602,6 +602,7 @@ export default function LogWorkout() {
               selectedDayKey={selectedDay}
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
               onSkipExercises={selectedDay ? handleQuickLog : undefined}
+              isResuming={!!workoutStartTime}
               lastUsedNames={new Set(
                 exercises
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
