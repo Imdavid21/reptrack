@@ -214,7 +214,7 @@ export default function History() {
                                     min="0"
                                     max="24"
                                   />
-                                  <span className="text-xs text-muted-foreground">:</span>
+                                  <span className="text-[10px] text-muted-foreground font-medium">hr</span>
                                   <input
                                     type="number"
                                     placeholder="M"
@@ -224,6 +224,7 @@ export default function History() {
                                     min="0"
                                     max="59"
                                   />
+                                  <span className="text-[10px] text-muted-foreground font-medium">min</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
@@ -237,6 +238,7 @@ export default function History() {
                                   min="0"
                                   step="0.1"
                                 />
+                                <span className="text-[10px] text-muted-foreground font-medium">kg</span>
                               </div>
                             </div>
                             <div className="flex justify-end gap-2">
