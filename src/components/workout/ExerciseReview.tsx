@@ -507,7 +507,7 @@ export function ExerciseReview({
         {onSkipExercises && (
           <button
             onClick={onSkipExercises}
-            className="w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors text-center"
+            className="mx-auto block py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
           >
             Skip exercises →
           </button>
