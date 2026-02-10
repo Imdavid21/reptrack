@@ -1,46 +1,60 @@
 
 
-# Fix Duplicate Exercise Entries from `(Set X)` Suffix
+## Enhance AI Workout Generator for Full Muscle Sub-Group Coverage
 
-## Problem
-When workouts are saved, each set becomes a separate row in the `exercises` table with the set number appended to the name:
-- `Lat Pulldown (Set 1)`
-- `Lat Pulldown (Set 2)`  
-- `Lat Pulldown (Set 3)`
+### Problem
+The current AI prompt in the workout generator is generic — it says "focus on compound movements" but doesn't guide the AI to ensure comprehensive sub-muscle-group coverage across paired days. For example, Push A and Push B together should collectively target:
+- **Chest**: upper (incline), mid (flat), lower (decline/dips)
+- **Shoulders**: front delts, side delts, rear delts
+- **Triceps**: long head, lateral head, medial head
 
-Analytics components treat these as **separate exercises**, causing:
-- Progressions chart showing "Lat Pulldown (Set 1)", "Lat Pulldown (Set 2)" as different exercises
-- Strength Overview detail dialog listing duplicate exercise entries
-- Exercise counts being inflated
+Similarly for Pull and Legs days. Right now, the AI might generate two nearly identical days or miss important sub-groups like rear delts or hamstrings.
 
-Classification into muscle groups still works (pattern matching catches "pulldown"), but the per-exercise grouping is broken.
+### Solution
+Update the system prompt in the `generate-workout` edge function to include explicit muscle sub-group coverage requirements for each split type.
 
-## Solution
-Add a `stripSetSuffix` utility to `exerciseClassification.ts` that removes `(Set X)` from exercise names, then apply it at the data-processing level in the affected hooks/components.
+### Changes
 
-## Technical Changes
+**1. `supabase/functions/generate-workout/index.ts`** — Enhanced system prompt
 
-### 1. `src/lib/exerciseClassification.ts`
-- Add and export a `stripSetSuffix(name: string): string` function that removes ` (Set N)` suffixes using a regex like `/\s*\(set\s*\d+\)\s*$/i`
-- Apply it inside the `classify()` function so exact lookups work for set-suffixed names
-- This ensures both `getBodyPart` and `getMuscleGroup` handle suffixed names correctly
+Add a new section to the system prompt with split-specific sub-group coverage rules:
 
-### 2. `src/hooks/useExerciseSets.ts`
-- Import `stripSetSuffix`
-- Apply it when mapping exercise data: `exercise_name: stripSetSuffix(ex.name)` (line ~124)
-- This ensures volume totals, weekly volume, and progressions all group sets of the same exercise together
+```
+MUSCLE COVERAGE RULES:
+- For Push days: Ensure exercises collectively target upper chest (incline), mid chest (flat), 
+  front delts (pressing), side delts (lateral raises), and triceps (pushdowns/extensions). 
+  If there are two Push days (A & B), vary the emphasis — e.g., Push A = chest-heavy, Push B = shoulder-heavy — 
+  but both must include at least one exercise for each sub-group across the pair.
 
-### 3. `src/components/analytics/StrengthOverviewChart.tsx`
-- Import `stripSetSuffix`
-- Apply it when grouping exercises: `const exerciseName = stripSetSuffix(set.exercise_name)` before using it as a map key (line ~79)
-- This prevents "Lat Pulldown (Set 1)" and "Lat Pulldown (Set 2)" from appearing as separate exercises in the detail dialog
+- For Pull days: Cover upper back/lats (vertical pulls like pulldowns/pull-ups), mid back/rhomboids 
+  (horizontal rows), rear delts (face pulls/reverse fly), biceps (curls with varied grip — supinated, 
+  neutral/hammer), and forearms. If two Pull days, alternate between back thickness (rows/deadlifts) 
+  and back width (pulldowns/pull-ups) emphasis.
 
-### 4. `src/hooks/useBodyPartsProgress.ts`
-- This hook queries `exercise_sets` table (not `exercises`), which stores `exercise_name` without the `(Set X)` suffix, so no changes needed here
+- For Legs days: Include quad-dominant (squats, leg press, extensions), hamstring-dominant 
+  (RDLs, leg curls), glutes (hip thrusts, lunges), and calves. If two Legs days, alternate 
+  squat-pattern vs hinge-pattern as the primary movement.
 
-## What This Fixes
-- Exercise progressions will show a single "Lat Pulldown" entry instead of 4 separate "(Set 1/2/3/4)" entries
-- Strength Overview detail will list each exercise once with its true max weight
-- Volume calculations remain correct (all sets still contribute to total volume)
-- No database changes needed -- this is a display/grouping fix only
+- For Upper days: Balance push and pull movements. Include at least one horizontal push, one vertical push, 
+  one horizontal pull, one vertical pull, plus isolation for side delts and arms.
 
+- For Full Body days: Each session must include a squat pattern, a hinge pattern, an upper push, 
+  and an upper pull. Vary the specific exercises across days.
+```
+
+Also add a rule ensuring variation between A/B day pairs:
+```
+VARIATION RULE: When creating paired days (A & B), use different exercises for the same muscle group. 
+For example, if Push A has Barbell Bench Press, Push B should use Dumbbell Press or Incline Press as 
+the primary chest movement. Do NOT repeat the same exercise across paired days.
+```
+
+### Technical Details
+
+- Only the edge function prompt changes — no frontend or database changes needed
+- The existing JSON output format stays the same
+- The AI model (gpt-4o-mini) already supports these detailed instructions within context limits
+- This is backward compatible — the response structure is unchanged
+
+### Outcome
+AI-generated routines will ensure every muscle sub-group is covered across paired training days, producing more balanced and effective programs.
