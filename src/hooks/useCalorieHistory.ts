@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
+import { useDailyMetrics } from './useDailyMetrics';
 import { format, eachDayOfInterval, parseISO, differenceInMinutes } from 'date-fns';
 import { DateRange } from '@/contexts/DateRangeContext';
 
@@ -24,7 +25,11 @@ const MET_VALUES: Record<string, number> = {
 export function useCalorieHistory(dateRange: DateRange) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
-  const weightKg = preferences?.weight_goal || 70; // TODO: should use actual bodyweight from daily_metrics, not target weight
+
+  // Get actual bodyweight from daily metrics, fall back to weight_goal, then 70kg
+  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
+  const latestBodyweight = metricsData?.totals?.avgBodyweight;
+  const weightKg = latestBodyweight || preferences?.weight_goal || 70;
 
   const startDateStr = format(dateRange.from, 'yyyy-MM-dd');
   const endDateStr = format(dateRange.to, 'yyyy-MM-dd');

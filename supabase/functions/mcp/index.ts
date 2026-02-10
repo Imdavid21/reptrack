@@ -1,14 +1,25 @@
 import { Hono } from "npm:hono@4";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, mcp-session-id",
-  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Expose-Headers": "mcp-session-id",
-};
+const ALLOWED_ORIGINS = [
+  "https://reps-and-reminders.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
 
-// Session store for SSE connections
+function getCorsHeaders(origin: string) {
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, mcp-session-id",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Expose-Headers": "mcp-session-id",
+  };
+}
+
+// KNOWN LIMITATION: In-memory session store does not persist across serverless invocations.
+// SSE sessions will be lost when the function cold-starts. For production use, replace with
+// a persistent store (e.g., Supabase table or Redis).
 const sessions = new Map<string, { userId: string; messageEndpoint: string }>();
 
 // Validate API key and return user_id
@@ -591,9 +602,19 @@ async function handleJsonRpc(body: { method: string; params?: Record<string, unk
 
 const app = new Hono();
 
+// Set per-request CORS headers via middleware
+app.use("*", async (c, next) => {
+  const origin = c.req.header("origin") || "";
+  const headers = getCorsHeaders(origin);
+  Object.entries(headers).forEach(([key, value]) => {
+    c.header(key, value);
+  });
+  await next();
+});
+
 // Handle CORS preflight
 app.options("*", (c) => {
-  return new Response(null, { headers: corsHeaders });
+  return new Response(null, { headers: getCorsHeaders(c.req.header("origin") || "") });
 });
 
 // SSE endpoint for mcp-remote compatibility

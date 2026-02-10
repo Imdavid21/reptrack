@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
-import { useCalorieHistory } from '@/hooks/useMeals';
+import { useDailyCalorieTotals } from '@/hooks/useMeals';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
 import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
@@ -21,7 +21,7 @@ export default function History() {
     to: new Date(),
   });
 
-  const { data: calorieHistory } = useCalorieHistory(30);
+  const { data: calorieHistory } = useDailyCalorieTotals(30);
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
