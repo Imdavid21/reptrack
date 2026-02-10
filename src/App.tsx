@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
@@ -16,6 +16,12 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
+
+// Legacy redirect component that properly passes the workoutId param
+function HistoryRedirect() {
+  const { workoutId } = useParams();
+  return <Navigate to={`/app/history/${workoutId}`} replace />;
+}
 
 // Lazy-loaded public pages (not needed in PWA)
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -56,7 +62,7 @@ function AppRoutes() {
         <Route path="/analytics" element={<Navigate to="/app/insights" replace />} />
         <Route path="/health" element={<Navigate to="/app/insights?tab=vitals" replace />} />
         <Route path="/history" element={<Navigate to="/app/history" replace />} />
-        <Route path="/history/:workoutId" element={<Navigate to="/app/history/:workoutId" replace />} />
+        <Route path="/history/:workoutId" element={<HistoryRedirect />} />
         <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
 
         <Route path="*" element={<NotFound />} />
