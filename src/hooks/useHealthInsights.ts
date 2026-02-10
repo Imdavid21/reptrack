@@ -42,16 +42,10 @@ export function useHealthInsights(days: number = 30) {
       const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
 
       // Fetch all relevant data in parallel
-      const [metricsRes, nightRes, workoutsRes] = await Promise.all([
+      const [metricsRes, workoutsRes] = await Promise.all([
         supabase
           .from('daily_metrics')
           .select('date, sleep_hours, energy_level, bodyweight')
-          .eq('user_id', user.id)
-          .gte('date', startDate)
-          .order('date', { ascending: true }),
-        supabase
-          .from('night_checkins')
-          .select('*')
           .eq('user_id', user.id)
           .gte('date', startDate)
           .order('date', { ascending: true }),
@@ -64,7 +58,6 @@ export function useHealthInsights(days: number = 30) {
       ]);
 
       const morningData = (metricsRes.data || []) as any[];
-      const nightData = (nightRes.data || []) as any[];
       const workoutData = (workoutsRes.data || []) as any[];
 
       const insights: HealthInsight[] = [];
@@ -123,30 +116,7 @@ export function useHealthInsights(days: number = 30) {
         }
       }
 
-      // Step count trends
-      const recentSteps = nightData.slice(-7).filter(n => n.steps);
-      if (recentSteps.length >= 5) {
-        const avgSteps = avg(recentSteps.map(n => n.steps));
-        if (avgSteps < 5000) {
-          insights.push({
-            id: 'steps-low',
-            type: 'negative',
-            title: 'Low Activity',
-            description: `Averaging ${Math.round(avgSteps).toLocaleString()} steps/day. Try to hit 8,000+.`,
-            metric: `${Math.round(avgSteps).toLocaleString()} avg`,
-            trend: 'down',
-          });
-        } else if (avgSteps >= 10000) {
-          insights.push({
-            id: 'steps-great',
-            type: 'positive',
-            title: 'Active Lifestyle',
-            description: `Averaging ${Math.round(avgSteps).toLocaleString()} steps/day. Excellent!`,
-            metric: `${Math.round(avgSteps).toLocaleString()} avg`,
-            trend: 'up',
-          });
-        }
-      }
+      // Step count trends removed - night_checkins table dropped
 
       return { insights, correlations };
     },

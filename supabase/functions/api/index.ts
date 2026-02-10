@@ -83,8 +83,6 @@ serve(async (req) => {
               "GET /water",
               "GET /metrics/daily",
               "GET /metrics/morning",
-              "GET /metrics/night",
-              "GET /metrics/vitals",
               "GET /metrics/recovery",
               "GET /calories/burned",
               "GET /habits",
@@ -186,53 +184,7 @@ serve(async (req) => {
         break;
       }
 
-      case "metrics/vitals": {
-        const startDate = url.searchParams.get("start_date");
-        const endDate = url.searchParams.get("end_date");
-
-        const filters: { start: string | null; end: string | null } = {
-          start: startDate,
-          end: endDate,
-        };
-
-        const [bpRes, sugarRes] = await Promise.all([
-          supabase
-            .from("blood_pressure_readings")
-            .select("*")
-            .eq("user_id", userId)
-            .order("measured_at", { ascending: false })
-            .limit(200),
-          supabase
-            .from("blood_sugar_readings")
-            .select("*")
-            .eq("user_id", userId)
-            .order("measured_at", { ascending: false })
-            .limit(200),
-        ]);
-
-        if (bpRes.error || sugarRes.error) {
-          error = bpRes.error || sugarRes.error;
-          break;
-        }
-
-        let bloodPressure = bpRes.data || [];
-        let bloodSugar = sugarRes.data || [];
-
-        if (filters.start) {
-          bloodPressure = bloodPressure.filter((r) => r.measured_at >= filters.start!);
-          bloodSugar = bloodSugar.filter((r) => r.measured_at >= filters.start!);
-        }
-        if (filters.end) {
-          bloodPressure = bloodPressure.filter((r) => r.measured_at <= filters.end!);
-          bloodSugar = bloodSugar.filter((r) => r.measured_at <= filters.end!);
-        }
-
-        data = {
-          blood_pressure: bloodPressure,
-          blood_sugar: bloodSugar,
-        };
-        break;
-      }
+      // metrics/vitals endpoint removed - blood_pressure and blood_sugar tables dropped
 
       case "metrics/recovery": {
         const startDate = url.searchParams.get("start_date");
@@ -286,21 +238,7 @@ serve(async (req) => {
         break;
       }
 
-      case "metrics/night": {
-        const startDate = url.searchParams.get("start_date");
-        const endDate = url.searchParams.get("end_date");
-        let query = supabase
-          .from("night_checkins")
-          .select("*")
-          .eq("user_id", userId)
-          .order("date", { ascending: false });
-        
-        if (startDate) query = query.gte("date", startDate);
-        if (endDate) query = query.lte("date", endDate);
-        
-        ({ data, error } = await query.limit(90));
-        break;
-      }
+      // metrics/night endpoint removed - night_checkins table dropped
 
       case "stats/summary": {
         // Get aggregated stats

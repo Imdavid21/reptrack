@@ -60,7 +60,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
       // Fetch all relevant data
-      const [workoutsRes, dailyMetricsRes, nightRes, mealsRes, exercisesRes] = await Promise.all([
+      const [workoutsRes, dailyMetricsRes, mealsRes, exercisesRes] = await Promise.all([
         supabase
           .from('workouts')
           .select('id, date, post_satisfaction, post_difficulty, workout_duration_minutes, completed_at')
@@ -71,14 +71,6 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
         supabase
           .from('daily_metrics')
           .select('date, sleep_hours, bodyweight, energy_level')
-          .eq('user_id', user.id)
-          .gte('date', priorStart)
-          .order('date', { ascending: true }),
-        // Legacy: night_checkins for step tracking (deprecated, may be empty)
-        // Steps should eventually be moved to daily_metrics or wearable integration
-        supabase
-          .from('night_checkins')
-          .select('date, steps, energy_score')
           .eq('user_id', user.id)
           .gte('date', priorStart)
           .order('date', { ascending: true }),
@@ -100,7 +92,6 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
 
       const workouts = workoutsRes.data || [];
       const dailyMetrics = dailyMetricsRes.data || [];
-      const nightData = nightRes.data || [];
       const meals = mealsRes.data || [];
       const exercises = exercisesRes.data || [];
 
@@ -146,34 +137,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
       // 2. Morning Energy → Volume correlation
       // Removed - energy_level is no longer tracked per minimalism policy
 
-      // 3. Steps → Night Energy correlation
-      const stepsEnergyData = nightData
-        .filter(n => n.steps && n.steps > 0 && n.energy_score)
-        .map(n => ({ steps: n.steps!, energy: n.energy_score! }));
-
-      if (stepsEnergyData.length >= 5) {
-        const activeSteps = stepsEnergyData.filter(d => d.steps >= 8000);
-        const lowSteps = stepsEnergyData.filter(d => d.steps < 5000);
-        
-        if (activeSteps.length >= 2 && lowSteps.length >= 2) {
-          const avgActiveEnergy = activeSteps.reduce((s, d) => s + d.energy, 0) / activeSteps.length;
-          const avgLowEnergy = lowSteps.reduce((s, d) => s + d.energy, 0) / lowSteps.length;
-          const diff = (avgActiveEnergy - avgLowEnergy).toFixed(1);
-          
-          if (Math.abs(parseFloat(diff)) > 0.3) {
-            correlations.push({
-              id: 'steps-energy',
-              title: 'Activity → Energy',
-              insight: parseFloat(diff) > 0
-                ? `8k+ step days correlate with +${diff} pts evening energy.`
-                : `Higher step counts may be reducing evening energy.`,
-              strength: Math.min(Math.abs(parseFloat(diff)) * 20 + 40, 85),
-              positive: parseFloat(diff) > 0,
-              dataPoints: stepsEnergyData.length,
-            });
-          }
-        }
-      }
+      // Steps correlation removed - night_checkins table dropped
 
       // 4. Protein → Recovery (next day energy)
       // Removed - energy_level is no longer tracked per minimalism policy
@@ -189,7 +153,6 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
         
         const weekWorkouts = workouts.filter(w => w.date >= weekStartStr && w.date <= weekEndStr);
         const weekMetrics = dailyMetrics.filter(m => m.date >= weekStartStr && m.date <= weekEndStr);
-        const weekNights = nightData.filter(n => n.date >= weekStartStr && n.date <= weekEndStr);
         const weekMeals = meals.filter(m => m.date >= weekStartStr && m.date <= weekEndStr);
         
         const weekExercises = exercises.filter(e => 
@@ -203,7 +166,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
         }, 0);
         
         const sleepData = weekMetrics.filter(m => m.sleep_hours && m.sleep_hours > 0).map(m => m.sleep_hours!);
-        const stepsData = weekNights.filter(n => n.steps && n.steps > 0).map(n => n.steps!);
+        
         
         weeklySummaries.push({
           weekStart: format(weekStart, 'MMM d'),
@@ -212,7 +175,7 @@ export function useCorrelationAnalysis(dateRange?: DateRangeFilter) {
           totalVolume: Math.round(totalVolume),
           avgSleep: sleepData.length ? sleepData.reduce((a, b) => a + b, 0) / sleepData.length : null,
           avgEnergy: null, // No longer tracked
-          avgSteps: stepsData.length ? Math.round(stepsData.reduce((a, b) => a + b, 0) / stepsData.length) : null,
+          avgSteps: null,
           caloriesIn: weekMeals.reduce((sum, m) => sum + (m.calories || 0), 0),
           caloriesOut: weekWorkouts.length * 350, // Estimate
         });
