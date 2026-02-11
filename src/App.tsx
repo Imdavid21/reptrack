@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
@@ -11,6 +11,10 @@ import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
 import LogWorkout from "./pages/LogWorkout";
 import Insights from "./pages/Insights";
@@ -24,11 +28,20 @@ function HistoryRedirect() {
   return <Navigate to={`/app/history/${workoutId}`} replace />;
 }
 
-// Lazy-loaded public pages (rarely visited, not needed in PWA shell)
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
-const Changelog = lazy(() => import("./pages/Changelog"));
+// Keep marketing landing web-only; installed PWA opens app shell
+function RootRoute() {
+  const isStandalone = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+  }, []);
+
+  if (isStandalone) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return <Landing />;
+}
 
 const queryClient = new QueryClient();
 
@@ -39,13 +52,13 @@ function AppRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Public routes */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
-        <Route path="/privacy" element={<Suspense fallback={null}><Privacy /></Suspense>} />
-        <Route path="/blog" element={<Suspense fallback={null}><Blog /></Suspense>} />
-        <Route path="/blog/:slug" element={<Suspense fallback={null}><BlogPost /></Suspense>} />
-        <Route path="/changelog" element={<Suspense fallback={null}><Changelog /></Suspense>} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/changelog" element={<Changelog />} />
 
         {/* App routes (authenticated, eagerly loaded for instant navigation) */}
         <Route path="/app" element={<AppIndex />} />
