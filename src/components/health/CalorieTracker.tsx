@@ -60,7 +60,7 @@ export function CalorieTracker() {
     if (!file || !user) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => setPreviewUrl(e.target?.result as string);
+    reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
     reader.readAsDataURL(file);
 
     setIsAnalyzing(true);
@@ -77,6 +77,8 @@ export function CalorieTracker() {
       setManualMode(true);
     } finally {
       setIsAnalyzing(false);
+      // Reset input so re-selecting the same file triggers onChange
+      e.target.value = '';
     }
   };
 

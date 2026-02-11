@@ -36,10 +36,41 @@
       @media (prefers-color-scheme: dark) {
         body { background: #000; }
       }
+      /* PWA splash screen — visible before any JS loads */
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fafafa;
+        transition: opacity .3s ease-out;
+      }
+      #splash .brand {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: .2em;
+        color: #161616;
+        animation: pulse-brand 1.5s ease-in-out infinite;
+      }
+      #splash .brand span { color: #737373; }
+      @media (prefers-color-scheme: dark) {
+        #splash { background: #000; }
+        #splash .brand { color: #f5f5f5; }
+        #splash .brand span { color: #737373; }
+      }
+      #splash.fade-out { opacity: 0; pointer-events: none; }
+      @keyframes pulse-brand {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .4; }
+      }
     </style>
   </head>
 
   <body>
+    <div id="splash"><div class="brand">REPTRACK<span>&nbsp;</span>FITNESS</div></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

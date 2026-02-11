@@ -13,17 +13,6 @@ export default function AppIndex() {
   const { needsOnboarding, isLoading: prefsLoading } = useUserPreferences();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
-  // Hide HTML splash once React is ready (backup - MutationObserver in index.html handles this)
-  useEffect(() => {
-    const splash = document.getElementById('splash');
-    if (splash) {
-      splash.classList.add('fade-out');
-      setTimeout(() => {
-        try { splash.remove(); } catch (e) { }
-      }, 300);
-    }
-  }, []);
-
   // Redirect to sign in if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {

@@ -5,9 +5,25 @@
 
 const MAX_DIMENSION = 1024;
 const JPEG_QUALITY = 0.75;
+const COMPRESSION_TIMEOUT_MS = 15_000;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export async function compressImage(file: File): Promise<File> {
-  return new Promise((resolve, reject) => {
+  // Reject obviously oversized files early
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`File too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum is 20MB.`);
+  }
+
+  return Promise.race([
+    doCompress(file),
+    new Promise<File>((_, reject) =>
+      setTimeout(() => reject(new Error('Image compression timed out')), COMPRESSION_TIMEOUT_MS)
+    ),
+  ]);
+}
+
+function doCompress(file: File): Promise<File> {
+  return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
 

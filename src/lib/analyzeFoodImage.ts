@@ -30,7 +30,26 @@ interface AnalyzeResult {
   publicUrl: string;
 }
 
+const OVERALL_TIMEOUT_MS = 45_000; // 45s max for the entire pipeline
+
 export async function analyzeFoodImage(
+  file: File,
+  userId: string,
+  onStep: (step: AnalysisStep) => void,
+): Promise<AnalyzeResult> {
+  // Race the entire pipeline against an overall timeout
+  return Promise.race([
+    doAnalyze(file, userId, onStep),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => {
+        onStep('error');
+        reject(new Error('Image analysis timed out. Please try again.'));
+      }, OVERALL_TIMEOUT_MS)
+    ),
+  ]);
+}
+
+async function doAnalyze(
   file: File,
   userId: string,
   onStep: (step: AnalysisStep) => void,
