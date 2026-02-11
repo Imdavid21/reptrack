@@ -336,11 +336,13 @@ export function SetBySetCard({
   const equipmentType = getEquipmentType(exercise.name);
   const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipmentType);
 
-  const currentMaxWeight = Math.max(
-    ...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0),
-    0
-  );
-  const isNewPR = personalRecord && currentMaxWeight > personalRecord.maxWeight;
+  // PR comparison depends on exercise type
+  const currentMaxValue = isTimed
+    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualTime).map(s => s.actualTime || 0), 0)
+    : isBodyweight
+    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
+    : Math.max(...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0), 0);
+  const isNewPR = personalRecord && currentMaxValue > personalRecord.maxWeight;
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
@@ -418,9 +420,13 @@ export function SetBySetCard({
             {isWeightedBW && (
               <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW+</span>
             )}
-            {personalRecord && !isNewPR && showWeight && (
+            {personalRecord && !isNewPR && (
               <span className="text-[10px] text-muted-foreground tabular-nums">
-                PR {personalRecord.maxWeight}{weightLabel}
+                PR {personalRecord.prType === 'duration'
+                  ? formatTime(personalRecord.maxWeight)
+                  : personalRecord.prType === 'reps'
+                  ? `${personalRecord.maxWeight} reps`
+                  : `${personalRecord.maxWeight}${weightLabel}`}
               </span>
             )}
             {isNewPR && (

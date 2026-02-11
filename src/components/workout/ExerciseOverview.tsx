@@ -1,6 +1,6 @@
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, Timer, Dumbbell } from 'lucide-react';
 
 interface ExerciseOverviewProps {
   exercises: WorkoutExercise[];
@@ -71,7 +71,18 @@ export function ExerciseOverview({
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{exercise.name}</div>
+                        <div className="font-medium truncate flex items-center gap-1.5">
+                          {exercise.name}
+                          {exercise.exerciseType === 'timed' && (
+                            <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">timed</span>
+                          )}
+                          {exercise.exerciseType === 'bodyweight' && (
+                            <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw</span>
+                          )}
+                          {exercise.exerciseType === 'weighted_bw' && (
+                            <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw+</span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {completedSets}/{exercise.sets.length} sets logged
                         </div>
