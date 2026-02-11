@@ -333,16 +333,18 @@ export function SetBySetCard({
   const addSet = () => {
     haptic('light');
     const updated = { ...exercise };
+    // Find the last completed set for smart pre-fill, fall back to last set's targets
+    const lastCompleted = [...updated.sets].reverse().find(s => s.completed);
     const lastSet = updated.sets[updated.sets.length - 1];
     updated.sets = [
       ...updated.sets,
       {
         setNumber: lastSet.setNumber + 1,
-        targetWeight: lastSet.actualWeight || lastSet.targetWeight,
-        targetReps: lastSet.actualReps || lastSet.targetReps,
-        actualWeight: lastSet.actualWeight || '',
-        actualReps: lastSet.actualReps || '',
-        targetTime: lastSet.actualTime || lastSet.targetTime,
+        targetWeight: lastCompleted?.actualWeight || lastSet.targetWeight,
+        targetReps: lastCompleted?.actualReps || lastSet.targetReps,
+        actualWeight: lastCompleted?.actualWeight || '',
+        actualReps: lastCompleted?.actualReps || '',
+        targetTime: lastCompleted?.actualTime || lastSet.targetTime,
         completed: false,
       },
     ];
@@ -392,7 +394,7 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-  // Build prev set hint — only show if previous set was actually completed
+  // Build prev set hint — only show if previous set was actually completed with real data
   const getPrevHint = () => {
     if (!prevSet?.completed) return null;
     if (isTimed) {
@@ -403,9 +405,12 @@ export function SetBySetCard({
       if (prevSet.actualReps) return `prev: ${prevSet.actualReps} reps`;
       return null;
     }
-    if (prevSet.actualWeight || prevSet.actualReps) {
+    // Only show if we have actual logged values — never mix with template targets
+    const w = prevSet.actualWeight;
+    const r = prevSet.actualReps;
+    if (w && r) {
       const prefix = isWeightedBW ? '+' : '';
-      return `prev: ${prefix}${String(prevSet.actualWeight || prevSet.targetWeight).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${prevSet.actualReps || prevSet.targetReps}`;
+      return `prev: ${prefix}${String(w).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${r}`;
     }
     return null;
   };
