@@ -3,17 +3,41 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
   "https://reps-and-reminders.lovable.app",
+  "https://reptrack.fitness",
+  "https://www.reptrack.fitness",
   "http://localhost:5173",
+  "http://localhost:4173",
   "http://localhost:8080",
 ];
 
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(?:[a-z0-9-]+\.)*reptrack\.fitness(?::\d+)?$/i,
+  /^https:\/\/(?:[a-z0-9-]+\.)*lovable\.app(?::\d+)?$/i,
+  /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i,
+  /^capacitor:\/\/localhost$/i,
+  /^ionic:\/\/localhost$/i,
+];
+
+function resolveAllowedOrigin(origin: string) {
+  // Non-browser callers may omit Origin; allow with wildcard CORS response.
+  if (!origin || origin === "null") return "*";
+
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  if (ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin))) return origin;
+
+  console.warn(`analyze-food: rejecting origin=${origin}`);
+  return ALLOWED_ORIGINS[0];
+}
+
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = resolveAllowedOrigin(origin);
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
   };
 }
 
@@ -24,7 +48,27 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function callOpenAI(imageUrl: string, apiKey: string, attempt: number = 1): Promise<any> {
+class HttpStatusError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "HttpStatusError";
+  }
+}
+
+type OpenAIResponse = {
+  choices?: Array<{
+    message?: {
+      tool_calls?: Array<{
+        function?: {
+          arguments?: string;
+        };
+      }>;
+      content?: string;
+    };
+  }>;
+};
+
+async function callOpenAI(imageUrl: string, apiKey: string, attempt: number = 1): Promise<OpenAIResponse> {
   console.log(`OpenAI API call attempt ${attempt}/${MAX_RETRIES + 1}`);
   
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -120,16 +164,17 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
       return callOpenAI(imageUrl, apiKey, attempt + 1);
     }
     
-    throw { status: response.status, message: errorText };
+    throw new HttpStatusError(response.status, errorText);
   }
 
-  return response.json();
+  return (await response.json()) as OpenAIResponse;
 }
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
+    console.log(`analyze-food: preflight from origin=${req.headers.get("origin")}`);
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -252,33 +297,37 @@ serve(async (req) => {
     console.error("Could not extract valid response from AI:", JSON.stringify(data));
     throw new Error("Could not parse AI response");
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("analyze-food error:", error);
     
     // Handle specific error types
-    if (error.status === 429) {
+    if (error instanceof HttpStatusError && error.status === 429) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    if (error.status === 401) {
+    if (error instanceof HttpStatusError && error.status === 401) {
       return new Response(
         JSON.stringify({ error: "Invalid API key. Please check your OpenAI API key." }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    if (error.status === 400) {
+    if (error instanceof HttpStatusError && error.status === 400) {
       return new Response(
         JSON.stringify({ error: "Could not analyze this image. Try a clearer photo or manual entry." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const fallbackMessage = error instanceof Error
+      ? error.message
+      : "Failed to analyze food. Please try again.";
     
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to analyze food. Please try again." }),
+      JSON.stringify({ error: fallbackMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
