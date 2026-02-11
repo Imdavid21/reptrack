@@ -1,16 +1,11 @@
 import { Hono } from "npm:hono@4";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ALLOWED_ORIGINS = [
-  "https://reps-and-reminders.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
-
-function getCorsHeaders(origin: string) {
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+function getCorsHeaders(origin?: string) {
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": origin || "*",
+    "Vary": "Origin",
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, mcp-session-id",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Expose-Headers": "mcp-session-id",
@@ -18,7 +13,7 @@ function getCorsHeaders(origin: string) {
 }
 
 // Default CORS headers for non-request contexts (SSE, etc.)
-const corsHeaders = getCorsHeaders("https://reps-and-reminders.lovable.app");
+const corsHeaders = getCorsHeaders("*");
 
 // SSE sessions will be lost when the function cold-starts. For production use, replace with
 // a persistent store (e.g., Supabase table or Redis).
@@ -606,8 +601,7 @@ const app = new Hono();
 
 // Set per-request CORS headers via middleware
 app.use("*", async (c, next) => {
-  const origin = c.req.header("origin") || "";
-  const headers = getCorsHeaders(origin);
+  const headers = getCorsHeaders(c.req.header("origin") || undefined);
   Object.entries(headers).forEach(([key, value]) => {
     c.header(key, value);
   });
@@ -616,7 +610,7 @@ app.use("*", async (c, next) => {
 
 // Handle CORS preflight
 app.options("*", (c) => {
-  return new Response(null, { headers: getCorsHeaders(c.req.header("origin") || "") });
+  return new Response(null, { headers: getCorsHeaders(c.req.header("origin") || undefined) });
 });
 
 // SSE endpoint for mcp-remote compatibility

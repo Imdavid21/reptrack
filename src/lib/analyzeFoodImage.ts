@@ -39,6 +39,31 @@ interface AnalyzeResult {
 }
 
 const OVERALL_TIMEOUT_MS = 45_000; // 45s max for the entire pipeline
+const SIGNED_URL_TTL_SECONDS = 5 * 60; // 5 minutes
+const MAX_ANALYSIS_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+async function getFunctionUserMessage(error: unknown): Promise<string | null> {
+  if (!error || typeof error !== 'object') return null;
+
+  const maybeContext = (error as { context?: { json?: () => Promise<unknown> } }).context;
+  if (!maybeContext?.json) return null;
+
+  try {
+    const body = await maybeContext.json();
+    if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
+      return body.error;
+    }
+  } catch {
+    // ignore parse failures and use default message
+  }
+
+  return null;
+}
 
 export async function analyzeFoodImage(
   file: File,
@@ -62,6 +87,9 @@ async function doAnalyze(
   userId: string,
   onStep: (step: AnalysisStep) => void,
 ): Promise<AnalyzeResult> {
+  let filePath = '';
+  let publicUrl = '';
+
   try {
     // Step 1: Compress
     onStep('compressing');
@@ -73,49 +101,69 @@ async function doAnalyze(
       compressed = file; // fallback to original
     }
 
-    // Step 2: Upload
+    if (compressed.size > MAX_ANALYSIS_IMAGE_BYTES) {
+      throw new FoodAnalysisError(
+        'Image too large for analysis request',
+        'Image is too large after compression. Please use a smaller or lower-resolution photo.'
+      );
+    }
+
+    // Step 2: Upload + signed URL
     onStep('uploading');
-    const fileName = `${userId}/${Date.now()}-${compressed.name}`;
+    filePath = `${userId}/${Date.now()}-${compressed.name}`;
+
     const { error: uploadError } = await supabase.storage
       .from('meal-photos')
-      .upload(fileName, compressed);
+      .upload(filePath, compressed);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      throw new FoodAnalysisError(uploadError.message, 'Could not upload image. Please try again.');
+    }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('meal-photos')
-      .getPublicUrl(fileName);
+      .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS);
 
-    // Step 3: Analyze (with 1 retry)
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      throw new FoodAnalysisError(
+        signedUrlError?.message || 'Could not create signed URL',
+        'Could not prepare image for analysis. Please try again.'
+      );
+    }
+
+    const signedUrl = signedUrlData.signedUrl;
+    const { data: publicUrlData } = supabase.storage
+      .from('meal-photos')
+      .getPublicUrl(filePath);
+    publicUrl = publicUrlData.publicUrl;
+
+    // Step 3: Analyze (single retry)
     onStep('analyzing');
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const { data, error } = await supabase.functions.invoke('analyze-food', {
-          body: { imageUrl: publicUrl },
+          body: { imageUrl: signedUrl },
         });
 
         if (error) {
-          // Extract the actual error message from the edge function response
-          let userMessage = 'Could not analyze image.';
-          try {
-            const body = await (error as any).context?.json?.();
-            if (body?.error) userMessage = body.error;
-          } catch {
-            // context may not be available or parseable
-          }
-          throw new FoodAnalysisError(error.message || 'Edge function error', userMessage);
+          const userMessage = (await getFunctionUserMessage(error)) || 'Could not analyze image.';
+          throw new FoodAnalysisError(getErrorMessage(error), userMessage);
         }
-        if (data?.error) throw new FoodAnalysisError(data.error, data.error);
+
+        if (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') {
+          throw new FoodAnalysisError(data.error, data.error);
+        }
 
         onStep('done');
         return { analysis: data as FoodAnalysis, publicUrl };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         console.warn(`Analysis attempt ${attempt + 1} failed:`, lastError.message);
+
         if (attempt === 0) {
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
           onStep('analyzing');
         }
       }
@@ -126,5 +174,12 @@ async function doAnalyze(
   } catch (err) {
     onStep('error');
     throw err;
+  } finally {
+    if (filePath) {
+      const { error: removeError } = await supabase.storage.from('meal-photos').remove([filePath]);
+      if (removeError) {
+        console.warn('Could not remove temporary meal photo:', removeError.message);
+      }
+    }
   }
 }

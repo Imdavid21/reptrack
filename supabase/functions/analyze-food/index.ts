@@ -1,22 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ALLOWED_ORIGINS = [
-  "https://reps-and-reminders.lovable.app",
-  "https://reptrack.fitness",
-  "https://www.reptrack.fitness",
-  "http://localhost:5173",
-  "http://localhost:4173",
-  "http://localhost:8080",
-];
-
 function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const origin = req.headers.get("origin");
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": origin || "*",
+    "Vary": "Origin",
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   };
 }
 
@@ -198,19 +191,21 @@ serve(async (req) => {
     }
 
     const { imageUrl } = body;
-    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}`);
+    const hasImageUrl = typeof imageUrl === "string" && imageUrl.length > 0;
 
-    if (!imageUrl) {
-      console.error("analyze-food: No imageUrl in request body");
+    if (!hasImageUrl) {
+      console.error("analyze-food: Missing imageUrl payload");
       return new Response(
-        JSON.stringify({ error: "Image URL is required" }),
+        JSON.stringify({ error: "imageUrl is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Validate URL format
     try {
-      new URL(imageUrl);
+      const parsed = new URL(imageUrl);
+      if (parsed.protocol !== "https:") {
+        throw new Error("Only https image URLs are allowed");
+      }
     } catch {
       console.error("analyze-food: Invalid URL format:", imageUrl);
       return new Response(
