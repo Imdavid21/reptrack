@@ -138,12 +138,12 @@ export function SetBySetCard({
   const baseReps = getBaseReps();
   const baseTime = getBaseTime();
 
-  // Generate weight options: wider range with smart increments
+  // Generate weight options: wide scrollable range
   const generateWeightOptions = (): number[] => {
     const options = new Set<number>();
     const increments = isWeightedBW
-      ? [-5, -2.5, 0, 2.5, 5, 10, 15]  // Added weight for weighted BW
-      : [-10, -5, -2.5, 0, 2.5, 5, 10];
+      ? [-10, -5, -2.5, 0, 2.5, 5, 10, 15, 20]
+      : [-20, -15, -10, -5, -2.5, 0, 2.5, 5, 10, 15, 20];
     increments.forEach(delta => {
       const w = baseWeight + delta;
       if (isWeightedBW ? w >= 0 : w > 0) options.add(w);
@@ -151,10 +151,12 @@ export function SetBySetCard({
     return Array.from(options).sort((a, b) => a - b);
   };
 
-  // Generate rep options
+  // Generate rep options: wider scrollable range
   const generateRepOptions = (): number[] => {
     const options = new Set<number>();
-    const range = isBodyweight ? [-5, -3, -1, 0, 1, 3, 5] : [-3, -2, -1, 0, 1, 2, 3];
+    const range = isBodyweight
+      ? [-8, -5, -3, -2, -1, 0, 1, 2, 3, 5, 8]
+      : [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
     range.forEach(delta => {
       const r = baseReps + delta;
       if (r > 0 && r <= 100) options.add(r);
@@ -587,13 +589,13 @@ export function SetBySetCard({
                     <span className="text-xs text-muted-foreground ml-2 self-center">sec</span>
                   </div>
                 ) : (
-                  <div className="flex gap-1 justify-center flex-wrap">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x justify-center">
                     {timeOptions.map((t) => (
                       <button
                         key={t}
                         onClick={() => handleTimeSelect(t)}
                         className={cn(
-                          'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
+                          'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
                           selectedTime === t
                             ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -604,7 +606,7 @@ export function SetBySetCard({
                     ))}
                     <button
                       onClick={() => setShowTimeInput(true)}
-                      className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                      className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                     >
                       ···
                     </button>
@@ -636,16 +638,16 @@ export function SetBySetCard({
                 />
               </div>
             ) : (
-              <div className="flex gap-1 justify-center flex-wrap">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                 {weightOptions.map((w) => (
                   <button
                     key={w}
                     onClick={() => handleWeightSelect(w)}
                     className={cn(
-                      'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
+                      'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
                       selectedWeight === w
                         ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     )}
                   >
                     {isWeightedBW && '+'}
@@ -654,7 +656,7 @@ export function SetBySetCard({
                 ))}
                 <button
                   onClick={() => setShowWeightInput(true)}
-                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                 >
                   ···
                 </button>
@@ -684,13 +686,13 @@ export function SetBySetCard({
                 />
               </div>
             ) : (
-              <div className="flex gap-1 justify-center flex-wrap">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x justify-center">
                 {repOptions.map((r) => (
                   <button
                     key={r}
                     onClick={() => handleRepsSelect(r)}
                     className={cn(
-                      'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
+                      'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
                       selectedReps === r
                         ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -701,7 +703,7 @@ export function SetBySetCard({
                 ))}
                 <button
                   onClick={() => setShowRepsInput(true)}
-                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                 >
                   ···
                 </button>
