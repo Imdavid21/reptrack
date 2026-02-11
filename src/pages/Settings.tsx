@@ -22,7 +22,7 @@ import {
   ChevronDown,
   Check,
   Edit2,
-  
+  Dumbbell,
   Link2,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
@@ -518,6 +518,121 @@ export default function Settings() {
             </Box>
           </MuiCard>
 
+
+          {/* Workout Preferences */}
+          <MuiCard>
+            <Box
+              onClick={() => toggleSection('workout')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Dumbbell size={18} />
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>Workout</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Rest timer, units, preferences
+                  </Typography>
+                </Box>
+              </Box>
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: expandedSections.workout ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            </Box>
+
+            <Collapse in={expandedSections.workout}>
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+
+                {/* Default Rest Timer */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Default Rest Timer
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                    Rest between sets (can always adjust per-set)
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {[
+                      { label: '60s', value: 60 },
+                      { label: '90s', value: 90 },
+                      { label: '2m', value: 120 },
+                      { label: '3m', value: 180 },
+                      { label: '5m', value: 300 },
+                    ].map(opt => {
+                      const current = (preferences as any)?.default_rest_seconds || 90;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => updatePreferences.mutate({ default_rest_seconds: opt.value } as any)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                            current === opt.value
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                {/* Weight Unit */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Weight Unit
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {['kg', 'lbs'].map(unit => {
+                      const current = (preferences as any)?.weight_unit || 'kg';
+                      return (
+                        <button
+                          key={unit}
+                          onClick={() => updatePreferences.mutate({ weight_unit: unit } as any)}
+                          className={cn(
+                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
+                            current === unit
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {unit.toUpperCase()}
+                        </button>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                {/* Auto-start rest timer toggle */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>Auto-start Rest Timer</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Start timer automatically after completing a set
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={(preferences as any)?.auto_rest_timer !== false}
+                    onChange={() => {
+                      const current = (preferences as any)?.auto_rest_timer !== false;
+                      updatePreferences.mutate({ auto_rest_timer: !current } as any);
+                    }}
+                    color="primary"
+                  />
+                </Box>
+              </Box>
+            </Collapse>
+          </MuiCard>
 
           {/* Install as App - only show when NOT running as installed PWA */}
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (

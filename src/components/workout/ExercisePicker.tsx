@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { exerciseLibrary, ExerciseOption, getExerciseType } from '@/lib/exerciseLibrary';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search, X, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,16 +31,48 @@ function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   return { sets: 3, reps: targetReps };
 }
 
+const RECENT_EXERCISES_KEY = 'reptrack_recent_exercises';
+const MAX_RECENT = 10;
+
+function getRecentExercises(): string[] {
+  try {
+    const stored = localStorage.getItem(RECENT_EXERCISES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addToRecent(name: string) {
+  const recent = getRecentExercises().filter(n => n !== name);
+  recent.unshift(name);
+  localStorage.setItem(RECENT_EXERCISES_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
+}
+
+// Build muscle group map for each category
+function getMuscleGroups(category: string): string[] {
+  const exercises = exerciseLibrary[category] || [];
+  const groups = new Set<string>();
+  exercises.forEach(ex => groups.add(ex.muscleGroup));
+  return Array.from(groups);
+}
+
+// Get all exercises across all categories
+function getAllExercises(): ExerciseOption[] {
+  return Object.values(exerciseLibrary).flat();
+}
+
 export function ExercisePicker({ existingExercises, onAddExercise, dayType, autoOpen = false, onClose }: ExercisePickerProps) {
   const [open, setOpen] = useState(autoOpen);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>(dayType || 'Push');
+  const [selectedMuscle, setSelectedMuscle] = useState<string>('All');
 
   const existingNames = new Set(existingExercises.map(e => e.name.toLowerCase()));
 
   const handleAddExercise = (option: ExerciseOption) => {
     const { sets: numSets, reps } = parseTargetReps(option.defaultReps);
-    
+
     const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
       setNumber: i + 1,
       targetWeight: option.defaultWeight,
@@ -71,25 +103,107 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
       exerciseType: exType,
     };
 
+    addToRecent(option.name);
     onAddExercise(newExercise);
     setOpen(false);
     setSearch('');
   };
 
-  const filterExercises = (exercises: ExerciseOption[]) => {
-    if (!search) return exercises;
-    const searchLower = search.toLowerCase();
-    return exercises.filter(
+  // When searching, look across all categories
+  const isSearching = search.length > 0;
+  const searchLower = search.toLowerCase();
+
+  const allExercises = useMemo(() => getAllExercises(), []);
+
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
+    return allExercises.filter(
       ex => ex.name.toLowerCase().includes(searchLower) ||
             ex.muscleGroup.toLowerCase().includes(searchLower)
     );
+  }, [isSearching, searchLower, allExercises]);
+
+  // Recently used exercises resolved from library
+  const recentExercises = useMemo(() => {
+    const recentNames = getRecentExercises();
+    return recentNames
+      .map(name => allExercises.find(ex => ex.name === name))
+      .filter((ex): ex is ExerciseOption => !!ex);
+  }, [allExercises]);
+
+  // Muscle groups for the active tab
+  const muscleGroups = useMemo(() => getMuscleGroups(activeTab), [activeTab]);
+
+  const filterExercises = (exercises: ExerciseOption[]) => {
+    let filtered = exercises;
+    if (search) {
+      filtered = filtered.filter(
+        ex => ex.name.toLowerCase().includes(searchLower) ||
+              ex.muscleGroup.toLowerCase().includes(searchLower)
+      );
+    }
+    if (selectedMuscle !== 'All') {
+      filtered = filtered.filter(ex => ex.muscleGroup === selectedMuscle);
+    }
+    return filtered;
   };
 
   const categories = ['Push', 'Pull', 'Legs'] as const;
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
-    if (!newOpen && onClose) onClose();
+    if (!newOpen) {
+      setSearch('');
+      setSelectedMuscle('All');
+      if (onClose) onClose();
+    }
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSelectedMuscle('All');
+  };
+
+  const renderExerciseRow = (option: ExerciseOption) => {
+    const alreadyAdded = existingNames.has(option.name.toLowerCase());
+    return (
+      <button
+        key={option.name}
+        onClick={() => !alreadyAdded && handleAddExercise(option)}
+        disabled={alreadyAdded}
+        className={cn(
+          'w-full text-left p-3 rounded border transition-colors',
+          alreadyAdded
+            ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
+            : 'hover:bg-muted border-border'
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-sm">{option.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {option.muscleGroup} • {option.defaultWeight} • {option.defaultReps}
+              {option.exerciseType && option.exerciseType !== 'weighted' && (
+                <span className="ml-1 text-[10px] uppercase opacity-60">
+                  ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
+                </span>
+              )}
+            </div>
+          </div>
+          <span className={cn(
+            'text-xs px-2 py-0.5 rounded',
+            option.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted'
+          )}>
+            {option.category}
+          </span>
+        </div>
+        {alreadyAdded && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Already in workout
+          </div>
+        )}
+      </button>
+    );
   };
 
   return (
@@ -106,12 +220,12 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
         <DialogHeader>
           <DialogTitle>Add Exercise</DialogTitle>
         </DialogHeader>
-        
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search exercises..."
+            placeholder="Search exercises or muscle groups..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 pr-10"
@@ -126,63 +240,101 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
           )}
         </div>
 
-        {/* Category tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-3">
-            {categories.map(cat => (
-              <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {categories.map(cat => (
-            <TabsContent key={cat} value={cat} className="flex-1 overflow-y-auto mt-2">
+        {/* Cross-category search results */}
+        {isSearching ? (
+          <div className="flex-1 overflow-y-auto mt-2 space-y-1">
+            {searchResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No exercises found for "{search}"
+              </p>
+            ) : (
+              <>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-1 mb-1">
+                  {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} across all categories
+                </p>
+                {searchResults.map(renderExerciseRow)}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Recently used section */}
+            {recentExercises.length > 0 && (
               <div className="space-y-1">
-                {filterExercises(exerciseLibrary[cat]).map((option) => {
-                  const alreadyAdded = existingNames.has(option.name.toLowerCase());
-                  
-                  return (
-                    <button
-                      key={option.name}
-                      onClick={() => !alreadyAdded && handleAddExercise(option)}
-                      disabled={alreadyAdded}
-                      className={cn(
-                        'w-full text-left p-3 rounded border transition-colors',
-                        alreadyAdded 
-                          ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
-                          : 'hover:bg-muted border-border'
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{option.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {option.muscleGroup} • {option.defaultWeight} • {option.defaultReps}
-                            {option.exerciseType && option.exerciseType !== 'weighted' && (
-                              <span className="ml-1 text-[10px] uppercase opacity-60">
-                                ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <span className={cn(
-                          'text-xs px-2 py-0.5 rounded',
-                          option.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted'
-                        )}>
-                          {option.category}
-                        </span>
-                      </div>
-                      {alreadyAdded && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Already in workout
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+                <div className="flex items-center gap-1 px-1">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Recent</span>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  {recentExercises.slice(0, 6).map((option) => {
+                    const alreadyAdded = existingNames.has(option.name.toLowerCase());
+                    return (
+                      <button
+                        key={option.name}
+                        onClick={() => !alreadyAdded && handleAddExercise(option)}
+                        disabled={alreadyAdded}
+                        className={cn(
+                          'shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors',
+                          alreadyAdded
+                            ? 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed border-transparent'
+                            : 'border-border hover:bg-muted hover:border-foreground/20'
+                        )}
+                      >
+                        {option.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            )}
+
+            {/* Category tabs */}
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid grid-cols-3">
+                {categories.map(cat => (
+                  <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
+                ))}
+              </TabsList>
+
+              {categories.map(cat => (
+                <TabsContent key={cat} value={cat} className="flex-1 overflow-y-auto mt-2 space-y-1">
+                  {/* Muscle group filter chips */}
+                  {cat === activeTab && muscleGroups.length > 1 && (
+                    <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide sticky top-0 bg-background z-10">
+                      <button
+                        onClick={() => setSelectedMuscle('All')}
+                        className={cn(
+                          'shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors',
+                          selectedMuscle === 'All'
+                            ? 'bg-foreground text-background'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        All
+                      </button>
+                      {muscleGroups.map(group => (
+                        <button
+                          key={group}
+                          onClick={() => setSelectedMuscle(selectedMuscle === group ? 'All' : group)}
+                          className={cn(
+                            'shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors',
+                            selectedMuscle === group
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {group}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {filterExercises(exerciseLibrary[cat]).map(renderExerciseRow)}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -22,6 +22,7 @@ import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { CalorieChart } from '@/components/health/CalorieChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
+import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
@@ -453,6 +454,11 @@ function InsightsContent() {
             {/* Strength Overview */}
             <motion.div variants={staggerItem}>
               <StrengthOverviewChart />
+            </motion.div>
+
+            {/* Per-Exercise Progression */}
+            <motion.div variants={staggerItem}>
+              <ExerciseProgressionChart />
             </motion.div>
 
             {/* Energy Balance + Calorie Trends (merged) */}
