@@ -57,6 +57,11 @@ function ExerciseItemCard({
 }) {
   const totalSets = exercise.sets.length;
   const targetInfo = exercise.sets[0];
+  const exType = exercise.exerciseType || 'weighted';
+  const isTimed = exType === 'timed';
+  const isBodyweight = exType === 'bodyweight';
+  const isWeightedBW = exType === 'weighted_bw';
+  const showWeightField = exType === 'weighted' || exType === 'weighted_bw';
 
   // Extract max from rep ranges like "10-12" → "12"
   const displayReps = (reps: string | undefined) => {
@@ -64,6 +69,15 @@ function ExerciseItemCard({
     const match = reps.match(/(\d+)\s*[-–]\s*(\d+)/);
     if (match) return match[2];
     return reps;
+  };
+
+  // Format seconds for timed display
+  const formatTimeSummary = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m > 0 && s > 0) return `${m}m ${s}s`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
   };
 
   const handleSetsChange = (delta: number) => {
@@ -145,11 +159,21 @@ function ExerciseItemCard({
             )}
             <span>{totalSets} sets</span>
             <span className="opacity-40">·</span>
-            <span>{displayReps(targetInfo?.targetReps)}</span>
-            {targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
+            {isTimed ? (
+              <span>{formatTimeSummary(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)}</span>
+            ) : (
+              <span>{displayReps(targetInfo?.targetReps)}{isBodyweight ? ' reps' : ''}</span>
+            )}
+            {showWeightField && targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
               <>
                 <span className="opacity-40">·</span>
-                <span>{targetInfo.targetWeight}</span>
+                <span>{isWeightedBW ? '+' : ''}{targetInfo.targetWeight}</span>
+              </>
+            )}
+            {(isTimed || isBodyweight || isWeightedBW) && (
+              <>
+                <span className="opacity-40">·</span>
+                <span className="text-[9px] uppercase">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
               </>
             )}
           </div>
@@ -207,30 +231,48 @@ function ExerciseItemCard({
 
               <div className="w-px h-8 bg-border/50" />
 
-              {/* Reps */}
+              {/* Reps or Time */}
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Reps</span>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                  {isTimed ? 'Secs' : 'Reps'}
+                </span>
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={displayReps(targetInfo?.targetReps)}
-                  onChange={(e) => handleRepsChange(e.target.value)}
+                  value={isTimed
+                    ? String(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)
+                    : displayReps(targetInfo?.targetReps)
+                  }
+                  onChange={(e) => {
+                    if (isTimed) {
+                      const secs = parseInt(e.target.value) || 0;
+                      const newSets = exercise.sets.map(s => ({ ...s, targetTime: secs, targetReps: String(secs) }));
+                      onUpdate({ ...exercise, sets: newSets });
+                    } else {
+                      handleRepsChange(e.target.value);
+                    }
+                  }}
                   className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
                 />
               </div>
 
-              <div className="w-px h-8 bg-border/50" />
-
-              {/* Weight */}
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Weight</span>
-                <input
-                  type="text"
-                  value={targetInfo?.targetWeight || ''}
-                  onChange={(e) => handleWeightChange(e.target.value)}
-                  className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
-                />
-              </div>
+              {/* Weight — only for weighted and weighted_bw */}
+              {showWeightField && (
+                <>
+                  <div className="w-px h-8 bg-border/50" />
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                      {isWeightedBW ? '+Weight' : 'Weight'}
+                    </span>
+                    <input
+                      type="text"
+                      value={targetInfo?.targetWeight || ''}
+                      onChange={(e) => handleWeightChange(e.target.value)}
+                      className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -526,7 +568,7 @@ export function ExerciseReview({
 
       {/* Info text */}
       <p className="text-[11px] text-muted-foreground text-center">
-        Tap any exercise to adjust sets, reps, or weight
+        Tap any exercise to adjust sets, reps, weight, or duration
       </p>
     </div>
   );
