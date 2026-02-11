@@ -108,26 +108,26 @@ export function SetBySetCard({
     }
   }, [currentSetIndex, exerciseIndex]);
 
-  // Priority for base values: prev set actual -> last used from DB -> target
+  // Priority for base values: prev completed set -> last used from DB -> current target
+  const completedPrev = prevSet?.completed ? prevSet : null;
+
   const getBaseWeight = (): number => {
     if (currentSet.actualWeight) return parseFloat(currentSet.actualWeight);
-    if (prevSet?.actualWeight) return parseFloat(prevSet.actualWeight);
+    if (completedPrev?.actualWeight) return parseFloat(completedPrev.actualWeight);
     if (lastUsed?.weight) return lastUsed.weight;
-    if (prevSet?.targetWeight) return parseFloat(prevSet.targetWeight) || 0;
     return parseFloat(currentSet.targetWeight) || 0;
   };
 
   const getBaseReps = (): number => {
     if (currentSet.actualReps) return parseInt(currentSet.actualReps);
-    if (prevSet?.actualReps) return parseInt(prevSet.actualReps);
+    if (completedPrev?.actualReps) return parseInt(completedPrev.actualReps);
     if (lastUsed?.reps) return lastUsed.reps;
-    if (prevSet?.targetReps) return parseInt(prevSet.targetReps) || 8;
     return parseInt(currentSet.targetReps) || 8;
   };
 
   const getBaseTime = (): number => {
     if (currentSet.actualTime) return currentSet.actualTime;
-    if (prevSet?.actualTime) return prevSet.actualTime;
+    if (completedPrev?.actualTime) return completedPrev.actualTime;
     if (currentSet.targetTime) return currentSet.targetTime;
     // Parse from targetReps for backwards compat (e.g. "45" meaning 45 seconds)
     const parsed = parseInt(currentSet.targetReps);
@@ -333,16 +333,18 @@ export function SetBySetCard({
   const addSet = () => {
     haptic('light');
     const updated = { ...exercise };
+    // Find the last completed set for smart pre-fill, fall back to last set's targets
+    const lastCompleted = [...updated.sets].reverse().find(s => s.completed);
     const lastSet = updated.sets[updated.sets.length - 1];
     updated.sets = [
       ...updated.sets,
       {
         setNumber: lastSet.setNumber + 1,
-        targetWeight: lastSet.actualWeight || lastSet.targetWeight,
-        targetReps: lastSet.actualReps || lastSet.targetReps,
-        actualWeight: lastSet.actualWeight || '',
-        actualReps: lastSet.actualReps || '',
-        targetTime: lastSet.actualTime || lastSet.targetTime,
+        targetWeight: lastCompleted?.actualWeight || lastSet.targetWeight,
+        targetReps: lastCompleted?.actualReps || lastSet.targetReps,
+        actualWeight: lastCompleted?.actualWeight || '',
+        actualReps: lastCompleted?.actualReps || '',
+        targetTime: lastCompleted?.actualTime || lastSet.targetTime,
         completed: false,
       },
     ];
@@ -392,26 +394,29 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-  // Build prev set hint based on exercise type
+  // Build prev set hint — only show if previous set was actually completed with real data
   const getPrevHint = () => {
+    if (!prevSet?.completed) return null;
     if (isTimed) {
-      if (prevSet?.actualTime) return `prev: ${formatTime(prevSet.actualTime)}`;
-      if (prevSet?.targetTime) return `prev: ${formatTime(prevSet.targetTime)}`;
+      if (prevSet.actualTime) return `prev: ${formatTime(prevSet.actualTime)}`;
       return null;
     }
     if (isBodyweight) {
-      if (prevSet?.actualReps) return `prev: ${prevSet.actualReps} reps`;
+      if (prevSet.actualReps) return `prev: ${prevSet.actualReps} reps`;
       return null;
     }
-    if (prevSet && (prevSet.actualWeight || prevSet.targetWeight)) {
+    // Only show if we have actual logged values — never mix with template targets
+    const w = prevSet.actualWeight;
+    const r = prevSet.actualReps;
+    if (w && r) {
       const prefix = isWeightedBW ? '+' : '';
-      return `prev: ${prefix}${String(prevSet.actualWeight || prevSet.targetWeight).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${prevSet.actualReps || prevSet.targetReps}`;
+      return `prev: ${prefix}${String(w).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${r}`;
     }
     return null;
   };
 
   const getLastUsedHint = () => {
-    if (!lastUsed || prevSet) return null;
+    if (!lastUsed || completedPrev) return null;
     if (isTimed) return null;
     if (isBodyweight) return `last: ${lastUsed.reps} reps`;
     const prefix = isWeightedBW ? '+' : '';

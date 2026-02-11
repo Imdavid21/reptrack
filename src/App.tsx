@@ -6,16 +6,9 @@ import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
-// Landing & Auth pages
+// Landing & Auth — eagerly loaded (entry points)
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
-// App pages
-import AppIndex from "./pages/AppIndex";
-import LogWorkout from "./pages/LogWorkout";
-import Insights from "./pages/Insights";
-import History from "./pages/History";
-import Settings from "./pages/Settings";
-import WorkoutDetail from "./pages/WorkoutDetail";
 import NotFound from "./pages/NotFound";
 
 // Legacy redirect component that properly passes the workoutId param
@@ -24,11 +17,30 @@ function HistoryRedirect() {
   return <Navigate to={`/app/history/${workoutId}`} replace />;
 }
 
+// Route-based code splitting — each page downloads only when navigated to
+const AppIndex = lazy(() => import("./pages/AppIndex"));
+const LogWorkout = lazy(() => import("./pages/LogWorkout"));
+const Insights = lazy(() => import("./pages/Insights"));
+const History = lazy(() => import("./pages/History"));
+const Settings = lazy(() => import("./pages/Settings"));
+const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
+
 // Lazy-loaded public pages (not needed in PWA)
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Changelog = lazy(() => import("./pages/Changelog"));
+
+// Lightweight fallback shown while lazy chunks load
+function RouteFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-2xl font-bold tracking-widest animate-pulse">
+        REPTRACK<span className="text-muted-foreground">&nbsp;</span>FITNESS
+      </div>
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -47,14 +59,13 @@ function AppRoutes() {
         <Route path="/blog/:slug" element={<Suspense fallback={null}><BlogPost /></Suspense>} />
         <Route path="/changelog" element={<Suspense fallback={null}><Changelog /></Suspense>} />
 
-        {/* App routes (authenticated) */}
-        <Route path="/app" element={<AppIndex />} />
-        <Route path="/app/log" element={<LogWorkout />} />
-        
-        <Route path="/app/insights" element={<Insights />} />
-        <Route path="/app/history" element={<History />} />
-        <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
-        <Route path="/app/settings" element={<Settings />} />
+        {/* App routes (authenticated, lazy-loaded) */}
+        <Route path="/app" element={<Suspense fallback={<RouteFallback />}><AppIndex /></Suspense>} />
+        <Route path="/app/log" element={<Suspense fallback={<RouteFallback />}><LogWorkout /></Suspense>} />
+        <Route path="/app/insights" element={<Suspense fallback={<RouteFallback />}><Insights /></Suspense>} />
+        <Route path="/app/history" element={<Suspense fallback={<RouteFallback />}><History /></Suspense>} />
+        <Route path="/app/history/:workoutId" element={<Suspense fallback={<RouteFallback />}><WorkoutDetail /></Suspense>} />
+        <Route path="/app/settings" element={<Suspense fallback={<RouteFallback />}><Settings /></Suspense>} />
 
         {/* Legacy redirects */}
         <Route path="/log" element={<Navigate to="/app/log" replace />} />

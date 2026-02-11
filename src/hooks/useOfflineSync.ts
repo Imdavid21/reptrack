@@ -24,7 +24,7 @@ export function useOfflineSync() {
     };
   }, []);
 
-  // Update pending count periodically
+  // Update pending count — called after queue changes, not on a timer
   const refreshCount = useCallback(async () => {
     try {
       const count = await getQueueCount();
@@ -34,11 +34,10 @@ export function useOfflineSync() {
     }
   }, []);
 
+  // Refresh once on mount and when connectivity changes (no polling)
   useEffect(() => {
     refreshCount();
-    const interval = setInterval(refreshCount, 10000);
-    return () => clearInterval(interval);
-  }, [refreshCount]);
+  }, [refreshCount, isOnline]);
 
   // Process a single queue item
   const processItem = useCallback(async (item: SyncQueueItem): Promise<boolean> => {
