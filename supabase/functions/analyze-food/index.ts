@@ -133,10 +133,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log(`analyze-food: ${req.method} from origin=${req.headers.get("origin")}`);
+
   try {
     // Verify JWT auth
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
+      console.error("analyze-food: Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -150,17 +153,21 @@ serve(async (req) => {
     });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error("analyze-food: Auth failed:", authError?.message || "no user");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`analyze-food: Authenticated user ${user.id}`);
+
     // Validate request body
     let body;
     try {
       body = await req.json();
-    } catch {
+    } catch (e) {
+      console.error("analyze-food: Invalid JSON body:", e);
       return new Response(
         JSON.stringify({ error: "Invalid JSON in request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -168,8 +175,10 @@ serve(async (req) => {
     }
 
     const { imageUrl } = body;
-    
+    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}`);
+
     if (!imageUrl) {
+      console.error("analyze-food: No imageUrl in request body");
       return new Response(
         JSON.stringify({ error: "Image URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -180,6 +189,7 @@ serve(async (req) => {
     try {
       new URL(imageUrl);
     } catch {
+      console.error("analyze-food: Invalid URL format:", imageUrl);
       return new Response(
         JSON.stringify({ error: "Invalid image URL format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -188,15 +198,18 @@ serve(async (req) => {
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not configured");
+      console.error("analyze-food: OPENAI_API_KEY is not configured");
       return new Response(
         JSON.stringify({ error: "AI service not configured. Please add your OpenAI API key in settings." }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("analyze-food: Calling OpenAI...");
+
     const data = await callOpenAI(imageUrl, OPENAI_API_KEY);
-    
+    console.log("analyze-food: OpenAI response received, extracting result...");
+
     // Extract the function call result
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
@@ -205,9 +218,11 @@ serve(async (req) => {
         
         // Validate required fields
         if (typeof result.total_calories !== 'number' || !result.description) {
+          console.error("analyze-food: Missing required fields:", JSON.stringify(result).substring(0, 200));
           throw new Error("Missing required fields in AI response");
         }
-        
+
+        console.log(`analyze-food: Success! ${result.total_calories} cal - ${result.description}`);
         return new Response(
           JSON.stringify(result),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }

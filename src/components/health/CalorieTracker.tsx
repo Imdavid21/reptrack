@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { analyzeFoodImage, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
+import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
@@ -42,6 +42,8 @@ export function CalorieTracker() {
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +55,30 @@ export function CalorieTracker() {
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
     setUploadedPhotoUrl(null);
+    setAnalysisError(null);
+    setLastFile(null);
+  };
+
+  const runAnalysis = async (file: File) => {
+    if (!user) return;
+    setIsAnalyzing(true);
+    setAnalysis(null);
+    setAnalysisError(null);
+    setAnalysisStep('compressing');
+
+    try {
+      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
+      setUploadedPhotoUrl(result.publicUrl);
+      setAnalysis(result.analysis);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      const message = error instanceof FoodAnalysisError
+        ? error.userMessage
+        : (error instanceof Error ? error.message : 'Could not analyze image.');
+      setAnalysisError(message);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,23 +89,10 @@ export function CalorieTracker() {
     reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
     reader.readAsDataURL(file);
 
-    setIsAnalyzing(true);
-    setAnalysis(null);
-    setAnalysisStep('compressing');
-
-    try {
-      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
-      setUploadedPhotoUrl(result.publicUrl);
-      setAnalysis(result.analysis);
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      toast.error('Could not analyze image. Try manual entry.');
-      setManualMode(true);
-    } finally {
-      setIsAnalyzing(false);
-      // Reset input so re-selecting the same file triggers onChange
-      e.target.value = '';
-    }
+    setLastFile(file);
+    await runAnalysis(file);
+    // Reset input so re-selecting the same file triggers onChange
+    e.target.value = '';
   };
 
   const handleConfirmAnalysis = async () => {
@@ -240,6 +253,29 @@ export function CalorieTracker() {
 
                 {isAnalyzing ? (
                   <AnalysisProgress currentStep={analysisStep} />
+                ) : analysisError ? (
+                  <div className="space-y-3">
+                    <div className="border border-destructive/30 bg-destructive/5 p-4">
+                      <p className="text-sm text-destructive">{analysisError}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => { setManualMode(true); setAnalysisError(null); }}
+                        className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
+                      >
+                        <Plus className="h-4 w-4" />
+                        ENTER MANUALLY
+                      </button>
+                      <button
+                        onClick={() => { if (lastFile) runAnalysis(lastFile); }}
+                        disabled={!lastFile}
+                        className="btn-brutalist flex items-center justify-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        RETRY
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
