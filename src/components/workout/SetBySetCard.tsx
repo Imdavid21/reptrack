@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus, Info } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
+import { RestTimer } from './RestTimer';
+import { estimate1RM, formatPlates } from '@/lib/calculators';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +18,7 @@ interface PersonalRecord {
   maxWeight: number;
   reps: string;
   date: string;
+  prType?: 'weight' | 'reps' | 'duration';
 }
 
 interface LastUsedData {
@@ -72,6 +75,8 @@ export function SetBySetCard({
   const [showWeightInput, setShowWeightInput] = useState(false);
   const [showRepsInput, setShowRepsInput] = useState(false);
   const [showTimeInput, setShowTimeInput] = useState(false);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [restDuration, setRestDuration] = useState(90);
 
   // Timer state for timed exercises
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -92,10 +97,11 @@ export function SetBySetCard({
     };
   }, []);
 
-  // Reset timer when switching sets
+  // Reset timer when switching sets/exercises
   useEffect(() => {
     setIsTimerRunning(false);
     setTimerSeconds(0);
+    setShowRestTimer(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -222,6 +228,13 @@ export function SetBySetCard({
     }
   };
 
+  // Determine smart rest duration based on exercise category
+  const getDefaultRest = (): number => {
+    if (exercise.category === 'primary') return 120; // 2min for compounds
+    if (isTimed) return 60;
+    return 90; // 1.5min for accessories
+  };
+
   const completeSet = () => {
     haptic('success');
     const updated = { ...exercise };
@@ -255,31 +268,49 @@ export function SetBySetCard({
     onChange(updated);
 
     if (isLastSet) {
-      if (isLastExercise) {
-        onComplete();
-      } else {
-        onNextExercise();
-      }
-    } else {
-      const nextSetIndex = currentSetIndex + 1;
-      if (isTimed) {
-        updated.sets[nextSetIndex] = {
-          ...updated.sets[nextSetIndex],
-          actualTime: updated.sets[nextSetIndex].actualTime || updated.sets[currentSetIndex].actualTime,
-        };
-      } else {
-        const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
-        const finalReps = currentSet.actualReps || baseReps.toString();
-        updated.sets[nextSetIndex] = {
-          ...updated.sets[nextSetIndex],
-          actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
-          actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
-        };
-      }
-      onChange(updated);
-      onSetIndexChange(nextSetIndex);
+      // Don't auto-advance — stay on this exercise so user can add sets or move on
+      // The "Next Exercise" / "Finish" button below handles navigation
+      return;
     }
+
+    // Pre-fill next set with current values
+    const nextSetIndex = currentSetIndex + 1;
+    if (isTimed) {
+      updated.sets[nextSetIndex] = {
+        ...updated.sets[nextSetIndex],
+        actualTime: updated.sets[nextSetIndex].actualTime || updated.sets[currentSetIndex].actualTime,
+      };
+    } else {
+      const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
+      const finalReps = currentSet.actualReps || baseReps.toString();
+      updated.sets[nextSetIndex] = {
+        ...updated.sets[nextSetIndex],
+        actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
+        actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
+      };
+    }
+    onChange(updated);
+
+    // Show rest timer between sets
+    setRestDuration(getDefaultRest());
+    setShowRestTimer(true);
   };
+
+  const handleRestDismiss = useCallback(() => {
+    setShowRestTimer(false);
+    // Advance to next set
+    if (!isLastSet) {
+      onSetIndexChange(currentSetIndex + 1);
+    }
+  }, [isLastSet, currentSetIndex, onSetIndexChange]);
+
+  const handleRestComplete = useCallback(() => {
+    setShowRestTimer(false);
+    // Advance to next set
+    if (!isLastSet) {
+      onSetIndexChange(currentSetIndex + 1);
+    }
+  }, [isLastSet, currentSetIndex, onSetIndexChange]);
 
   const skipSet = () => {
     haptic('light');
@@ -678,44 +709,92 @@ export function SetBySetCard({
             )}
           </div>
         )}
+
+        {/* 1RM estimate & plate breakdown for weighted exercises */}
+        {showWeight && !isTimed && selectedWeight > 0 && selectedReps > 0 && (
+          <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground tabular-nums">
+            <span>
+              Est. 1RM: <span className="font-medium text-foreground/70">{estimate1RM(selectedWeight, selectedReps)}kg</span>
+            </span>
+            {equipmentType === 'barbell' && selectedWeight >= 20 && (
+              <span>
+                {formatPlates(selectedWeight)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Rest Timer — shown between sets */}
+      {showRestTimer && (
+        <RestTimer
+          isOpen={showRestTimer}
+          defaultDuration={restDuration}
+          onDismiss={handleRestDismiss}
+          onComplete={handleRestComplete}
+        />
+      )}
 
       {/* Actions */}
-      <div className="flex gap-2">
-        {(!isFirstSet || !isFirstExercise) && (
-          <button
-            onClick={goToPrevSet}
-            className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
-
-        {!currentSet.completed && (
-          <button
-            onClick={skipSet}
-            className="h-10 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            <SkipForward className="h-3 w-3" />
-          </button>
-        )}
-
-        <button
-          onClick={completeSet}
-          className={cn(
-            "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
-            currentSet.completed
-              ? "bg-primary/20 text-primary border border-primary/30"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+      {!showRestTimer && (
+        <div className="flex gap-2">
+          {(!isFirstSet || !isFirstExercise) && (
+            <button
+              onClick={goToPrevSet}
+              className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
           )}
-        >
-          <Check className="h-3.5 w-3.5" />
-          {currentSet.completed
-            ? (isLastSet && isLastExercise ? 'Review & Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
-            : getLogLabel()
-          }
-        </button>
-      </div>
+
+          {!currentSet.completed && (
+            <button
+              onClick={skipSet}
+              className="h-10 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <SkipForward className="h-3 w-3" />
+            </button>
+          )}
+
+          {/* Main action button */}
+          {currentSet.completed && isLastSet ? (
+            // Last set completed — show explicit navigation buttons instead of auto-advance
+            <div className="flex gap-2 flex-1">
+              <button
+                onClick={addSet}
+                className="h-10 px-3 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              >
+                <Plus className="h-3 w-3" />
+                Add Set
+              </button>
+              <button
+                onClick={() => {
+                  haptic('medium');
+                  if (isLastExercise) onComplete();
+                  else onNextExercise();
+                }}
+                className="flex-1 h-10 rounded-full text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-1.5"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {isLastExercise ? 'Review & Finish' : 'Next Exercise'}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={completeSet}
+              className={cn(
+                "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
+                currentSet.completed
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+            >
+              <Check className="h-3.5 w-3.5" />
+              {currentSet.completed ? 'Next Set' : getLogLabel()}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

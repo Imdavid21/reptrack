@@ -24,6 +24,7 @@ import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
+import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -621,15 +622,18 @@ export default function LogWorkout() {
                 ? 'flex flex-col min-h-[calc(100vh-10rem)] justify-center' 
                 : ''
             )}>
-              {/* Header with view toggle + edit exercises button */}
+              {/* Header with timer + view toggle + edit exercises button */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold">
                     {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
+                    </p>
+                    <WorkoutTimer startTime={workoutStartTime} />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">

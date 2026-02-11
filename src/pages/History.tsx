@@ -16,12 +16,14 @@ export default function History() {
   const { workouts } = useWorkouts();
   const navigate = useNavigate();
 
+  const [daysToShow, setDaysToShow] = useState(30);
+
   const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
-    from: subDays(new Date(), 30),
+    from: subDays(new Date(), daysToShow),
     to: new Date(),
   });
 
-  const { data: calorieHistory } = useDailyCalorieTotals(30);
+  const { data: calorieHistory } = useDailyCalorieTotals(daysToShow);
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
@@ -32,8 +34,8 @@ export default function History() {
     bodyweight: string;
   }>({ sleepHours: '', sleepMinutes: '', bodyweight: '' });
 
-  const last30Days = eachDayOfInterval({
-    start: subDays(startOfDay(new Date()), 29),
+  const visibleDays = eachDayOfInterval({
+    start: subDays(startOfDay(new Date()), daysToShow - 1),
     end: startOfDay(new Date()),
   }).reverse();
 
@@ -150,7 +152,7 @@ export default function History() {
 
               {/* Timeline */}
               <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
-                {last30Days.map((date) => {
+                {visibleDays.map((date) => {
                   const dateStr = format(date, 'yyyy-MM-dd');
                   const workout = workoutsByDate[dateStr];
                   const metric = metricsByDate[dateStr];
@@ -315,6 +317,14 @@ export default function History() {
                   );
                 })}
               </motion.div>
+
+              {/* Load more button */}
+              <button
+                onClick={() => setDaysToShow(prev => prev + 30)}
+                className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Load older ({daysToShow} days shown)
+              </button>
             </>
           )}
 
