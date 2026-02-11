@@ -1,18 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const ALLOWED_ORIGINS = [
+const TRUSTED_REDIRECT_ORIGINS = [
   "https://reps-and-reminders.lovable.app",
   "http://localhost:5173",
   "http://localhost:8080",
 ];
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+function getCorsHeaders() {
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   };
 }
 
@@ -37,7 +36,7 @@ function isValidEmail(email: string): boolean {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  const corsHeaders = getCorsHeaders(req);
+  const corsHeaders = getCorsHeaders();
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -64,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       const url = new URL(redirectUrl);
       const origin = url.origin;
-      if (!ALLOWED_ORIGINS.includes(origin)) {
+      if (!TRUSTED_REDIRECT_ORIGINS.includes(origin)) {
         console.error("Rejected redirect URL with untrusted origin:", origin);
         return new Response(
           JSON.stringify({ error: "Invalid redirect URL" }),
