@@ -17,7 +17,9 @@ function getCorsHeaders(origin: string) {
   };
 }
 
-// KNOWN LIMITATION: In-memory session store does not persist across serverless invocations.
+// Default CORS headers for non-request contexts (SSE, etc.)
+const corsHeaders = getCorsHeaders("https://reps-and-reminders.lovable.app");
+
 // SSE sessions will be lost when the function cold-starts. For production use, replace with
 // a persistent store (e.g., Supabase table or Redis).
 const sessions = new Map<string, { userId: string; messageEndpoint: string }>();
