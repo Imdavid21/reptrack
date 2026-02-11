@@ -141,18 +141,6 @@ export default defineConfig(({ mode }) => ({
     }
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
-          'charts': ['recharts'],
-          'animation': ['framer-motion'],
-          'mui': ['@mui/material'],
-          'query': ['@tanstack/react-query'],
-          'supabase': ['@supabase/supabase-js'],
-        },
-      },
-    },
     commonjsOptions: {
       include: [/node_modules/],
     },
