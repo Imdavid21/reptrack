@@ -3,12 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
 
+import type { ExerciseType } from '@/lib/exerciseLibrary';
+
 export interface ExerciseSet {
   setNumber: number;
   targetWeight: string;
   targetReps: string;
   actualWeight: string;
   actualReps: string;
+  /** Target duration in seconds for timed exercises */
+  targetTime?: number;
+  /** Actual duration in seconds for timed exercises */
+  actualTime?: number;
   completed: boolean;
 }
 
@@ -18,6 +24,8 @@ export interface WorkoutExercise {
   category: string;
   sets: ExerciseSet[];
   sort_order: number;
+  /** How this exercise is measured: weighted, bodyweight, weighted_bw, timed */
+  exerciseType?: ExerciseType;
 }
 
 export interface Habits {
@@ -113,9 +121,9 @@ export function useWorkouts() {
           name: `${ex.name} (Set ${set.setNumber})`,
           category: ex.category,
           target_weight: set.targetWeight,
-          target_reps: set.targetReps,
+          target_reps: ex.exerciseType === 'timed' ? String(set.targetTime || set.targetReps) : set.targetReps,
           actual_weight: set.actualWeight,
-          actual_reps: set.actualReps,
+          actual_reps: ex.exerciseType === 'timed' ? String(set.actualTime || set.actualReps) : set.actualReps,
           completed: set.completed,
           sort_order: exIdx * 100 + setIdx,
         }));

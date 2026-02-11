@@ -14,6 +14,7 @@ import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
+import { getExerciseType } from '@/lib/exerciseLibrary';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
@@ -62,6 +63,7 @@ function buildExercisesFromTemplate(
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   return workExercises.map((ex, idx) => {
+    const exType = getExerciseType(ex.name, ex.targetWeight, ex.targetReps);
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
     const { sets: templateSets, reps: templateReps } = parseTargetReps(ex.targetReps);
 
@@ -70,19 +72,30 @@ function buildExercisesFromTemplate(
     const reps = lastUsed ? String(lastUsed.reps) : templateReps;
     const weight = lastUsed ? `${lastUsed.weight}kg` : ex.targetWeight;
 
-    const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => ({
-      setNumber: i + 1,
-      targetWeight: weight,
-      targetReps: reps,
-      actualWeight: '',
-      actualReps: '',
-      completed: false,
-    }));
+    const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => {
+      const set: ExerciseSet = {
+        setNumber: i + 1,
+        targetWeight: weight,
+        targetReps: reps,
+        actualWeight: '',
+        actualReps: '',
+        completed: false,
+      };
+      // For timed exercises, parse seconds into targetTime
+      if (exType === 'timed') {
+        const seconds = parseInt(reps, 10);
+        if (!isNaN(seconds)) {
+          set.targetTime = seconds;
+        }
+      }
+      return set;
+    });
     return {
       name: ex.name,
       category: ex.category,
       sets: setsArray,
       sort_order: idx,
+      exerciseType: exType,
     };
   });
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { exerciseLibrary, ExerciseOption } from '@/lib/exerciseLibrary';
+import { exerciseLibrary, ExerciseOption, getExerciseType } from '@/lib/exerciseLibrary';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { Plus, Search, X } from 'lucide-react';
@@ -50,11 +50,25 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
       completed: false,
     }));
 
+    const exType = option.exerciseType || getExerciseType(option.name, option.defaultWeight, option.defaultReps);
+
+    // For timed exercises, parse seconds from the reps field into targetTime
+    if (exType === 'timed') {
+      const seconds = parseInt(reps, 10);
+      if (!isNaN(seconds)) {
+        setsArray.forEach(s => {
+          s.targetTime = seconds;
+          s.targetReps = String(seconds);
+        });
+      }
+    }
+
     const newExercise: WorkoutExercise = {
       name: option.name,
       category: option.category,
       sets: setsArray,
       sort_order: existingExercises.length,
+      exerciseType: exType,
     };
 
     onAddExercise(newExercise);
@@ -143,6 +157,11 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
                           <div className="font-medium">{option.name}</div>
                           <div className="text-xs text-muted-foreground">
                             {option.muscleGroup} • {option.defaultWeight} • {option.defaultReps}
+                            {option.exerciseType && option.exerciseType !== 'weighted' && (
+                              <span className="ml-1 text-[10px] uppercase opacity-60">
+                                ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span className={cn(

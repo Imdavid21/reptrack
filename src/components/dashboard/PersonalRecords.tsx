@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trophy, ChevronDown } from 'lucide-react';
-import { usePersonalRecords } from '@/hooks/usePersonalRecords';
+import { usePersonalRecords, PersonalRecord } from '@/hooks/usePersonalRecords';
 import { Box, Typography, Chip, Collapse, IconButton } from '@mui/material';
 import { MuiCard } from '@/components/ui/MuiCard';
 
@@ -97,17 +97,12 @@ export function PersonalRecords() {
                   {shortenName(record.exerciseName)}
                 </Typography>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.75rem' }}>
-                  {record.maxWeight}kg
+                  {formatPRValue(record)}
                 </Typography>
-                {record.reps && (
-                  <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.65rem' }}>
-                    ×{record.reps}
-                  </Typography>
-                )}
               </Box>
             }
             variant="outlined"
-            sx={{ 
+            sx={{
               height: 'auto',
               py: 0.5,
               '& .MuiChip-label': { px: 1 },
@@ -134,17 +129,12 @@ export function PersonalRecords() {
                       {shortenName(record.exerciseName)}
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.75rem' }}>
-                      {record.maxWeight}kg
+                      {formatPRValue(record)}
                     </Typography>
-                    {record.reps && (
-                      <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.65rem' }}>
-                        ×{record.reps}
-                      </Typography>
-                    )}
                   </Box>
                 }
                 variant="outlined"
-                sx={{ 
+                sx={{
                   height: 'auto',
                   py: 0.5,
                   '& .MuiChip-label': { px: 1 },
@@ -156,6 +146,19 @@ export function PersonalRecords() {
       )}
     </MuiCard>
   );
+}
+
+// Format PR value based on type
+function formatPRValue(record: PersonalRecord): string {
+  if (record.prType === 'duration') {
+    const secs = record.maxWeight;
+    return secs >= 60 ? `${Math.floor(secs / 60)}m${secs % 60 ? `${secs % 60}s` : ''}` : `${secs}s`;
+  }
+  if (record.prType === 'reps') {
+    return `${record.maxWeight} reps`;
+  }
+  // Default: weight-based
+  return record.reps ? `${record.maxWeight}kg ×${record.reps}` : `${record.maxWeight}kg`;
 }
 
 // Shorten exercise names for compact display

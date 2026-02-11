@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { getExerciseType, type ExerciseType } from '@/lib/exerciseLibrary';
 
 export interface PersonalRecord {
   exerciseName: string;
   maxWeight: number;
   reps: string;
   date: string;
+  /** The type of PR: 'weight' (heaviest), 'reps' (most reps, for bodyweight), 'duration' (longest hold, for timed) */
+  prType?: 'weight' | 'reps' | 'duration';
 }
 
 // Expanded list of tracked exercises for PR display
@@ -74,6 +77,27 @@ const TRACKED_EXERCISES = [
   'Cable Rope Overhead Tricep Extension',
   'Close Grip Bench Press',
   'Dips',
+  // Bodyweight exercises (PR = max reps)
+  'Push-ups',
+  'Incline Push-ups',
+  'Decline Push-ups',
+  'Chin-ups',
+  'Body Rows',
+  'Hanging Leg Raises',
+  'Ab Crunches',
+  'Mountain Climbers',
+  'Burpees',
+  'Lunges',
+  'Bodyweight Squats',
+  'Glute Bridges',
+  'Calf Raises',
+  // Weighted bodyweight (PR = max added weight)
+  'Weighted Pull-ups',
+  'Weighted Dips',
+  // Timed exercises (PR = max duration)
+  'Wall Sit',
+  'Dead Hang',
+  'Plank',
 ];
 
 // Canonical name mapping for exercise variants
@@ -110,6 +134,7 @@ export function usePersonalRecords() {
     queryFn: async () => {
       if (!user) return [];
 
+      // Fetch all completed exercises (not just those with weight)
       const { data: exercises, error } = await supabase
         .from('exercises')
         .select(`
@@ -121,31 +146,63 @@ export function usePersonalRecords() {
             user_id
           )
         `)
-        .eq('workouts.user_id', user.id)
-        .not('actual_weight', 'is', null);
+        .eq('workouts.user_id', user.id);
 
       if (error) throw error;
 
-      // Find max weight per exercise
+      // Find PRs per exercise based on exercise type
       const prMap: Record<string, PersonalRecord> = {};
 
       for (const ex of exercises || []) {
         const canonicalName = getCanonicalName(ex.name);
-        
+
         if (!TRACKED_EXERCISES.includes(canonicalName)) continue;
 
-        const weight = parseFloat(ex.actual_weight || '0');
-        if (isNaN(weight) || weight === 0) continue;
-
+        const exType = getExerciseType(canonicalName);
         const workout = ex.workouts as unknown as { date: string };
 
-        if (!prMap[canonicalName] || weight > prMap[canonicalName].maxWeight) {
-          prMap[canonicalName] = {
-            exerciseName: canonicalName,
-            maxWeight: weight,
-            reps: ex.actual_reps || '',
-            date: workout.date,
-          };
+        if (exType === 'timed') {
+          // Timed: PR = longest duration (stored in actual_reps as seconds)
+          const duration = parseFloat(ex.actual_reps || '0');
+          if (isNaN(duration) || duration === 0) continue;
+
+          if (!prMap[canonicalName] || duration > prMap[canonicalName].maxWeight) {
+            prMap[canonicalName] = {
+              exerciseName: canonicalName,
+              maxWeight: duration, // reuse field: holds seconds for timed
+              reps: `${duration}s`,
+              date: workout.date,
+              prType: 'duration',
+            };
+          }
+        } else if (exType === 'bodyweight') {
+          // Bodyweight: PR = max reps
+          const reps = parseFloat(ex.actual_reps || '0');
+          if (isNaN(reps) || reps === 0) continue;
+
+          if (!prMap[canonicalName] || reps > prMap[canonicalName].maxWeight) {
+            prMap[canonicalName] = {
+              exerciseName: canonicalName,
+              maxWeight: reps, // reuse field: holds reps for bodyweight
+              reps: `${reps} reps`,
+              date: workout.date,
+              prType: 'reps',
+            };
+          }
+        } else {
+          // Weighted / weighted_bw: PR = heaviest weight
+          const weight = parseFloat(ex.actual_weight || '0');
+          if (isNaN(weight) || weight === 0) continue;
+
+          if (!prMap[canonicalName] || weight > prMap[canonicalName].maxWeight) {
+            prMap[canonicalName] = {
+              exerciseName: canonicalName,
+              maxWeight: weight,
+              reps: ex.actual_reps || '',
+              date: workout.date,
+              prType: 'weight',
+            };
+          }
         }
       }
 

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
@@ -40,6 +40,15 @@ interface SetBySetCardProps {
   lastUsed?: LastUsedData;
 }
 
+// Format seconds as Mm Ss
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0 && s > 0) return `${m}m ${s}s`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
+
 export function SetBySetCard({
   exercise,
   exerciseIndex,
@@ -62,6 +71,36 @@ export function SetBySetCard({
   const prevSet = currentSetIndex > 0 ? exercise.sets[currentSetIndex - 1] : null;
   const [showWeightInput, setShowWeightInput] = useState(false);
   const [showRepsInput, setShowRepsInput] = useState(false);
+  const [showTimeInput, setShowTimeInput] = useState(false);
+
+  // Timer state for timed exercises
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const exType = exercise.exerciseType || 'weighted';
+  const isTimed = exType === 'timed';
+  const isBodyweight = exType === 'bodyweight';
+  const isWeightedBW = exType === 'weighted_bw';
+  const showWeight = exType === 'weighted' || exType === 'weighted_bw';
+  const showReps = exType === 'weighted' || exType === 'bodyweight' || exType === 'weighted_bw';
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Reset timer when switching sets
+  useEffect(() => {
+    setIsTimerRunning(false);
+    setTimerSeconds(0);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [currentSetIndex, exerciseIndex]);
 
   // Priority for base values: prev set actual -> last used from DB -> target
   const getBaseWeight = (): number => {
@@ -80,16 +119,28 @@ export function SetBySetCard({
     return parseInt(currentSet.targetReps) || 8;
   };
 
+  const getBaseTime = (): number => {
+    if (currentSet.actualTime) return currentSet.actualTime;
+    if (prevSet?.actualTime) return prevSet.actualTime;
+    if (currentSet.targetTime) return currentSet.targetTime;
+    // Parse from targetReps for backwards compat (e.g. "45" meaning 45 seconds)
+    const parsed = parseInt(currentSet.targetReps);
+    return !isNaN(parsed) ? parsed : 30;
+  };
+
   const baseWeight = getBaseWeight();
   const baseReps = getBaseReps();
+  const baseTime = getBaseTime();
 
   // Generate weight options: wider range with smart increments
   const generateWeightOptions = (): number[] => {
     const options = new Set<number>();
-    // Core options around base
-    [-10, -5, -2.5, 0, 2.5, 5, 10].forEach(delta => {
+    const increments = isWeightedBW
+      ? [-5, -2.5, 0, 2.5, 5, 10, 15]  // Added weight for weighted BW
+      : [-10, -5, -2.5, 0, 2.5, 5, 10];
+    increments.forEach(delta => {
       const w = baseWeight + delta;
-      if (w > 0) options.add(w);
+      if (isWeightedBW ? w >= 0 : w > 0) options.add(w);
     });
     return Array.from(options).sort((a, b) => a - b);
   };
@@ -97,23 +148,35 @@ export function SetBySetCard({
   // Generate rep options
   const generateRepOptions = (): number[] => {
     const options = new Set<number>();
-    [-3, -2, -1, 0, 1, 2, 3].forEach(delta => {
+    const range = isBodyweight ? [-5, -3, -1, 0, 1, 3, 5] : [-3, -2, -1, 0, 1, 2, 3];
+    range.forEach(delta => {
       const r = baseReps + delta;
-      if (r > 0 && r <= 30) options.add(r);
+      if (r > 0 && r <= 100) options.add(r);
     });
     return Array.from(options).sort((a, b) => a - b);
   };
 
-  const weightOptions = generateWeightOptions();
-  const repOptions = generateRepOptions();
+  // Generate time options for timed exercises (in seconds)
+  const generateTimeOptions = (): number[] => {
+    const options = new Set<number>();
+    [-30, -15, -10, -5, 0, 5, 10, 15, 30].forEach(delta => {
+      const t = baseTime + delta;
+      if (t > 0 && t <= 300) options.add(t);
+    });
+    return Array.from(options).sort((a, b) => a - b);
+  };
+
+  const weightOptions = showWeight ? generateWeightOptions() : [];
+  const repOptions = showReps ? generateRepOptions() : [];
+  const timeOptions = isTimed ? generateTimeOptions() : [];
 
   const handleWeightSelect = (weight: number) => {
     haptic('light');
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = { 
-      ...updated.sets[currentSetIndex], 
-      actualWeight: weight.toString() 
+    updated.sets[currentSetIndex] = {
+      ...updated.sets[currentSetIndex],
+      actualWeight: weight.toString()
     };
     onChange(updated);
   };
@@ -122,43 +185,97 @@ export function SetBySetCard({
     haptic('light');
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = { 
-      ...updated.sets[currentSetIndex], 
-      actualReps: reps.toString() 
+    updated.sets[currentSetIndex] = {
+      ...updated.sets[currentSetIndex],
+      actualReps: reps.toString()
     };
     onChange(updated);
   };
 
-  const completeSet = () => {
-    const finalWeight = currentSet.actualWeight || baseWeight.toString();
-    const finalReps = currentSet.actualReps || baseReps.toString();
+  const handleTimeSelect = (seconds: number) => {
+    haptic('light');
+    const updated = { ...exercise };
+    updated.sets = [...updated.sets];
+    updated.sets[currentSetIndex] = {
+      ...updated.sets[currentSetIndex],
+      actualTime: seconds,
+    };
+    onChange(updated);
+  };
 
+  const toggleTimer = () => {
+    if (isTimerRunning) {
+      // Stop — save the elapsed time
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setIsTimerRunning(false);
+      handleTimeSelect(timerSeconds);
+    } else {
+      // Start counting up
+      setTimerSeconds(0);
+      setIsTimerRunning(true);
+      timerRef.current = setInterval(() => {
+        setTimerSeconds(prev => prev + 1);
+      }, 1000);
+    }
+  };
+
+  const completeSet = () => {
     haptic('success');
     const updated = { ...exercise };
     updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = { 
-      ...updated.sets[currentSetIndex], 
-      completed: true,
-      actualWeight: finalWeight,
-      actualReps: finalReps,
-    };
+
+    if (isTimed) {
+      const finalTime = currentSet.actualTime || (isTimerRunning ? timerSeconds : baseTime);
+      // Stop timer if running
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setIsTimerRunning(false);
+      updated.sets[currentSetIndex] = {
+        ...updated.sets[currentSetIndex],
+        completed: true,
+        actualTime: finalTime,
+        actualReps: String(finalTime),
+        actualWeight: '',
+      };
+    } else {
+      const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
+      const finalReps = currentSet.actualReps || baseReps.toString();
+      updated.sets[currentSetIndex] = {
+        ...updated.sets[currentSetIndex],
+        completed: true,
+        actualWeight: finalWeight,
+        actualReps: finalReps,
+      };
+    }
     onChange(updated);
 
     if (isLastSet) {
-      // Always move to next exercise or overview — never auto-finish the session
       if (isLastExercise) {
-        // Go to overview so user can review and explicitly finish
         onComplete();
       } else {
         onNextExercise();
       }
     } else {
       const nextSetIndex = currentSetIndex + 1;
-      updated.sets[nextSetIndex] = {
-        ...updated.sets[nextSetIndex],
-        actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
-        actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
-      };
+      if (isTimed) {
+        updated.sets[nextSetIndex] = {
+          ...updated.sets[nextSetIndex],
+          actualTime: updated.sets[nextSetIndex].actualTime || updated.sets[currentSetIndex].actualTime,
+        };
+      } else {
+        const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
+        const finalReps = currentSet.actualReps || baseReps.toString();
+        updated.sets[nextSetIndex] = {
+          ...updated.sets[nextSetIndex],
+          actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
+          actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
+        };
+      }
       onChange(updated);
       onSetIndexChange(nextSetIndex);
     }
@@ -192,6 +309,7 @@ export function SetBySetCard({
         targetReps: lastSet.actualReps || lastSet.targetReps,
         actualWeight: lastSet.actualWeight || '',
         actualReps: lastSet.actualReps || '',
+        targetTime: lastSet.actualTime || lastSet.targetTime,
         completed: false,
       },
     ];
@@ -216,16 +334,56 @@ export function SetBySetCard({
   const variants = getExerciseVariants(exercise.name);
   const showVariantSwitch = hasVariants(exercise.name);
   const equipmentType = getEquipmentType(exercise.name);
-  const weightLabel = getWeightLabel(equipmentType);
+  const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipmentType);
 
-  const currentMaxWeight = Math.max(
-    ...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0),
-    0
-  );
-  const isNewPR = personalRecord && currentMaxWeight > personalRecord.maxWeight;
+  // PR comparison depends on exercise type
+  const currentMaxValue = isTimed
+    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualTime).map(s => s.actualTime || 0), 0)
+    : isBodyweight
+    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
+    : Math.max(...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0), 0);
+  const isNewPR = personalRecord && currentMaxValue > personalRecord.maxWeight;
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
+  const selectedTime = currentSet.actualTime || baseTime;
+
+  // Build the log button label based on exercise type
+  const getLogLabel = () => {
+    if (isTimed) {
+      if (isTimerRunning) return `Stop & Log ${formatTime(timerSeconds)}`;
+      return `Log ${formatTime(selectedTime)}`;
+    }
+    if (isBodyweight) return `Log ${selectedReps} reps`;
+    if (isWeightedBW) return `Log +${selectedWeight}kg × ${selectedReps}`;
+    return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
+  };
+
+  // Build prev set hint based on exercise type
+  const getPrevHint = () => {
+    if (isTimed) {
+      if (prevSet?.actualTime) return `prev: ${formatTime(prevSet.actualTime)}`;
+      if (prevSet?.targetTime) return `prev: ${formatTime(prevSet.targetTime)}`;
+      return null;
+    }
+    if (isBodyweight) {
+      if (prevSet?.actualReps) return `prev: ${prevSet.actualReps} reps`;
+      return null;
+    }
+    if (prevSet && (prevSet.actualWeight || prevSet.targetWeight)) {
+      const prefix = isWeightedBW ? '+' : '';
+      return `prev: ${prefix}${String(prevSet.actualWeight || prevSet.targetWeight).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${prevSet.actualReps || prevSet.targetReps}`;
+    }
+    return null;
+  };
+
+  const getLastUsedHint = () => {
+    if (!lastUsed || prevSet) return null;
+    if (isTimed) return null;
+    if (isBodyweight) return `last: ${lastUsed.reps} reps`;
+    const prefix = isWeightedBW ? '+' : '';
+    return `last: ${prefix}${lastUsed.weight}${isWeightedBW ? 'kg' : weightLabel}×${lastUsed.reps}`;
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -248,14 +406,27 @@ export function SetBySetCard({
         </div>
       </div>
 
-      {/* Exercise name with PR (weight × reps) */}
+      {/* Exercise name with PR / type badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2 flex-wrap">
             <h2 className="text-base font-bold">{exercise.name}</h2>
+            {isTimed && (
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
+            )}
+            {isBodyweight && (
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
+            )}
+            {isWeightedBW && (
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW+</span>
+            )}
             {personalRecord && !isNewPR && (
               <span className="text-[10px] text-muted-foreground tabular-nums">
-                PR {personalRecord.maxWeight}{weightLabel}
+                PR {personalRecord.prType === 'duration'
+                  ? formatTime(personalRecord.maxWeight)
+                  : personalRecord.prType === 'reps'
+                  ? `${personalRecord.maxWeight} reps`
+                  : `${personalRecord.maxWeight}${weightLabel}`}
               </span>
             )}
             {isNewPR && (
@@ -297,10 +468,10 @@ export function SetBySetCard({
             onClick={() => onSetIndexChange(idx)}
             className={cn(
               'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200',
-              idx === currentSetIndex 
-                ? 'bg-primary text-primary-foreground scale-110 shadow-sm' 
-                : set.completed 
-                  ? 'bg-primary/20 text-primary' 
+              idx === currentSetIndex
+                ? 'bg-primary text-primary-foreground scale-110 shadow-sm'
+                : set.completed
+                  ? 'bg-primary/20 text-primary'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
@@ -322,107 +493,191 @@ export function SetBySetCard({
       )}>
         <div className="text-center text-xs text-muted-foreground mb-4">
           SET {currentSetIndex + 1}
-          {prevSet && (prevSet.actualWeight || prevSet.targetWeight) && (
-            <span className="ml-1">
-              (prev: {String(prevSet.actualWeight || prevSet.targetWeight).replace(/[a-zA-Z]/g, '')}{weightLabel}×{prevSet.actualReps || prevSet.targetReps})
-            </span>
+          {getPrevHint() && (
+            <span className="ml-1">({getPrevHint()})</span>
           )}
-          {!prevSet && lastUsed && (
-            <span className="ml-1 text-primary/70">
-              (last: {lastUsed.weight}{weightLabel}×{lastUsed.reps})
-            </span>
+          {getLastUsedHint() && (
+            <span className="ml-1 text-primary/70">({getLastUsedHint()})</span>
           )}
         </div>
 
-        {/* Weight selection with manual input option */}
-        <div className="mb-4">
-          <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
-            Weight ({weightLabel})
-          </div>
-          {showWeightInput ? (
-            <div className="flex justify-center">
-              <Input
-                type="number"
-                inputMode="decimal"
-                autoFocus
-                value={currentSet.actualWeight || ''}
-                onChange={(e) => handleWeightSelect(parseFloat(e.target.value) || 0)}
-                onBlur={() => setShowWeightInput(false)}
-                onKeyDown={(e) => e.key === 'Enter' && setShowWeightInput(false)}
-                className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
-                placeholder={baseWeight.toString()}
-              />
+        {/* ===== TIMED EXERCISE UI ===== */}
+        {isTimed && (
+          <div className="space-y-4">
+            {/* Timer display */}
+            <div className="text-center">
+              {isTimerRunning ? (
+                <div className="text-4xl font-bold tabular-nums text-primary animate-pulse">
+                  {formatTime(timerSeconds)}
+                </div>
+              ) : (
+                <div className="text-4xl font-bold tabular-nums">
+                  {formatTime(selectedTime)}
+                </div>
+              )}
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {isTimerRunning ? 'TIMING...' : `TARGET: ${formatTime(baseTime)}`}
+              </div>
             </div>
-          ) : (
-            <div className="flex gap-1 justify-center flex-wrap">
-              {weightOptions.map((w) => (
-                <button
-                  key={w}
-                  onClick={() => handleWeightSelect(w)}
-                  className={cn(
-                    'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
-                    selectedWeight === w
-                      ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
-                  )}
-                >
-                  {w % 1 === 0 ? w : w.toFixed(1)}
-                </button>
-              ))}
-              <button
-                onClick={() => setShowWeightInput(true)}
-                className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-              >
-                ···
-              </button>
-            </div>
-          )}
-        </div>
 
-        {/* Reps selection with manual input option */}
-        <div>
-          <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
-            Reps
+            {/* Start/stop timer button */}
+            <button
+              onClick={toggleTimer}
+              className={cn(
+                'w-full h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2',
+                isTimerRunning
+                  ? 'bg-destructive text-destructive-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Timer className="h-3.5 w-3.5" />
+              {isTimerRunning ? 'STOP TIMER' : 'START TIMER'}
+            </button>
+
+            {/* Quick time selection (when timer not running) */}
+            {!isTimerRunning && (
+              <>
+                <div className="text-[10px] text-muted-foreground text-center uppercase tracking-wider">
+                  Or set duration
+                </div>
+                {showTimeInput ? (
+                  <div className="flex justify-center">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      autoFocus
+                      value={currentSet.actualTime || ''}
+                      onChange={(e) => handleTimeSelect(parseInt(e.target.value) || 0)}
+                      onBlur={() => setShowTimeInput(false)}
+                      onKeyDown={(e) => e.key === 'Enter' && setShowTimeInput(false)}
+                      className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
+                      placeholder={baseTime.toString()}
+                    />
+                    <span className="text-xs text-muted-foreground ml-2 self-center">sec</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {timeOptions.map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => handleTimeSelect(t)}
+                        className={cn(
+                          'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
+                          selectedTime === t
+                            ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        )}
+                      >
+                        {formatTime(t)}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowTimeInput(true)}
+                      className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                    >
+                      ···
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          {showRepsInput ? (
-            <div className="flex justify-center">
-              <Input
-                type="number"
-                inputMode="numeric"
-                autoFocus
-                value={currentSet.actualReps || ''}
-                onChange={(e) => handleRepsSelect(parseInt(e.target.value) || 0)}
-                onBlur={() => setShowRepsInput(false)}
-                onKeyDown={(e) => e.key === 'Enter' && setShowRepsInput(false)}
-                className="w-20 h-9 text-center text-xs rounded-full border-border bg-muted"
-                placeholder={baseReps.toString()}
-              />
+        )}
+
+        {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
+        {showWeight && !isTimed && (
+          <div className="mb-4">
+            <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+              {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
             </div>
-          ) : (
-            <div className="flex gap-1 justify-center flex-wrap">
-              {repOptions.map((r) => (
+            {showWeightInput ? (
+              <div className="flex justify-center">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  autoFocus
+                  value={currentSet.actualWeight || ''}
+                  onChange={(e) => handleWeightSelect(parseFloat(e.target.value) || 0)}
+                  onBlur={() => setShowWeightInput(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && setShowWeightInput(false)}
+                  className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
+                  placeholder={baseWeight.toString()}
+                />
+              </div>
+            ) : (
+              <div className="flex gap-1 justify-center flex-wrap">
+                {weightOptions.map((w) => (
+                  <button
+                    key={w}
+                    onClick={() => handleWeightSelect(w)}
+                    className={cn(
+                      'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200',
+                      selectedWeight === w
+                        ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-102'
+                    )}
+                  >
+                    {isWeightedBW && '+'}
+                    {w % 1 === 0 ? w : w.toFixed(1)}
+                  </button>
+                ))}
                 <button
-                  key={r}
-                  onClick={() => handleRepsSelect(r)}
-                  className={cn(
-                    'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
-                    selectedReps === r
-                      ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
+                  onClick={() => setShowWeightInput(true)}
+                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
                 >
-                  {r}
+                  ···
                 </button>
-              ))}
-              <button
-                onClick={() => setShowRepsInput(true)}
-                className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-              >
-                ···
-              </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
+        {showReps && !isTimed && (
+          <div>
+            <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+              Reps
             </div>
-          )}
-        </div>
+            {showRepsInput ? (
+              <div className="flex justify-center">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  autoFocus
+                  value={currentSet.actualReps || ''}
+                  onChange={(e) => handleRepsSelect(parseInt(e.target.value) || 0)}
+                  onBlur={() => setShowRepsInput(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && setShowRepsInput(false)}
+                  className="w-20 h-9 text-center text-xs rounded-full border-border bg-muted"
+                  placeholder={baseReps.toString()}
+                />
+              </div>
+            ) : (
+              <div className="flex gap-1 justify-center flex-wrap">
+                {repOptions.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => handleRepsSelect(r)}
+                    className={cn(
+                      'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200',
+                      selectedReps === r
+                        ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setShowRepsInput(true)}
+                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                >
+                  ···
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -449,15 +704,15 @@ export function SetBySetCard({
           onClick={completeSet}
           className={cn(
             "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
-            currentSet.completed 
+            currentSet.completed
               ? "bg-primary/20 text-primary border border-primary/30"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
         >
           <Check className="h-3.5 w-3.5" />
-          {currentSet.completed 
+          {currentSet.completed
             ? (isLastSet && isLastExercise ? 'Review & Finish' : isLastSet ? 'Next Exercise' : 'Next Set')
-            : `Log ${selectedWeight}${weightLabel} × ${selectedReps}`
+            : getLogLabel()
           }
         </button>
       </div>

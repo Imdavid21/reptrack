@@ -23,6 +23,7 @@ export function useLastUsedWeights() {
       if (!user) return {};
 
       // Get most recent completed sets per exercise
+      // Note: we don't filter out null actual_weight so bodyweight/timed exercises are included
       const { data, error } = await supabase
         .from('exercise_sets')
         .select(`
@@ -36,7 +37,6 @@ export function useLastUsedWeights() {
         `)
         .eq('workouts.user_id', user.id)
         .eq('completed', true)
-        .not('actual_weight', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -57,9 +57,9 @@ export function useLastUsedWeights() {
           exerciseWorkoutSets[name].count++;
         }
 
-        if (!lastUsedMap[name] && set.actual_weight && set.actual_reps) {
+        if (!lastUsedMap[name] && set.actual_reps) {
           lastUsedMap[name] = {
-            weight: set.actual_weight,
+            weight: set.actual_weight || 0,
             reps: set.actual_reps,
             sets: 1, // will be updated below
             date: (set.workouts as any).date,

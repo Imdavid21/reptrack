@@ -23,13 +23,6 @@ interface AuthEmailRequest {
   newEmail?: string;
 }
 
-// Allowed redirect URL origins for security
-const ALLOWED_ORIGINS = [
-  "https://reps-and-reminders.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
-
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
