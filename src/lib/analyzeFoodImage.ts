@@ -14,6 +14,14 @@ export const STEP_LABELS: Record<AnalysisStep, string> = {
   error: 'Analysis failed',
 };
 
+/** Custom error that preserves the user-facing message from the edge function. */
+export class FoodAnalysisError extends Error {
+  constructor(message: string, public readonly userMessage: string) {
+    super(message);
+    this.name = 'FoodAnalysisError';
+  }
+}
+
 export interface FoodAnalysis {
   foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number }[];
   total_calories: number;
@@ -88,8 +96,18 @@ async function doAnalyze(
           body: { imageUrl: publicUrl },
         });
 
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+        if (error) {
+          // Extract the actual error message from the edge function response
+          let userMessage = 'Could not analyze image.';
+          try {
+            const body = await (error as any).context?.json?.();
+            if (body?.error) userMessage = body.error;
+          } catch {
+            // context may not be available or parseable
+          }
+          throw new FoodAnalysisError(error.message || 'Edge function error', userMessage);
+        }
+        if (data?.error) throw new FoodAnalysisError(data.error, data.error);
 
         onStep('done');
         return { analysis: data as FoodAnalysis, publicUrl };
@@ -104,7 +122,7 @@ async function doAnalyze(
     }
 
     onStep('error');
-    throw lastError || new Error('Analysis failed');
+    throw lastError || new FoodAnalysisError('Analysis failed', 'Could not analyze image. Please try again.');
   } catch (err) {
     onStep('error');
     throw err;

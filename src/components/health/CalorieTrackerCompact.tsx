@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
-import { analyzeFoodImage, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
+import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -57,6 +57,8 @@ export function CalorieTrackerCompact() {
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -79,6 +81,8 @@ export function CalorieTrackerCompact() {
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
     setUploadedPhotoUrl(null);
+    setAnalysisError(null);
+    setLastFile(null);
   };
 
   const handleCameraClick = () => {
@@ -104,6 +108,28 @@ export function CalorieTrackerCompact() {
     setIsDialogOpen(true);
   };
 
+  const runAnalysis = async (file: File) => {
+    if (!user) return;
+    setIsAnalyzing(true);
+    setAnalysis(null);
+    setAnalysisError(null);
+    setAnalysisStep('compressing');
+
+    try {
+      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
+      setUploadedPhotoUrl(result.publicUrl);
+      setAnalysis(result.analysis);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      const message = error instanceof FoodAnalysisError
+        ? error.userMessage
+        : (error instanceof Error ? error.message : 'Could not analyze image.');
+      setAnalysisError(message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -115,23 +141,9 @@ export function CalorieTrackerCompact() {
     reader.onload = (e) => setPreviewUrl(e.target?.result as string);
     reader.readAsDataURL(file);
 
-    setIsAnalyzing(true);
-    setAnalysis(null);
-    setAnalysisStep('compressing');
-
-    try {
-      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
-      setUploadedPhotoUrl(result.publicUrl);
-      setAnalysis(result.analysis);
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      toast.error('Could not analyze image. Try manual entry.');
-      setManualMode(true);
-      setImageMode(false);
-    } finally {
-      setIsAnalyzing(false);
-      e.target.value = '';
-    }
+    setLastFile(file);
+    await runAnalysis(file);
+    e.target.value = '';
   };
 
   const handleTextAnalyze = async () => {
@@ -404,13 +416,38 @@ export function CalorieTrackerCompact() {
             {imageMode && !analysis && !manualMode && (
               <>
                 {previewUrl && (
-                  <div className="aspect-video bg-muted overflow-hidden">
+                  <div className="aspect-video bg-muted overflow-hidden rounded-xl">
                     <img src={previewUrl} alt="Food" className="w-full h-full object-cover" />
                   </div>
                 )}
 
                 {isAnalyzing && (
                   <AnalysisProgress currentStep={analysisStep} />
+                )}
+
+                {analysisError && !isAnalyzing && (
+                  <div className="space-y-3">
+                    <div className="border border-destructive/30 bg-destructive/5 rounded-xl p-4">
+                      <p className="text-sm text-destructive">{analysisError}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => { setManualMode(true); setImageMode(false); setAnalysisError(null); }}
+                        className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        ENTER MANUALLY
+                      </button>
+                      <button
+                        onClick={() => { if (lastFile) runAnalysis(lastFile); }}
+                        disabled={!lastFile}
+                        className="btn-brutalist flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Camera className="h-4 w-4" />
+                        RETRY
+                      </button>
+                    </div>
+                  </div>
                 )}
               </>
             )}
