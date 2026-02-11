@@ -8,7 +8,9 @@ function dismissSplash() {
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('fade-out');
-    setTimeout(() => { try { splash.remove(); } catch {} }, 350);
+    setTimeout(() => {
+      splash.remove();
+    }, 350);
   }
 }
 
