@@ -16,6 +16,7 @@ interface PersonalRecord {
   maxWeight: number;
   reps: string;
   date: string;
+  prType?: 'weight' | 'reps' | 'duration';
 }
 
 interface LastUsedData {

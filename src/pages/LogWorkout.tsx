@@ -182,6 +182,7 @@ export default function LogWorkout() {
         date: selectedDate.toISOString(),
         weekNumber,
         exercises,
+        habits: { pullups: 0, water_intake: 0, sleep_hours: 0, energy_level: 0 },
         currentExerciseIndex,
         currentSetIndex,
         step,

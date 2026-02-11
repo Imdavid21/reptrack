@@ -85,8 +85,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    let subject: string;
-    let html: string;
+    let subject!: string;
+    let html!: string;
 
     if (type === "password_reset") {
       subject = "Reset Your Password - Reptrack Fitness";
