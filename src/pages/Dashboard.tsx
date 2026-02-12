@@ -145,15 +145,15 @@ export default function Dashboard() {
                   </div>
                   <div className="card-brutalist text-center !py-3">
                     <div className="text-lg font-bold tabular-nums">
-                      {workouts.filter(w => {
-                        const currentMonth = format(new Date(), 'yyyy-MM');
-                        return w.date.startsWith(currentMonth);
-                      }).length}
+                      {new Set(workouts
+                        .filter(w => w.date.startsWith(format(new Date(), 'yyyy-MM')))
+                        .map(w => w.date)
+                      ).size}
                     </div>
                     <div className="text-[9px] text-muted-foreground uppercase mt-0.5">This Month</div>
                   </div>
                   <div className="card-brutalist text-center !py-3">
-                    <div className="text-lg font-bold tabular-nums">{workouts.length}</div>
+                    <div className="text-lg font-bold tabular-nums">{new Set(workouts.map(w => w.date)).size}</div>
                     <div className="text-[9px] text-muted-foreground uppercase mt-0.5">All Time</div>
                   </div>
                 </div>
