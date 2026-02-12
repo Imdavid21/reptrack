@@ -161,10 +161,11 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const token = authHeader.replace("Bearer ", "");
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       console.error("analyze-food: Auth failed:", authError?.message || "no user");
       return new Response(
