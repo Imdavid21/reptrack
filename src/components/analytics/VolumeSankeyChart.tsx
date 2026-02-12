@@ -7,6 +7,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import { haptic } from '@/lib/haptics';
+import { getMuscleGroup, stripSetSuffix } from '@/lib/exerciseClassification';
 
 interface CategoryData {
   name: string;
@@ -24,33 +25,40 @@ export function VolumeSankeyChart() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // High contrast black/white only
-  const CATEGORY_FILLS = useMemo(() => ({
-    push: isDark ? '#FFFFFF' : '#000000',
-    pull: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-    legs: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-  }), [isDark]);
+  const MUSCLE_GROUP_LABELS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core'];
+
+  const CATEGORY_FILLS = useMemo(() => {
+    const base = isDark ? 255 : 0;
+    return {
+      chest: isDark ? '#FFFFFF' : '#000000',
+      back: `rgba(${base},${base},${base},0.75)`,
+      shoulders: `rgba(${base},${base},${base},0.55)`,
+      arms: `rgba(${base},${base},${base},0.4)`,
+      legs: `rgba(${base},${base},${base},0.28)`,
+      core: `rgba(${base},${base},${base},0.18)`,
+    } as Record<string, string>;
+  }, [isDark]);
 
   const { categories, totalVolume, radialData } = useMemo(() => {
     if (!data?.sets || data.sets.length === 0) {
       return { categories: [], totalVolume: 0, radialData: [] };
     }
 
-    // Aggregate volume by exercise
-    const exerciseVolumes = new Map<string, { volume: number; category: string }>();
+    // Aggregate volume by exercise, using getMuscleGroup for classification
+    const exerciseVolumes = new Map<string, { volume: number; muscleGroup: string }>();
 
     data.sets.forEach(set => {
       if (!set.actual_weight || !set.actual_reps) return;
 
       const volume = set.actual_weight * set.actual_reps;
-      const existing = exerciseVolumes.get(set.exercise_name);
+      const baseName = stripSetSuffix(set.exercise_name);
+      const muscleGroup = getMuscleGroup(set.exercise_name);
+      const existing = exerciseVolumes.get(baseName);
 
       if (existing) {
         existing.volume += volume;
       } else {
-        exerciseVolumes.set(set.exercise_name, {
-          volume,
-          category: set.exercise_category,
-        });
+        exerciseVolumes.set(baseName, { volume, muscleGroup });
       }
     });
 
@@ -58,17 +66,15 @@ export function VolumeSankeyChart() {
       return { categories: [], totalVolume: 0, radialData: [] };
     }
 
-    // Group by category
-    const categoryMap: Record<string, { volume: number; exercises: { name: string; volume: number }[] }> = {
-      push: { volume: 0, exercises: [] },
-      pull: { volume: 0, exercises: [] },
-      legs: { volume: 0, exercises: [] },
-    };
+    // Group by muscle group
+    const categoryMap: Record<string, { volume: number; exercises: { name: string; volume: number }[] }> = {};
+    MUSCLE_GROUP_LABELS.forEach(g => { categoryMap[g] = { volume: 0, exercises: [] }; });
 
     exerciseVolumes.forEach((data, name) => {
-      const cat = data.category as 'push' | 'pull' | 'legs';
-      categoryMap[cat].volume += data.volume;
-      categoryMap[cat].exercises.push({ name, volume: data.volume });
+      const group = data.muscleGroup;
+      if (!categoryMap[group]) categoryMap[group] = { volume: 0, exercises: [] };
+      categoryMap[group].volume += data.volume;
+      categoryMap[group].exercises.push({ name, volume: data.volume });
     });
 
     // Sort exercises by volume
@@ -76,15 +82,15 @@ export function VolumeSankeyChart() {
       cat.exercises.sort((a, b) => b.volume - a.volume);
     });
 
-    const total = categoryMap.push.volume + categoryMap.pull.volume + categoryMap.legs.volume;
+    const total = Object.values(categoryMap).reduce((s, c) => s + c.volume, 0);
 
-    const cats: CategoryData[] = ['push', 'pull', 'legs']
-      .filter(cat => categoryMap[cat].volume > 0)
+    const cats: CategoryData[] = MUSCLE_GROUP_LABELS
+      .filter(cat => categoryMap[cat]?.volume > 0)
       .map(cat => ({
         name: cat,
         volume: categoryMap[cat].volume,
         percentage: Math.round((categoryMap[cat].volume / total) * 100),
-        fill: CATEGORY_FILLS[cat as keyof typeof CATEGORY_FILLS],
+        fill: CATEGORY_FILLS[cat] || (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'),
         exercises: categoryMap[cat].exercises.map(ex => ({
           ...ex,
           percentage: Math.round((ex.volume / categoryMap[cat].volume) * 100),
@@ -92,7 +98,7 @@ export function VolumeSankeyChart() {
       }))
       .sort((a, b) => b.volume - a.volume);
 
-    // Create radial bar data - larger categories on outer rings
+    // Create radial bar data
     const radial = cats.map((cat, index) => ({
       name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1),
       value: cat.percentage,
@@ -104,7 +110,7 @@ export function VolumeSankeyChart() {
     }));
 
     return { categories: cats, totalVolume: total, radialData: radial };
-  }, [data?.sets, CATEGORY_FILLS]);
+  }, [data?.sets, CATEGORY_FILLS, isDark]);
 
   const formatVolume = (value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
