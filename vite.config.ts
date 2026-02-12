@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.png'],
       workbox: {
         // Cache all static assets aggressively
@@ -82,9 +82,9 @@ export default defineConfig(({ mode }) => ({
         ],
         // Never cache OAuth redirect paths
         navigateFallbackDenylist: [/^\/~oauth/],
-        // Keep the service worker alive for offline use
-        skipWaiting: true,
-        clientsClaim: true,
+        // Don't auto-activate — let the app control the update to preserve auth state
+        skipWaiting: false,
+        clientsClaim: false,
       },
       manifest: {
         name: 'Reptrack Fitness',
