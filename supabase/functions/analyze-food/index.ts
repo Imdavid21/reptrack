@@ -160,19 +160,28 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const token = authHeader.replace("Bearer ", "");
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { authorization: authHeader } },
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const token = authHeader.replace("Bearer ", "").replace("bearer ", "");
+    
+    // Verify user via direct GoTrue call (avoids esm.sh client issues)
+    console.log(`analyze-food: Verifying token via ${supabaseUrl}/auth/v1/user`);
+    const authResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "apikey": supabaseAnonKey,
+      },
     });
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      console.error("analyze-food: Auth failed:", authError?.message || "no user");
+    
+    if (!authResp.ok) {
+      const errText = await authResp.text();
+      console.error(`analyze-food: Auth verification failed (${authResp.status}):`, errText.substring(0, 200));
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    const user = await authResp.json();
 
     console.log(`analyze-food: Authenticated user ${user.id}`);
 
