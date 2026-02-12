@@ -4,6 +4,11 @@ import { RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function PWAUpdatePrompt() {
+  const isStandalone = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone
+  );
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -21,8 +26,9 @@ export function PWAUpdatePrompt() {
     },
   });
 
+  if (!isStandalone) return null;
+
   const handleUpdate = () => {
-    // reload: true tells the SW to skipWaiting + clients.claim, then reloads
     updateServiceWorker(true);
   };
 
