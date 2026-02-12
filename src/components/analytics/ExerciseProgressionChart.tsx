@@ -3,7 +3,7 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'rec
 import { useExerciseSets, ExerciseProgression } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { MuiCard } from '@/components/ui/MuiCard';
-import { Box, Typography, Chip, Collapse } from '@mui/material';
+import { Box, Typography, Chip, Collapse, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, ChevronDown, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -120,19 +120,31 @@ function ExerciseCard({ progression }: { progression: ExerciseProgression }) {
 }
 
 export function ExerciseProgressionChart() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
   const [showAll, setShowAll] = useState(false);
 
+  const headerIcon = (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{
+        p: 1,
+        borderRadius: 2,
+        bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      }}>
+        <Dumbbell size={14} />
+      </Box>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        Exercise Progression
+      </Typography>
+    </Box>
+  );
+
   if (isLoading) {
     return (
       <MuiCard>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Dumbbell size={14} />
-          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
-            EXERCISE PROGRESSION
-          </Typography>
-        </Box>
+        {headerIcon}
         <Box sx={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Typography variant="caption" color="text.secondary">Loading...</Typography>
         </Box>
@@ -144,13 +156,8 @@ export function ExerciseProgressionChart() {
   if (progressions.length === 0) {
     return (
       <MuiCard>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Dumbbell size={14} />
-          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
-            EXERCISE PROGRESSION
-          </Typography>
-        </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+        {headerIcon}
+        <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
           Log weighted exercises to see progression charts
         </Typography>
       </MuiCard>
@@ -161,14 +168,9 @@ export function ExerciseProgressionChart() {
 
   return (
     <MuiCard>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Dumbbell size={14} />
-          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
-            EXERCISE PROGRESSION
-          </Typography>
-          <Chip label={progressions.length} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
-        </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        {headerIcon}
+        <Chip label={progressions.length} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
       </Box>
 
       <div className="space-y-2">
