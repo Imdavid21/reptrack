@@ -31,9 +31,9 @@ export function ProgressHeader() {
     const split = (preferences?.training_split as TrainingSplit) || 'ppl6';
     const template = SPLIT_TEMPLATES[split];
     const dpw = template?.daysPerWeek ?? 6;
-    const total = dpw * 12; // 12-week program
+    const total = dpw * 52; // 52-week (year-long) program
     const sessions = workouts.length;
-    const week = Math.min(Math.ceil(sessions / dpw) || 1, 12);
+    const week = Math.min(Math.ceil(sessions / dpw) || 1, 52);
     const percent = Math.min((sessions / total) * 100, 100);
     return { daysPerWeek: dpw, totalSessions: total, currentWeek: week, progressPercent: percent };
   }, [workouts.length, preferences?.training_split]);
@@ -150,7 +150,7 @@ export function ProgressHeader() {
         {/* Main progress */}
         <div className="space-y-3">
            <div className="flex items-center justify-between">
-             <span className="text-xs text-muted-foreground uppercase tracking-wider">12-WEEK PROGRAM</span>
+             <span className="text-xs text-muted-foreground uppercase tracking-wider">52-WEEK PROGRAM</span>
              <span className="text-xs font-mono">
                {workouts.length}/{totalSessions} SESSIONS
              </span>
