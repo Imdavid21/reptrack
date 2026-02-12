@@ -223,6 +223,7 @@ export function StrengthOverviewChart() {
           gap: 1.5,
           mb: 2,
           justifyContent: 'center',
+          overflow: 'hidden',
         }}>
           {muscleGroups.map((group, idx) => (
             <motion.div
@@ -232,8 +233,9 @@ export function StrengthOverviewChart() {
               transition={{ delay: idx * 0.05 }}
               style={{ 
                 flex: '0 0 calc(33.333% - 8px)',
-                minWidth: 100,
+                minWidth: 90,
                 maxWidth: 180,
+                overflow: 'hidden',
               }}
             >
               <SparklineCard
@@ -307,6 +309,7 @@ function SparklineCard({ group, isDark, onClick }: SparklineCardProps) {
         borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
+        overflow: 'hidden',
         '&:hover': {
           bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
           borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
@@ -317,8 +320,8 @@ function SparklineCard({ group, isDark, onClick }: SparklineCardProps) {
       }}
     >
       {/* Label + Growth */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, overflow: 'hidden', gap: 0.5 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
           {group.label}
         </Typography>
         {hasGrowth && (
@@ -327,9 +330,10 @@ function SparklineCard({ group, isDark, onClick }: SparklineCardProps) {
             alignItems: 'center', 
             gap: 0.25,
             color: isPositive ? 'success.main' : 'error.main',
+            flexShrink: 0,
           }}>
             {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-            <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
+            <Typography variant="caption" sx={{ fontSize: '0.55rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
               {isPositive ? '+' : ''}{group.growthPercent}%
             </Typography>
           </Box>
