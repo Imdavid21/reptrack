@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
-import { PersonalRecords } from '@/components/dashboard/PersonalRecords';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -167,10 +166,8 @@ export default function Dashboard() {
               <ProgressHeader />
             </motion.div>
 
-            {/* Personal Records */}
-            <motion.div variants={staggerItem}>
-              <PersonalRecords />
-            </motion.div>
+
+
 
             {/* Core Trackers */}
             <motion.div variants={staggerItem}>
