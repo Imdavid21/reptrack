@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
+import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
@@ -92,6 +93,7 @@ function MuiThemedApp() {
       <CssBaseline />
       <BrowserRouter>
         <OfflineBanner />
+        <PWAUpdatePrompt />
         <AppRoutes />
       </BrowserRouter>
     </MuiThemeProvider>
