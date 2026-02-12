@@ -146,9 +146,8 @@ export default function Dashboard() {
                   <div className="card-brutalist text-center !py-3">
                     <div className="text-lg font-bold tabular-nums">
                       {workouts.filter(w => {
-                        const d = new Date(w.date);
-                        const now = new Date();
-                        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                        const currentMonth = format(new Date(), 'yyyy-MM');
+                        return w.date.startsWith(currentMonth);
                       }).length}
                     </div>
                     <div className="text-[9px] text-muted-foreground uppercase mt-0.5">This Month</div>
