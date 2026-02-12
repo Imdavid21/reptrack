@@ -85,6 +85,11 @@ function AppRoutes() {
   );
 }
 
+const isStandalone = typeof window !== 'undefined' && (
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (window.navigator as any).standalone
+);
+
 function MuiThemedApp() {
   const { isDark } = useTheme();
   
@@ -93,7 +98,7 @@ function MuiThemedApp() {
       <CssBaseline />
       <BrowserRouter>
         <OfflineBanner />
-        <PWAUpdatePrompt />
+        {isStandalone && <PWAUpdatePrompt />}
         <AppRoutes />
       </BrowserRouter>
     </MuiThemeProvider>
