@@ -92,20 +92,25 @@ async function doAnalyze(
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const { data, error } = await supabase.functions.invoke('analyze-food', {
-          body: { imageUrl: publicUrl },
-        });
-
-        if (error) {
-          // Extract the actual error message from the edge function response
-          let userMessage = 'Could not analyze image.';
-          try {
-            const body = await (error as any).context?.json?.();
-            if (body?.error) userMessage = body.error;
-          } catch {
-            // context may not be available or parseable
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-food`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ imageUrl: publicUrl }),
           }
-          throw new FoodAnalysisError(error.message || 'Edge function error', userMessage);
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const userMessage = data?.error || `Analysis failed (${response.status})`;
+          console.error('analyze-food HTTP error:', response.status, data);
+          throw new FoodAnalysisError(userMessage, userMessage);
         }
         if (data?.error) throw new FoodAnalysisError(data.error, data.error);
 

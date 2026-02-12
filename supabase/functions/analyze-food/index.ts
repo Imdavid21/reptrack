@@ -213,7 +213,15 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) {
       console.error("analyze-food: OPENAI_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ error: "AI service not configured. Please add your OpenAI API key in settings." }),
+        JSON.stringify({ error: "AI service not configured. Please ask the admin to add an OpenAI API key." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (OPENAI_API_KEY.length < 20) {
+      console.error("analyze-food: OPENAI_API_KEY looks invalid (too short)");
+      return new Response(
+        JSON.stringify({ error: "AI service key appears invalid. Please update the OpenAI API key." }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
