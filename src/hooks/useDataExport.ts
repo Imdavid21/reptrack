@@ -5,10 +5,14 @@ import { format } from 'date-fns';
 
 export type DataTable = 
   | 'workouts'
+  | 'exercises'
   | 'exercise_sets'
   | 'daily_metrics'
   | 'water_logs'
-  | 'meals';
+  | 'meals'
+  | 'calorie_burns'
+  | 'habits'
+  | 'recovery_metrics';
 
 interface ExportOptions {
   tables: DataTable[];
@@ -29,7 +33,12 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
     'started_at', 'completed_at', 'workout_duration_minutes',
     'pre_energy', 'pre_motivation', 'pre_soreness',
-    'post_difficulty', 'post_satisfaction', 'created_at'
+    'post_difficulty', 'post_satisfaction', 'is_skipped', 'created_at'
+  ],
+  exercises: [
+    'id', 'workout_id', 'name', 'category', 'sort_order',
+    'target_weight', 'target_reps', 'actual_weight', 'actual_reps',
+    'completed'
   ],
   exercise_sets: [
     'id', 'workout_id', 'exercise_name', 'exercise_category', 
@@ -39,7 +48,7 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
   ],
   daily_metrics: [
     'id', 'user_id', 'date', 'sleep_hours', 'energy_level', 'bodyweight',
-    'pullups', 'is_rest_day', 'notes', 'created_at', 'updated_at'
+    'pullups', 'is_rest_day', 'supplements', 'notes', 'created_at', 'updated_at'
   ],
   water_logs: [
     'id', 'user_id', 'timestamp', 'amount', 'method'
@@ -49,15 +58,34 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'protein', 'carbs', 'fat', 'fiber', 'food_quality',
     'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed', 'notes', 'created_at'
   ],
+  calorie_burns: [
+    'id', 'user_id', 'date', 'calories', 'source', 'activity_type',
+    'duration_minutes', 'created_at'
+  ],
+  habits: [
+    'id', 'workout_id', 'pullups', 'water_intake', 'sleep_hours',
+    'energy_level', 'bodyweight', 'supplements', 'notes'
+  ],
+  recovery_metrics: [
+    'id', 'user_id', 'date', 'recovery_score', 'hrv_ms', 'resting_hr',
+    'sleep_quality', 'muscle_soreness', 'fatigue_level', 'stress_level',
+    'workout_readiness', 'deload_recommended', 'notes', 'created_at', 'updated_at'
+  ],
 };
 
-// Some tables don't have created_at; also prefer ordering by the domain date/time column.
+// Tables that link via workout_id instead of user_id
+const WORKOUT_LINKED_TABLES: DataTable[] = ['exercise_sets', 'exercises', 'habits'];
+
 const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
   workouts: { column: 'date', ascending: true },
+  exercises: { column: 'sort_order', ascending: true },
   exercise_sets: { column: 'created_at', ascending: true },
   daily_metrics: { column: 'date', ascending: true },
   water_logs: { column: 'timestamp', ascending: true },
   meals: { column: 'date', ascending: true },
+  calorie_burns: { column: 'date', ascending: true },
+  habits: null,
+  recovery_metrics: { column: 'date', ascending: true },
 };
 
 const PAGE_SIZE = 1000;
@@ -169,7 +197,7 @@ export function useDataExport() {
         let error: any = null;
         
         // Handle tables that don't have direct user_id (they link via workout_id)
-        if (table === 'exercise_sets') {
+        if (WORKOUT_LINKED_TABLES.includes(table)) {
           // Get all workout IDs for this user first
           const workouts = await fetchAllPaged<{ id: string }>(async (from, to) => {
             const result = await supabase
@@ -183,25 +211,24 @@ export function useDataExport() {
 
           if (workouts.length > 0) {
             const workoutIds = workouts.map(w => w.id);
-            // Chunk to avoid very long URLs / request size limits
             const chunkSize = 100;
-            const allSets: Record<string, any>[] = [];
+            const allRows: Record<string, any>[] = [];
 
             for (let c = 0; c < workoutIds.length; c += chunkSize) {
               const chunk = workoutIds.slice(c, c + chunkSize);
               const orderBy = TABLE_ORDER_BY[table];
 
-              const setsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
+              const rowsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
                 let q = (supabase.from(table) as any).select('*').in('workout_id', chunk);
                 if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
                 const result = await q.range(from, to);
                 return { data: result.data ?? null, error: result.error };
               });
 
-              allSets.push(...setsForChunk);
+              allRows.push(...rowsForChunk);
             }
 
-            data = allSets;
+            data = allRows;
           }
         } else {
           // Standard query for tables with user_id
@@ -268,10 +295,14 @@ export function useDataExport() {
   const exportAllData = async (): Promise<LastExportFile | null> => {
     const allTables: DataTable[] = [
       'workouts',
+      'exercises',
       'exercise_sets', 
       'daily_metrics',
       'water_logs',
-      'meals'
+      'meals',
+      'calorie_burns',
+      'habits',
+      'recovery_metrics',
     ];
     
     return await exportToCSV({ tables: allTables });
@@ -341,18 +372,21 @@ export function useDataExport() {
               // Parse special types
               if (value === '') {
                 value = null;
-              } else if (header.includes('muscles')) {
+              } else if (header === 'supplements' || header.includes('muscles') || header === 'fatigue_indicators') {
                 try { value = JSON.parse(value); } catch { /* keep as string */ }
-              } else if (['completed', 'is_rest_day', 'is_confirmed'].includes(header)) {
+              } else if (['completed', 'is_rest_day', 'is_confirmed', 'is_skipped', 'deload_recommended'].includes(header)) {
                 value = value === 'true' || value === '1';
               } else if ([
                 'actual_weight', 'actual_reps', 'target_weight', 'target_reps',
                 'sleep_hours', 'energy_level', 'bodyweight', 'pullups',
                 'calories', 'protein', 'carbs', 'fat', 'fiber',
-                'amount', 'steps',
+                'amount', 'steps', 'water_intake', 'sort_order',
                 'pre_energy', 'pre_motivation',
                 'pre_soreness', 'post_difficulty', 'post_satisfaction',
-                'workout_duration_minutes', 'week_number', 'set_number', 'ai_confidence'
+                'workout_duration_minutes', 'week_number', 'set_number', 'ai_confidence',
+                'recovery_score', 'hrv_ms', 'resting_hr', 'sleep_quality',
+                'muscle_soreness', 'fatigue_level', 'stress_level', 'workout_readiness',
+                'volume_reduction_percent', 'intensity_reduction_percent', 'duration_minutes'
               ].includes(header)) {
                 value = value ? parseFloat(value) : null;
               }
