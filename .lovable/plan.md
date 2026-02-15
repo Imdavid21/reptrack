@@ -1,119 +1,95 @@
 
 
-# Combined Plan: Log Exercises, Fix Reverse Curls, and Add All New Exercises + Variants
+## Trainer Validation and Corrections
 
-## Summary
+The overall approach is solid and follows proven DUP (Daily Undulating Periodization) principles. Two corrections:
 
-This plan combines the previous two tasks into one implementation:
+**Correction 1 - Heavy day effort target:** You wrote "stop 1-2 reps before failure." For heavy compound lifts (4-6 rep range at 80-85% 1RM), 1 RIR is too aggressive for sustainable weekly programming -- it accumulates excessive CNS fatigue. Recommended: **2-3 RIR (RPE 7-8) for heavy compounds**, 1-2 RIR for heavy accessories. This preserves strength performance across the week.
 
-1. Insert 6 new exercise rows into the database (Back Extension + Lever Seated Row)
-2. Rename "Reverse Curls" to "Barbell Reverse Curls" in the database
-3. Add all new exercises (back extensions, lever rows, reverse curl variations) to the three exercise data files
+**Correction 2 - Volume day isolation RIR:** Allowing 0 RIR (true failure) on the *last set* of isolations is fine, but only for single-joint movements (lateral raises, curls, extensions). Multi-joint accessories like dips or rows should stay at 1-2 RIR even on volume day.
 
----
-
-## Part 1: Database Changes
-
-### Insert Back Extension 90 Degree (3 sets)
-
-Workout ID: `0c36ec63-bf3c-4e75-b2c5-28293a311a44`
-
-| Name | Sort Order | Actual Weight | Actual Reps | Category | Completed |
-|---|---|---|---|---|---|
-| Back Extension 90 Degree (Set 1) | 600 | 80 | 21 | accessory | true |
-| Back Extension 90 Degree (Set 2) | 601 | 80 | 21 | accessory | true |
-| Back Extension 90 Degree (Set 3) | 602 | 80 | 21 | accessory | true |
-
-### Insert Lever Seated Row Machine (3 sets)
-
-| Name | Sort Order | Actual Weight | Actual Reps | Category | Completed |
-|---|---|---|---|---|---|
-| Lever Seated Row Machine (Set 1) | 700 | 30 | 12 | accessory | true |
-| Lever Seated Row Machine (Set 2) | 701 | 30 | 12 | accessory | true |
-| Lever Seated Row Machine (Set 3) | 702 | 30 | 12 | accessory | true |
-
-### Rename Reverse Curls to Barbell Reverse Curls
-
-Update 3 existing rows (weights stay the same since they're already total barbell weight):
-
-| ID | Old Name | New Name |
-|---|---|---|
-| ce4aafc7... | Reverse Curls (Set 1) | Barbell Reverse Curls (Set 1) |
-| fa8f2d15... | Reverse Curls (Set 2) | Barbell Reverse Curls (Set 2) |
-| 5d3e3683... | Reverse Curls (Set 3) | Barbell Reverse Curls (Set 3) |
-
-No duration change needed.
+Everything else -- the PPLPPL structure, 2x frequency, Heavy/Volume pairing, rest time differentiation, and the personalization-from-data requirement -- is best practice.
 
 ---
 
-## Part 2: Code Changes
+## Implementation Plan
 
-### File 1: `src/lib/exerciseClassification.ts`
+### 1. Extend the Exercise and WorkoutDay data model
 
-**Update existing entries** (lines 149-152):
-- Change `'reverse curl'` and `'reverse curls'` from `Biceps` to `Forearms` (more anatomically accurate)
-- Change `'wrist curl'` and `'wrist curls'` from `Biceps` to `Forearms`
+Add new optional fields to the `Exercise` interface in `src/lib/workoutPresets.ts`:
+- `restSeconds?: number` -- rest time between sets
+- `rir?: string` -- reps in reserve target (e.g. "2-3" or "1-2")
 
-**Add new entries** to the classification map:
+Add a `bias` field to `WorkoutDay`:
+- `bias?: 'heavy' | 'volume'` -- determines programming rules for the day
 
-Under a new **ARMS -- Forearms** section:
-- `'barbell reverse curls'` / `'barbell reverse curl'` -> Forearms / arms
-- `'dumbbell reverse curls'` / `'dumbbell reverse curl'` -> Forearms / arms
-- `'ez bar reverse curls'` / `'ez bar reverse curl'` -> Forearms / arms
-- `'cable reverse curls'` / `'cable reverse curl'` -> Forearms / arms
+### 2. Update the default PPL6 routine structure
 
-Under the **BACK** section:
-- `'back extension 90 degree'` / `'back extension'` / `'back extensions'` / `'hyperextension'` / `'hyperextensions'` / `'back extension machine'` -> Back / back
-- `'lever seated row machine'` / `'lever seated row'` / `'plate loaded row'` / `'plate loaded rows'` -> Back / back
+In `src/lib/workoutPresets.ts`, update the `defaultRoutine` (phase1) so:
+- Days 1-3 (Push A, Pull A, Legs A) get `bias: 'heavy'`
+- Days 4-6 (Push B, Pull B, Legs B) get `bias: 'volume'`
+- Keep the exact same exercise names and order
+- Update each exercise's `targetReps` to reflect the correct ranges for its bias:
+  - Heavy compounds: `"4x4-6"` or `"4x5-6"`
+  - Heavy accessories: `"3x8-10"`
+  - Volume compounds: `"4x8-10"` or `"4x8-12"`
+  - Volume accessories: `"3x12-15"`
+  - Volume isolations: `"3x15-20"`
+- Add `restSeconds` per exercise:
+  - Heavy compounds: 180 (3 min)
+  - Heavy accessories: 120 (2 min)
+  - Volume compounds: 120 (2 min)
+  - Volume accessories: 90 (1.5 min)
+  - Volume isolations: 60 (1 min)
+- Add `rir` per exercise:
+  - Heavy compounds: `"2-3"`
+  - Heavy accessories: `"1-2"`
+  - Volume compounds: `"1-2"`
+  - Volume accessories: `"1-2"`
+  - Volume isolations (last set): `"0-1"` (noted in the `notes` field)
 
-**Add fallback patterns**:
-- `'back extension'` -> Back / back (multi-word, before single-word patterns)
-- `'reverse curl'` -> Forearms / arms (multi-word, before the generic `'curl'` -> Biceps fallback)
-- `'lever row'` -> Back / back (multi-word)
+Phase 2 and Phase 3 routines will be updated to match the same Heavy/Volume pattern with their existing weight progressions.
 
-### File 2: `src/lib/exerciseLibrary.ts`
+### 3. Build a personalization engine
 
-Add to the `'Pull'` array:
+Create a new utility function `derivePersonalizedProgramming()` in `src/lib/workoutPresets.ts` (or a new file `src/lib/programmingEngine.ts`) that:
 
-| Exercise | Category | Default Weight | Default Reps | Muscle Group |
-|---|---|---|---|---|
-| Back Extension 90 Degree | accessory | BW | 3x15-20 | Lower Back |
-| Back Extension | accessory | BW | 3x15-20 | Lower Back |
-| Hyperextension | accessory | BW | 3x12-15 | Lower Back |
-| Lever Seated Row Machine | primary | 30kg | 3x10-12 | Back |
-| Reverse Curls | accessory | 10kg | 3x12-15 | Forearms |
-| Barbell Reverse Curls | accessory | 20kg | 3x12-15 | Forearms |
-| Dumbbell Reverse Curls | accessory | 10kg | 3x12-15 | Forearms |
-| EZ Bar Reverse Curls | accessory | 20kg | 3x12-15 | Forearms |
-| Cable Reverse Curls | accessory | 15kg | 3x12-15 | Forearms |
+1. Takes: exercise name, day bias (heavy/volume), exercise category, user's last-used data (from `useLastUsedWeights`), user preferences (fitness_goal)
+2. Returns: computed `sets`, `reps`, `restSeconds`, `rir`
 
-### File 3: `src/lib/exerciseVariants.ts`
+Logic:
+- **If last-used data exists:** Derive sets from the user's most recent set count for that exercise. Derive rep target from the bias rules (heavy = lower end, volume = higher end) adjusted by actual performance.
+- **If no data exists:** Fall back to best-practice defaults based on the exercise category and day bias, as described in step 2.
 
-Add new variant groups under a labeled **Forearms -- Reverse Curls** section and **Back -- Extensions / Lever Rows** section:
+### 4. Integrate into the workout loading flow
 
-**Reverse Curls group** (each entry lists the other variations as swappable alternatives):
-- `'Reverse Curls'` (dumbbell) <-> Barbell Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
-- `'Barbell Reverse Curls'` (barbell) <-> Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
-- `'Dumbbell Reverse Curls'` (dumbbell) <-> Reverse Curls, Barbell Reverse Curls, EZ Bar Reverse Curls, Cable Reverse Curls
-- `'EZ Bar Reverse Curls'` (barbell) <-> Reverse Curls, Barbell Reverse Curls, Cable Reverse Curls, Dumbbell Reverse Curls
-- `'Cable Reverse Curls'` (cable) <-> Reverse Curls, Barbell Reverse Curls, EZ Bar Reverse Curls, Dumbbell Reverse Curls
+Update `buildExercisesFromTemplate()` in `src/pages/LogWorkout.tsx` to:
+- Read the day's `bias` field
+- Call `derivePersonalizedProgramming()` for each exercise
+- Use the returned values instead of raw template values when constructing `ExerciseSet[]`
+- Pass `restSeconds` and `rir` through to each exercise object
 
-**Back Extension group**:
-- `'Back Extension 90 Degree'` (bodyweight) <-> Back Extension, Hyperextension
-- `'Back Extension'` (bodyweight) <-> Back Extension 90 Degree, Hyperextension
-- `'Hyperextension'` (bodyweight) <-> Back Extension 90 Degree, Back Extension
+### 5. Display rest time and effort targets in the logging UI
 
-**Lever Seated Row group**:
-- `'Lever Seated Row Machine'` (machine) <-> Seated Cable Row, T-Bar Row
+Update `src/components/workout/SetBySetCard.tsx` to show:
+- Rest time suggestion (e.g. "Rest: 3:00") after completing a set -- can integrate with the existing `RestTimer` component
+- RIR target displayed subtly near the rep target (e.g. "8-10 reps @ 2 RIR")
 
----
+### 6. Update the AI workout generator
 
-## Files Modified
+Update the system prompt in `supabase/functions/generate-workout/index.ts` to:
+- Include Heavy/Volume bias in the output JSON for each day
+- Add `restSeconds` and `rir` fields to generated exercises
+- Instruct the AI to follow the same Heavy day / Volume day rules
+
+### Summary of files changed
 
 | File | Change |
-|---|---|
-| Database (`exercises` table) | 6 INSERTs + 3 UPDATEs |
-| `src/lib/exerciseClassification.ts` | ~20 new entries + 3 fallback patterns + fix Forearms labeling |
-| `src/lib/exerciseLibrary.ts` | 9 new exercises in Pull array |
-| `src/lib/exerciseVariants.ts` | ~10 new variant entries with proper section labels |
+|------|--------|
+| `src/lib/workoutPresets.ts` | Add `restSeconds`, `rir` to Exercise interface; add `bias` to WorkoutDay; update all phase routines |
+| `src/lib/splitTemplates.ts` | No structural changes needed (inherits from defaultRoutine) |
+| `src/lib/programmingEngine.ts` | New file: personalization logic |
+| `src/pages/LogWorkout.tsx` | Update `buildExercisesFromTemplate` to use programming engine |
+| `src/components/workout/SetBySetCard.tsx` | Display rest time and RIR hints |
+| `supabase/functions/generate-workout/index.ts` | Update prompt for Heavy/Volume output |
 
