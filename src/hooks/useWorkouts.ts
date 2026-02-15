@@ -26,6 +26,10 @@ export interface WorkoutExercise {
   sort_order: number;
   /** How this exercise is measured: weighted, bodyweight, weighted_bw, timed */
   exerciseType?: ExerciseType;
+  /** Recommended rest between sets in seconds */
+  restSeconds?: number;
+  /** Reps in reserve target (e.g. "2-3") */
+  rir?: string;
 }
 
 export interface Habits {

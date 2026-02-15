@@ -95,15 +95,25 @@ serve(async (req) => {
 
     const systemPrompt = `You are a professional certified strength and conditioning coach.
     
-TASK: Generate a ${trainingSplit} workout routine based on the user's goals.
+TASK: Generate a ${trainingSplit} workout routine based on the user's goals using a Heavy/Volume DUP structure.
 
 STRICT RULES:
 1. ${splitInstructions}
 2. Each day should have 5-8 exercises.
 3. Categories must be exactly: "primary" or "accessory".
 4. Include specific weight suggestions in kg suitable for an ${experienceLevel} lifter.
-5. Target reps format example: "4x8-10", "3x12-15", "5x5".
+5. Target reps format example: "4x4-6", "3x12-15", "5x5".
 6. Focus on compound movements for primary exercises.
+7. Days 1-3 (first cycle) must have "bias": "heavy". Days 4-6 (second cycle) must have "bias": "volume".
+
+HEAVY DAY RULES (bias: "heavy"):
+- Primary compounds: 4x4-6 reps, restSeconds: 180, rir: "2-3"
+- Accessories: 3x8-10 reps, restSeconds: 120, rir: "1-2"
+
+VOLUME DAY RULES (bias: "volume"):
+- Primary compounds: 4x8-10 reps, restSeconds: 120, rir: "1-2"
+- Accessories: 3x12-15 reps, restSeconds: 90, rir: "1-2"
+- Single-joint isolations (curls, raises, extensions): 3x15-20 reps, restSeconds: 60, rir: "0-1"
 
 MUSCLE COVERAGE RULES:
 - For Push days: Ensure exercises collectively target upper chest (incline), mid chest (flat), front delts (pressing), side delts (lateral raises), and triceps (pushdowns/extensions). If there are two Push days (A & B), vary the emphasis — e.g., Push A = chest-heavy, Push B = shoulder-heavy — but both must include at least one exercise for each sub-group across the pair.
@@ -121,12 +131,15 @@ REQUIRED JSON OUTPUT FORMAT (valid JSON only):
     "Day 1": {
       "name": "Day Name (e.g. Push A)",
       "focus": "Muscle Focus",
+      "bias": "heavy",
       "exercises": [
         {
           "name": "Exercise Name",
           "category": "primary",
           "targetWeight": "60kg",
-          "targetReps": "4x6-8"
+          "targetReps": "4x4-6",
+          "restSeconds": 180,
+          "rir": "2-3"
         }
       ]
     }
