@@ -19,6 +19,7 @@ export interface UserPreferences {
   training_split: TrainingSplit;
   rest_days: number[];
   routine_setup_completed: boolean;
+  fitness_goal: string | null;
   created_at: string;
   updated_at: string;
 }

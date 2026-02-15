@@ -12,6 +12,7 @@ import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
+import { derivePersonalizedProgramming } from '@/lib/programmingEngine';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { getExerciseType } from '@/lib/exerciseLibrary';
@@ -59,18 +60,27 @@ function findLastUsed(
 }
 
 function buildExercisesFromTemplate(
-  dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string }> },
-  lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string }>
+  dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string; restSeconds?: number; rir?: string; notes?: string }>; bias?: 'heavy' | 'volume' },
+  lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string; perSet?: Array<{ weight: number; reps: number }> }>,
+  fitnessGoal?: string | null,
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
+  const bias = (dayData as any).bias as 'heavy' | 'volume' | undefined;
+
   return workExercises.map((ex, idx) => {
     const exType = getExerciseType(ex.name, ex.targetWeight, ex.targetReps);
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
-    const { sets: templateSets, reps: templateReps } = parseTargetReps(ex.targetReps);
 
-    // Use last-used values if available, otherwise fall back to template
-    const numSets = lastUsed ? lastUsed.sets : templateSets;
-    const reps = lastUsed ? String(lastUsed.reps) : templateReps;
+    // Use programming engine for personalized sets/reps/rest/rir
+    const programming = derivePersonalizedProgramming(
+      ex as any,
+      bias,
+      lastUsed as any,
+      fitnessGoal,
+    );
+
+    const numSets = programming.sets;
+    const reps = lastUsed ? String(lastUsed.reps) : programming.reps;
     const weight = lastUsed ? `${lastUsed.weight}kg` : ex.targetWeight;
 
     const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => {
@@ -82,7 +92,6 @@ function buildExercisesFromTemplate(
         actualReps: '',
         completed: false,
       };
-      // For timed exercises, parse seconds into targetTime
       if (exType === 'timed') {
         const seconds = parseInt(reps, 10);
         if (!isNaN(seconds)) {
@@ -97,7 +106,9 @@ function buildExercisesFromTemplate(
       sets: setsArray,
       sort_order: idx,
       exerciseType: exType,
-    };
+      restSeconds: programming.restSeconds,
+      rir: programming.rir,
+    } as WorkoutExercise;
   });
 }
 
@@ -220,7 +231,7 @@ export default function LogWorkout() {
 
     const dayInfo = splitDays[day];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal));
     }
 
     setCurrentExerciseIndex(0);
@@ -261,7 +272,7 @@ export default function LogWorkout() {
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal);
           // Only swap if we got valid exercises
           setPreSuggestionExercises(backup);
           setExercises(suggested);
@@ -441,7 +452,7 @@ export default function LogWorkout() {
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal));
     }
     setPreSuggestionExercises(null);
   };
@@ -475,7 +486,7 @@ export default function LogWorkout() {
         const firstDayKey = Object.keys(routine.days)[0];
         const firstDay = routine.days[firstDayKey] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal);
           const newSplitDays = getSplitDays(split);
           const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
           setSelectedDay(dayKey);

@@ -239,11 +239,12 @@ export function SetBySetCard({
     }
   };
 
-  // Determine smart rest duration based on exercise category
+  // Determine smart rest duration based on exercise restSeconds or category fallback
   const getDefaultRest = (): number => {
-    if (exercise.category === 'primary') return 120; // 2min for compounds
+    if (exercise.restSeconds) return exercise.restSeconds;
+    if (exercise.category === 'primary') return 120;
     if (isTimed) return 60;
-    return 90; // 1.5min for accessories
+    return 90;
   };
 
   const completeSet = () => {
@@ -484,6 +485,9 @@ export function SetBySetCard({
           </div>
           <span className="text-xs text-muted-foreground">
             {completedSets}/{exercise.sets.length} sets
+            {exercise.rir && (
+              <span className="ml-1.5 text-primary/70">@ {exercise.rir} RIR</span>
+            )}
           </span>
         </div>
         {showVariantSwitch && (
