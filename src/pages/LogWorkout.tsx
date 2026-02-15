@@ -8,7 +8,7 @@ import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
-import { ExerciseOverview } from '@/components/workout/ExerciseOverview';
+
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
@@ -690,26 +690,27 @@ export default function LogWorkout() {
               )}
 
               {exerciseViewMode === 'overview' && (
-                <>
-                  <ExerciseOverview
-                    exercises={exercises}
-                    currentIndex={currentExerciseIndex}
-                    onSelectExercise={(idx) => {
-                      setCurrentExerciseIndex(idx);
-                      setCurrentSetIndex(0);
-                      setExerciseViewMode('single');
-                    }}
-                    onAddExercise={handleAddExercise}
-                    dayType={dayType}
-                  />
-                  <button
-                    className="btn-brutalist btn-primary w-full py-4 text-base font-bold disabled:opacity-50"
-                    onClick={handleExercisesDone}
-                    disabled={completedSets === 0 || isCreating}
-                  >
-                    {isCreating ? 'Saving…' : 'Finish Workout'}
-                  </button>
-                </>
+                <ExerciseReview
+                  exercises={exercises}
+                  dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
+                  dayFocus={selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}
+                  dayType={dayType}
+                  onChange={(updated) => {
+                    setExercises(updated);
+                    if (updated.length > 0) {
+                      setCurrentExerciseIndex(prev => Math.min(prev, updated.length - 1));
+                    }
+                  }}
+                  onStart={() => {}}
+                  activeSession
+                  onSelectExercise={(idx) => {
+                    setCurrentExerciseIndex(idx);
+                    setCurrentSetIndex(0);
+                    setExerciseViewMode('single');
+                  }}
+                  onFinish={handleExercisesDone}
+                  isFinishing={isCreating}
+                />
               )}
             </div>
           )}
