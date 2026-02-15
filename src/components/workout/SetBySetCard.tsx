@@ -404,7 +404,6 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-
   const getLastUsedHint = () => {
     // Use per-set data if available, otherwise fall back to aggregate
     const setData = lastUsedForSet || (lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : null);
@@ -452,11 +451,11 @@ export function SetBySetCard({
             )}
             {personalRecord && !isNewPR && (
               <span className="text-[10px] text-muted-foreground tabular-nums">
-                PR {personalRecord.prType === 'duration'
+                PR: {personalRecord.prType === 'duration'
                   ? formatTime(personalRecord.maxWeight)
                   : personalRecord.prType === 'reps'
                   ? `${personalRecord.maxWeight} reps`
-                  : `${personalRecord.maxWeight}${weightLabel} × ${personalRecord.reps}`}
+                  : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
               </span>
             )}
             {isNewPR && (
