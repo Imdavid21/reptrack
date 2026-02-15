@@ -21,9 +21,15 @@ interface PersonalRecord {
   prType?: 'weight' | 'reps' | 'duration';
 }
 
+interface LastUsedSetData {
+  weight: number;
+  reps: number;
+}
+
 interface LastUsedData {
   weight: number;
   reps: number;
+  perSet?: LastUsedSetData[];
 }
 
 interface SetBySetCardProps {
@@ -108,12 +114,14 @@ export function SetBySetCard({
     }
   }, [currentSetIndex, exerciseIndex]);
 
-  // Priority for base values: prev completed set -> last used from DB -> current target
+  // Priority for base values: prev completed set -> per-set last used -> aggregate last used -> current target
   const completedPrev = prevSet?.completed ? prevSet : null;
+  const lastUsedForSet = lastUsed?.perSet?.[currentSetIndex];
 
   const getBaseWeight = (): number => {
     if (currentSet.actualWeight) return parseFloat(currentSet.actualWeight);
     if (completedPrev?.actualWeight) return parseFloat(completedPrev.actualWeight);
+    if (lastUsedForSet?.weight) return lastUsedForSet.weight;
     if (lastUsed?.weight) return lastUsed.weight;
     return parseFloat(currentSet.targetWeight) || 0;
   };
@@ -121,6 +129,7 @@ export function SetBySetCard({
   const getBaseReps = (): number => {
     if (currentSet.actualReps) return parseInt(currentSet.actualReps);
     if (completedPrev?.actualReps) return parseInt(completedPrev.actualReps);
+    if (lastUsedForSet?.reps) return lastUsedForSet.reps;
     if (lastUsed?.reps) return lastUsed.reps;
     return parseInt(currentSet.targetReps) || 8;
   };
@@ -416,11 +425,13 @@ export function SetBySetCard({
   };
 
   const getLastUsedHint = () => {
-    if (!lastUsed || completedPrev) return null;
+    // Use per-set data if available, otherwise fall back to aggregate
+    const setData = lastUsedForSet || (lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : null);
+    if (!setData) return null;
     if (isTimed) return null;
-    if (isBodyweight) return `last: ${lastUsed.reps} reps`;
+    if (isBodyweight) return `last: ${setData.reps} reps`;
     const prefix = isWeightedBW ? '+' : '';
-    return `last: ${prefix}${lastUsed.weight}${isWeightedBW ? 'kg' : weightLabel}×${lastUsed.reps}`;
+    return `last: ${prefix}${setData.weight}${isWeightedBW ? 'kg' : weightLabel}×${setData.reps}`;
   };
 
   return (

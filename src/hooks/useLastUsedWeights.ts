@@ -3,16 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { findBestMatch } from '@/lib/exerciseMatching';
 
+export interface LastUsedSetData {
+  weight: number;
+  reps: number;
+}
+
 export interface LastUsedData {
   weight: number;
   reps: number;
   sets: number;
   date: string;
+  /** Per-set data from the most recent workout, ordered by set number */
+  perSet: LastUsedSetData[];
 }
 
 /**
  * Hook to get last used weight/reps for each exercise.
  * This helps pre-fill values when logging sets.
+ *
+ * For each exercise we find the most recent workout that included it
+ * and store every completed set from that workout so the UI can show
+ * per-set "last:" hints (e.g. Set 1 today shows Set 1 from last time).
  */
 export function useLastUsedWeights() {
   const { user } = useAuth();
@@ -41,37 +52,45 @@ export function useLastUsedWeights() {
 
       if (error) throw error;
 
-      // Build map of exercise -> most recent weight/reps/sets
-      // Group by exercise + workout_id to get full set count from the last session
+      // Track the most recent workout_id per exercise, and collect all sets from it.
+      // Data is ordered created_at DESC, so the first row for an exercise is from
+      // its most recent workout.
       const lastUsedMap: Record<string, LastUsedData> = {};
-      const exerciseWorkoutSets: Record<string, { workoutId: string; count: number }> = {};
+      const seenWorkout: Record<string, string> = {}; // exercise -> workout_id
 
       for (const set of data || []) {
         const name = set.exercise_name;
-        
-        // Track set count per exercise per workout (most recent workout only)
-        if (!exerciseWorkoutSets[name]) {
-          exerciseWorkoutSets[name] = { workoutId: set.workout_id, count: 0 };
-        }
-        if (exerciseWorkoutSets[name].workoutId === set.workout_id) {
-          exerciseWorkoutSets[name].count++;
-        }
 
-        if (!lastUsedMap[name] && set.actual_reps) {
+        // First time we see this exercise → record which workout it came from
+        if (!seenWorkout[name]) {
+          seenWorkout[name] = set.workout_id;
           lastUsedMap[name] = {
             weight: set.actual_weight || 0,
-            reps: set.actual_reps,
-            sets: 1, // will be updated below
+            reps: set.actual_reps || 0,
+            sets: 0,
             date: (set.workouts as any).date,
+            perSet: [],
           };
+        }
+
+        // Only collect sets from the same (most recent) workout
+        if (set.workout_id !== seenWorkout[name]) continue;
+
+        const entry = lastUsedMap[name];
+        entry.sets++;
+
+        if (set.actual_reps) {
+          entry.perSet.push({
+            weight: set.actual_weight || 0,
+            reps: set.actual_reps,
+          });
         }
       }
 
-      // Update sets count from the tracked data
-      for (const [name, data] of Object.entries(exerciseWorkoutSets)) {
-        if (lastUsedMap[name]) {
-          lastUsedMap[name].sets = data.count;
-        }
+      // perSet is currently newest-first (created_at DESC) → reverse to
+      // get Set 1 at index 0, Set 2 at index 1, etc.
+      for (const entry of Object.values(lastUsedMap)) {
+        entry.perSet.reverse();
       }
 
       return lastUsedMap;
