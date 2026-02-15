@@ -30,6 +30,11 @@ interface ExerciseReviewProps {
   onSkipExercises?: () => void;
   lastUsedNames?: Set<string>;
   isResuming?: boolean;
+  // Active session mode (mid-workout overview)
+  activeSession?: boolean;
+  onSelectExercise?: (index: number) => void;
+  onFinish?: () => void;
+  isFinishing?: boolean;
 }
 
 function ExerciseItemCard({
@@ -43,6 +48,8 @@ function ExerciseItemCard({
   onMoveDown,
   onRemove,
   onUpdate,
+  activeSession,
+  onSelect,
 }: {
   exercise: WorkoutExercise;
   globalIndex: number;
@@ -54,6 +61,8 @@ function ExerciseItemCard({
   onMoveDown: () => void;
   onRemove: () => void;
   onUpdate: (updated: WorkoutExercise) => void;
+  activeSession?: boolean;
+  onSelect?: () => void;
 }) {
   const totalSets = exercise.sets.length;
   const targetInfo = exercise.sets[0];
@@ -114,6 +123,10 @@ function ExerciseItemCard({
     onUpdate({ ...exercise, sets: newSets });
   };
 
+  const completedSetsCount = exercise.sets.filter(s => s.completed).length;
+  const allComplete = completedSetsCount === exercise.sets.length;
+  const hasProgress = completedSetsCount > 0;
+
   return (
     <motion.div
       layout
@@ -124,56 +137,95 @@ function ExerciseItemCard({
       className="rounded-xl border border-border bg-card overflow-hidden"
     >
       <div className="flex items-center gap-2 p-3">
-        {/* Reorder controls */}
-        <div className="flex flex-col gap-0.5 shrink-0">
-          <button
-            onClick={onMoveUp}
-            disabled={globalIndex === 0}
-            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-          >
-            <ChevronUp className="h-3 w-3" />
-          </button>
-          <button
-            onClick={onMoveDown}
-            disabled={globalIndex === totalExercises - 1}
-            className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
-          >
-            <ChevronDown className="h-3 w-3" />
-          </button>
-        </div>
+        {/* Reorder controls — hidden during active session */}
+        {!activeSession && (
+          <div className="flex flex-col gap-0.5 shrink-0">
+            <button
+              onClick={onMoveUp}
+              disabled={globalIndex === 0}
+              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              onClick={onMoveDown}
+              disabled={globalIndex === totalExercises - 1}
+              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        )}
 
-        {/* Exercise info — tap to expand editor */}
+        {/* Status icon for active session */}
+        {activeSession && (
+          <div className={cn(
+            'h-8 w-8 rounded-full flex items-center justify-center shrink-0',
+            allComplete ? 'bg-primary text-primary-foreground' :
+            hasProgress ? 'bg-warning/20 text-warning' :
+            'bg-muted text-muted-foreground'
+          )}>
+            {allComplete ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <span className="text-sm font-bold">{globalIndex + 1}</span>
+            )}
+          </div>
+        )}
+
+        {/* Exercise info — tap to expand editor or select exercise */}
         <button
           onClick={() => {
             haptic('light');
-            onToggleEdit();
+            if (activeSession && onSelect) {
+              onSelect();
+            } else {
+              onToggleEdit();
+            }
           }}
           className="flex-1 min-w-0 text-left"
         >
-          <div className="font-semibold text-sm truncate">{exercise.name}</div>
+          <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+            {exercise.name}
+            {exercise.exerciseType === 'timed' && (
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">timed</span>
+            )}
+            {exercise.exerciseType === 'bodyweight' && (
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw</span>
+            )}
+            {exercise.exerciseType === 'weighted_bw' && (
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw+</span>
+            )}
+          </div>
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-            {isFromHistory && (
+            {isFromHistory && !activeSession && (
               <>
                 <History className="h-2.5 w-2.5 opacity-50" />
               </>
             )}
-            <span>{totalSets} sets</span>
-            <span className="opacity-40">·</span>
-            {isTimed ? (
-              <span>{formatTimeSummary(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)}</span>
+            {activeSession ? (
+              <span>{completedSetsCount}/{exercise.sets.length} sets logged</span>
             ) : (
-              <span>{displayReps(targetInfo?.targetReps)}{isBodyweight ? ' reps' : ''}</span>
-            )}
-            {showWeightField && targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
               <>
+                <span>{totalSets} sets</span>
                 <span className="opacity-40">·</span>
-                <span>{isWeightedBW ? '+' : ''}{targetInfo.targetWeight}</span>
-              </>
-            )}
-            {(isTimed || isBodyweight || isWeightedBW) && (
-              <>
-                <span className="opacity-40">·</span>
-                <span className="text-[9px] uppercase">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
+                {isTimed ? (
+                  <span>{formatTimeSummary(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)}</span>
+                ) : (
+                  <span>{displayReps(targetInfo?.targetReps)}{isBodyweight ? ' reps' : ''}</span>
+                )}
+                {showWeightField && targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span>{isWeightedBW ? '+' : ''}{targetInfo.targetWeight}</span>
+                  </>
+                )}
+                {(isTimed || isBodyweight || isWeightedBW) && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span className="text-[9px] uppercase">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -189,13 +241,20 @@ function ExerciseItemCard({
           {exercise.category === 'primary' ? 'MAIN' : 'ACC'}
         </span>
 
-        {/* Remove button */}
-        <button
-          onClick={onRemove}
-          className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {/* Remove button — hidden during active session */}
+        {!activeSession && (
+          <button
+            onClick={onRemove}
+            className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+        {/* Chevron for active session */}
+        {activeSession && (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 -rotate-90" />
+        )}
       </div>
 
       {/* Inline editor */}
@@ -299,6 +358,10 @@ export function ExerciseReview({
   onSkipExercises,
   lastUsedNames,
   isResuming,
+  activeSession,
+  onSelectExercise,
+  onFinish,
+  isFinishing,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -351,13 +414,15 @@ export function ExerciseReview({
         exercise={exercise}
         globalIndex={globalIndex}
         totalExercises={exercises.length}
-        isEditing={editingIndex === globalIndex}
+        isEditing={!activeSession && editingIndex === globalIndex}
         isFromHistory={lastUsedNames?.has(exercise.name) ?? false}
         onToggleEdit={() => setEditingIndex(editingIndex === globalIndex ? null : globalIndex)}
         onMoveUp={() => handleMoveUp(globalIndex)}
         onMoveDown={() => handleMoveDown(globalIndex)}
         onRemove={() => handleRemove(globalIndex)}
         onUpdate={(updated) => handleUpdateExercise(globalIndex, updated)}
+        activeSession={activeSession}
+        onSelect={onSelectExercise ? () => onSelectExercise(globalIndex) : undefined}
       />
     );
   };
@@ -476,100 +541,115 @@ export function ExerciseReview({
 
       {/* Action buttons */}
       <div className="space-y-2.5 flex flex-col items-center w-full">
-        {/* AI suggestion confirmation banner */}
-        <AnimatePresence>
-          {hasPendingSuggestions && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted">
-                <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground flex-1">AI updated exercises</span>
-                <button
-                  onClick={onConfirmSuggestions}
-                  className="h-7 px-2.5 rounded-lg bg-foreground text-background text-[11px] font-semibold flex items-center gap-1 hover:opacity-90 transition-opacity"
-                >
-                  <Check className="h-3 w-3" />
-                  Keep
-                </button>
-                <button
-                  onClick={onDenySuggestions}
-                  className="h-7 px-2.5 rounded-lg border border-border text-[11px] font-semibold flex items-center gap-1 hover:bg-muted transition-colors"
-                >
-                  <Undo2 className="h-3 w-3" />
-                  Undo
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Add exercise + AI suggest row */}
-        <div className="flex gap-2 justify-center">
-          {showPicker && (
-            <ExercisePicker
-              existingExercises={exercises}
-              onAddExercise={handleAddExercise}
-              dayType={dayType}
-              autoOpen
-              onClose={() => setShowPicker(false)}
-            />
-          )}
-          {!showPicker && (
-            <>
-              <button
-                onClick={() => setShowPicker(true)}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Add Exercise
-              </button>
-
-              {onSuggest && !hasPendingSuggestions && (
-                <button
-                  onClick={onSuggest}
-                  disabled={isSuggesting}
-                  title="Suggest exercises with AI"
-                  className={cn(
-                    'h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40',
-                    isSuggesting && 'animate-pulse'
-                  )}
-                >
-                  <Sparkles className="h-4 w-4" />
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Start workout */}
-        <button
-          onClick={onStart}
-          disabled={exercises.length === 0}
-          className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-        >
-          <Play className="h-4 w-4" />
-          {isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`}
-        </button>
-
-        {/* Skip exercises */}
-        {onSkipExercises && (
+        {activeSession ? (
+          /* Active session: Finish Workout button only */
           <button
-            onClick={onSkipExercises}
-            className="mx-auto block py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            onClick={onFinish}
+            disabled={isFinishing}
+            className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Skip exercises →
+            {isFinishing ? 'Saving…' : 'Finish Workout'}
           </button>
+        ) : (
+          <>
+            {/* AI suggestion confirmation banner */}
+            <AnimatePresence>
+              {hasPendingSuggestions && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted">
+                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground flex-1">AI updated exercises</span>
+                    <button
+                      onClick={onConfirmSuggestions}
+                      className="h-7 px-2.5 rounded-lg bg-foreground text-background text-[11px] font-semibold flex items-center gap-1 hover:opacity-90 transition-opacity"
+                    >
+                      <Check className="h-3 w-3" />
+                      Keep
+                    </button>
+                    <button
+                      onClick={onDenySuggestions}
+                      className="h-7 px-2.5 rounded-lg border border-border text-[11px] font-semibold flex items-center gap-1 hover:bg-muted transition-colors"
+                    >
+                      <Undo2 className="h-3 w-3" />
+                      Undo
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Add exercise + AI suggest row */}
+            <div className="flex gap-2 justify-center">
+              {showPicker && (
+                <ExercisePicker
+                  existingExercises={exercises}
+                  onAddExercise={handleAddExercise}
+                  dayType={dayType}
+                  autoOpen
+                  onClose={() => setShowPicker(false)}
+                />
+              )}
+              {!showPicker && (
+                <>
+                  <button
+                    onClick={() => setShowPicker(true)}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Exercise
+                  </button>
+
+                  {onSuggest && !hasPendingSuggestions && (
+                    <button
+                      onClick={onSuggest}
+                      disabled={isSuggesting}
+                      title="Suggest exercises with AI"
+                      className={cn(
+                        'h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40',
+                        isSuggesting && 'animate-pulse'
+                      )}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Start workout */}
+            <button
+              onClick={onStart}
+              disabled={exercises.length === 0}
+              className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              <Play className="h-4 w-4" />
+              {isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`}
+            </button>
+
+            {/* Skip exercises */}
+            {onSkipExercises && (
+              <button
+                onClick={onSkipExercises}
+                className="mx-auto block py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+              >
+                Skip exercises →
+              </button>
+            )}
+          </>
         )}
       </div>
 
       {/* Info text */}
-      <p className="text-[11px] text-muted-foreground text-center">
-        Tap any exercise to adjust sets, reps, weight, or duration
-      </p>
+      {!activeSession && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Tap any exercise to adjust sets, reps, weight, or duration
+        </p>
+      )}
     </div>
   );
 }
