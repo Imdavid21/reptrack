@@ -19,7 +19,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Barbell Bench Press', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Flat Dumbbell Bench Press': [
-    { name: 'Flat Dumbbell Bench Press', defaultWeight: '26kg', equipmentType: 'dumbbell' },
+    { name: 'Dumbbell Bench Press', defaultWeight: '26kg', equipmentType: 'dumbbell' },
     { name: 'Barbell Bench Press', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Flat Barbell Bench': [
@@ -92,7 +92,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Dumbbell Shoulder Press', defaultWeight: '20kg', equipmentType: 'dumbbell' },
   ],
   'Barbell Overhead Press': [
-    { name: 'Barbell Overhead Press', defaultWeight: '40kg', equipmentType: 'barbell' },
+    { name: 'Overhead Press', defaultWeight: '40kg', equipmentType: 'barbell' },
     { name: 'Dumbbell Shoulder Press', defaultWeight: '20kg', equipmentType: 'dumbbell' },
   ],
   'Dumbbell Shoulder Press': [
@@ -100,7 +100,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Overhead Press', defaultWeight: '40kg', equipmentType: 'barbell' },
   ],
   'Seated Dumbbell Shoulder Press': [
-    { name: 'Seated Dumbbell Shoulder Press', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+    { name: 'Dumbbell Shoulder Press', defaultWeight: '20kg', equipmentType: 'dumbbell' },
     { name: 'Overhead Press', defaultWeight: '40kg', equipmentType: 'barbell' },
   ],
   'Seated DB Shoulder Press': [
@@ -118,7 +118,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Cable Lateral Raise', defaultWeight: '7.5kg', equipmentType: 'cable' },
   ],
   'Dumbbell Lateral Raises': [
-    { name: 'Dumbbell Lateral Raises', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Lateral Raises', defaultWeight: '10kg', equipmentType: 'dumbbell' },
     { name: 'Cable Lateral Raise', defaultWeight: '7.5kg', equipmentType: 'cable' },
   ],
   'Cable Lateral Raise': [
@@ -137,7 +137,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Tricep Pushdown', defaultWeight: '25kg', equipmentType: 'cable' },
   ],
   'Cable Tricep Pushdowns': [
-    { name: 'Cable Tricep Pushdowns', defaultWeight: '25kg', equipmentType: 'cable' },
+    { name: 'Tricep Pushdown', defaultWeight: '25kg', equipmentType: 'cable' },
   ],
   'Overhead Tricep Extension': [
     { name: 'Overhead Tricep Extension', defaultWeight: '20kg', equipmentType: 'cable' },
@@ -179,7 +179,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Straight Arm Pulldown', defaultWeight: '25kg', equipmentType: 'cable' },
   ],
   'Straight Arm Pulldowns': [
-    { name: 'Straight Arm Pulldowns', defaultWeight: '25kg', equipmentType: 'cable' },
+    { name: 'Straight Arm Pulldown', defaultWeight: '25kg', equipmentType: 'cable' },
   ],
 
   // Back - Rows
@@ -189,8 +189,8 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'T-Bar Row', defaultWeight: '50kg', equipmentType: 'machine' },
   ],
   'Barbell Rows': [
-    { name: 'Barbell Rows', defaultWeight: '60kg', equipmentType: 'barbell' },
-    { name: 'Single Arm Dumbbell Rows', defaultWeight: '30kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Row', defaultWeight: '60kg', equipmentType: 'barbell' },
+    { name: 'Single Arm Dumbbell Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
   ],
   'T-Bar Row': [
     { name: 'T-Bar Row', defaultWeight: '50kg', equipmentType: 'machine' },
@@ -202,15 +202,15 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Single Arm Dumbbell Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
   ],
   'Cable Seated Row': [
-    { name: 'Cable Seated Row', defaultWeight: '50kg', equipmentType: 'cable' },
+    { name: 'Seated Cable Row', defaultWeight: '50kg', equipmentType: 'cable' },
   ],
   'Single Arm Dumbbell Row': [
     { name: 'Single Arm Dumbbell Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
     { name: 'Barbell Row', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Single Arm Dumbbell Rows': [
-    { name: 'Single Arm Dumbbell Rows', defaultWeight: '30kg', equipmentType: 'dumbbell' },
-    { name: 'Barbell Rows', defaultWeight: '60kg', equipmentType: 'barbell' },
+    { name: 'Single Arm Dumbbell Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
+    { name: 'Barbell Row', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Single Arm DB Row': [
     { name: 'Single Arm DB Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
@@ -243,7 +243,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Cable Curl', defaultWeight: '20kg', equipmentType: 'cable' },
   ],
   'Barbell Curls': [
-    { name: 'Barbell Curls', defaultWeight: '25kg', equipmentType: 'barbell' },
+    { name: 'Barbell Curl', defaultWeight: '25kg', equipmentType: 'barbell' },
     { name: 'Dumbbell Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
   ],
   'Dumbbell Curl': [
@@ -258,14 +258,14 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Incline Dumbbell Curl', defaultWeight: '10kg', equipmentType: 'dumbbell' },
   ],
   'Incline Dumbbell Curls': [
-    { name: 'Incline Dumbbell Curls', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Incline Dumbbell Curl', defaultWeight: '10kg', equipmentType: 'dumbbell' },
   ],
   'Cable Curl': [
     { name: 'Cable Curl', defaultWeight: '20kg', equipmentType: 'cable' },
     { name: 'Barbell Curl', defaultWeight: '25kg', equipmentType: 'barbell' },
   ],
   'Cable Curls': [
-    { name: 'Cable Curls', defaultWeight: '20kg', equipmentType: 'cable' },
+    { name: 'Cable Curl', defaultWeight: '20kg', equipmentType: 'cable' },
   ],
   'EZ Bar Preacher Curls': [
     { name: 'EZ Bar Preacher Curls', defaultWeight: '20kg', equipmentType: 'barbell' },
@@ -372,7 +372,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Barbell Bulgarian Split Squat', defaultWeight: '40kg', equipmentType: 'barbell' },
   ],
   'Bulgarian Split Squats': [
-    { name: 'Bulgarian Split Squats', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+    { name: 'Bulgarian Split Squat', defaultWeight: '20kg', equipmentType: 'dumbbell' },
   ],
   'Walking Lunges': [
     { name: 'Walking Lunges', defaultWeight: '20kg', equipmentType: 'dumbbell' },
@@ -384,7 +384,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Leg Extension', defaultWeight: '45kg', equipmentType: 'machine' },
   ],
   'Leg Extensions': [
-    { name: 'Leg Extensions', defaultWeight: '45kg', equipmentType: 'machine' },
+    { name: 'Leg Extension', defaultWeight: '45kg', equipmentType: 'machine' },
   ],
 
   // Hamstrings - Compound
@@ -393,7 +393,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Dumbbell RDL', defaultWeight: '24kg', equipmentType: 'dumbbell' },
   ],
   'Romanian Deadlifts': [
-    { name: 'Romanian Deadlifts', defaultWeight: '70kg', equipmentType: 'barbell' },
+    { name: 'Romanian Deadlift', defaultWeight: '70kg', equipmentType: 'barbell' },
   ],
   'Dumbbell RDL': [
     { name: 'Dumbbell RDL', defaultWeight: '24kg', equipmentType: 'dumbbell' },
@@ -411,7 +411,7 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Leg Curl', defaultWeight: '40kg', equipmentType: 'machine' },
   ],
   'Leg Curls': [
-    { name: 'Leg Curls', defaultWeight: '40kg', equipmentType: 'machine' },
+    { name: 'Leg Curl', defaultWeight: '40kg', equipmentType: 'machine' },
   ],
 
   // Glutes
@@ -420,13 +420,13 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Glute Bridge', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Hip Thrusts': [
-    { name: 'Hip Thrusts', defaultWeight: '80kg', equipmentType: 'barbell' },
+    { name: 'Hip Thrust', defaultWeight: '80kg', equipmentType: 'barbell' },
   ],
   'Glute Bridge': [
     { name: 'Glute Bridge', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
   'Glute Bridges': [
-    { name: 'Glute Bridges', defaultWeight: '60kg', equipmentType: 'barbell' },
+    { name: 'Glute Bridge', defaultWeight: '60kg', equipmentType: 'barbell' },
   ],
 
   // Calves
@@ -434,13 +434,13 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Standing Calf Raise', defaultWeight: '60kg', equipmentType: 'machine' },
   ],
   'Standing Calf Raises': [
-    { name: 'Standing Calf Raises', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Standing Calf Raise', defaultWeight: 'BW', equipmentType: 'bodyweight' },
   ],
   'Seated Calf Raise': [
     { name: 'Seated Calf Raise', defaultWeight: '40kg', equipmentType: 'machine' },
   ],
   'Seated Calf Raises': [
-    { name: 'Seated Calf Raises', defaultWeight: '40kg', equipmentType: 'machine' },
+    { name: 'Seated Calf Raise', defaultWeight: '40kg', equipmentType: 'machine' },
   ],
 
   // Core
