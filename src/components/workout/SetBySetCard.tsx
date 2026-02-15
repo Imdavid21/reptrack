@@ -404,26 +404,6 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-  // Build prev set hint — only show if previous set was actually completed with real data
-  const getPrevHint = () => {
-    if (!prevSet?.completed) return null;
-    if (isTimed) {
-      if (prevSet.actualTime) return `prev: ${formatTime(prevSet.actualTime)}`;
-      return null;
-    }
-    if (isBodyweight) {
-      if (prevSet.actualReps) return `prev: ${prevSet.actualReps} reps`;
-      return null;
-    }
-    // Only show if we have actual logged values — never mix with template targets
-    const w = prevSet.actualWeight;
-    const r = prevSet.actualReps;
-    if (w && r) {
-      const prefix = isWeightedBW ? '+' : '';
-      return `prev: ${prefix}${String(w).replace(/[a-zA-Z]/g, '')}${isWeightedBW ? 'kg' : weightLabel}×${r}`;
-    }
-    return null;
-  };
 
   const getLastUsedHint = () => {
     // Use per-set data if available, otherwise fall back to aggregate
@@ -476,7 +456,7 @@ export function SetBySetCard({
                   ? formatTime(personalRecord.maxWeight)
                   : personalRecord.prType === 'reps'
                   ? `${personalRecord.maxWeight} reps`
-                  : `${personalRecord.maxWeight}${weightLabel}`}
+                  : `${personalRecord.maxWeight}${weightLabel} × ${personalRecord.reps}`}
               </span>
             )}
             {isNewPR && (
@@ -546,9 +526,6 @@ export function SetBySetCard({
       )}>
         <div className="text-center text-xs text-muted-foreground mb-4">
           SET {currentSetIndex + 1}
-          {getPrevHint() && (
-            <span className="ml-1">({getPrevHint()})</span>
-          )}
           {getLastUsedHint() && (
             <span className="ml-1 text-primary/70">({getLastUsedHint()})</span>
           )}
