@@ -4,13 +4,9 @@ import { Timer, X, RotateCcw } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 
 interface RestTimerProps {
-  /** Whether the timer should be visible */
   isOpen: boolean;
-  /** Default rest duration in seconds */
   defaultDuration: number;
-  /** Called when timer is dismissed */
   onDismiss: () => void;
-  /** Called when timer completes (auto or manual) */
   onComplete: () => void;
 }
 
@@ -35,72 +31,97 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
   const [remaining, setRemaining] = useState(defaultDuration);
   const [totalDuration, setTotalDuration] = useState(defaultDuration);
   const [isRunning, setIsRunning] = useState(false);
+  // Wall-clock end timestamp – survives background throttling
+  const endTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completedRef = useRef(false);
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const recalculate = useCallback(() => {
+    if (!endTimeRef.current) return;
+    const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+    setRemaining(left);
+    if (left <= 0 && !completedRef.current) {
+      completedRef.current = true;
+      clearTimer();
+      setIsRunning(false);
+      haptic('success');
+      onComplete();
+    }
+  }, [onComplete, clearTimer]);
+
+  // Start a new countdown anchored to wall-clock
+  const startCountdown = useCallback((seconds: number) => {
+    clearTimer();
+    completedRef.current = false;
+    endTimeRef.current = Date.now() + seconds * 1000;
+    setRemaining(seconds);
+    setIsRunning(true);
+
+    intervalRef.current = setInterval(() => {
+      if (!endTimeRef.current) return;
+      const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setRemaining(left);
+      if (left <= 0 && !completedRef.current) {
+        completedRef.current = true;
+        clearTimer();
+        setIsRunning(false);
+        haptic('success');
+        onComplete();
+      }
+    }, 250); // tick faster for snappy UI after resume
+  }, [clearTimer, onComplete]);
 
   // Auto-start when opened
   useEffect(() => {
     if (isOpen) {
-      setRemaining(defaultDuration);
       setTotalDuration(defaultDuration);
-      setIsRunning(true);
+      startCountdown(defaultDuration);
     } else {
       setIsRunning(false);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      endTimeRef.current = null;
+      clearTimer();
     }
-  }, [isOpen, defaultDuration]);
+  }, [isOpen, defaultDuration, startCountdown, clearTimer]);
 
-  // Countdown logic
+  // Recalculate on visibility change (PWA resume from background)
   useEffect(() => {
-    if (!isRunning) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
-
-    intervalRef.current = setInterval(() => {
-      setRemaining(prev => {
-        if (prev <= 1) {
-          // Timer done
-          haptic('success');
-          setIsRunning(false);
-          onComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        recalculate();
       }
     };
-  }, [isRunning, onComplete]);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [recalculate]);
+
+  // Cleanup on unmount
+  useEffect(() => clearTimer, [clearTimer]);
 
   const handlePresetSelect = useCallback((seconds: number) => {
     haptic('light');
     setTotalDuration(seconds);
-    setRemaining(seconds);
-    setIsRunning(true);
-  }, []);
+    startCountdown(seconds);
+  }, [startCountdown]);
 
   const handleReset = useCallback(() => {
     haptic('light');
-    setRemaining(totalDuration);
-    setIsRunning(true);
-  }, [totalDuration]);
+    startCountdown(totalDuration);
+  }, [totalDuration, startCountdown]);
 
   const handleSkip = useCallback(() => {
     haptic('light');
     setIsRunning(false);
+    endTimeRef.current = null;
+    clearTimer();
     onDismiss();
-  }, [onDismiss]);
+  }, [onDismiss, clearTimer]);
 
   if (!isOpen) return null;
 

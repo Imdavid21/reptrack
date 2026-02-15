@@ -25,14 +25,21 @@ export function WorkoutTimer({ startTime }: WorkoutTimerProps) {
       return;
     }
 
-    // Calculate initial elapsed
-    setElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
+    const calc = () => setElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
+    calc();
 
-    const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
-    }, 1000);
+    const interval = setInterval(calc, 1000);
 
-    return () => clearInterval(interval);
+    // Recalculate immediately when PWA resumes from background
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') calc();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [startTime]);
 
   if (!startTime) return null;
