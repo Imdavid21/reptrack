@@ -10,14 +10,10 @@ function getCorsHeaders() {
   };
 }
 
-// Default CORS headers for non-request contexts (SSE, etc.)
 const corsHeaders = getCorsHeaders();
 
-// SSE sessions will be lost when the function cold-starts. For production use, replace with
-// a persistent store (e.g., Supabase table or Redis).
 const sessions = new Map<string, { userId: string; messageEndpoint: string }>();
 
-// Validate API key and return user_id
 async function validateApiKey(apiKey: string): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -46,22 +42,23 @@ function createSupabaseClient() {
 }
 
 // Tool handlers
-async function getWorkouts(args: { limit?: number; days?: number }, userId: string) {
+async function getWorkouts(args: { limit?: number; offset?: number; days?: number }, userId: string) {
   const supabase = createSupabaseClient();
-  const limit = args.limit || 10;
+  const limit = Math.min(args.limit || 50, 500);
+  const offset = args.offset || 0;
   const days = args.days || 30;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  
+
   const { data, error } = await supabase
     .from("workouts")
     .select("id, date, day_name, workout_duration_minutes, post_difficulty, post_satisfaction")
     .eq("user_id", userId)
     .gte("date", startDate)
     .order("date", { ascending: false })
-    .limit(limit);
-  
+    .range(offset, offset + limit - 1);
+
   if (error) throw new Error(error.message);
-  return { workouts: data };
+  return { workouts: data, pagination: { limit, offset } };
 }
 
 async function getWorkoutDetails(args: { workout_id: string }, userId: string) {
@@ -81,14 +78,13 @@ async function getWorkoutDetails(args: { workout_id: string }, userId: string) {
   ]);
 
   if (workoutRes.error) throw new Error("Workout not found");
-
   return { workout: workoutRes.data, exercises: exercisesRes.data || [] };
 }
 
 async function getTodaySummary(userId: string) {
   const supabase = createSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
-  
+
   const [workoutRes, waterRes, mealsRes, metricsRes] = await Promise.all([
     supabase
       .from("workouts")
@@ -113,43 +109,41 @@ async function getTodaySummary(userId: string) {
       .maybeSingle()
   ]);
 
-  const totalWater = waterRes.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  const totalCalories = mealsRes.data?.reduce((sum, m) => sum + (m.calories || 0), 0) || 0;
-  const totalProtein = mealsRes.data?.reduce((sum, m) => sum + (m.protein || 0), 0) || 0;
+  const totalWater = waterRes.data?.reduce((sum: number, w: any) => sum + (w.amount || 0), 0) || 0;
+  const totalCalories = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.calories || 0), 0) || 0;
+  const totalProtein = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.protein || 0), 0) || 0;
 
   return {
     date: today,
     workout: workoutRes.data?.[0] || null,
     water_liters: Math.round(totalWater * 100) / 100,
-    nutrition: {
-      calories: totalCalories,
-      protein: totalProtein,
-      meals_logged: mealsRes.data?.length || 0
-    },
+    nutrition: { calories: totalCalories, protein: totalProtein, meals_logged: mealsRes.data?.length || 0 },
     daily_metrics: metricsRes.data || null
   };
 }
 
-async function getNutrition(args: { date?: string; days?: number }, userId: string) {
+async function getNutrition(args: { date?: string; days?: number; limit?: number; offset?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
-  
+  const limit = Math.min(args.limit || 200, 1000);
+  const offset = args.offset || 0;
+
   let query = supabase
     .from("meals")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-  
+
   if (args.days) {
     const startDate = new Date(Date.now() - args.days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     query = query.gte("date", startDate);
   } else {
     query = query.eq("date", args.date || today);
   }
-  
-  const { data, error } = await query.limit(50);
+
+  const { data, error } = await query.range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
-  
+
   const byDate: Record<string, { date: string; calories: number; protein: number; carbs: number; fat: number; meals: { food_name: string | null; calories: number | null }[] }> = {};
   for (const meal of data || []) {
     if (!byDate[meal.date]) {
@@ -161,52 +155,52 @@ async function getNutrition(args: { date?: string; days?: number }, userId: stri
     byDate[meal.date].fat += meal.fat || 0;
     byDate[meal.date].meals.push({ food_name: meal.food_name, calories: meal.calories });
   }
-  
-  return { nutrition: Object.values(byDate) };
+
+  return { nutrition: Object.values(byDate), pagination: { limit, offset } };
 }
 
-async function getWaterIntake(args: { date?: string }, userId: string) {
+async function getWaterIntake(args: { date?: string; limit?: number; offset?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const today = new Date().toISOString().split("T")[0];
   const date = args.date || today;
-  
+  const limit = Math.min(args.limit || 500, 2000);
+  const offset = args.offset || 0;
+
   const { data, error } = await supabase
     .from("water_logs")
     .select("amount, timestamp")
     .eq("user_id", userId)
     .gte("timestamp", `${date}T00:00:00`)
     .lt("timestamp", `${date}T23:59:59`)
-    .order("timestamp");
-  
+    .order("timestamp")
+    .range(offset, offset + limit - 1);
+
   if (error) throw new Error(error.message);
-  
-  const total = data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  return { date, total_liters: Math.round(total * 100) / 100, logs: data };
+
+  const total = data?.reduce((sum: number, w: any) => sum + (w.amount || 0), 0) || 0;
+  return { date, total_liters: Math.round(total * 100) / 100, logs: data, pagination: { limit, offset } };
 }
 
 async function getSleepEnergy(args: { days?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const days = args.days || 7;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  
+
   const { data, error } = await supabase
     .from("daily_metrics")
     .select("date, sleep_hours, energy_level")
     .eq("user_id", userId)
     .gte("date", startDate)
     .order("date", { ascending: false });
-  
+
   if (error) throw new Error(error.message);
-  
-  const avgSleep = data?.length ? data.reduce((sum, d) => sum + (d.sleep_hours || 0), 0) / data.length : 0;
-  const avgEnergy = data?.length ? data.reduce((sum, d) => sum + (d.energy_level || 0), 0) / data.length : 0;
-  
+
+  const avgSleep = data?.length ? data.reduce((sum: number, d: any) => sum + (d.sleep_hours || 0), 0) / data.length : 0;
+  const avgEnergy = data?.length ? data.reduce((sum: number, d: any) => sum + (d.energy_level || 0), 0) / data.length : 0;
+
   return {
     days: data,
-    averages: {
-      sleep_hours: Math.round(avgSleep * 10) / 10,
-      energy_level: Math.round(avgEnergy * 10) / 10
-    }
+    averages: { sleep_hours: Math.round(avgSleep * 10) / 10, energy_level: Math.round(avgEnergy * 10) / 10 }
   };
 }
 
@@ -214,7 +208,7 @@ async function getBodyweight(args: { days?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const days = args.days || 30;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  
+
   const { data, error } = await supabase
     .from("daily_metrics")
     .select("date, bodyweight")
@@ -222,55 +216,21 @@ async function getBodyweight(args: { days?: number }, userId: string) {
     .gte("date", startDate)
     .not("bodyweight", "is", null)
     .order("date", { ascending: false });
-  
+
   if (error) throw new Error(error.message);
-  
+
   const current = data?.[0]?.bodyweight;
   const oldest = data?.[data.length - 1]?.bodyweight;
   const change = current && oldest ? Math.round((current - oldest) * 100) / 100 : null;
-  
-  return {
-    measurements: data,
-    current_weight: current,
-    change_kg: change,
-    period_days: days
-  };
+
+  return { measurements: data, current_weight: current, change_kg: change, period_days: days };
 }
 
-async function getVitals(args: { days?: number }, userId: string) {
-  const supabase = createSupabaseClient();
-  const days = args.days || 90;
-  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-  const [bpRes, sugarRes] = await Promise.all([
-    supabase
-      .from("blood_pressure_readings")
-      .select("measured_at, systolic, diastolic, pulse, notes")
-      .eq("user_id", userId)
-      .gte("measured_at", startDate)
-      .order("measured_at", { ascending: false }),
-    supabase
-      .from("blood_sugar_readings")
-      .select("measured_at, glucose_level, reading_type, notes")
-      .eq("user_id", userId)
-      .gte("measured_at", startDate)
-      .order("measured_at", { ascending: false }),
-  ]);
-
-  if (bpRes.error || sugarRes.error) {
-    throw new Error((bpRes.error || sugarRes.error)!.message);
-  }
-
-  return {
-    period_days: days,
-    blood_pressure: bpRes.data || [],
-    blood_sugar: sugarRes.data || [],
-  };
-}
-
-async function getDailyMetrics(args: { days?: number }, userId: string) {
+async function getDailyMetrics(args: { days?: number; limit?: number; offset?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const days = args.days || 60;
+  const limit = Math.min(args.limit || 180, 500);
+  const offset = args.offset || 0;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const { data, error } = await supabase
@@ -278,19 +238,18 @@ async function getDailyMetrics(args: { days?: number }, userId: string) {
     .select("date, pullups, bodyweight, sleep_hours, energy_level, is_rest_day, notes")
     .eq("user_id", userId)
     .gte("date", startDate)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) throw new Error(error.message);
-
-  return {
-    period_days: days,
-    metrics: data || [],
-  };
+  return { period_days: days, metrics: data || [], pagination: { limit, offset } };
 }
 
-async function getRecovery(args: { days?: number }, userId: string) {
+async function getRecovery(args: { days?: number; limit?: number; offset?: number }, userId: string) {
   const supabase = createSupabaseClient();
   const days = args.days || 60;
+  const limit = Math.min(args.limit || 180, 500);
+  const offset = args.offset || 0;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const { data, error } = await supabase
@@ -298,23 +257,30 @@ async function getRecovery(args: { days?: number }, userId: string) {
     .select("date, recovery_score, hrv_ms, resting_hr, sleep_quality, fatigue_level, stress_level, workout_readiness, deload_recommended, notes")
     .eq("user_id", userId)
     .gte("date", startDate)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) throw new Error(error.message);
-
-  return {
-    period_days: days,
-    recovery: data || [],
-  };
+  return { period_days: days, recovery: data || [], pagination: { limit, offset } };
 }
 
 async function getPersonalRecords(args: { exercise_name?: string }, userId: string) {
   const supabase = createSupabaseClient();
 
+  // First get user's workout IDs, then query exercises (no !inner join)
+  const { data: workoutIds, error: wErr } = await supabase
+    .from("workouts")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (wErr) throw new Error(wErr.message);
+  const ids = (workoutIds || []).map((w: any) => w.id);
+  if (ids.length === 0) return { personal_records: [] };
+
   let query = supabase
     .from("exercises")
-    .select("name, actual_weight, actual_reps, created_at, workouts!inner(user_id)")
-    .eq("workouts.user_id", userId)
+    .select("name, actual_weight, actual_reps, workout_id")
+    .in("workout_id", ids)
     .eq("completed", true)
     .not("actual_weight", "is", null)
     .not("actual_reps", "is", null);
@@ -323,13 +289,12 @@ async function getPersonalRecords(args: { exercise_name?: string }, userId: stri
     query = query.ilike("name", `%${args.exercise_name}%`);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false }).limit(500);
+  const { data, error } = await query.limit(2000);
   if (error) throw new Error(error.message);
 
-  const prs: Record<string, { exercise: string; weight: number; reps: number; e1rm: number; date: string }> = {};
+  const prs: Record<string, { exercise: string; weight: number; reps: number; e1rm: number }> = {};
 
   for (const exercise of data || []) {
-    // Parse weight - handle formats like "50kg" or "50"
     const weightMatch = exercise.actual_weight?.match(/[\d.]+/);
     const repsMatch = exercise.actual_reps?.match(/\d+/);
     if (!weightMatch || !repsMatch) continue;
@@ -341,58 +306,64 @@ async function getPersonalRecords(args: { exercise_name?: string }, userId: stri
     const e1rm = reps === 1 ? weight : Math.round(weight * (1 + reps / 30));
 
     if (!prs[exercise.name] || e1rm > prs[exercise.name].e1rm) {
-      prs[exercise.name] = {
-        exercise: exercise.name,
-        weight,
-        reps,
-        e1rm,
-        date: exercise.created_at.split("T")[0]
-      };
+      prs[exercise.name] = { exercise: exercise.name, weight, reps, e1rm };
     }
   }
 
   return { personal_records: Object.values(prs).sort((a, b) => b.e1rm - a.e1rm) };
 }
 
-async function getWeeklyStats(userId: string) {
+async function getStatsSummary(userId: string) {
   const supabase = createSupabaseClient();
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  
-  const [workoutsRes, waterRes, mealsRes, metricsRes] = await Promise.all([
+  const today = new Date().toISOString().split("T")[0];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const [workoutsRes, mealsRes, waterRes, dailyMetricsRes] = await Promise.all([
     supabase
       .from("workouts")
-      .select("workout_duration_minutes")
+      .select("id, date, workout_duration_minutes")
       .eq("user_id", userId)
-      .gte("date", weekAgo),
-    supabase
-      .from("water_logs")
-      .select("amount, timestamp")
-      .eq("user_id", userId)
-      .gte("timestamp", `${weekAgo}T00:00:00`),
+      .gte("date", thirtyDaysAgo),
     supabase
       .from("meals")
-      .select("calories, protein")
+      .select("calories, protein, date")
       .eq("user_id", userId)
-      .gte("date", weekAgo),
+      .eq("date", today),
+    supabase
+      .from("water_logs")
+      .select("amount")
+      .eq("user_id", userId)
+      .gte("timestamp", `${today}T00:00:00`),
     supabase
       .from("daily_metrics")
-      .select("sleep_hours, energy_level")
+      .select("sleep_hours, energy_level, bodyweight")
       .eq("user_id", userId)
-      .gte("date", weekAgo)
+      .eq("date", today)
+      .maybeSingle()
   ]);
 
   const totalWorkouts = workoutsRes.data?.length || 0;
-  const totalGymMins = workoutsRes.data?.reduce((sum, w) => sum + (w.workout_duration_minutes || 0), 0) || 0;
-  const totalWater = waterRes.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  const avgCalories = mealsRes.data?.length ? mealsRes.data.reduce((sum, m) => sum + (m.calories || 0), 0) / 7 : 0;
-  const avgSleep = metricsRes.data?.length ? metricsRes.data.reduce((sum, s) => sum + (s.sleep_hours || 0), 0) / metricsRes.data.length : 0;
+  const totalGymMinutes = workoutsRes.data?.reduce((sum: number, w: any) => sum + (w.workout_duration_minutes || 0), 0) || 0;
+  const todayCalories = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.calories || 0), 0) || 0;
+  const todayProtein = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.protein || 0), 0) || 0;
+  const todayWater = waterRes.data?.reduce((sum: number, w: any) => sum + (w.amount || 0), 0) || 0;
 
   return {
-    period: "last_7_days",
-    workouts: { count: totalWorkouts, total_minutes: totalGymMins },
-    water: { total_liters: Math.round(totalWater * 100) / 100, daily_avg: Math.round(totalWater / 7 * 100) / 100 },
-    nutrition: { avg_daily_calories: Math.round(avgCalories) },
-    sleep: { avg_hours: Math.round(avgSleep * 10) / 10 }
+    period: "last_30_days",
+    today: {
+      date: today,
+      calories: todayCalories,
+      protein: todayProtein,
+      water_liters: todayWater,
+      sleep_hours: dailyMetricsRes.data?.sleep_hours || null,
+      energy_level: dailyMetricsRes.data?.energy_level || null,
+      bodyweight: dailyMetricsRes.data?.bodyweight || null,
+    },
+    last_30_days: {
+      total_workouts: totalWorkouts,
+      total_gym_minutes: totalGymMinutes,
+      avg_workouts_per_week: Math.round((totalWorkouts / 4.3) * 10) / 10,
+    }
   };
 }
 
@@ -400,11 +371,12 @@ async function getWeeklyStats(userId: string) {
 const tools = [
   {
     name: "get_workouts",
-    description: "Get a list of workouts. Returns workout sessions with date, duration, difficulty, and satisfaction ratings.",
+    description: "Get a list of workouts with date, duration, difficulty, and satisfaction ratings. Supports pagination.",
     inputSchema: {
       type: "object",
       properties: {
-        limit: { type: "number", description: "Max number of workouts to return (default 10)" },
+        limit: { type: "number", description: "Max results (default 50, max 500)" },
+        offset: { type: "number", description: "Skip N results for pagination (default 0)" },
         days: { type: "number", description: "Get workouts from the last N days (default 30)" }
       }
     }
@@ -427,28 +399,32 @@ const tools = [
   },
   {
     name: "get_nutrition",
-    description: "Get nutrition data (meals and macros) for a date range.",
+    description: "Get nutrition data (meals and macros) for a date range. Supports pagination.",
     inputSchema: {
       type: "object",
       properties: {
-        date: { type: "string", description: "Specific date in YYYY-MM-DD format (defaults to today)" },
-        days: { type: "number", description: "Get meals from the last N days instead of a specific date" }
+        date: { type: "string", description: "Specific date YYYY-MM-DD (defaults to today)" },
+        days: { type: "number", description: "Get meals from the last N days instead of a specific date" },
+        limit: { type: "number", description: "Max results (default 200, max 1000)" },
+        offset: { type: "number", description: "Skip N results for pagination (default 0)" }
       }
     }
   },
   {
     name: "get_water_intake",
-    description: "Get water intake logs for today or a specific date.",
+    description: "Get water intake logs for today or a specific date. Supports pagination.",
     inputSchema: {
       type: "object",
       properties: {
-        date: { type: "string", description: "Specific date in YYYY-MM-DD format (defaults to today)" }
+        date: { type: "string", description: "Specific date YYYY-MM-DD (defaults to today)" },
+        limit: { type: "number", description: "Max results (default 500, max 2000)" },
+        offset: { type: "number", description: "Skip N results for pagination (default 0)" }
       }
     }
   },
   {
     name: "get_sleep_energy",
-    description: "Get sleep hours and energy levels from morning check-ins.",
+    description: "Get sleep hours and energy levels from daily check-ins.",
     inputSchema: {
       type: "object",
       properties: {
@@ -467,32 +443,26 @@ const tools = [
     }
   },
   {
-    name: "get_vitals",
-    description: "Get blood pressure and blood sugar readings.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        days: { type: "number", description: "Number of days to look back (default 90)" }
-      }
-    }
-  },
-  {
     name: "get_daily_metrics",
-    description: "Get daily health metrics (sleep, energy, bodyweight, pullups, rest days).",
+    description: "Get daily health metrics (sleep, energy, bodyweight, pullups, rest days). Supports pagination.",
     inputSchema: {
       type: "object",
       properties: {
-        days: { type: "number", description: "Number of days to look back (default 60)" }
+        days: { type: "number", description: "Number of days to look back (default 60)" },
+        limit: { type: "number", description: "Max results (default 180, max 500)" },
+        offset: { type: "number", description: "Skip N results for pagination (default 0)" }
       }
     }
   },
   {
     name: "get_recovery",
-    description: "Get recovery metrics including HRV, resting HR, fatigue, and stress levels.",
+    description: "Get recovery metrics including HRV, resting HR, fatigue, and stress levels. Supports pagination.",
     inputSchema: {
       type: "object",
       properties: {
-        days: { type: "number", description: "Number of days to look back (default 60)" }
+        days: { type: "number", description: "Number of days to look back (default 60)" },
+        limit: { type: "number", description: "Max results (default 180, max 500)" },
+        offset: { type: "number", description: "Skip N results for pagination (default 0)" }
       }
     }
   },
@@ -507,8 +477,8 @@ const tools = [
     }
   },
   {
-    name: "get_weekly_stats",
-    description: "Get aggregated weekly statistics for workouts, nutrition, and health metrics.",
+    name: "get_stats_summary",
+    description: "Get aggregated 30-day stats: total workouts, gym minutes, today's calories/protein/water/sleep/energy/bodyweight.",
     inputSchema: { type: "object", properties: {} }
   }
 ];
@@ -517,38 +487,35 @@ const tools = [
 async function handleToolCall(name: string, args: Record<string, unknown>, userId: string) {
   switch (name) {
     case "get_workouts":
-      return await getWorkouts(args as { limit?: number; days?: number }, userId);
+      return await getWorkouts(args as any, userId);
     case "get_workout_details":
       return await getWorkoutDetails(args as { workout_id: string }, userId);
     case "get_today_summary":
       return await getTodaySummary(userId);
     case "get_nutrition":
-      return await getNutrition(args as { date?: string; days?: number }, userId);
+      return await getNutrition(args as any, userId);
     case "get_water_intake":
-      return await getWaterIntake(args as { date?: string }, userId);
+      return await getWaterIntake(args as any, userId);
     case "get_sleep_energy":
       return await getSleepEnergy(args as { days?: number }, userId);
     case "get_bodyweight":
       return await getBodyweight(args as { days?: number }, userId);
-    case "get_vitals":
-      return await getVitals(args as { days?: number }, userId);
     case "get_daily_metrics":
-      return await getDailyMetrics(args as { days?: number }, userId);
+      return await getDailyMetrics(args as any, userId);
     case "get_recovery":
-      return await getRecovery(args as { days?: number }, userId);
+      return await getRecovery(args as any, userId);
     case "get_personal_records":
       return await getPersonalRecords(args as { exercise_name?: string }, userId);
-    case "get_weekly_stats":
-      return await getWeeklyStats(userId);
+    case "get_stats_summary":
+      return await getStatsSummary(userId);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
 }
 
-// Process JSON-RPC request and return response
+// Process JSON-RPC request
 async function handleJsonRpc(body: { method: string; params?: Record<string, unknown>; id?: number | string }, userId: string) {
   const { method, params, id } = body;
-
   console.log(`MCP request: method=${method}, id=${id}`);
 
   switch (method) {
@@ -558,7 +525,7 @@ async function handleJsonRpc(body: { method: string; params?: Record<string, unk
         result: {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "fitness-tracker", version: "1.0.0" }
+          serverInfo: { name: "fitness-tracker", version: "1.2.0" }
         },
         id
       };
@@ -597,95 +564,54 @@ async function handleJsonRpc(body: { method: string; params?: Record<string, unk
 
 const app = new Hono();
 
-// Set per-request CORS headers via middleware
 app.use("*", async (c, next) => {
   const headers = getCorsHeaders();
-  Object.entries(headers).forEach(([key, value]) => {
-    c.header(key, value);
-  });
+  Object.entries(headers).forEach(([key, value]) => { c.header(key, value); });
   await next();
 });
 
-// Handle CORS preflight
-app.options("*", (c) => {
-  return new Response(null, { headers: getCorsHeaders() });
-});
+app.options("*", (c) => new Response(null, { headers: getCorsHeaders() }));
 
-// SSE endpoint for mcp-remote compatibility
+// SSE endpoint
 app.get("/sse", async (c) => {
-  const apiKey = c.req.header("x-api-key") || 
-                 c.req.query("api_key") ||
-                 c.req.header("authorization")?.replace("Bearer ", "");
-  
-  if (!apiKey) {
-    return c.json({ error: "Missing API key" }, 401, corsHeaders);
-  }
+  const apiKey = c.req.header("x-api-key") || c.req.query("api_key") || c.req.header("authorization")?.replace("Bearer ", "");
+  if (!apiKey) return c.json({ error: "Missing API key" }, 401, corsHeaders);
 
   const userId = await validateApiKey(apiKey);
-  if (!userId) {
-    return c.json({ error: "Invalid API key" }, 401, corsHeaders);
-  }
+  if (!userId) return c.json({ error: "Invalid API key" }, 401, corsHeaders);
 
-  // Generate session ID
   const sessionId = crypto.randomUUID();
   const baseUrl = new URL(c.req.url);
   const messageEndpoint = `${baseUrl.protocol}//${baseUrl.host}/mcp/message?sessionId=${sessionId}`;
-  
-  // Store session
   sessions.set(sessionId, { userId, messageEndpoint });
 
-  // Create SSE stream
   const stream = new ReadableStream({
     start(controller) {
-      // Send endpoint event (required by SSE transport spec)
       const endpointEvent = `event: endpoint\ndata: ${messageEndpoint}\n\n`;
       controller.enqueue(new TextEncoder().encode(endpointEvent));
-      
-      // Keep connection alive with periodic pings
       const interval = setInterval(() => {
-        try {
-          controller.enqueue(new TextEncoder().encode(": ping\n\n"));
-        } catch {
-          clearInterval(interval);
-        }
+        try { controller.enqueue(new TextEncoder().encode(": ping\n\n")); } catch { clearInterval(interval); }
       }, 15000);
-
-      // Clean up after 5 minutes (edge function timeout)
       setTimeout(() => {
         clearInterval(interval);
         sessions.delete(sessionId);
-        try {
-          controller.close();
-        } catch {
-          // Already closed
-        }
+        try { controller.close(); } catch { /* Already closed */ }
       }, 290000);
     }
   });
 
   return new Response(stream, {
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "mcp-session-id": sessionId,
-    }
+    headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive", "mcp-session-id": sessionId }
   });
 });
 
 // Message endpoint for SSE transport
 app.post("/message", async (c) => {
   const sessionId = c.req.query("sessionId");
-  
-  if (!sessionId) {
-    return c.json({ error: "Missing sessionId" }, 400, corsHeaders);
-  }
+  if (!sessionId) return c.json({ error: "Missing sessionId" }, 400, corsHeaders);
 
   const session = sessions.get(sessionId);
-  if (!session) {
-    return c.json({ error: "Invalid or expired session" }, 401, corsHeaders);
-  }
+  if (!session) return c.json({ error: "Invalid or expired session" }, 401, corsHeaders);
 
   try {
     const body = await c.req.json();
@@ -693,72 +619,35 @@ app.post("/message", async (c) => {
     return c.json(response, 200, corsHeaders);
   } catch (err) {
     console.error("Message error:", err);
-    return c.json({
-      jsonrpc: "2.0",
-      error: { code: -32700, message: "Parse error" },
-      id: null
-    }, 400, corsHeaders);
+    return c.json({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: null }, 400, corsHeaders);
   }
 });
 
-// Health check / server info (root path)
+// Health check
 app.get("/", (c) => {
   return c.json({
     status: "ok",
     server: "fitness-tracker-mcp",
-    version: "1.0.0",
-    description: "MCP server for fitness tracker data. Use with Claude Desktop or other MCP clients.",
-    endpoints: {
-      sse: "/mcp/sse",
-      message: "/mcp/message"
-    },
+    version: "1.2.0",
+    endpoints: { sse: "/mcp/sse", message: "/mcp/message" },
     usage: "npx -y mcp-remote https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/mcp/sse --header 'X-API-Key:YOUR_KEY'",
   }, 200, corsHeaders);
 });
 
-// Also handle /mcp root for info
 app.get("/*", (c) => {
-  // Don't match /sse or /message
-  if (c.req.path.includes("/sse") || c.req.path.includes("/message")) {
-    return c.notFound();
-  }
-  return c.json({
-    status: "ok",
-    server: "fitness-tracker-mcp",
-    version: "1.0.0",
-    endpoints: {
-      sse: "/mcp/sse",
-      message: "/mcp/message"
-    },
-  }, 200, corsHeaders);
+  if (c.req.path.includes("/sse") || c.req.path.includes("/message")) return c.notFound();
+  return c.json({ status: "ok", server: "fitness-tracker-mcp", version: "1.2.0", endpoints: { sse: "/mcp/sse", message: "/mcp/message" } }, 200, corsHeaders);
 });
 
-// Streamable HTTP transport (POST to root for direct JSON-RPC)
+// Streamable HTTP transport
 app.post("/*", async (c) => {
-  // Skip if it's the message endpoint
-  if (c.req.path.includes("/message")) {
-    return c.notFound();
-  }
+  if (c.req.path.includes("/message")) return c.notFound();
 
-  const apiKey = c.req.header("x-api-key") || 
-                 c.req.header("authorization")?.replace("Bearer ", "");
-  
-  if (!apiKey) {
-    return c.json(
-      { jsonrpc: "2.0", error: { code: -32600, message: "Missing API key" }, id: null }, 
-      401, 
-      corsHeaders
-    );
-  }
+  const apiKey = c.req.header("x-api-key") || c.req.header("authorization")?.replace("Bearer ", "");
+  if (!apiKey) return c.json({ jsonrpc: "2.0", error: { code: -32600, message: "Missing API key" }, id: null }, 401, corsHeaders);
 
   const userId = await validateApiKey(apiKey);
-  if (!userId) {
-    return c.json(
-      { jsonrpc: "2.0", error: { code: -32600, message: "Invalid API key" }, id: null }, 
-      401, 
-      corsHeaders
-    );
-  }
+  if (!userId) return c.json({ jsonrpc: "2.0", error: { code: -32600, message: "Invalid API key" }, id: null }, 401, corsHeaders);
 
   try {
     const body = await c.req.json();
@@ -766,11 +655,7 @@ app.post("/*", async (c) => {
     return c.json(response, 200, corsHeaders);
   } catch (err) {
     console.error("MCP error:", err);
-    return c.json({
-      jsonrpc: "2.0",
-      error: { code: -32700, message: "Parse error" },
-      id: null
-    }, 400, corsHeaders);
+    return c.json({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: null }, 400, corsHeaders);
   }
 });
 
