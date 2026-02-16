@@ -47,6 +47,7 @@ interface SetBySetCardProps {
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
   lastUsed?: LastUsedData;
+  workoutBias?: 'heavy' | 'volume';
 }
 
 // Format seconds as Mm Ss
@@ -73,6 +74,7 @@ export function SetBySetCard({
   isLastExercise,
   personalRecord,
   lastUsed,
+  workoutBias,
 }: SetBySetCardProps) {
   const currentSet = exercise.sets[currentSetIndex];
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
@@ -239,9 +241,11 @@ export function SetBySetCard({
     }
   };
 
-  // Determine smart rest duration based on exercise restSeconds or category fallback
+  // Smart rest duration: exercise-level > workout bias > category fallback
   const getDefaultRest = (): number => {
     if (exercise.restSeconds) return exercise.restSeconds;
+    if (workoutBias === 'heavy') return 180;
+    if (workoutBias === 'volume') return 90;
     if (exercise.category === 'primary') return 120;
     if (isTimed) return 60;
     return 90;
