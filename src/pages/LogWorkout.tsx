@@ -686,6 +686,7 @@ export default function LogWorkout() {
                   isLastExercise={currentExerciseIndex === exercises.length - 1}
                   personalRecord={getPRForExercise(currentExercise.name)}
                   lastUsed={getLastUsed(currentExercise.name)}
+                  workoutBias={dayData?.bias}
                 />
               )}
 
