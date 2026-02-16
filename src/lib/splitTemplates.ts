@@ -1,4 +1,4 @@
-import { defaultRoutine, WorkoutDay } from './workoutPresets';
+import { WorkoutDay } from './workoutPresets';
 
 export type TrainingSplit = 'ppl6' | 'upper_lower4' | 'full_body3' | 'ppl5' | 'custom';
 
@@ -14,9 +14,88 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
   ppl6: {
     id: 'ppl6',
     name: 'Push/Pull/Legs (6-day)',
-    description: 'Classic bodybuilding split, each muscle group twice per week',
+    description: 'Strength Days 1-3, Hypertrophy Days 4-6 — DUP periodization',
     daysPerWeek: 6,
-    days: defaultRoutine.days,
+    days: {
+      'Day 1': {
+        name: 'Push A',
+        focus: 'Strength — Chest & Shoulders',
+        bias: 'heavy',
+        exercises: [
+          { name: 'Barbell Bench Press', category: 'primary', targetWeight: '60kg', targetReps: '5x4-6' },
+          { name: 'Overhead Press', category: 'primary', targetWeight: '40kg', targetReps: '4x4-6' },
+          { name: 'Incline Dumbbell Press', category: 'primary', targetWeight: '18kg', targetReps: '3x6-8' },
+          { name: 'Dumbbell Shoulder Press', category: 'accessory', targetWeight: '14kg', targetReps: '3x6-8' },
+          { name: 'Lateral Raises', category: 'accessory', targetWeight: '7kg', targetReps: '3x10-12' },
+          { name: 'Tricep Pushdown', category: 'accessory', targetWeight: '25kg', targetReps: '3x8-10' },
+        ],
+      },
+      'Day 2': {
+        name: 'Pull A',
+        focus: 'Strength — Back & Biceps',
+        bias: 'heavy',
+        exercises: [
+          { name: 'Conventional Deadlift', category: 'primary', targetWeight: '80kg', targetReps: '5x3-5' },
+          { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '5x4-6' },
+          { name: 'Barbell Row', category: 'primary', targetWeight: '60kg', targetReps: '4x4-6' },
+          { name: 'Seated Cable Row', category: 'accessory', targetWeight: '50kg', targetReps: '3x6-8' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x10-12' },
+          { name: 'Barbell Curl', category: 'accessory', targetWeight: '25kg', targetReps: '3x6-8' },
+        ],
+      },
+      'Day 3': {
+        name: 'Legs A',
+        focus: 'Strength — Quads & Glutes',
+        bias: 'heavy',
+        exercises: [
+          { name: 'Barbell Squat', category: 'primary', targetWeight: '80kg', targetReps: '5x4-6' },
+          { name: 'Leg Press', category: 'primary', targetWeight: '140kg', targetReps: '4x6-8' },
+          { name: 'Bulgarian Split Squat', category: 'primary', targetWeight: '14kg', targetReps: '3x6-8 each' },
+          { name: 'Leg Extension', category: 'accessory', targetWeight: '40kg', targetReps: '3x8-10' },
+          { name: 'Standing Calf Raise', category: 'accessory', targetWeight: '+20kg', targetReps: '4x10-12' },
+        ],
+      },
+      'Day 4': {
+        name: 'Push B',
+        focus: 'Hypertrophy — Chest & Shoulders',
+        bias: 'volume',
+        exercises: [
+          { name: 'Incline Dumbbell Press', category: 'primary', targetWeight: '16kg', targetReps: '4x10-12' },
+          { name: 'Cable Flyes', category: 'primary', targetWeight: '12kg', targetReps: '3x12-15' },
+          { name: 'Arnold Press', category: 'primary', targetWeight: '12kg', targetReps: '3x10-12' },
+          { name: 'Lateral Raises', category: 'accessory', targetWeight: '6kg', targetReps: '4x15-20' },
+          { name: 'Bent Over Rear Delt Flyes', category: 'accessory', targetWeight: '6kg', targetReps: '4x15-20' },
+          { name: 'Dips', category: 'accessory', targetWeight: 'BW', targetReps: '3x10-12' },
+          { name: 'Overhead Tricep Extension', category: 'accessory', targetWeight: '15kg', targetReps: '3x12-15' },
+        ],
+      },
+      'Day 5': {
+        name: 'Pull B',
+        focus: 'Hypertrophy — Back Width & Arms',
+        bias: 'volume',
+        exercises: [
+          { name: 'Lat Pulldown', category: 'primary', targetWeight: '55kg', targetReps: '4x10-12' },
+          { name: 'Single Arm Dumbbell Row', category: 'primary', targetWeight: '18kg', targetReps: '3x10-12 each' },
+          { name: 'Straight Arm Pulldown', category: 'accessory', targetWeight: '20kg', targetReps: '3x12-15' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20' },
+          { name: 'EZ Bar Preacher Curls', category: 'accessory', targetWeight: '20kg', targetReps: '4x12-15' },
+          { name: 'Hammer Curls', category: 'accessory', targetWeight: '10kg', targetReps: '3x12-15' },
+        ],
+      },
+      'Day 6': {
+        name: 'Legs B',
+        focus: 'Hypertrophy — Hamstrings & Glutes',
+        bias: 'volume',
+        exercises: [
+          { name: 'Romanian Deadlift', category: 'primary', targetWeight: '60kg', targetReps: '4x8-10' },
+          { name: 'Leg Press', category: 'primary', targetWeight: '120kg', targetReps: '4x12-15' },
+          { name: 'Walking Lunges', category: 'primary', targetWeight: '12kg', targetReps: '3x12-15 each' },
+          { name: 'Leg Curl', category: 'accessory', targetWeight: '35kg', targetReps: '3x12-15' },
+          { name: 'Hip Thrust', category: 'accessory', targetWeight: '50kg', targetReps: '4x12-15' },
+          { name: 'Seated Calf Raise', category: 'accessory', targetWeight: '25kg', targetReps: '4x15-20' },
+        ],
+      },
+    },
   },
   
   ppl5: {
