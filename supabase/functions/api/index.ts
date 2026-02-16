@@ -79,7 +79,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             status: "ok", 
-            version: "1.1.0",
+            version: "1.2.0",
             endpoints: [
               "GET /workouts",
               "GET /workouts/:id",
@@ -87,10 +87,8 @@ serve(async (req) => {
               "GET /meals",
               "GET /water",
               "GET /metrics/daily",
-              "GET /metrics/morning",
               "GET /metrics/recovery",
               "GET /calories/burned",
-              "GET /habits",
               "GET /preferences",
               "GET /stats/summary"
             ]
@@ -99,7 +97,7 @@ serve(async (req) => {
         );
 
       case "workouts": {
-        const limit = parseInt(url.searchParams.get("limit") || "50");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 500);
         const offset = parseInt(url.searchParams.get("offset") || "0");
         ({ data, error } = await supabase
           .from("workouts")
@@ -112,21 +110,43 @@ serve(async (req) => {
 
       case "exercises": {
         const workoutId = url.searchParams.get("workout_id");
-        let query = supabase
-          .from("exercises")
-          .select("*, workouts!inner(user_id)")
-          .eq("workouts.user_id", userId)
-          .order("sort_order", { ascending: true });
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "500"), 2000);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
 
         if (workoutId) {
-          query = query.eq("workout_id", workoutId);
+          // Single workout: direct query, no join needed
+          ({ data, error } = await supabase
+            .from("exercises")
+            .select("id, workout_id, name, category, target_weight, target_reps, actual_weight, actual_reps, completed, sort_order")
+            .eq("workout_id", workoutId)
+            .order("sort_order", { ascending: true })
+            .range(offset, offset + limit - 1));
+        } else {
+          // All exercises: fetch user's workout IDs first, then query exercises
+          const { data: workoutIds, error: wErr } = await supabase
+            .from("workouts")
+            .select("id")
+            .eq("user_id", userId);
+
+          if (wErr) { error = wErr; break; }
+
+          const ids = (workoutIds || []).map((w: any) => w.id);
+          if (ids.length === 0) { data = []; break; }
+
+          ({ data, error } = await supabase
+            .from("exercises")
+            .select("id, workout_id, name, category, target_weight, target_reps, actual_weight, actual_reps, completed, sort_order")
+            .in("workout_id", ids)
+            .order("sort_order", { ascending: true })
+            .range(offset, offset + limit - 1));
         }
-        ({ data, error } = await query.limit(200));
         break;
       }
 
       case "meals": {
         const date = url.searchParams.get("date");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 1000);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
         let query = supabase
           .from("meals")
           .select("*")
@@ -136,12 +156,14 @@ serve(async (req) => {
         if (date) {
           query = query.eq("date", date);
         }
-        ({ data, error } = await query.limit(100));
+        ({ data, error } = await query.range(offset, offset + limit - 1));
         break;
       }
 
       case "water": {
         const date = url.searchParams.get("date");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "500"), 2000);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
         let query = supabase
           .from("water_logs")
           .select("*")
@@ -152,13 +174,15 @@ serve(async (req) => {
           query = query.gte("timestamp", `${date}T00:00:00`)
             .lt("timestamp", `${date}T23:59:59`);
         }
-        ({ data, error } = await query.limit(100));
+        ({ data, error } = await query.range(offset, offset + limit - 1));
         break;
       }
 
       case "metrics/daily": {
         const startDate = url.searchParams.get("start_date");
         const endDate = url.searchParams.get("end_date");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "180"), 500);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
         let query = supabase
           .from("daily_metrics")
           .select("*")
@@ -168,32 +192,15 @@ serve(async (req) => {
         if (startDate) query = query.gte("date", startDate);
         if (endDate) query = query.lte("date", endDate);
         
-        ({ data, error } = await query.limit(90));
+        ({ data, error } = await query.range(offset, offset + limit - 1));
         break;
       }
-
-      // Deprecated: metrics/morning now proxies to daily_metrics for backward compatibility
-      case "metrics/morning": {
-        const startDate = url.searchParams.get("start_date");
-        const endDate = url.searchParams.get("end_date");
-        let query = supabase
-          .from("daily_metrics")
-          .select("*")
-          .eq("user_id", userId)
-          .order("date", { ascending: false });
-        
-        if (startDate) query = query.gte("date", startDate);
-        if (endDate) query = query.lte("date", endDate);
-        
-        ({ data, error } = await query.limit(90));
-        break;
-      }
-
-      // metrics/vitals endpoint removed - blood_pressure and blood_sugar tables dropped
 
       case "metrics/recovery": {
         const startDate = url.searchParams.get("start_date");
         const endDate = url.searchParams.get("end_date");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "180"), 500);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
         let query = supabase
           .from("recovery_metrics")
           .select("*")
@@ -203,13 +210,15 @@ serve(async (req) => {
         if (startDate) query = query.gte("date", startDate);
         if (endDate) query = query.lte("date", endDate);
 
-        ({ data, error } = await query.limit(90));
+        ({ data, error } = await query.range(offset, offset + limit - 1));
         break;
       }
 
       case "calories/burned": {
         const startDate = url.searchParams.get("start_date");
         const endDate = url.searchParams.get("end_date");
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "365"), 1000);
+        const offset = parseInt(url.searchParams.get("offset") || "0");
         let query = supabase
           .from("calorie_burns")
           .select("*")
@@ -219,18 +228,7 @@ serve(async (req) => {
         if (startDate) query = query.gte("date", startDate);
         if (endDate) query = query.lte("date", endDate);
 
-        ({ data, error } = await query.limit(180));
-        break;
-      }
-
-      case "habits": {
-        let query = supabase
-          .from("habits")
-          .select("*, workouts!inner(date)")
-          .eq("workouts.user_id", userId)
-          .order("workouts.date", { ascending: false });
-
-        ({ data, error } = await query.limit(180));
+        ({ data, error } = await query.range(offset, offset + limit - 1));
         break;
       }
 
@@ -242,8 +240,6 @@ serve(async (req) => {
           .maybeSingle());
         break;
       }
-
-      // metrics/night endpoint removed - night_checkins table dropped
 
       case "stats/summary": {
         // Get aggregated stats
@@ -275,10 +271,10 @@ serve(async (req) => {
         ]);
 
         const totalWorkouts = workoutsRes.data?.length || 0;
-        const totalGymMinutes = workoutsRes.data?.reduce((sum, w) => sum + (w.workout_duration_minutes || 0), 0) || 0;
-        const todayCalories = mealsRes.data?.reduce((sum, m) => sum + (m.calories || 0), 0) || 0;
-        const todayProtein = mealsRes.data?.reduce((sum, m) => sum + (m.protein || 0), 0) || 0;
-        const todayWater = waterRes.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+        const totalGymMinutes = workoutsRes.data?.reduce((sum: number, w: any) => sum + (w.workout_duration_minutes || 0), 0) || 0;
+        const todayCalories = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.calories || 0), 0) || 0;
+        const todayProtein = mealsRes.data?.reduce((sum: number, m: any) => sum + (m.protein || 0), 0) || 0;
+        const todayWater = waterRes.data?.reduce((sum: number, w: any) => sum + (w.amount || 0), 0) || 0;
 
         data = {
           period: "last_30_days",
@@ -313,7 +309,7 @@ serve(async (req) => {
               .single(),
             supabase
               .from("exercises")
-              .select("*")
+              .select("id, workout_id, name, category, target_weight, target_reps, actual_weight, actual_reps, completed, sort_order")
               .eq("workout_id", workoutId)
               .order("sort_order")
           ]);
