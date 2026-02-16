@@ -12,25 +12,8 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { getSplitDays } from '@/lib/splitTemplates';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
-import { Dumbbell, ChevronRight, Flame, Play } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-
-function useWorkoutStreak(workouts: { date: string }[]): number {
-  if (workouts.length === 0) return 0;
-  const today = new Date();
-  let streak = 0;
-  for (let i = 0; i < 52; i++) {
-    const weekStart = startOfWeek(subDays(today, i * 7), { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-    const hasWorkout = workouts.some(w => {
-      const d = new Date(w.date);
-      return isWithinInterval(d, { start: weekStart, end: weekEnd });
-    });
-    if (hasWorkout) streak++;
-    else break;
-  }
-  return streak;
-}
+import { Dumbbell, ChevronRight, Play } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -39,7 +22,7 @@ export default function Dashboard() {
   const { preferences } = useUserPreferences();
   const { customDays, hasCustomRoutine } = useCustomRoutine();
 
-  const streak = useWorkoutStreak(workouts);
+  
 
   // Figure out today's scheduled workout day
   const todaySchedule = useMemo(() => {
@@ -132,33 +115,6 @@ export default function Dashboard() {
               </motion.div>
             )}
 
-            {/* Streak + stats row */}
-            {(streak > 0 || workouts.length > 0) && (
-              <motion.div variants={staggerItem}>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="card-brutalist text-center !py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <Flame className="h-3.5 w-3.5 text-orange-500" />
-                      <span className="text-lg font-bold tabular-nums">{streak}</span>
-                    </div>
-                    <div className="text-[9px] text-muted-foreground uppercase mt-0.5">Week Streak</div>
-                  </div>
-                  <div className="card-brutalist text-center !py-3">
-                    <div className="text-lg font-bold tabular-nums">
-                      {new Set(workouts
-                        .filter(w => w.date.startsWith(format(new Date(), 'yyyy-MM')))
-                        .map(w => w.date)
-                      ).size}
-                    </div>
-                    <div className="text-[9px] text-muted-foreground uppercase mt-0.5">This Month</div>
-                  </div>
-                  <div className="card-brutalist text-center !py-3">
-                    <div className="text-lg font-bold tabular-nums">{new Set(workouts.map(w => w.date)).size}</div>
-                    <div className="text-[9px] text-muted-foreground uppercase mt-0.5">All Time</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
 
             {/* Progress Overview */}
             <motion.div variants={staggerItem}>
