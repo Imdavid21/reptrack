@@ -20,14 +20,12 @@ export interface HydrationAnalytics {
   };
 }
 
-const DAILY_GOAL = 3.5; // liters
-
 export interface DateRangeFilter {
   from: Date;
   to: Date;
 }
 
-export function useHydrationData(dateRange?: DateRangeFilter) {
+export function useHydrationData(dateRange?: DateRangeFilter, dailyGoal: number = 3) {
   const { user } = useAuth();
 
   return useQuery({
@@ -86,7 +84,7 @@ export function useHydrationData(dateRange?: DateRangeFilter) {
         totalLiters,
         avgDaily: daysWithData.length > 0 ? totalLiters / daysWithData.length : 0,
         daysTracked: daysWithData.length,
-        daysMetGoal: dailyData.filter(d => d.total >= DAILY_GOAL).length,
+        daysMetGoal: dailyData.filter(d => d.total >= dailyGoal).length,
       };
 
       return { dailyData, totals };

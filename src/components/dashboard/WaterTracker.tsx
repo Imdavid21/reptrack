@@ -104,6 +104,9 @@ export function WaterTracker() {
         <span className="text-lg text-muted-foreground ml-1">
           / {dailyGoal}L
         </span>
+        {totalToday >= dailyGoal && (
+          <span className="ml-2 text-sm font-bold text-primary animate-fade-in">✓ DONE</span>
+        )}
       </div>
 
       {/* Inline goal editor */}

@@ -3,6 +3,7 @@ import { Box, Typography, Skeleton, useTheme, Chip } from '@mui/material';
 import { Droplets, Target } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useHydrationData } from '@/hooks/useHydrationData';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   BarChart,
@@ -14,13 +15,13 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-const DAILY_GOAL = 3.5;
-
 export function HydrationChart() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
-  const { data, isLoading } = useHydrationData(dateRange);
+  const { preferences } = useUserPreferences();
+  const dailyGoal = preferences?.daily_water_goal ?? 3;
+  const { data, isLoading } = useHydrationData(dateRange, dailyGoal);
 
   // High contrast black/white
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
@@ -31,7 +32,7 @@ export function HydrationChart() {
     if (!data?.dailyData) return [];
     return data.dailyData.map(d => ({
       ...d,
-      metGoal: d.total >= DAILY_GOAL,
+      metGoal: d.total >= dailyGoal,
     }));
   }, [data?.dailyData]);
 
@@ -105,7 +106,7 @@ export function HydrationChart() {
         <Chip
           size="small"
           icon={<Target size={12} />}
-          label={`${DAILY_GOAL}L/day`}
+          label={`${dailyGoal}L/day`}
           sx={{
             height: 24,
             fontSize: '0.7rem',
@@ -134,7 +135,7 @@ export function HydrationChart() {
               tickLine={false}
             />
             <ReferenceLine
-              y={DAILY_GOAL}
+              y={dailyGoal}
               stroke={mutedColor}
               strokeDasharray="4 4"
             />
