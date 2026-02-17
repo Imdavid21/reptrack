@@ -88,12 +88,15 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
           volume += weight * reps;
         });
 
+        // Skip workouts with no exercise data (ghost/empty entries)
+        if (volume === 0 && (w.exercises || []).length === 0) return;
+
         // Calculate duration
         let duration = w.workout_duration_minutes || 0;
         if (!duration && w.started_at && w.completed_at) {
           duration = differenceInMinutes(new Date(w.completed_at), new Date(w.started_at));
         }
-        // Default to 45 min if no duration data
+        // Default to 45 min if no duration data but has exercises
         if (duration <= 0) duration = 45;
 
         workoutMetricsById.set(w.id, { volume, duration, date: w.date });
