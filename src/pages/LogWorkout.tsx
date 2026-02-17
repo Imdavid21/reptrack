@@ -170,7 +170,8 @@ export default function LogWorkout() {
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
       setSelectedDay(draft.day);
-      setSelectedDate(new Date(draft.date));
+      // Always use current date when restoring a draft to avoid stale dates
+      setSelectedDate(new Date());
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       const validStep: Step = draft.step === 'exercises' ? 'exercises' :
