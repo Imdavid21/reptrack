@@ -152,7 +152,15 @@ export function ExerciseProgressionChart() {
     );
   }
 
-  const progressions = data?.progressions || [];
+  const progressions = (data?.progressions || []).slice().sort((a, b) => {
+    const pctOf = (p: typeof a) => {
+      const first = p.data[0]?.weight || 0;
+      const last = p.data[p.data.length - 1]?.weight || 0;
+      return first > 0 ? ((last - first) / first) * 100 : 0;
+    };
+    return pctOf(b) - pctOf(a);
+  });
+
   if (progressions.length === 0) {
     return (
       <MuiCard>
