@@ -240,9 +240,9 @@ export default function LogWorkout() {
     setStep('review');
   };
 
-  // Start session from review
+  // Start session from review — preserve original start time if already set
   const handleStartSession = () => {
-    setWorkoutStartTime(new Date());
+    setWorkoutStartTime(prev => prev ?? new Date());
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
     setStep('exercises');
