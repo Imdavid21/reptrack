@@ -60,6 +60,9 @@ const CANONICAL_ALIASES: Record<string, string> = {
   // Leg Extensions
   'leg extension': 'leg extensions',
 
+  // Standing Calf Raises
+  'standing calf raise': 'standing calf raises',
+
   // Lateral Raises
   'dumbbell lateral raises': 'lateral raises',
   'dumbbell lateral raise': 'lateral raises',
