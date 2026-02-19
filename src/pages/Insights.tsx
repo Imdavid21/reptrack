@@ -15,7 +15,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
-import { StrengthOverviewChart } from '@/components/analytics/StrengthOverviewChart';
+
 import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
 import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
@@ -451,10 +451,6 @@ function InsightsContent() {
               <VolumeSankeyChart />
             </motion.div>
 
-            {/* Strength Overview */}
-            <motion.div variants={staggerItem}>
-              <StrengthOverviewChart />
-            </motion.div>
 
             {/* Per-Exercise Progression */}
             <motion.div variants={staggerItem}>
