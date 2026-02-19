@@ -153,12 +153,17 @@ export function ExerciseProgressionChart() {
   }
 
   const progressions = (data?.progressions || []).slice().sort((a, b) => {
-    const pctOf = (p: typeof a) => {
-      const first = p.data[0]?.weight || 0;
-      const last = p.data[p.data.length - 1]?.weight || 0;
-      return first > 0 ? ((last - first) / first) * 100 : 0;
+    // Use average of first 2 vs last 2 data points for more stable growth %
+    const growthPct = (p: typeof a) => {
+      const d = p.data.filter(pt => pt.weight > 0);
+      if (d.length < 2) return 0;
+      const headCount = Math.min(2, Math.ceil(d.length / 3));
+      const tailCount = headCount;
+      const headAvg = d.slice(0, headCount).reduce((s, pt) => s + pt.weight, 0) / headCount;
+      const tailAvg = d.slice(-tailCount).reduce((s, pt) => s + pt.weight, 0) / tailCount;
+      return headAvg > 0 ? ((tailAvg - headAvg) / headAvg) * 100 : 0;
     };
-    return pctOf(b) - pctOf(a);
+    return growthPct(b) - growthPct(a);
   });
 
   if (progressions.length === 0) {
