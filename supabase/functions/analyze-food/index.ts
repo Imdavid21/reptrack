@@ -37,9 +37,11 @@ type OpenAIResponse = {
   }>;
 };
 
-async function callOpenAI(imageUrl: string, apiKey: string, attempt: number = 1): Promise<OpenAIResponse> {
+async function callOpenAI(imageUrl: string, apiKey: string, context: string | undefined, attempt: number = 1): Promise<OpenAIResponse> {
   console.log(`OpenAI API call attempt ${attempt}/${MAX_RETRIES + 1}`);
-  
+
+  const contextNote = context ? `\n\nAdditional context from the user: "${context}"` : '';
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -47,30 +49,48 @@ async function callOpenAI(imageUrl: string, apiKey: string, attempt: number = 1)
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are a nutrition expert AI. Analyze food images and provide accurate calorie estimates.
-          
-When analyzing food:
-1. Identify all visible food items
-2. Estimate portion sizes based on visual cues
-3. Calculate approximate calories for each item
-4. Sum up total calories
+          content: `You are a precise nutrition analysis AI. Your job is to analyze food images and provide highly accurate calorie and macro estimates.
 
-Be accurate with portions. When quantities aren't clear, assume reasonable single servings.`
+COUNTING RULES — follow these strictly:
+- Count EACH individual item separately. If you see 3 eggs, list "3 large eggs", not "eggs".
+- If you see a stack of pancakes, count how many there are.
+- If items are in a bowl or plate, estimate quantity from volume and density.
+
+COOKING METHOD — always identify it:
+- Fried, baked, grilled, boiled, sautéed, raw — cooking method significantly changes calorie count.
+- Include the cooking method in the food name (e.g., "fried egg", "grilled chicken breast").
+
+PORTIONS — use plate-relative sizing:
+- A standard dinner plate is ~25cm diameter. Use visible plate/utensil size as a reference.
+- If no plate is visible, estimate from hand size, packaging, or common serving sizes.
+- Be specific with portions: "150g", "1 cup", "1 medium", "2 tbsp" — not just "some" or "a piece".
+
+SAUCES & CONDIMENTS — never ignore them:
+- Oils used in cooking add significant calories. Estimate if food looks oily/buttery.
+- Visible dressings, sauces, ketchup, mayo, butter, syrup — all must be listed separately.
+
+UNCERTAINTY — be honest:
+- If you cannot identify something, list it as "Unknown item" and estimate 150-200 cal.
+- Confidence score: 0.9+ = very clear image, 0.7-0.9 = clear but some guesswork, below 0.7 = poor image quality.
+
+MACRO CALCULATION:
+- Always provide protein, carbs, fat, and fiber for each item and totals.
+- Use standard USDA nutritional values as your baseline.${contextNote}`
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Analyze this food image and estimate the calories."
+              text: "Analyze this food image carefully. Count every individual item, identify cooking methods, and estimate all sauces and condiments. Provide precise portion sizes and accurate calorie/macro estimates."
             },
             {
               type: "image_url",
-              image_url: { url: imageUrl, detail: "low" }
+              image_url: { url: imageUrl, detail: "high" }
             }
           ]
         }
@@ -80,7 +100,7 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
           type: "function",
           function: {
             name: "analyze_food",
-            description: "Analyze food in an image and estimate calories",
+            description: "Analyze food in an image and estimate calories and macros",
             parameters: {
               type: "object",
               properties: {
@@ -89,12 +109,13 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
                   items: {
                     type: "object",
                     properties: {
-                      name: { type: "string", description: "Food item name" },
-                      portion: { type: "string", description: "Estimated portion size" },
+                      name: { type: "string", description: "Food item name including cooking method and count (e.g., '3 fried eggs', '2 slices whole wheat toast')" },
+                      portion: { type: "string", description: "Estimated portion size with units (e.g., '150g', '1 cup', '2 tbsp')" },
                       calories: { type: "number", description: "Estimated calories" },
                       protein: { type: "number", description: "Protein in grams" },
-                      carbs: { type: "number", description: "Carbs in grams" },
-                      fat: { type: "number", description: "Fat in grams" }
+                      carbs: { type: "number", description: "Carbohydrates in grams" },
+                      fat: { type: "number", description: "Fat in grams" },
+                      fiber: { type: "number", description: "Dietary fiber in grams" }
                     },
                     required: ["name", "portion", "calories"]
                   }
@@ -103,12 +124,13 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
                 total_protein: { type: "number" },
                 total_carbs: { type: "number" },
                 total_fat: { type: "number" },
+                total_fiber: { type: "number" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
-                description: { type: "string", description: "Brief description of the meal" },
+                description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
                 food_quality: { 
                   type: "string", 
                   enum: ["excellent", "good", "moderate", "poor"],
-                  description: "Overall nutritional quality"
+                  description: "Overall nutritional quality rating"
                 }
               },
               required: ["foods", "total_calories", "confidence", "description"]
@@ -117,7 +139,7 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
         }
       ],
       tool_choice: { type: "function", function: { name: "analyze_food" } },
-      max_tokens: 1000,
+      max_tokens: 1500,
     }),
   });
 
@@ -130,7 +152,7 @@ Be accurate with portions. When quantities aren't clear, assume reasonable singl
       const delay = RETRY_DELAY_MS * attempt; // Linear backoff
       console.log(`Retrying in ${delay}ms...`);
       await sleep(delay);
-      return callOpenAI(imageUrl, apiKey, attempt + 1);
+      return callOpenAI(imageUrl, apiKey, context, attempt + 1);
     }
     
     throw new HttpStatusError(response.status, errorText);
@@ -197,8 +219,8 @@ serve(async (req) => {
       );
     }
 
-    const { imageUrl } = body;
-    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}`);
+    const { imageUrl, context } = body;
+    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}, context=${context || "none"}`);
 
     if (!imageUrl) {
       console.error("analyze-food: No imageUrl in request body");
@@ -238,7 +260,7 @@ serve(async (req) => {
 
     console.log("analyze-food: Calling OpenAI...");
 
-    const data = await callOpenAI(imageUrl, OPENAI_API_KEY);
+    const data = await callOpenAI(imageUrl, OPENAI_API_KEY, context);
     console.log("analyze-food: OpenAI response received, extracting result...");
 
     // Extract the function call result

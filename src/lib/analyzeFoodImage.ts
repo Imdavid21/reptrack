@@ -23,11 +23,12 @@ export class FoodAnalysisError extends Error {
 }
 
 export interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number }[];
+  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number }[];
   total_calories: number;
   total_protein?: number;
   total_carbs?: number;
   total_fat?: number;
+  total_fiber?: number;
   confidence: number;
   description: string;
   food_quality?: string;
@@ -44,10 +45,11 @@ export async function analyzeFoodImage(
   file: File,
   userId: string,
   onStep: (step: AnalysisStep) => void,
+  contextHint?: string,
 ): Promise<AnalyzeResult> {
   // Race the entire pipeline against an overall timeout
   return Promise.race([
-    doAnalyze(file, userId, onStep),
+    doAnalyze(file, userId, onStep, contextHint),
     new Promise<never>((_, reject) =>
       setTimeout(() => {
         onStep('error');
@@ -61,6 +63,7 @@ async function doAnalyze(
   file: File,
   userId: string,
   onStep: (step: AnalysisStep) => void,
+  contextHint?: string,
 ): Promise<AnalyzeResult> {
   try {
     // Step 1: Compress
@@ -101,7 +104,7 @@ async function doAnalyze(
               'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
               'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
-            body: JSON.stringify({ imageUrl: publicUrl }),
+            body: JSON.stringify({ imageUrl: publicUrl, context: contextHint }),
           }
         );
 

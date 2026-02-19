@@ -3,8 +3,8 @@
  * Resizes images to max 1024px and compresses as JPEG to reduce upload size.
  */
 
-const MAX_DIMENSION = 1024;
-const JPEG_QUALITY = 0.75;
+const MAX_DIMENSION = 1536;
+const JPEG_QUALITY = 0.85;
 const COMPRESSION_TIMEOUT_MS = 15_000;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 

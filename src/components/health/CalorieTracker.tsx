@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -27,16 +27,27 @@ const MEAL_LABELS = {
   snack: 'SNACK',
 };
 
-// FoodAnalysis type imported from analyzeFoodImage
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+type EditableFood = {
+  name: string;
+  portion: string;
+  calories: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+};
 
 export function CalorieTracker() {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
+  const [editableFoods, setEditableFoods] = useState<EditableFood[]>([]);
   const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('compressing');
   const [manualMode, setManualMode] = useState(false);
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
@@ -44,30 +55,46 @@ export function CalorieTracker() {
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [lastFile, setLastFile] = useState<File | null>(null);
+  const [contextHint, setContextHint] = useState('');
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleOpenDialog = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
+  // Sync editable foods from analysis
+  useEffect(() => {
+    if (analysis) {
+      setEditableFoods(analysis.foods.map(f => ({ ...f })));
+    }
+  }, [analysis]);
+
+  const editableTotal = useMemo(
+    () => editableFoods.reduce((sum, f) => sum + (Number(f.calories) || 0), 0),
+    [editableFoods]
+  );
+
+  const handleOpenDialog = (mealType: MealType) => {
     setSelectedMealType(mealType);
     setIsDialogOpen(true);
     setAnalysis(null);
+    setEditableFoods([]);
     setManualMode(false);
     setManualData({ food_name: '', calories: '' });
     setPreviewUrl(null);
     setUploadedPhotoUrl(null);
     setAnalysisError(null);
     setLastFile(null);
+    setContextHint('');
   };
 
-  const runAnalysis = async (file: File) => {
+  const runAnalysis = async (file: File, hint?: string) => {
     if (!user) return;
     setIsAnalyzing(true);
     setAnalysis(null);
+    setEditableFoods([]);
     setAnalysisError(null);
     setAnalysisStep('compressing');
 
     try {
-      const result = await analyzeFoodImage(file, user.id, setAnalysisStep);
+      const result = await analyzeFoodImage(file, user.id, setAnalysisStep, hint);
       setUploadedPhotoUrl(result.publicUrl);
       setAnalysis(result.analysis);
     } catch (error) {
@@ -90,23 +117,52 @@ export function CalorieTracker() {
     reader.readAsDataURL(file);
 
     setLastFile(file);
-    await runAnalysis(file);
-    // Reset input so re-selecting the same file triggers onChange
+    await runAnalysis(file, contextHint || undefined);
     e.target.value = '';
   };
 
+  const updateFood = (index: number, field: keyof EditableFood, value: string | number) => {
+    setEditableFoods(prev => prev.map((f, i) =>
+      i === index ? { ...f, [field]: field === 'calories' ? Number(value) || 0 : value } : f
+    ));
+  };
+
+  const removeFood = (index: number) => {
+    setEditableFoods(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addFood = () => {
+    setEditableFoods(prev => [...prev, { name: '', portion: '1 serving', calories: 0 }]);
+  };
+
   const handleConfirmAnalysis = async () => {
-    if (!analysis) return;
+    if (!analysis && editableFoods.length === 0) return;
+
+    const validFoods = editableFoods.filter(f => f.name.trim() && f.calories > 0);
+    if (validFoods.length === 0) {
+      toast.error('Please add at least one food item with calories');
+      return;
+    }
+
+    const totalProtein = validFoods.reduce((s, f) => s + (f.protein || 0), 0);
+    const totalCarbs = validFoods.reduce((s, f) => s + (f.carbs || 0), 0);
+    const totalFat = validFoods.reduce((s, f) => s + (f.fat || 0), 0);
+    const totalFiber = validFoods.reduce((s, f) => s + (f.fiber || 0), 0);
 
     try {
       await addMeal({
         meal_type: selectedMealType,
-        food_name: analysis.description,
-        calories: analysis.total_calories,
+        food_name: analysis?.description || validFoods.map(f => f.name).join(', '),
+        calories: editableTotal,
         photo_url: uploadedPhotoUrl || undefined,
-        ai_detected_food: analysis.foods.map(f => f.name).join(', '),
-        ai_confidence: analysis.confidence,
+        ai_detected_food: validFoods.map(f => f.name).join(', '),
+        ai_confidence: analysis?.confidence,
         is_confirmed: true,
+        protein: totalProtein || undefined,
+        carbs: totalCarbs || undefined,
+        fat: totalFat || undefined,
+        fiber: totalFiber || undefined,
+        food_quality: analysis?.food_quality,
       });
       toast.success('Meal logged');
       setIsDialogOpen(false);
@@ -219,12 +275,33 @@ export function CalorieTracker() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="border-border bg-background">
+        <DialogContent className="border-border bg-background max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              LOG {MEAL_LABELS[selectedMealType].toUpperCase()}
+              LOG {MEAL_LABELS[selectedMealType]}
             </DialogTitle>
           </DialogHeader>
+
+          {/* Meal type selector */}
+          <div className="flex gap-1 flex-wrap">
+            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
+              const Icon = MEAL_ICONS[type];
+              return (
+                <button
+                  key={type}
+                  onClick={() => setSelectedMealType(type)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    selectedMealType === type
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {MEAL_LABELS[type]}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="space-y-4">
             {!analysis && !manualMode && (
@@ -267,7 +344,7 @@ export function CalorieTracker() {
                         ENTER MANUALLY
                       </button>
                       <button
-                        onClick={() => { if (lastFile) runAnalysis(lastFile); }}
+                        onClick={() => { if (lastFile) runAnalysis(lastFile, contextHint || undefined); }}
                         disabled={!lastFile}
                         className="btn-brutalist flex items-center justify-center gap-2"
                       >
@@ -277,7 +354,17 @@ export function CalorieTracker() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    {/* Context hint */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground">CONTEXT (OPTIONAL)</Label>
+                      <Input
+                        placeholder="e.g., restaurant, home cooked, meal prep"
+                        value={contextHint}
+                        onChange={(e) => setContextHint(e.target.value)}
+                        className="mt-1 text-sm"
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => cameraInputRef.current?.click()}
@@ -306,6 +393,7 @@ export function CalorieTracker() {
               </>
             )}
 
+            {/* Editable analysis results */}
             {analysis && !manualMode && (
               <div className="space-y-4">
                 {previewUrl && (
@@ -314,32 +402,71 @@ export function CalorieTracker() {
                   </div>
                 )}
 
-                <div className="border border-border p-4">
-                  <p className="text-sm mb-3">{analysis.description}</p>
-                  
-                  <div className="space-y-2">
-                    {analysis.foods.map((food, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{food.name} <span className="text-muted-foreground">({food.portion})</span></span>
-                        <span className="tabular-nums">{food.calories} cal</span>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS — tap to edit</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(analysis.confidence * 100)}% confidence
+                    </span>
+                  </div>
+
+                  <div className="border border-border divide-y divide-border overflow-hidden">
+                    {editableFoods.map((food, i) => (
+                      <div key={i} className="p-2 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={food.name}
+                            onChange={(e) => updateFood(i, 'name', e.target.value)}
+                            placeholder="Food name"
+                            className="h-7 text-xs flex-1 border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                          <button
+                            onClick={() => removeFood(i)}
+                            className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={food.portion}
+                            onChange={(e) => updateFood(i, 'portion', e.target.value)}
+                            placeholder="Portion"
+                            className="h-6 text-xs flex-1 border-0 bg-transparent p-0 text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Input
+                              type="number"
+                              value={food.calories || ''}
+                              onChange={(e) => updateFood(i, 'calories', e.target.value)}
+                              className="h-6 w-16 text-xs text-right border border-border/50 bg-muted/30 rounded px-1.5 focus-visible:ring-0"
+                            />
+                            <span className="text-xs text-muted-foreground">cal</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
+
+                    <button
+                      onClick={addFood}
+                      className="w-full p-2.5 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      ADD ITEM
+                    </button>
                   </div>
 
-                  <div className="border-t border-border mt-3 pt-3 flex justify-between">
-                    <span className="font-medium">Total</span>
-                    <span className="font-bold tabular-nums">{analysis.total_calories} cal</span>
+                  <div className="flex justify-between pt-1 px-1">
+                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-sm font-bold tabular-nums">{editableTotal} cal</span>
                   </div>
-
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Confidence: {Math.round(analysis.confidence * 100)}%
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
                       setAnalysis(null);
+                      setEditableFoods([]);
                       setPreviewUrl(null);
                     }}
                     className="border border-border p-3 flex items-center justify-center gap-2 hover:bg-muted transition-colors"
@@ -349,7 +476,7 @@ export function CalorieTracker() {
                   </button>
                   <button
                     onClick={handleConfirmAnalysis}
-                    disabled={isAdding}
+                    disabled={isAdding || editableFoods.filter(f => f.name.trim() && f.calories > 0).length === 0}
                     className="btn-brutalist flex items-center justify-center gap-2"
                   >
                     {isAdding ? (
@@ -357,7 +484,7 @@ export function CalorieTracker() {
                     ) : (
                       <Check className="h-4 w-4" />
                     )}
-                    CONFIRM
+                    LOG {editableTotal} CAL
                   </button>
                 </div>
               </div>
