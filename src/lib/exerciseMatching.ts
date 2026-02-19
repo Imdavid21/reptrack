@@ -6,9 +6,83 @@
  * is consistent everywhere.
  */
 
+/**
+ * Canonical alias map — resolves common abbreviations and legacy naming
+ * variations to their unified canonical name BEFORE normalization.
+ * Add new aliases here to prevent future duplicates.
+ */
+const CANONICAL_ALIASES: Record<string, string> = {
+  // Barbell Overhead Press
+  'barbell ohp': 'barbell overhead press',
+  'overhead press': 'barbell overhead press',
+  'ohp': 'barbell overhead press',
+
+  // Deadlifts
+  'deadlift': 'deadlifts',
+  'conventional deadlift': 'deadlifts',
+
+  // Flat Dumbbell Bench Press
+  'flat db bench': 'flat dumbbell bench press',
+  'flat db bench press': 'flat dumbbell bench press',
+  'flat dumbbell bench': 'flat dumbbell bench press',
+  'dumbbell bench press': 'flat dumbbell bench press',
+
+  // Incline Barbell Bench Press
+  'incline barbell bench': 'incline barbell bench press',
+  'incline bb bench': 'incline barbell bench press',
+
+  // Incline Dumbbell Press
+  'incline db press': 'incline dumbbell press',
+
+  // Incline Dumbbell Flyes
+  'incline db fly': 'incline dumbbell flyes',
+  'incline db flyes': 'incline dumbbell flyes',
+
+  // Dumbbell Shoulder Press
+  'db shoulder press': 'dumbbell shoulder press',
+  'seated db shoulder press': 'dumbbell shoulder press',
+  'seated dumbbell shoulder press': 'dumbbell shoulder press',
+
+  // Cable Seated Row
+  'seated cable row': 'cable seated row',
+
+  // Cable Tricep Pushdowns
+  'tricep pushdown': 'cable tricep pushdowns',
+  'cable pushdown': 'cable tricep pushdowns',
+  'tricep pushdowns': 'cable tricep pushdowns',
+
+  // Barbell Curls
+  'barbell curl': 'barbell curls',
+
+  // Hammer Curls
+  'hammer curl': 'hammer curls',
+
+  // Leg Extensions
+  'leg extension': 'leg extensions',
+
+  // Lateral Raises
+  'dumbbell lateral raises': 'lateral raises',
+  'dumbbell lateral raise': 'lateral raises',
+
+  // Close Grip Bench Press
+  'close grip chest press': 'close grip bench press',
+
+  // Dumbbell Bicep Curls
+  'db bicep curl': 'dumbbell bicep curls',
+  'db bicep curls': 'dumbbell bicep curls',
+};
+
+/** Resolve a name through the canonical alias map (exact lowercase match). */
+export function resolveCanonicalName(name: string): string {
+  const lower = name.toLowerCase().trim();
+  return CANONICAL_ALIASES[lower] ?? name;
+}
+
 /** Normalize an exercise name for fuzzy matching across naming variations. */
 export function normalizeExerciseName(name: string): string {
-  return name
+  // First resolve any known alias to the canonical form
+  const resolved = resolveCanonicalName(name);
+  return resolved
     .toLowerCase()
     .replace(/\bdumbbell\b/g, 'db')
     .replace(/\bbarbell\b/g, 'bb')
