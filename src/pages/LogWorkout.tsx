@@ -179,7 +179,16 @@ export default function LogWorkout() {
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
-      if (draft.workoutStartTime) setWorkoutStartTime(new Date(draft.workoutStartTime));
+      if (draft.workoutStartTime) {
+        setWorkoutStartTime(new Date(draft.workoutStartTime));
+      } else {
+        // Fallback: if there's progress but no start time saved (e.g. app was force-killed
+        // before the draft auto-saved the start time), use lastSavedAt as a conservative estimate.
+        const hasProgress = draft.exercises.some(ex => ex.sets.some(s => s.completed));
+        if (hasProgress && draft.lastSavedAt) {
+          setWorkoutStartTime(new Date(draft.lastSavedAt));
+        }
+      }
       setDraftRestored(true);
       toast.info('Restored your previous session');
     }
@@ -242,7 +251,23 @@ export default function LogWorkout() {
 
   // Start session from review — preserve original start time if already set
   const handleStartSession = () => {
-    setWorkoutStartTime(prev => prev ?? new Date());
+    setWorkoutStartTime(prev => {
+      if (prev) return prev; // Never overwrite an existing start time
+      const now = new Date();
+      // Eagerly flush start time to draft so it survives immediate backgrounding
+      const key = user ? `fittrack_draft_workout_${user.id}` : null;
+      if (key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const saved = JSON.parse(raw);
+            saved.workoutStartTime = now.toISOString();
+            localStorage.setItem(key, JSON.stringify(saved));
+          }
+        } catch (_) { /* ignore */ }
+      }
+      return now;
+    });
     setCurrentExerciseIndex(0);
     setCurrentSetIndex(0);
     setStep('exercises');
