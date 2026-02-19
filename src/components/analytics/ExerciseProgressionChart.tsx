@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useExerciseSets, ExerciseProgression } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -6,6 +6,16 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { Box, Typography, Chip, Collapse, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, ChevronDown, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getMuscleGroup } from '@/lib/exerciseClassification';
+
+const MUSCLE_GROUP_LABELS: Record<string, string> = {
+  chest: 'Chest',
+  back: 'Back',
+  shoulders: 'Shoulders',
+  arms: 'Arms',
+  legs: 'Legs',
+  core: 'Core',
+};
 
 function GrowthBadge({ startWeight, endWeight }: { startWeight: number; endWeight: number }) {
   if (startWeight === 0) return null;
@@ -125,6 +135,39 @@ export function ExerciseProgressionChart() {
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
   const [showAll, setShowAll] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+
+  const sortedProgressions = useMemo(() => {
+    return (data?.progressions || []).slice().sort((a, b) => {
+      const growthPct = (p: typeof a) => {
+        const d = p.data.filter(pt => pt.weight > 0);
+        if (d.length < 2) return 0;
+        const headCount = Math.min(2, Math.ceil(d.length / 3));
+        const tailCount = headCount;
+        const headAvg = d.slice(0, headCount).reduce((s, pt) => s + pt.weight, 0) / headCount;
+        const tailAvg = d.slice(-tailCount).reduce((s, pt) => s + pt.weight, 0) / tailCount;
+        return headAvg > 0 ? ((tailAvg - headAvg) / headAvg) * 100 : 0;
+      };
+      return growthPct(b) - growthPct(a);
+    });
+  }, [data?.progressions]);
+
+  // Derive available muscle groups from actual data
+  const availableGroups = useMemo(() => {
+    const groups = new Set<string>();
+    sortedProgressions.forEach(p => {
+      const g = getMuscleGroup(p.exerciseName);
+      if (MUSCLE_GROUP_LABELS[g]) groups.add(g);
+    });
+    return Array.from(groups).sort((a, b) =>
+      Object.keys(MUSCLE_GROUP_LABELS).indexOf(a) - Object.keys(MUSCLE_GROUP_LABELS).indexOf(b)
+    );
+  }, [sortedProgressions]);
+
+  const progressions = useMemo(() => {
+    if (activeFilter === 'all') return sortedProgressions;
+    return sortedProgressions.filter(p => getMuscleGroup(p.exerciseName) === activeFilter);
+  }, [sortedProgressions, activeFilter]);
 
   const headerIcon = (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -152,21 +195,7 @@ export function ExerciseProgressionChart() {
     );
   }
 
-  const progressions = (data?.progressions || []).slice().sort((a, b) => {
-    // Use average of first 2 vs last 2 data points for more stable growth %
-    const growthPct = (p: typeof a) => {
-      const d = p.data.filter(pt => pt.weight > 0);
-      if (d.length < 2) return 0;
-      const headCount = Math.min(2, Math.ceil(d.length / 3));
-      const tailCount = headCount;
-      const headAvg = d.slice(0, headCount).reduce((s, pt) => s + pt.weight, 0) / headCount;
-      const tailAvg = d.slice(-tailCount).reduce((s, pt) => s + pt.weight, 0) / tailCount;
-      return headAvg > 0 ? ((tailAvg - headAvg) / headAvg) * 100 : 0;
-    };
-    return growthPct(b) - growthPct(a);
-  });
-
-  if (progressions.length === 0) {
+  if (sortedProgressions.length === 0) {
     return (
       <MuiCard>
         {headerIcon}
@@ -179,17 +208,79 @@ export function ExerciseProgressionChart() {
 
   const visible = showAll ? progressions : progressions.slice(0, 6);
 
+  const handleFilterChange = (group: string) => {
+    setActiveFilter(group);
+    setShowAll(false);
+  };
+
   return (
     <MuiCard>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         {headerIcon}
-        <Chip label={progressions.length} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
+        <Chip
+          label={progressions.length}
+          size="small"
+          sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
+        />
       </Box>
+
+      {/* Filter chips */}
+      {availableGroups.length > 1 && (
+        <Box sx={{
+          display: 'flex',
+          gap: 0.75,
+          mb: 1.5,
+          overflowX: 'auto',
+          pb: 0.25,
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+        }}>
+          <Chip
+            label="All"
+            size="small"
+            onClick={() => handleFilterChange('all')}
+            variant={activeFilter === 'all' ? 'filled' : 'outlined'}
+            sx={{
+              height: 24,
+              fontSize: '0.65rem',
+              fontWeight: activeFilter === 'all' ? 600 : 400,
+              flexShrink: 0,
+              opacity: activeFilter === 'all' ? 1 : 0.6,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          />
+          {availableGroups.map(group => (
+            <Chip
+              key={group}
+              label={MUSCLE_GROUP_LABELS[group]}
+              size="small"
+              onClick={() => handleFilterChange(group)}
+              variant={activeFilter === group ? 'filled' : 'outlined'}
+              sx={{
+                height: 24,
+                fontSize: '0.65rem',
+                fontWeight: activeFilter === group ? 600 : 400,
+                flexShrink: 0,
+                opacity: activeFilter === group ? 1 : 0.6,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            />
+          ))}
+        </Box>
+      )}
 
       <div className="space-y-2">
         {visible.map((p) => (
           <ExerciseCard key={p.exerciseName} progression={p} />
         ))}
+        {progressions.length === 0 && (
+          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 3 }}>
+            No exercises found for {MUSCLE_GROUP_LABELS[activeFilter]}
+          </Typography>
+        )}
       </div>
 
       {progressions.length > 6 && (
