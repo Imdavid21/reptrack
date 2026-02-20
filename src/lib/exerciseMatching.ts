@@ -12,67 +12,151 @@
  * Add new aliases here to prevent future duplicates.
  */
 const CANONICAL_ALIASES: Record<string, string> = {
-  // Barbell Overhead Press
-  'barbell ohp': 'barbell overhead press',
-  'overhead press': 'barbell overhead press',
-  'ohp': 'barbell overhead press',
-
-  // Deadlifts
-  'deadlift': 'deadlifts',
-  'conventional deadlift': 'deadlifts',
-
-  // Flat Dumbbell Bench Press
-  'flat db bench': 'flat dumbbell bench press',
-  'flat db bench press': 'flat dumbbell bench press',
-  'flat dumbbell bench': 'flat dumbbell bench press',
-  'dumbbell bench press': 'flat dumbbell bench press',
-
-  // Incline Barbell Bench Press
+  // ── Chest ──
+  'barbell bench': 'barbell bench press',
+  'flat barbell bench': 'barbell bench press',
+  'bb bench press': 'barbell bench press',
+  'db press': 'dumbbell bench press',
+  'flat dumbbell bench press': 'dumbbell bench press',
+  'flat db press': 'dumbbell bench press',
+  'flat dumbbell bench': 'dumbbell bench press',
+  'dumbbell bench press': 'dumbbell bench press',
+  'db flat bench': 'dumbbell bench press',
   'incline barbell bench': 'incline barbell bench press',
   'incline bb bench': 'incline barbell bench press',
-
-  // Incline Dumbbell Press
   'incline db press': 'incline dumbbell press',
-
-  // Incline Dumbbell Flyes
+  'incline db bench press': 'incline dumbbell press',
   'incline db fly': 'incline dumbbell flyes',
   'incline db flyes': 'incline dumbbell flyes',
+  'chest fly': 'cable flyes',
+  'chest flyes': 'cable flyes',
+  'machine chest fly': 'cable flyes',
+  'pec fly': 'cable flyes',
+  'pec deck': 'cable flyes',
+  'cable fly': 'cable flyes',
 
-  // Dumbbell Shoulder Press
+  // ── Shoulders ──
+  'barbell ohp': 'overhead press',
+  'barbell overhead press': 'overhead press',
+  'ohp': 'overhead press',
+  'overhead press': 'overhead press',
+  'military press': 'overhead press',
   'db shoulder press': 'dumbbell shoulder press',
-  'seated db shoulder press': 'dumbbell shoulder press',
+  'db ohp': 'dumbbell shoulder press',
   'seated dumbbell shoulder press': 'dumbbell shoulder press',
+  'seated db shoulder press': 'dumbbell shoulder press',
+  'lateral raise': 'lateral raises',
+  'dumbbell lateral raise': 'lateral raises',
+  'dumbbell lateral raises': 'lateral raises',
+  'lateral raise machine': 'lateral raises',
+  'machine lateral raise': 'lateral raises',
+  'face pull': 'face pulls',
+  'bent over rear delt fly': 'bent over rear delt flyes',
+  'rear delt fly': 'bent over rear delt flyes',
+  'rear delt flyes': 'bent over rear delt flyes',
+  'reverse fly': 'reverse flyes',
 
-  // Cable Seated Row
-  'seated cable row': 'cable seated row',
+  // ── Back ──
+  'barbell rows': 'barbell row',
+  'bb row': 'barbell row',
+  'bent over row': 'barbell row',
+  'bent over barbell row': 'barbell row',
+  'pendlay row': 'barbell row',
+  'cable row': 'seated cable row',
+  'seated row': 'seated cable row',
+  'cable seated row': 'seated cable row',
+  'seated cable row': 'seated cable row',
+  'single arm dumbbell rows': 'single arm dumbbell row',
+  'single arm db row': 'single arm dumbbell row',
+  'db row': 'single arm dumbbell row',
+  'one arm dumbbell row': 'single arm dumbbell row',
+  'straight arm pulldowns': 'straight arm pulldown',
+  'lat pulldowns': 'lat pulldown',
+  'wide grip lat pulldown': 'lat pulldown',
+  'close grip lat pulldown': 'lat pulldown',
+  'reverse grip lat pulldown': 'lat pulldown',
+  'negative pull-ups': 'pull-ups',
 
-  // Cable Tricep Pushdowns
-  'tricep pushdown': 'cable tricep pushdowns',
-  'cable pushdown': 'cable tricep pushdowns',
-  'tricep pushdowns': 'cable tricep pushdowns',
+  // ── Deadlifts ──
+  'deadlift': 'conventional deadlift',
+  'deadlifts': 'conventional deadlift',
+  'sumo deadlift': 'conventional deadlift',
+  'deadlift technique': 'deadlift technique work',
+  'rdl': 'romanian deadlift',
+  'romanian deadlifts': 'romanian deadlift',
+  'db rdl': 'romanian deadlift',
+  'dumbbell rdl': 'romanian deadlift',
+  'single leg romanian deadlifts': 'romanian deadlift',
 
-  // Barbell Curls
-  'barbell curl': 'barbell curls',
+  // ── Triceps ──
+  'cable tricep pushdowns': 'tricep pushdown',
+  'tricep pushdowns': 'tricep pushdown',
+  'tricep pushdown': 'tricep pushdown',
+  'cable pushdown': 'tricep pushdown',
+  'rope pushdown': 'tricep pushdown',
+  'dumbbell overhead extension': 'overhead tricep extension',
+  'db overhead extension': 'overhead tricep extension',
+  'overhead extension': 'overhead tricep extension',
+  'dumbbell skull crushers': 'skull crushers',
 
-  // Hammer Curls
+  // ── Biceps ──
+  'barbell curls': 'barbell curl',
+  'barbell curl': 'barbell curl',
+  'bb curl': 'barbell curl',
+  'bb curls': 'barbell curl',
+  'ez bar curl': 'barbell curl',
+  'ez bar curls': 'barbell curl',
+  'ez curl': 'barbell curl',
+  'dumbbell bicep curls': 'dumbbell curl',
+  'dumbbell curls': 'dumbbell curl',
+  'db curl': 'dumbbell curl',
+  'db curls': 'dumbbell curl',
+  'db bicep curl': 'dumbbell curl',
+  'db bicep curls': 'dumbbell curl',
+  'bicep curl': 'dumbbell curl',
+  'bicep curls': 'dumbbell curl',
+  'incline dumbbell curls': 'incline dumbbell curl',
+  'incline db curl': 'incline dumbbell curl',
+  'cable curls': 'cable curl',
+  'rope cable curl': 'cable curl',
+  'rope curl': 'cable curl',
+  'preacher curls': 'ez bar preacher curls',
+  'preacher curl': 'ez bar preacher curls',
   'hammer curl': 'hammer curls',
 
-  // Leg Extensions
+  // ── Legs ──
+  'bb squat': 'barbell squat',
+  'back squat': 'barbell squat',
+  'squat': 'barbell squat',
+  'squats': 'barbell squat',
+  'goblet squat': 'goblet squats',
+  'bulgarian split squats': 'bulgarian split squat',
   'leg extension': 'leg extensions',
-
-  // Standing Calf Raises
+  'leg curls': 'leg curl',
+  'lying leg curl': 'leg curl',
+  'seated leg curl': 'leg curl',
+  'hip thrusts': 'hip thrust',
+  'barbell hip thrust': 'hip thrust',
+  'glute bridges': 'glute bridge',
   'standing calf raise': 'standing calf raises',
+  'calf raise': 'standing calf raises',
+  'calf raises': 'standing calf raises',
+  'seated calf raises': 'seated calf raise',
+  'walking lunge': 'walking lunges',
+  'lunges': 'walking lunges',
 
-  // Lateral Raises
-  'dumbbell lateral raises': 'lateral raises',
-  'dumbbell lateral raise': 'lateral raises',
+  // ── Timed ──
+  'dead hangs': 'dead hang',
+  'planks': 'plank',
+  'wall sits': 'wall sit',
 
-  // Close Grip Bench Press
+  // ── Bodyweight ──
+  'close grip push-ups': 'push-ups',
+  'diamond push-ups': 'push-ups',
+  'wide push-ups': 'push-ups',
+
+  // ── Close Grip Bench ──
   'close grip chest press': 'close grip bench press',
-
-  // Dumbbell Bicep Curls
-  'db bicep curl': 'dumbbell bicep curls',
-  'db bicep curls': 'dumbbell bicep curls',
 };
 
 /** Resolve a name through the canonical alias map (exact lowercase match). */
