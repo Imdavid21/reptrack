@@ -12,85 +12,6 @@ export interface PersonalRecord {
   prType?: 'weight' | 'reps' | 'duration';
 }
 
-// Expanded list of tracked exercises for PR display
-const TRACKED_EXERCISES = [
-  // Chest
-  'Incline DB Press',
-  'Flat Barbell Bench',
-  'Flat DB Press',
-  'Incline Barbell Bench Press',
-  'Incline Barbell Bench',
-  'Dumbbell Bench Press',
-  'Cable Flyes',
-  'Incline Dumbbell Flyes',
-  'Incline Dumbbell Press',
-  'Cable Crossover',
-  // Shoulders
-  'Overhead Press',
-  'Dumbbell Shoulder Press',
-  'Lateral Raises',
-  'Bent Over Rear Delt Flyes',
-  'Face Pulls',
-  // Back
-  'Barbell Row',
-  'Conventional Deadlift',
-  'Romanian Deadlift',
-  'Lat Pulldown',
-  'Seated Cable Row',
-  'T-Bar Row',
-  'Single Arm Dumbbell Row',
-  'Straight Arm Pulldown',
-  'Pull-ups',
-  'Weighted Pull-ups',
-  // Legs
-  'Barbell Squat',
-  'Leg Press',
-  'Hack Squat',
-  'Bulgarian Split Squat',
-  'Goblet Squats',
-  'Leg Extension',
-  'Leg Curl',
-  'Hip Thrust',
-  'Walking Lunges',
-  'Standing Calf Raise',
-  'Seated Calf Raise',
-  // Arms
-  'Dumbbell Curl',
-  'Barbell Curl',
-  'Hammer Curls',
-  'EZ Bar Preacher Curls',
-  'Concentration Curls',
-  'Incline Dumbbell Curl',
-  'Cable Curl',
-  'Tricep Pushdown',
-  'Skull Crushers',
-  'Overhead Cable Tricep Extension',
-  'Cable Rope Overhead Tricep Extension',
-  'Close Grip Bench Press',
-  'Dips',
-  // Bodyweight exercises (PR = max reps)
-  'Push-ups',
-  'Incline Push-ups',
-  'Decline Push-ups',
-  'Chin-ups',
-  'Body Rows',
-  'Hanging Leg Raises',
-  'Ab Crunches',
-  'Mountain Climbers',
-  'Burpees',
-  'Lunges',
-  'Bodyweight Squats',
-  'Glute Bridge',
-  'Calf Raises',
-  // Weighted bodyweight (PR = max added weight)
-  'Weighted Pull-ups',
-  'Weighted Dips',
-  // Timed exercises (PR = max duration)
-  'Wall Sit',
-  'Dead Hang',
-  'Plank',
-];
-
 // Canonical name mapping for exercise variants
 const EXERCISE_ALIASES: Record<string, string> = {
   'Barbell OHP': 'Overhead Press',
@@ -157,14 +78,11 @@ export function usePersonalRecords() {
 
       if (error) throw error;
 
-      // Find PRs per exercise based on exercise type
+      // Find PRs per exercise — NO whitelist, track ALL exercises
       const prMap: Record<string, PersonalRecord> = {};
 
       for (const ex of exercises || []) {
         const canonicalName = getCanonicalName(ex.name);
-
-        if (!TRACKED_EXERCISES.includes(canonicalName)) continue;
-
         const exType = getExerciseType(canonicalName);
         const workout = ex.workouts as unknown as { date: string };
 
@@ -176,7 +94,7 @@ export function usePersonalRecords() {
           if (!prMap[canonicalName] || duration > prMap[canonicalName].maxWeight) {
             prMap[canonicalName] = {
               exerciseName: canonicalName,
-              maxWeight: duration, // reuse field: holds seconds for timed
+              maxWeight: duration,
               reps: `${duration}s`,
               date: workout.date,
               prType: 'duration',
@@ -190,7 +108,7 @@ export function usePersonalRecords() {
           if (!prMap[canonicalName] || reps > prMap[canonicalName].maxWeight) {
             prMap[canonicalName] = {
               exerciseName: canonicalName,
-              maxWeight: reps, // reuse field: holds reps for bodyweight
+              maxWeight: reps,
               reps: `${reps} reps`,
               date: workout.date,
               prType: 'reps',

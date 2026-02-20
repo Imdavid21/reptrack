@@ -408,15 +408,6 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-  const getLastUsedHint = () => {
-    // Use per-set data if available, otherwise fall back to aggregate
-    const setData = lastUsedForSet || (lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : null);
-    if (!setData) return null;
-    if (isTimed) return null;
-    if (isBodyweight) return `last: ${setData.reps} reps`;
-    const prefix = isWeightedBW ? '+' : '';
-    return `last: ${prefix}${setData.weight}${isWeightedBW ? 'kg' : weightLabel}×${setData.reps}`;
-  };
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -529,9 +520,6 @@ export function SetBySetCard({
       )}>
         <div className="text-center text-xs text-muted-foreground mb-4">
           SET {currentSetIndex + 1}
-          {getLastUsedHint() && (
-            <span className="ml-1 text-primary/70">({getLastUsedHint()})</span>
-          )}
         </div>
 
         {/* ===== TIMED EXERCISE UI ===== */}
