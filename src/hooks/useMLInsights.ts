@@ -48,7 +48,6 @@ export function useMLInsights(dateRange?: DateRangeFilter) {
       daysActive: metricsData?.totals.daysWithData || 0,
       exerciseProgress,
       avgSleep: metricsData?.totals.avgSleep || null,
-      avgEnergy: metricsData?.totals.avgEnergy || null,
       supplementAdherence: {},
       pullupTotal: metricsData?.totals.totalPullups || 0,
       volumeBreakdown: {

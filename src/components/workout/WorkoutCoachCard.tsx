@@ -125,7 +125,6 @@ export function WorkoutCoachCard() {
         daysActive: weekContext?.sessionsThisWeek || 0,
         exerciseProgress: [],
         avgSleep: null,
-        avgEnergy: null,
         supplementAdherence: {},
         pullupTotal: 0,
         volumeBreakdown: { push: 0, pull: 0, legs: 0 },

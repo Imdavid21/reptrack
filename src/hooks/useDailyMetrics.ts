@@ -7,12 +7,10 @@ export interface DailyMetric {
   id: string;
   user_id: string;
   date: string;
-  // From daily_metrics
   pullups: number;
   notes: string | null;
   bodyweight: number | null;
   sleep_hours: number | null;
-  energy_level: number | null;
 }
 
 export interface MetricsAnalytics {
@@ -20,7 +18,6 @@ export interface MetricsAnalytics {
   totals: {
     totalPullups: number;
     avgSleep: number | null;
-    avgEnergy: number | null;
     avgBodyweight: number | null;
     daysWithData: number;
     daysTracked: number;
@@ -48,7 +45,7 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
       if (!user) {
         return {
           dataPoints: [],
-          totals: { totalPullups: 0, avgSleep: null, avgEnergy: null, avgBodyweight: null, daysWithData: 0, daysTracked: 0 },
+          totals: { totalPullups: 0, avgSleep: null, avgBodyweight: null, daysWithData: 0, daysTracked: 0 },
         };
       }
 
@@ -57,7 +54,7 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
 
       const { data, error } = await supabase
         .from('daily_metrics')
-        .select('id, date, pullups, notes, bodyweight, sleep_hours, energy_level')
+        .select('id, date, pullups, notes, bodyweight, sleep_hours')
         .eq('user_id', user.id)
         .gte('date', startDate || '1900-01-01')
         .lte('date', endDate || '2100-01-01')
@@ -73,24 +70,19 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
         notes: d.notes ?? null,
         bodyweight: d.bodyweight ?? null,
         sleep_hours: d.sleep_hours ?? null,
-        energy_level: d.energy_level ?? null,
       }));
 
       // Calculate totals
       const withSleep = dataPoints.filter(d => d.sleep_hours !== null && d.sleep_hours > 0);
-      const withEnergy = dataPoints.filter(d => d.energy_level !== null);
       const withWeight = dataPoints.filter(d => d.bodyweight !== null && d.bodyweight > 0);
-      const withAnyData = dataPoints.filter(d => 
-        d.sleep_hours !== null || d.energy_level !== null || d.bodyweight !== null || d.pullups > 0
+      const withAnyData = dataPoints.filter(d =>
+        d.sleep_hours !== null || d.bodyweight !== null || d.pullups > 0
       );
 
       const totals = {
         totalPullups: dataPoints.reduce((sum, d) => sum + (d.pullups || 0), 0),
         avgSleep: withSleep.length > 0
           ? withSleep.reduce((sum, d) => sum + (d.sleep_hours || 0), 0) / withSleep.length
-          : null,
-        avgEnergy: withEnergy.length > 0
-          ? withEnergy.reduce((sum, d) => sum + (d.energy_level || 0), 0) / withEnergy.length
           : null,
         avgBodyweight: withWeight.length > 0
           ? withWeight.reduce((sum, d) => sum + (d.bodyweight || 0), 0) / withWeight.length
@@ -107,16 +99,14 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
 
   const upsertMetrics = useMutation({
     mutationFn: async (metrics: { 
-      date: string; 
-      pullups?: number; 
-      notes?: string; 
+      date: string;
+      pullups?: number;
+      notes?: string;
       bodyweight?: number;
       sleep_hours?: number;
-      energy_level?: number;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Build update object only with provided fields
       const updateData: {
         user_id: string;
         date: string;
@@ -124,17 +114,15 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
         notes?: string;
         bodyweight?: number;
         sleep_hours?: number;
-        energy_level?: number;
       } = {
         user_id: user.id,
         date: metrics.date,
       };
-      
+
       if (metrics.pullups !== undefined) updateData.pullups = metrics.pullups;
       if (metrics.notes !== undefined) updateData.notes = metrics.notes;
       if (metrics.bodyweight !== undefined) updateData.bodyweight = metrics.bodyweight;
       if (metrics.sleep_hours !== undefined) updateData.sleep_hours = metrics.sleep_hours;
-      if (metrics.energy_level !== undefined) updateData.energy_level = metrics.energy_level;
 
       const { data, error } = await supabase
         .from('daily_metrics')
