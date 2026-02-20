@@ -42,8 +42,6 @@ export interface Habits {
 }
 
 export interface PostCheckin {
-  difficulty: number;
-  satisfaction: number;
   durationMinutes?: number;
 }
 
@@ -58,8 +56,6 @@ export interface Workout {
   started_at?: string;
   completed_at?: string;
   workout_duration_minutes?: number;
-  post_difficulty?: number;
-  post_satisfaction?: number;
   exercises?: WorkoutExercise[];
   habits?: Habits;
 }
@@ -110,8 +106,6 @@ export function useWorkouts() {
         day_name: workout.day_name,
         week_number: workout.week_number,
         date: workoutDate,
-        post_difficulty: workout.postCheckin?.difficulty,
-        post_satisfaction: workout.postCheckin?.satisfaction,
         workout_duration_minutes: workout.postCheckin?.durationMinutes,
         started_at: workout.startedAt?.toISOString(),
         completed_at: workout.completedAt?.toISOString(),
