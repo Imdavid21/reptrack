@@ -422,8 +422,6 @@ export default function LogWorkout() {
         date: selectedDate,
         exercises,
         postCheckin: {
-          difficulty: 5,
-          satisfaction: 7,
           durationMinutes,
         },
         startedAt: workoutStartTime || undefined,
