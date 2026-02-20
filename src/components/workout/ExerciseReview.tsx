@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
-import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus, History } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus, History, ArrowLeftRight } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface DayOption {
   key: string;
@@ -48,6 +55,7 @@ function ExerciseItemCard({
   onMoveDown,
   onRemove,
   onUpdate,
+  onSwap,
   activeSession,
   onSelect,
 }: {
@@ -61,6 +69,7 @@ function ExerciseItemCard({
   onMoveDown: () => void;
   onRemove: () => void;
   onUpdate: (updated: WorkoutExercise) => void;
+  onSwap: (variantName: string, defaultWeight: string) => void;
   activeSession?: boolean;
   onSelect?: () => void;
 }) {
@@ -267,71 +276,99 @@ function ExerciseItemCard({
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 pt-1 flex items-center gap-3 border-t border-border/50">
-              {/* Sets */}
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Sets</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleSetsChange(-1)}
-                    className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="text-sm font-bold w-5 text-center tabular-nums">{totalSets}</span>
-                  <button
-                    onClick={() => handleSetsChange(1)}
-                    className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="w-px h-8 bg-border/50" />
-
-              {/* Reps or Time */}
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
-                  {isTimed ? 'Secs' : 'Reps'}
-                </span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={isTimed
-                    ? String(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)
-                    : displayReps(targetInfo?.targetReps)
-                  }
-                  onChange={(e) => {
-                    if (isTimed) {
-                      const secs = parseInt(e.target.value) || 0;
-                      const newSets = exercise.sets.map(s => ({ ...s, targetTime: secs, targetReps: String(secs) }));
-                      onUpdate({ ...exercise, sets: newSets });
-                    } else {
-                      handleRepsChange(e.target.value);
-                    }
-                  }}
-                  className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
-                />
-              </div>
-
-              {/* Weight — only for weighted and weighted_bw */}
-              {showWeightField && (
-                <>
-                  <div className="w-px h-8 bg-border/50" />
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
-                      {isWeightedBW ? '+Weight' : 'Weight'}
-                    </span>
-                    <input
-                      type="text"
-                      value={targetInfo?.targetWeight || ''}
-                      onChange={(e) => handleWeightChange(e.target.value)}
-                      className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
-                    />
+            <div className="px-3 pb-3 pt-1 border-t border-border/50 space-y-2">
+              <div className="flex items-center gap-3">
+                {/* Sets */}
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Sets</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleSetsChange(-1)}
+                      className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="text-sm font-bold w-5 text-center tabular-nums">{totalSets}</span>
+                    <button
+                      onClick={() => handleSetsChange(1)}
+                      className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
                   </div>
-                </>
-              )}
+                </div>
+
+                <div className="w-px h-8 bg-border/50" />
+
+                {/* Reps or Time */}
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                    {isTimed ? 'Secs' : 'Reps'}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={isTimed
+                      ? String(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)
+                      : displayReps(targetInfo?.targetReps)
+                    }
+                    onChange={(e) => {
+                      if (isTimed) {
+                        const secs = parseInt(e.target.value) || 0;
+                        const newSets = exercise.sets.map(s => ({ ...s, targetTime: secs, targetReps: String(secs) }));
+                        onUpdate({ ...exercise, sets: newSets });
+                      } else {
+                        handleRepsChange(e.target.value);
+                      }
+                    }}
+                    className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                  />
+                </div>
+
+                {/* Weight — only for weighted and weighted_bw */}
+                {showWeightField && (
+                  <>
+                    <div className="w-px h-8 bg-border/50" />
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                        {isWeightedBW ? '+Weight' : 'Weight'}
+                      </span>
+                      <input
+                        type="text"
+                        value={targetInfo?.targetWeight || ''}
+                        onChange={(e) => handleWeightChange(e.target.value)}
+                        className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Spacer */}
+                <div className="flex-1" />
+
+                {/* Swap variant button */}
+                {hasVariants(exercise.name) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                        <ArrowLeftRight className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-background border-border z-50">
+                      {getExerciseVariants(exercise.name).map((variant) => (
+                        <DropdownMenuItem
+                          key={variant.name}
+                          onClick={() => onSwap(variant.name, variant.defaultWeight)}
+                          className="flex items-center justify-between gap-4"
+                        >
+                          {variant.name}
+                          {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -421,6 +458,14 @@ export function ExerciseReview({
         onMoveDown={() => handleMoveDown(globalIndex)}
         onRemove={() => handleRemove(globalIndex)}
         onUpdate={(updated) => handleUpdateExercise(globalIndex, updated)}
+        onSwap={(variantName, defaultWeight) => {
+          haptic('medium');
+          const updated = { ...exercise, name: variantName };
+          if (defaultWeight) {
+            updated.sets = updated.sets.map(s => ({ ...s, targetWeight: defaultWeight }));
+          }
+          handleUpdateExercise(globalIndex, updated);
+        }}
         activeSession={activeSession}
         onSelect={onSelectExercise ? () => onSelectExercise(globalIndex) : undefined}
       />
