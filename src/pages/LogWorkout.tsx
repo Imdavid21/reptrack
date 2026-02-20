@@ -24,15 +24,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, Sparkles } from 'lucide-react';
+import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
-
+import { cn } from '@/lib/utils';
 import { findBestMatch } from '@/lib/exerciseMatching';
 
 type Step = 'select-day' | 'review' | 'exercises';
-
+type ExerciseViewMode = 'single' | 'overview';
 
 
 
@@ -130,7 +130,7 @@ export default function LogWorkout() {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
-  
+  const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -273,6 +273,10 @@ export default function LogWorkout() {
     setStep('exercises');
   };
 
+  // Navigate to review from exercises (edit exercises escape hatch)
+  const handleEditExercises = () => {
+    setStep('review');
+  };
 
   // AI suggestions
   const handleSuggestExercises = async () => {
@@ -394,7 +398,7 @@ export default function LogWorkout() {
       setCurrentExerciseIndex(prev => prev + 1);
       setCurrentSetIndex(0);
     } else {
-      setStep('review');
+      setExerciseViewMode('overview');
     }
   };
 
@@ -443,12 +447,16 @@ export default function LogWorkout() {
       }
       setStep('select-day');
     } else if (step === 'exercises') {
-      if (currentSetIndex > 0) {
-        setCurrentSetIndex(prev => prev - 1);
-      } else if (currentExerciseIndex > 0) {
-        setCurrentExerciseIndex(prev => prev - 1);
-        const prevEx = exercises[currentExerciseIndex - 1];
-        setCurrentSetIndex(prevEx.sets.length - 1);
+      if (exerciseViewMode === 'single') {
+        if (currentSetIndex > 0) {
+          setCurrentSetIndex(prev => prev - 1);
+        } else if (currentExerciseIndex > 0) {
+          setCurrentExerciseIndex(prev => prev - 1);
+          const prevEx = exercises[currentExerciseIndex - 1];
+          setCurrentSetIndex(prevEx.sets.length - 1);
+        } else {
+          setStep('review');
+        }
       } else {
         setStep('review');
       }
@@ -633,14 +641,6 @@ export default function LogWorkout() {
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
               onSkipExercises={selectedDay ? handleQuickLog : undefined}
               isResuming={!!workoutStartTime}
-              activeSession={!!workoutStartTime}
-              onSelectExercise={workoutStartTime ? (idx) => {
-                setCurrentExerciseIndex(idx);
-                setCurrentSetIndex(0);
-                setStep('exercises');
-              } : undefined}
-              onFinish={workoutStartTime ? handleExercisesDone : undefined}
-              isFinishing={isCreating}
               lastUsedNames={new Set(
                 exercises
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
@@ -650,54 +650,91 @@ export default function LogWorkout() {
           )}
 
           {/* Log Sets */}
-          {step === 'exercises' && currentExercise && (
-            <div className="flex flex-col min-h-[calc(100vh-10rem)] justify-center">
-              {/* Header with timer + sets counter */}
+          {step === 'exercises' && (
+            <div className={cn(
+              exerciseViewMode === 'single' 
+                ? 'flex flex-col min-h-[calc(100vh-10rem)] justify-center' 
+                : ''
+            )}>
+              {/* Header with timer + view toggle + edit exercises button */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleBack}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <div>
-                    <h2 className="text-lg font-bold">
-                      {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
-                      </p>
-                      <WorkoutTimer startTime={workoutStartTime} />
-                    </div>
+                <div>
+                  <h2 className="text-lg font-bold">
+                    {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
+                    </p>
+                    <WorkoutTimer startTime={workoutStartTime} />
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-lg font-bold tabular-nums">
-                    {completedSets}/{totalSets}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="text-lg font-bold tabular-nums">
+                      {completedSets}/{totalSets}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+                  </div>
+                  <button
+                    onClick={() => setExerciseViewMode(exerciseViewMode === 'single' ? 'overview' : 'single')}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {exerciseViewMode === 'single' ? <List size={16} /> : <LayoutGrid size={16} />}
+                  </button>
+                  <button
+                    onClick={handleEditExercises}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Edit exercises"
+                  >
+                    <Pencil size={14} />
+                  </button>
                 </div>
               </div>
 
-              <SetBySetCard
-                exercise={currentExercise}
-                exerciseIndex={currentExerciseIndex}
-                totalExercises={exercises.length}
-                currentSetIndex={currentSetIndex}
-                onChange={handleExerciseChange}
-                onSetIndexChange={setCurrentSetIndex}
-                onNextExercise={handleNextExercise}
-                onPrevExercise={handlePrevExercise}
-                onSkipExercise={handleSkipExercise}
-                onComplete={() => setStep('review')}
-                isFirstExercise={currentExerciseIndex === 0}
-                isLastExercise={currentExerciseIndex === exercises.length - 1}
-                personalRecord={getPRForExercise(currentExercise.name)}
-                lastUsed={getLastUsed(currentExercise.name)}
-                workoutBias={dayData?.bias}
-              />
+              {exerciseViewMode === 'single' && currentExercise && (
+                <SetBySetCard
+                  exercise={currentExercise}
+                  exerciseIndex={currentExerciseIndex}
+                  totalExercises={exercises.length}
+                  currentSetIndex={currentSetIndex}
+                  onChange={handleExerciseChange}
+                  onSetIndexChange={setCurrentSetIndex}
+                  onNextExercise={handleNextExercise}
+                  onPrevExercise={handlePrevExercise}
+                  onSkipExercise={handleSkipExercise}
+                  onComplete={() => setExerciseViewMode('overview')}
+                  isFirstExercise={currentExerciseIndex === 0}
+                  isLastExercise={currentExerciseIndex === exercises.length - 1}
+                  personalRecord={getPRForExercise(currentExercise.name)}
+                  lastUsed={getLastUsed(currentExercise.name)}
+                  workoutBias={dayData?.bias}
+                />
+              )}
+
+              {exerciseViewMode === 'overview' && (
+                <ExerciseReview
+                  exercises={exercises}
+                  dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
+                  dayFocus={selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}
+                  dayType={dayType}
+                  onChange={(updated) => {
+                    setExercises(updated);
+                    if (updated.length > 0) {
+                      setCurrentExerciseIndex(prev => Math.min(prev, updated.length - 1));
+                    }
+                  }}
+                  onStart={() => {}}
+                  activeSession
+                  onSelectExercise={(idx) => {
+                    setCurrentExerciseIndex(idx);
+                    setCurrentSetIndex(0);
+                    setExerciseViewMode('single');
+                  }}
+                  onFinish={handleExercisesDone}
+                  isFinishing={isCreating}
+                />
+              )}
             </div>
           )}
         </Box>
