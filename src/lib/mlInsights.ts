@@ -7,12 +7,10 @@ export interface WorkoutSummary {
   totalWorkouts: number;
   exerciseProgress: { name: string; startWeight: number; currentWeight: number; change: number }[];
   avgSleep: number | null;
-  avgEnergy: number | null;
   supplementAdherence: Record<string, number>;
   pullupTotal: number;
   volumeBreakdown: { push: number; pull: number; legs: number };
   daysActive: number;
-  sleepEnergyCorrelation?: number;
   volumeTrend?: 'increasing' | 'decreasing' | 'stable';
   consistencyScore?: number;
 }
@@ -79,24 +77,6 @@ export function generateMLInsights(summary: WorkoutSummary): Insight[] {
         priority: 2,
         text: `${summary.avgSleep.toFixed(1)}h avg sleep is optimal for recovery.`,
         icon: '✓',
-      });
-    }
-  }
-
-  if (summary.avgEnergy !== null) {
-    if (summary.avgEnergy < 5) {
-      insights.push({
-        category: 'recovery',
-        priority: 4,
-        text: `Energy averaging ${summary.avgEnergy.toFixed(1)}/10 — prioritize rest days.`,
-        icon: '⚡',
-      });
-    } else if (summary.avgEnergy >= 7) {
-      insights.push({
-        category: 'recovery',
-        priority: 2,
-        text: `High energy (${summary.avgEnergy.toFixed(1)}/10) — good recovery signals.`,
-        icon: '🔋',
       });
     }
   }

@@ -27,7 +27,6 @@ export interface WorkoutWithDetails {
     pullups: number;
     water_intake: number;
     sleep_hours: number;
-    energy_level: number;
     bodyweight: number | null;
     notes: string | null;
   } | null;

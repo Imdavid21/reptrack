@@ -36,13 +36,8 @@ export interface Habits {
   pullups: number;
   water_intake: number;
   sleep_hours: number;
-  energy_level: number;
   bodyweight?: number;
   notes?: string;
-}
-
-export interface PostCheckin {
-  durationMinutes?: number;
 }
 
 export interface Workout {
@@ -89,7 +84,7 @@ export function useWorkouts() {
       date?: Date;
       exercises: WorkoutExercise[];
       habits?: Habits;
-      postCheckin?: PostCheckin;
+      durationMinutes?: number;
       startedAt?: Date;
       completedAt?: Date;
     }) => {
@@ -106,7 +101,7 @@ export function useWorkouts() {
         day_name: workout.day_name,
         week_number: workout.week_number,
         date: workoutDate,
-        workout_duration_minutes: workout.postCheckin?.durationMinutes,
+        workout_duration_minutes: workout.durationMinutes,
         started_at: workout.startedAt?.toISOString(),
         completed_at: workout.completedAt?.toISOString(),
       };
@@ -131,7 +126,6 @@ export function useWorkouts() {
         pullups: workout.habits.pullups,
         water_intake: workout.habits.water_intake,
         sleep_hours: workout.habits.sleep_hours,
-        energy_level: workout.habits.energy_level,
         bodyweight: workout.habits.bodyweight,
         notes: workout.habits.notes,
       } : null;
