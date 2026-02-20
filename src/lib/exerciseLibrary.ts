@@ -112,8 +112,9 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
 
 /** Infer exercise type from weight/reps strings when exerciseType is not set */
 export function inferExerciseType(defaultWeight: string, defaultReps?: string): ExerciseType {
-  // Timed: reps field contains only a number (seconds) or ends with 's'
-  if (defaultReps && /^\d+x\d+s?$/.test(defaultReps)) return 'timed';
+  // Timed: reps field ends with 's' explicitly (e.g. "3x45s", "60s")
+  // Must have 's' suffix — "3x12" without 's' is NOT timed
+  if (defaultReps && /^\d+x\d+s$/.test(defaultReps)) return 'timed';
   if (defaultReps && /^\d+s$/.test(defaultReps)) return 'timed';
   // Weighted bodyweight: "+Xkg" pattern
   if (defaultWeight.startsWith('+')) return 'weighted_bw';
