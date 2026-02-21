@@ -586,15 +586,45 @@ export function ExerciseReview({
 
       {/* Action buttons */}
       <div className="space-y-2.5 flex flex-col items-center w-full">
-        {activeSession ? (
-          /* Active session: Finish Workout button only */
-          <button
-            onClick={onFinish}
-            disabled={isFinishing}
-            className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isFinishing ? 'Saving…' : 'Finish Workout'}
-          </button>
+      {activeSession ? (
+          /* Active session: Resume / Finish buttons */
+          (() => {
+            const allDone = exercises.length > 0 && exercises.every(ex =>
+              ex.sets.every(s => s.completed)
+            );
+            if (allDone) {
+              return (
+                <button
+                  onClick={onFinish}
+                  disabled={isFinishing}
+                  className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isFinishing ? 'Saving…' : 'Finish Workout'}
+                </button>
+              );
+            }
+            const resumeIndex = exercises.findIndex(ex =>
+              ex.sets.some(s => !s.completed)
+            );
+            return (
+              <>
+                <button
+                  onClick={() => onSelectExercise?.(resumeIndex >= 0 ? resumeIndex : 0)}
+                  className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold flex items-center justify-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Resume Workout
+                </button>
+                <button
+                  onClick={onFinish}
+                  disabled={isFinishing}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                >
+                  {isFinishing ? 'Saving…' : 'Finish Early'}
+                </button>
+              </>
+            );
+          })()
         ) : (
           <>
             {/* AI suggestion confirmation banner */}
