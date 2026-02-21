@@ -18,7 +18,7 @@ const MILESTONES = [0.5, 1];
 
 const WATER_SIZES = [
   { label: '250ml', value: 0.25 },
-  { label: '330ml', value: 0.33 },
+  { label: '350ml', value: 0.35 },
   { label: '500ml', value: 0.5 },
   { label: '750ml', value: 0.75 },
   { label: '1L', value: 1.0 },
