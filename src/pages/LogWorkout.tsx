@@ -642,7 +642,7 @@ export default function LogWorkout() {
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
                   .map(ex => ex.name)
               )}
-              {...(workoutStartTime && showActiveOverview ? {
+              {...(workoutStartTime ? {
                 activeSession: true,
                 onSelectExercise: (idx: number) => {
                   setCurrentExerciseIndex(idx);
