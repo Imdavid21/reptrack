@@ -1,36 +1,45 @@
 
 
-## Update Active Session Buttons in ExerciseReview
+## Optimize Exercise Review UI
 
-### What Changes
-When viewing the exercise list during an active workout session (via the overview toggle or edit button), the bottom action area will show:
+### Changes
 
-- **"Resume Workout"** as the primary, prominent button -- tapping it returns to the set-by-set card at the current exercise
-- **"Finish Early"** as a subtle, secondary text-style button below it -- visible but not easy to accidentally tap
-- When **all sets are completed**, the "Finish Workout" button becomes the sole primary button (current behavior, since there's nothing to resume)
+**1. Merge AI button into "Add Exercise" button**
 
-### Why
-1. Users who open the overview mid-workout most likely want to check progress or jump to an exercise, not finish
-2. An accidental "Finish" tap mid-workout could prematurely end a session
-3. The option to finish early should still be accessible for users who want it
+Combine the separate AI sparkles icon button into the "Add Exercise" button itself. The new button will show `+ Add Exercise` on the left and a sparkles icon divider on the right side -- tapping the left area opens the exercise picker, tapping the sparkles triggers AI suggestions. This keeps the UI cleaner with one combined element instead of two separate buttons.
+
+**2. Add "Finish Early" button when resuming a draft**
+
+When `isResuming` is true (a saved draft with progress exists), add a subtle "Finish Early" text button. This sits between the primary "Resume Workout" button and the "Skip exercises" link. It calls the same finish handler as the active session's finish early.
+
+- "Resume Workout" remains the big, prominent primary button
+- "Finish Early" is a small, muted text link -- visible but hard to accidentally tap
+- "Skip exercises" stays as-is and remains functionally separate (it logs a quick empty workout, not the same as finishing early)
+
+**3. Keep Skip and Finish Early as separate actions**
+
+- "Skip exercises" = quick-log with no exercise data (handleQuickLog)
+- "Finish Early" = save whatever progress has been recorded so far
 
 ### Technical Details
 
-**File: `src/components/workout/ExerciseReview.tsx`** (lines ~588-597)
+**File: `src/components/workout/ExerciseReview.tsx`**
 
-Replace the current single "Finish Workout" button in the `activeSession` branch with:
+*Props:* Add optional `onFinishEarly?: () => void` and `isFinishingEarly?: boolean` props.
 
-1. Calculate whether all exercises are fully completed (every set marked `completed`)
-2. If **not all done**:
-   - Primary button: "Resume Workout" -- calls `onSelectExercise` with the current/next incomplete exercise index
-   - Below it: a small text-link-style "Finish Early" button (ghost/link variant, muted color, smaller font) -- calls `onFinish`
-3. If **all done**:
-   - Single primary button: "Finish Workout" -- calls `onFinish` (same as current)
+*Add Exercise + AI row (lines ~661-697):* Replace the two separate buttons with a single combined button group:
+- A container with dashed border and rounded-xl
+- Left section: "+ Add Exercise" (click opens picker)  
+- Right section: sparkles icon with a left divider line (click triggers onSuggest)
+- When AI suggestions are pending or picker is open, render as before
 
-**File: `src/pages/LogWorkout.tsx`** (lines ~715-737)
+*Bottom actions (lines ~699-717):* When `isResuming` and `onFinishEarly` is provided, insert a "Finish Early" text button between "Resume Workout" and "Skip exercises":
+```
+Resume Workout (primary)
+Finish Early (subtle text)
+Skip exercises -> (existing link)
+```
 
-- Pass `currentExerciseIndex` to ExerciseReview as a new prop (e.g. `resumeAtIndex`) so "Resume" knows which exercise to return to
-- Alternatively, ExerciseReview can compute the first incomplete exercise index from the exercises array
+**File: `src/pages/LogWorkout.tsx`**
 
-No new dependencies or database changes required.
-
+Pass `onFinishEarly={handleExercisesDone}` and `isFinishingEarly={isCreating}` to `ExerciseReview` when `isResuming` is true.
