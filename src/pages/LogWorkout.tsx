@@ -24,7 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, List, LayoutGrid, Plus, Pencil, Sparkles } from 'lucide-react';
+import { ChevronLeft, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
@@ -32,7 +32,6 @@ import { cn } from '@/lib/utils';
 import { findBestMatch } from '@/lib/exerciseMatching';
 
 type Step = 'select-day' | 'review' | 'exercises';
-type ExerciseViewMode = 'single' | 'overview';
 
 
 
@@ -130,7 +129,7 @@ export default function LogWorkout() {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
-  const [exerciseViewMode, setExerciseViewMode] = useState<ExerciseViewMode>('single');
+  
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -398,7 +397,7 @@ export default function LogWorkout() {
       setCurrentExerciseIndex(prev => prev + 1);
       setCurrentSetIndex(0);
     } else {
-      setExerciseViewMode('overview');
+      setStep('review');
     }
   };
 
@@ -447,16 +446,12 @@ export default function LogWorkout() {
       }
       setStep('select-day');
     } else if (step === 'exercises') {
-      if (exerciseViewMode === 'single') {
-        if (currentSetIndex > 0) {
-          setCurrentSetIndex(prev => prev - 1);
-        } else if (currentExerciseIndex > 0) {
-          setCurrentExerciseIndex(prev => prev - 1);
-          const prevEx = exercises[currentExerciseIndex - 1];
-          setCurrentSetIndex(prevEx.sets.length - 1);
-        } else {
-          setStep('review');
-        }
+      if (currentSetIndex > 0) {
+        setCurrentSetIndex(prev => prev - 1);
+      } else if (currentExerciseIndex > 0) {
+        setCurrentExerciseIndex(prev => prev - 1);
+        const prevEx = exercises[currentExerciseIndex - 1];
+        setCurrentSetIndex(prevEx.sets.length - 1);
       } else {
         setStep('review');
       }
@@ -624,7 +619,6 @@ export default function LogWorkout() {
               dayFocus={selectedDay === 'custom' ? 'Build your own session' : (dayData?.focus || '')}
               dayType={dayType}
               onChange={(updated) => {
-                // If exercises were removed, clamp the currentExerciseIndex
                 setExercises(updated);
                 if (updated.length > 0) {
                   setCurrentExerciseIndex(prev => Math.min(prev, updated.length - 1));
@@ -646,27 +640,31 @@ export default function LogWorkout() {
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
                   .map(ex => ex.name)
               )}
+              {...(workoutStartTime ? {
+                activeSession: true,
+                onSelectExercise: (idx: number) => {
+                  setCurrentExerciseIndex(idx);
+                  setCurrentSetIndex(0);
+                  setStep('exercises');
+                },
+                onFinish: handleExercisesDone,
+                isFinishing: isCreating,
+              } : {})}
             />
           )}
 
           {/* Log Sets */}
           {step === 'exercises' && (
-            <div className={cn(
-              exerciseViewMode === 'single' 
-                ? 'flex flex-col min-h-[calc(100vh-10rem)] justify-center' 
-                : ''
-            )}>
-              {/* Header with timer + view toggle + edit exercises button */}
+            <div className="flex flex-col min-h-[calc(100vh-10rem)] justify-center">
+              {/* Header with timer + edit exercises button */}
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-bold">
-                    {selectedDay === 'custom' ? 'Freestyle Workout' : dayData?.name}
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      {selectedDay === 'custom' ? 'Custom Session' : dayData?.focus}
-                    </p>
-                    <WorkoutTimer startTime={workoutStartTime} />
+                <div className="flex items-center gap-3">
+                  <WorkoutTimer startTime={workoutStartTime} />
+                  <div>
+                    <h3 className="text-sm font-semibold leading-tight">
+                      {selectedDay === 'custom' ? 'Freestyle' : (dayData?.name || 'Workout')}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground">{selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -677,12 +675,6 @@ export default function LogWorkout() {
                     <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
                   </div>
                   <button
-                    onClick={() => setExerciseViewMode(exerciseViewMode === 'single' ? 'overview' : 'single')}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {exerciseViewMode === 'single' ? <List size={16} /> : <LayoutGrid size={16} />}
-                  </button>
-                  <button
                     onClick={handleEditExercises}
                     className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     title="Edit exercises"
@@ -692,7 +684,7 @@ export default function LogWorkout() {
                 </div>
               </div>
 
-              {exerciseViewMode === 'single' && currentExercise && (
+              {currentExercise && (
                 <SetBySetCard
                   exercise={currentExercise}
                   exerciseIndex={currentExerciseIndex}
@@ -703,36 +695,12 @@ export default function LogWorkout() {
                   onNextExercise={handleNextExercise}
                   onPrevExercise={handlePrevExercise}
                   onSkipExercise={handleSkipExercise}
-                  onComplete={() => setExerciseViewMode('overview')}
+                  onComplete={() => setStep('review')}
                   isFirstExercise={currentExerciseIndex === 0}
                   isLastExercise={currentExerciseIndex === exercises.length - 1}
                   personalRecord={getPRForExercise(currentExercise.name)}
                   lastUsed={getLastUsed(currentExercise.name)}
                   workoutBias={dayData?.bias}
-                />
-              )}
-
-              {exerciseViewMode === 'overview' && (
-                <ExerciseReview
-                  exercises={exercises}
-                  dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
-                  dayFocus={selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}
-                  dayType={dayType}
-                  onChange={(updated) => {
-                    setExercises(updated);
-                    if (updated.length > 0) {
-                      setCurrentExerciseIndex(prev => Math.min(prev, updated.length - 1));
-                    }
-                  }}
-                  onStart={() => {}}
-                  activeSession
-                  onSelectExercise={(idx) => {
-                    setCurrentExerciseIndex(idx);
-                    setCurrentSetIndex(0);
-                    setExerciseViewMode('single');
-                  }}
-                  onFinish={handleExercisesDone}
-                  isFinishing={isCreating}
                 />
               )}
             </div>
