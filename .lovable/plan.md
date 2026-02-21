@@ -1,72 +1,36 @@
 
-## Improve Food Photo Analysis Accuracy
 
-### Problem Diagnosis
+## Update Active Session Buttons in ExerciseReview
 
-There are three root causes for poor food recognition:
+### What Changes
+When viewing the exercise list during an active workout session (via the overview toggle or edit button), the bottom action area will show:
 
-1. **Model quality**: The edge function uses `gpt-4o-mini` with `detail: "low"` — this is the lowest-quality vision mode, causing it to miss individual items (e.g., 3 eggs counted as 1, or sauce not identified).
-2. **Weak system prompt**: The current prompt is generic with no counting discipline or reasoning steps. It doesn't instruct the model to count items precisely, identify cooking methods, or acknowledge uncertainty.
-3. **No user correction flow**: After analysis, users can only "Retry" or "Confirm" — they can't correct individual line items (wrong quantity, wrong food name, wrong calories). This means any AI mistake goes straight into the log uncorrected.
+- **"Resume Workout"** as the primary, prominent button -- tapping it returns to the set-by-set card at the current exercise
+- **"Finish Early"** as a subtle, secondary text-style button below it -- visible but not easy to accidentally tap
+- When **all sets are completed**, the "Finish Workout" button becomes the sole primary button (current behavior, since there's nothing to resume)
 
----
+### Why
+1. Users who open the overview mid-workout most likely want to check progress or jump to an exercise, not finish
+2. An accidental "Finish" tap mid-workout could prematurely end a session
+3. The option to finish early should still be accessible for users who want it
 
-### The Fixes
+### Technical Details
 
-#### 1. Edge Function — `supabase/functions/analyze-food/index.ts`
+**File: `src/components/workout/ExerciseReview.tsx`** (lines ~588-597)
 
-**Upgrade model from `gpt-4o-mini` to `gpt-4o`** for all vision calls. The `gpt-4o` model has significantly better visual recognition, especially for counting individual items and identifying cooking methods.
+Replace the current single "Finish Workout" button in the `activeSession` branch with:
 
-**Switch image detail from `"low"` to `"high"`** so the model actually processes the full image resolution. "Low" mode uses a 512px thumbnail — "high" allows it to see the full image in tiles.
+1. Calculate whether all exercises are fully completed (every set marked `completed`)
+2. If **not all done**:
+   - Primary button: "Resume Workout" -- calls `onSelectExercise` with the current/next incomplete exercise index
+   - Below it: a small text-link-style "Finish Early" button (ghost/link variant, muted color, smaller font) -- calls `onFinish`
+3. If **all done**:
+   - Single primary button: "Finish Workout" -- calls `onFinish` (same as current)
 
-**Rewrite the system prompt** to enforce:
-- Explicit item counting ("count each individual item — if you see 3 eggs, list 3 eggs, not 'eggs'")
-- Cooking method detection ("baked/fried/boiled affects calories significantly")  
-- Sauce/dressing estimation ("do not ignore oils, dressings, or condiments")
-- A calibration heuristic ("a standard dinner plate is ~25cm. Use plate-relative size for portions")
-- Honest uncertainty ("if you cannot identify something, say 'Unknown item' and estimate 200 cal")
+**File: `src/pages/LogWorkout.tsx`** (lines ~715-737)
 
-**Add a `context` field to the request body** so the frontend can optionally pass extra context (e.g., "restaurant meal" or "home cooked") to improve accuracy.
+- Pass `currentExerciseIndex` to ExerciseReview as a new prop (e.g. `resumeAtIndex`) so "Resume" knows which exercise to return to
+- Alternatively, ExerciseReview can compute the first incomplete exercise index from the exercises array
 
-**Add `fiber` to the tool schema** since the `meals` table already has a `fiber` column that currently goes unused.
+No new dependencies or database changes required.
 
-#### 2. Client Pipeline — `src/lib/analyzeFoodImage.ts`
-
-**Increase compression quality from `0.75` to `0.85`** and raise max dimension from `1024px` to `1536px` in `imageCompression.ts`. Higher detail mode benefits from larger images.
-
-**Pass optional `context` hint** through to the edge function (the `analyzeFoodImage` function signature gains an optional `contextHint?: string` param).
-
-#### 3. UI — `src/components/health/CalorieTrackerCompact.tsx`
-
-**Add an editable results screen**: After AI analysis, instead of just showing a read-only list with Retry/Confirm, each food line item becomes editable inline:
-- Food name is a text input (tap to edit)
-- Portion is a text input
-- Calories is a number input (tap to edit)
-- A "+ Add item" button lets users add missed items
-- A trash icon on each row lets users remove wrongly detected items
-- The total auto-recalculates as users edit
-
-**Add a meal type selector** in the dialog header (the current auto-detect by time-of-day is convenient but users may want to override it).
-
-**Add a context hint input** — a small optional text field before submitting a photo: "Add context (optional)" → placeholder "e.g., restaurant, home cooked, meal prep" → passes to the edge function for better accuracy.
-
----
-
-### Files Changed
-
-| File | Change |
-|---|---|
-| `supabase/functions/analyze-food/index.ts` | Upgrade to `gpt-4o` + `detail: "high"`, rewrite system prompt, add `fiber` to schema, accept `context` hint |
-| `src/lib/imageCompression.ts` | Increase max dimension to 1536px and quality to 0.85 |
-| `src/lib/analyzeFoodImage.ts` | Pass optional `contextHint` to edge function |
-| `src/components/health/CalorieTrackerCompact.tsx` | Editable result items, add-item button, remove-item button, live total recalc, context hint input, meal type selector in dialog |
-| `src/components/health/CalorieTracker.tsx` | Same editable result items (this component is used on the Dashboard) |
-
----
-
-### Technical Notes
-
-- `gpt-4o` with `detail: "high"` costs ~3-4x more tokens per image than `gpt-4o-mini` with `detail: "low"`, but is significantly more accurate. The `OPENAI_API_KEY` is already configured.
-- The editable results state will use a local `editableFoods` array copied from `analysis.foods` on mount — editing this array recalculates `editableTotal` displayed in the confirm button.
-- `fiber` will be saved to the `meals` table (column already exists) when confirmed.
-- The `CalorieTracker.tsx` (full-size version on Dashboard) will also receive the same editable result pattern for consistency.
