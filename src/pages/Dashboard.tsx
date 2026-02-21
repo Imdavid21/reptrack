@@ -31,6 +31,13 @@ export default function Dashboard() {
     const dayEntries = Object.entries(days);
     if (dayEntries.length === 0) return null;
 
+    // Check if today is a rest day
+    const todayDayOfWeek = new Date().getDay(); // 0 = Sunday
+    const restDays: number[] = Array.isArray(preferences?.rest_days)
+      ? (preferences.rest_days as number[])
+      : [0]; // default: Sunday is rest
+    if (restDays.includes(todayDayOfWeek)) return null;
+
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const todayWorkout = workouts.find(w => w.date === todayStr);
     if (todayWorkout) return { completed: true, dayName: todayWorkout.day_name, dayKey: '' };
