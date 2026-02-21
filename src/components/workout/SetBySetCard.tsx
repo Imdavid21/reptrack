@@ -699,20 +699,6 @@ export function SetBySetCard({
             )}
           </div>
         )}
-
-        {/* 1RM estimate & plate breakdown for weighted exercises */}
-        {showWeight && !isTimed && selectedWeight > 0 && selectedReps > 0 && (
-          <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground tabular-nums">
-            <span>
-              Est. 1RM: <span className="font-medium text-foreground/70">{estimate1RM(selectedWeight, selectedReps)}kg</span>
-            </span>
-            {equipmentType === 'barbell' && selectedWeight >= 20 && (
-              <span>
-                {formatPlates(selectedWeight)}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Rest Timer — shown between sets */}
