@@ -110,7 +110,6 @@ function buildExercisesFromTemplate(
     } as WorkoutExercise;
   });
 }
-  const [showActiveOverview, setShowActiveOverview] = useState(false);
 
 export default function LogWorkout() {
   const navigate = useNavigate();
@@ -129,6 +128,7 @@ export default function LogWorkout() {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [showActiveOverview, setShowActiveOverview] = useState(false);
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
