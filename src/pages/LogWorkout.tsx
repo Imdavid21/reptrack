@@ -540,7 +540,7 @@ export default function LogWorkout() {
           }),
         }}>
           {/* Back Button */}
-          {step === 'review' && !workoutStartTime && (
+          {step === 'review' && (
             <button
               onClick={handleBack}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
@@ -632,9 +632,9 @@ export default function LogWorkout() {
               hasPendingSuggestions={preSuggestionExercises !== null}
               onConfirmSuggestions={handleConfirmSuggestions}
               onDenySuggestions={handleDenySuggestions}
-              availableDays={selectedDay !== 'custom' && !workoutStartTime ? availableDays : undefined}
+              availableDays={selectedDay !== 'custom' ? availableDays : undefined}
               selectedDayKey={selectedDay}
-              onSwitchDay={selectedDay !== 'custom' && !workoutStartTime ? handleSwitchDay : undefined}
+              onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}
               onSkipExercises={selectedDay ? handleQuickLog : undefined}
               isResuming={!!workoutStartTime}
               lastUsedNames={new Set(
@@ -642,7 +642,7 @@ export default function LogWorkout() {
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
                   .map(ex => ex.name)
               )}
-              {...(workoutStartTime ? {
+              {...(workoutStartTime && showActiveOverview ? {
                 activeSession: true,
                 onSelectExercise: (idx: number) => {
                   setCurrentExerciseIndex(idx);
