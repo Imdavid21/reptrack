@@ -110,7 +110,7 @@ function buildExercisesFromTemplate(
     } as WorkoutExercise;
   });
 }
-
+  const [showActiveOverview, setShowActiveOverview] = useState(false);
 
 export default function LogWorkout() {
   const navigate = useNavigate();
@@ -274,6 +274,7 @@ export default function LogWorkout() {
 
   // Navigate to review from exercises (edit exercises escape hatch)
   const handleEditExercises = () => {
+    setShowActiveOverview(false);
     setStep('review');
   };
 
@@ -397,6 +398,7 @@ export default function LogWorkout() {
       setCurrentExerciseIndex(prev => prev + 1);
       setCurrentSetIndex(0);
     } else {
+      setShowActiveOverview(true);
       setStep('review');
     }
   };
@@ -640,11 +642,12 @@ export default function LogWorkout() {
                   .filter(ex => findLastUsed(ex.name, lastUsedMap))
                   .map(ex => ex.name)
               )}
-              {...(workoutStartTime ? {
+              {...(workoutStartTime && showActiveOverview ? {
                 activeSession: true,
                 onSelectExercise: (idx: number) => {
                   setCurrentExerciseIndex(idx);
                   setCurrentSetIndex(0);
+                  setShowActiveOverview(false);
                   setStep('exercises');
                 },
                 onFinish: handleExercisesDone,
@@ -695,7 +698,7 @@ export default function LogWorkout() {
                   onNextExercise={handleNextExercise}
                   onPrevExercise={handlePrevExercise}
                   onSkipExercise={handleSkipExercise}
-                  onComplete={() => setStep('review')}
+                  onComplete={() => { setShowActiveOverview(true); setStep('review'); }}
                   isFirstExercise={currentExerciseIndex === 0}
                   isLastExercise={currentExerciseIndex === exercises.length - 1}
                   personalRecord={getPRForExercise(currentExercise.name)}
