@@ -43,6 +43,7 @@ interface SetBySetCardProps {
   onPrevExercise: () => void;
   onSkipExercise: () => void;
   onSwapExercise?: () => void;
+  onJumpToExercise?: (index: number) => void;
   onComplete: () => void;
   isFirstExercise: boolean;
   isLastExercise: boolean;
@@ -71,6 +72,7 @@ export function SetBySetCard({
   onPrevExercise,
   onSkipExercise,
   onSwapExercise,
+  onJumpToExercise,
   onComplete,
   isFirstExercise,
   isLastExercise,
@@ -413,20 +415,23 @@ export function SetBySetCard({
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Exercise progress */}
+      {/* Exercise progress — tappable segments */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums">
           {exerciseIndex + 1}/{totalExercises}
         </span>
         <div className="flex gap-0.5 flex-1">
           {Array.from({ length: totalExercises }).map((_, i) => (
-            <div
+            <button
               key={i}
+              onClick={() => onJumpToExercise?.(i)}
               className={cn(
-                'h-0.5 flex-1 rounded-full transition-all duration-300',
+                'h-2 flex-1 rounded-full transition-all duration-300',
                 i < exerciseIndex ? 'bg-primary' :
-                i === exerciseIndex ? 'bg-primary/50' : 'bg-muted'
+                i === exerciseIndex ? 'bg-primary/50' : 'bg-muted',
+                onJumpToExercise && 'cursor-pointer hover:opacity-80 active:scale-95'
               )}
+              title={`Exercise ${i + 1}`}
             />
           ))}
         </div>
