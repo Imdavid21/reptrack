@@ -731,7 +731,13 @@ export default function LogWorkout() {
                     onPrevExercise={handlePrevExercise}
                     onSkipExercise={handleSkipExercise}
                     onSwapExercise={() => setShowSwapPicker(true)}
-                    onJumpToExercise={(idx) => { setCurrentExerciseIndex(idx); setCurrentSetIndex(0); }}
+                    onJumpToExercise={(idx) => {
+                      setCurrentExerciseIndex(idx);
+                      // Land on first uncompleted set, or last set if all done
+                      const ex = exercises[idx];
+                      const firstIncomplete = ex?.sets.findIndex(s => !s.completed);
+                      setCurrentSetIndex(firstIncomplete >= 0 ? firstIncomplete : Math.max(0, (ex?.sets.length ?? 1) - 1));
+                    }}
                     onComplete={() => { setShowActiveOverview(true); setStep('review'); }}
                     isFirstExercise={currentExerciseIndex === 0}
                     isLastExercise={currentExerciseIndex === exercises.length - 1}
