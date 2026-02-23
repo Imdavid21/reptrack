@@ -8,6 +8,7 @@ import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
+import { ExercisePicker } from '@/components/workout/ExercisePicker';
 
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
@@ -136,6 +137,7 @@ export default function LogWorkout() {
   const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [showSwapPicker, setShowSwapPicker] = useState(false);
 
   const splitDays = useMemo(() => {
     if (hasCustomRoutine && customDays) return customDays;
@@ -366,6 +368,19 @@ export default function LogWorkout() {
   const handleAddExercise = (newExercise: WorkoutExercise) => {
     setExercises(prev => [...prev, { ...newExercise, sort_order: prev.length }]);
     toast.success(`Added ${newExercise.name}`);
+  };
+
+  const handleSwapExercise = (newExercise: WorkoutExercise) => {
+    setExercises(prev =>
+      prev.map((ex, idx) =>
+        idx === currentExerciseIndex
+          ? { ...newExercise, sort_order: ex.sort_order }
+          : ex
+      )
+    );
+    setCurrentSetIndex(0);
+    setShowSwapPicker(false);
+    toast.success(`Switched to ${newExercise.name}`);
   };
 
   const handleRemoveExercise = (indexToRemove: number) => {
@@ -691,23 +706,35 @@ export default function LogWorkout() {
               </div>
 
               {currentExercise && (
-                <SetBySetCard
-                  exercise={currentExercise}
-                  exerciseIndex={currentExerciseIndex}
-                  totalExercises={exercises.length}
-                  currentSetIndex={currentSetIndex}
-                  onChange={handleExerciseChange}
-                  onSetIndexChange={setCurrentSetIndex}
-                  onNextExercise={handleNextExercise}
-                  onPrevExercise={handlePrevExercise}
-                  onSkipExercise={handleSkipExercise}
-                  onComplete={() => { setShowActiveOverview(true); setStep('review'); }}
-                  isFirstExercise={currentExerciseIndex === 0}
-                  isLastExercise={currentExerciseIndex === exercises.length - 1}
-                  personalRecord={getPRForExercise(currentExercise.name)}
-                  lastUsed={getLastUsed(currentExercise.name)}
-                  workoutBias={dayData?.bias}
-                />
+                <>
+                  <SetBySetCard
+                    exercise={currentExercise}
+                    exerciseIndex={currentExerciseIndex}
+                    totalExercises={exercises.length}
+                    currentSetIndex={currentSetIndex}
+                    onChange={handleExerciseChange}
+                    onSetIndexChange={setCurrentSetIndex}
+                    onNextExercise={handleNextExercise}
+                    onPrevExercise={handlePrevExercise}
+                    onSkipExercise={handleSkipExercise}
+                    onSwapExercise={() => setShowSwapPicker(true)}
+                    onComplete={() => { setShowActiveOverview(true); setStep('review'); }}
+                    isFirstExercise={currentExerciseIndex === 0}
+                    isLastExercise={currentExerciseIndex === exercises.length - 1}
+                    personalRecord={getPRForExercise(currentExercise.name)}
+                    lastUsed={getLastUsed(currentExercise.name)}
+                    workoutBias={dayData?.bias}
+                  />
+                  {showSwapPicker && (
+                    <ExercisePicker
+                      existingExercises={exercises}
+                      onAddExercise={handleSwapExercise}
+                      dayType={dayType}
+                      autoOpen={true}
+                      onClose={() => setShowSwapPicker(false)}
+                    />
+                  )}
+                </>
               )}
             </div>
           )}

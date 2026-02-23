@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus, Info } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus, Info, RefreshCw } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
@@ -42,6 +42,7 @@ interface SetBySetCardProps {
   onNextExercise: () => void;
   onPrevExercise: () => void;
   onSkipExercise: () => void;
+  onSwapExercise?: () => void;
   onComplete: () => void;
   isFirstExercise: boolean;
   isLastExercise: boolean;
@@ -69,6 +70,7 @@ export function SetBySetCard({
   onNextExercise,
   onPrevExercise,
   onSkipExercise,
+  onSwapExercise,
   onComplete,
   isFirstExercise,
   isLastExercise,
@@ -464,27 +466,38 @@ export function SetBySetCard({
             )}
           </span>
         </div>
-        {showVariantSwitch && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeftRight className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background border-border z-50">
-              {variants.map((variant) => (
-                <DropdownMenuItem
-                  key={variant.name}
-                  onClick={() => switchVariant(variant.name, variant.defaultWeight)}
-                  className={cn('cursor-pointer text-xs', variant.name === exercise.name && 'bg-primary/10')}
-                >
-                  {variant.name}
-                  {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-1.5">
+          {onSwapExercise && (
+            <button
+              onClick={onSwapExercise}
+              className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              title="Replace exercise"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          )}
+          {showVariantSwitch && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                  <ArrowLeftRight className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border-border z-50">
+                {variants.map((variant) => (
+                  <DropdownMenuItem
+                    key={variant.name}
+                    onClick={() => switchVariant(variant.name, variant.defaultWeight)}
+                    className={cn('cursor-pointer text-xs', variant.name === exercise.name && 'bg-primary/10')}
+                  >
+                    {variant.name}
+                    {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {/* Set pills */}
