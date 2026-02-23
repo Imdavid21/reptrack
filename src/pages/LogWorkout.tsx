@@ -116,7 +116,7 @@ export default function LogWorkout() {
   const { user } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
-  const { draft, loaded, saveDraft, clearDraft } = useDraftWorkout();
+  const { draft, loaded, saveDraft, clearDraft, hasProgress: draftHasProgress } = useDraftWorkout();
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
   const { customDays, hasCustomRoutine, isLoading: routineLoading } = useCustomRoutine();
@@ -267,8 +267,11 @@ export default function LogWorkout() {
       }
       return now;
     });
-    setCurrentExerciseIndex(0);
-    setCurrentSetIndex(0);
+    // Only reset to beginning for fresh starts; when resuming a draft, keep saved position
+    if (!draftHasProgress) {
+      setCurrentExerciseIndex(0);
+      setCurrentSetIndex(0);
+    }
     setStep('exercises');
   };
 
