@@ -371,6 +371,19 @@ export default function LogWorkout() {
   };
 
   const handleSwapExercise = (newExercise: WorkoutExercise) => {
+    const current = exercises[currentExerciseIndex];
+    const hasCompletedSets = current?.sets.some(s => s.completed);
+
+    if (hasCompletedSets) {
+      const confirmed = window.confirm(
+        `You have completed sets for "${current.name}". Swapping will discard them. Continue?`
+      );
+      if (!confirmed) {
+        setShowSwapPicker(false);
+        return;
+      }
+    }
+
     setExercises(prev =>
       prev.map((ex, idx) =>
         idx === currentExerciseIndex
