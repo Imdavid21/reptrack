@@ -386,6 +386,12 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['pullup',         { bodyPart: 'Back',       muscleGroup: 'back' }],
   ['chin-up',        { bodyPart: 'Back',       muscleGroup: 'back' }],
   ['deadlift',       { bodyPart: 'Back',       muscleGroup: 'back' }],
+  ['shrug',          { bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
+  ['wrist curl',     { bodyPart: 'Forearms',   muscleGroup: 'arms' }],
+  ['farmer',         { bodyPart: 'Forearms',   muscleGroup: 'arms' }],
+  ['kickback',       { bodyPart: 'Triceps',    muscleGroup: 'arms' }],
+  ['mountain climb', { bodyPart: 'Core',       muscleGroup: 'core' }],
+  ['nordic',         { bodyPart: 'Hamstrings', muscleGroup: 'legs' }],
   // Single-word fallbacks
   ['squat',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
   ['lunge',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
