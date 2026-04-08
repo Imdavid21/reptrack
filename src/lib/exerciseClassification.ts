@@ -54,7 +54,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'incline push-ups':           { bodyPart: 'Chest', muscleGroup: 'chest' },
   'decline push-ups':           { bodyPart: 'Chest', muscleGroup: 'chest' },
   'close grip push-ups':        { bodyPart: 'Chest', muscleGroup: 'chest' },
-  'diamond push-ups':           { bodyPart: 'Chest', muscleGroup: 'chest' },
+  // diamond push-ups classified under Triceps below
   'dips':                       { bodyPart: 'Chest', muscleGroup: 'chest' },
   'weighted dips':              { bodyPart: 'Chest', muscleGroup: 'chest' },
   'close grip chest press':     { bodyPart: 'Chest', muscleGroup: 'chest' },
