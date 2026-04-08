@@ -77,6 +77,11 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Hyperextension', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Lower Back', exerciseType: 'bodyweight' },
     // Lever Rows
     { name: 'Lever Seated Row Machine', category: 'primary', defaultWeight: '30kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
+    // Traps
+    { name: 'Barbell Shrugs', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x12-15', muscleGroup: 'Traps', exerciseType: 'weighted' },
+    { name: 'Dumbbell Shrugs', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12-15', muscleGroup: 'Traps', exerciseType: 'weighted' },
+    // Pulldown Variations
+    { name: 'Close Grip Pulldown', category: 'primary', defaultWeight: '40kg', defaultReps: '3x10-12', muscleGroup: 'Lats', exerciseType: 'weighted' },
   ],
   'Legs': [
     // Primary Quads
