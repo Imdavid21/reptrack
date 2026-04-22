@@ -13,6 +13,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
   'Push': [
     // ─── Primary Chest ───────────────────────────────────────────────────────
     { name: 'Barbell Bench Press', category: 'primary', defaultWeight: '60kg', defaultReps: '4x6-8', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Flat Barbell Bench Press', category: 'primary', defaultWeight: '60kg', defaultReps: '4x6-8', muscleGroup: 'Chest', exerciseType: 'weighted' },
     { name: 'Incline Barbell Bench Press', category: 'primary', defaultWeight: '55kg', defaultReps: '4x8-10', muscleGroup: 'Upper Chest', exerciseType: 'weighted' },
     { name: 'Decline Barbell Bench Press', category: 'primary', defaultWeight: '60kg', defaultReps: '4x8-10', muscleGroup: 'Chest', exerciseType: 'weighted' },
     { name: 'Dumbbell Bench Press', category: 'primary', defaultWeight: '20kg', defaultReps: '4x8-10', muscleGroup: 'Chest', exerciseType: 'weighted' },
@@ -27,6 +28,8 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Incline Dumbbell Flyes', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Upper Chest', exerciseType: 'weighted' },
     { name: 'Flat Dumbbell Flyes', category: 'accessory', defaultWeight: '14kg', defaultReps: '3x10-12', muscleGroup: 'Chest', exerciseType: 'weighted' },
     { name: 'Pec Deck', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x12-15', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Chest Fly', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12-15', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Close Grip Push-ups', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-15', muscleGroup: 'Chest/Triceps', exerciseType: 'bodyweight' },
     { name: 'Push-ups', category: 'accessory', defaultWeight: 'BW', defaultReps: '3xAMRAP', muscleGroup: 'Chest', exerciseType: 'bodyweight' },
     { name: 'Incline Push-ups', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Chest', exerciseType: 'bodyweight' },
     { name: 'Decline Push-ups', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-15', muscleGroup: 'Upper Chest', exerciseType: 'bodyweight' },
@@ -48,6 +51,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Front Raises', category: 'accessory', defaultWeight: '8kg', defaultReps: '3x12-15', muscleGroup: 'Front Delts', exerciseType: 'weighted' },
     { name: 'Cable Front Raise', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x12-15', muscleGroup: 'Front Delts', exerciseType: 'weighted' },
     { name: 'Bent Over Rear Delt Flyes', category: 'accessory', defaultWeight: '8kg', defaultReps: '4x12-15', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
+    { name: 'Rear Delt Fly + Lat Raise', category: 'accessory', defaultWeight: '7kg', defaultReps: '3x12-15', muscleGroup: 'Rear Delts/Side Delts', exerciseType: 'weighted' },
     { name: 'Reverse Pec Deck', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x12-15', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
     { name: 'Upright Row', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x10-12', muscleGroup: 'Shoulders', exerciseType: 'weighted' },
     { name: 'Dumbbell Upright Row', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Shoulders', exerciseType: 'weighted' },

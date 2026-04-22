@@ -22,6 +22,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'flat dumbbell bench press':  { bodyPart: 'Chest', muscleGroup: 'chest' },
   'flat dumbbell bench':        { bodyPart: 'Chest', muscleGroup: 'chest' },
   'flat barbell bench':         { bodyPart: 'Chest', muscleGroup: 'chest' },
+  'flat barbell bench press':   { bodyPart: 'Chest', muscleGroup: 'chest' },
   'flat db bench':              { bodyPart: 'Chest', muscleGroup: 'chest' },
   'flat db bench press':        { bodyPart: 'Chest', muscleGroup: 'chest' },
   'db flat bench':              { bodyPart: 'Chest', muscleGroup: 'chest' },
