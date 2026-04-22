@@ -66,6 +66,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Close Grip Bench Press', category: 'accessory', defaultWeight: '50kg', defaultReps: '3x8-10', muscleGroup: 'Triceps', exerciseType: 'weighted' },
     { name: 'Tricep Kickback', category: 'accessory', defaultWeight: '8kg', defaultReps: '3x12-15', muscleGroup: 'Triceps', exerciseType: 'weighted' },
     { name: 'Tricep Dips', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-12', muscleGroup: 'Triceps', exerciseType: 'bodyweight' },
+    { name: 'Bench Tricep Dips', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Triceps', exerciseType: 'bodyweight' },
     { name: 'JM Press', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x8-10', muscleGroup: 'Triceps', exerciseType: 'weighted' },
   ],
   'Pull': [
