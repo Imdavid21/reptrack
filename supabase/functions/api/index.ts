@@ -9,25 +9,32 @@ function getCorsHeaders() {
   };
 }
 
-// Validate API key and return user_id
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Validate API key (by hash) and return user_id
 async function validateApiKey(apiKey: string): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  const keyHash = await sha256Hex(apiKey);
+
   const { data, error } = await supabase
     .from("api_keys")
     .select("user_id")
-    .eq("api_key", apiKey)
-    .single();
+    .eq("key_hash", keyHash)
+    .maybeSingle();
 
   if (error || !data) return null;
 
-  // Update last_used_at
   await supabase
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
-    .eq("api_key", apiKey);
+    .eq("key_hash", keyHash);
 
   return data.user_id;
 }
