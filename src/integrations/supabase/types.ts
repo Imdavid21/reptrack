@@ -16,23 +16,26 @@ export type Database = {
     Tables: {
       api_keys: {
         Row: {
-          api_key: string
           created_at: string
           id: string
+          key_hash: string
+          key_prefix: string
           last_used_at: string | null
           user_id: string
         }
         Insert: {
-          api_key: string
           created_at?: string
           id?: string
+          key_hash: string
+          key_prefix: string
           last_used_at?: string | null
           user_id: string
         }
         Update: {
-          api_key?: string
           created_at?: string
           id?: string
+          key_hash?: string
+          key_prefix?: string
           last_used_at?: string | null
           user_id?: string
         }
