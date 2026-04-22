@@ -14,23 +14,31 @@ const corsHeaders = getCorsHeaders();
 
 const sessions = new Map<string, { userId: string; messageEndpoint: string }>();
 
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function validateApiKey(apiKey: string): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  const keyHash = await sha256Hex(apiKey);
+
   const { data, error } = await supabase
     .from("api_keys")
     .select("user_id")
-    .eq("api_key", apiKey)
-    .single();
+    .eq("key_hash", keyHash)
+    .maybeSingle();
 
   if (error || !data) return null;
 
   await supabase
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
-    .eq("api_key", apiKey);
+    .eq("key_hash", keyHash);
 
   return data.user_id;
 }

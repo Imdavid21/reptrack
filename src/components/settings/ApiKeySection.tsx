@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Copy, RefreshCw, Eye, EyeOff, Key, ExternalLink, Check, Bot } from 'lucide-react';
+import { Copy, RefreshCw, Eye, EyeOff, ExternalLink, Check, Bot, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 interface ApiKeyData {
-  api_key: string;
+  key_prefix: string;
   created_at: string;
   last_used_at: string | null;
+  // Plaintext key — present ONLY immediately after creation/regeneration.
+  api_key?: string;
   is_new?: boolean;
   regenerated?: boolean;
 }
 
 export function ApiKeySection() {
   const [apiKey, setApiKey] = useState<ApiKeyData | null>(null);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -40,8 +43,13 @@ export function ApiKeySection() {
       );
 
       if (!response.ok) throw new Error('Failed to fetch API key');
-      const data = await response.json();
+      const data: ApiKeyData = await response.json();
       setApiKey(data);
+      // First-time provisioning returns the plaintext once.
+      if (data.api_key) {
+        setRevealedKey(data.api_key);
+        setShowKey(true);
+      }
     } catch (error) {
       console.error('Error fetching API key:', error);
       toast.error('Failed to load API key');
@@ -55,8 +63,8 @@ export function ApiKeySection() {
   }, []);
 
   const handleCopy = async () => {
-    if (!apiKey?.api_key) return;
-    await navigator.clipboard.writeText(apiKey.api_key);
+    if (!revealedKey) return;
+    await navigator.clipboard.writeText(revealedKey);
     setCopiedKey(true);
     toast.success('API key copied');
     setTimeout(() => setCopiedKey(false), 2000);
@@ -82,10 +90,11 @@ export function ApiKeySection() {
       );
 
       if (!response.ok) throw new Error('Failed to regenerate');
-      const data = await response.json();
+      const data: ApiKeyData = await response.json();
       setApiKey(data);
+      setRevealedKey(data.api_key ?? null);
       setShowKey(true);
-      toast.success('API key regenerated');
+      toast.success('API key regenerated. Copy it now — it will not be shown again.');
     } catch (error) {
       toast.error('Failed to regenerate API key');
     } finally {
@@ -93,25 +102,21 @@ export function ApiKeySection() {
     }
   };
 
-  const maskedKey = apiKey?.api_key 
-    ? `${apiKey.api_key.slice(0, 8)}${'•'.repeat(24)}${apiKey.api_key.slice(-4)}`
-    : '';
+  const prefix = apiKey?.key_prefix ?? '';
+  const maskedKey = prefix ? `${prefix}${'•'.repeat(28)}` : '';
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiBaseUrl = `${supabaseUrl}/functions/v1/api`;
   const mcpBaseUrl = `${supabaseUrl}/functions/v1/mcp`;
   const mcpSseUrl = `${mcpBaseUrl}/sse`;
 
-  // Always use actual key for copy operations, but display placeholder when hidden
-  const actualKey = apiKey?.api_key || '';
-  const displayKey = showKey ? actualKey : 'YOUR_API_KEY';
-  const keyIsAvailable = !!apiKey?.api_key;
+  const keyIsAvailable = !!revealedKey;
+  const displayKey = showKey && revealedKey ? revealedKey : 'YOUR_API_KEY';
 
-  // Commands for display (shows placeholder if key hidden)
   const mcpRemoteCommandDisplay = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${displayKey}"`;
-
-  // Commands for copying (always uses actual key)
-  const mcpRemoteCommandCopy = `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${actualKey}"`;
+  const mcpRemoteCommandCopy = revealedKey
+    ? `npx -y mcp-remote ${mcpSseUrl} --header "X-API-Key:${revealedKey}"`
+    : '';
 
   const claudeConfigDisplay = `{
   "mcpServers": {
@@ -128,7 +133,7 @@ export function ApiKeySection() {
   }
 }`;
 
-  const claudeConfigCopy = `{
+  const claudeConfigCopy = revealedKey ? `{
   "mcpServers": {
     "fitness-tracker": {
       "command": "npx",
@@ -137,15 +142,15 @@ export function ApiKeySection() {
         "mcp-remote",
         "${mcpSseUrl}",
         "--header",
-        "X-API-Key:${actualKey}"
+        "X-API-Key:${revealedKey}"
       ]
     }
   }
-}`;
+}` : '';
 
   const copyWithToast = async (type: 'command' | 'config') => {
     if (!keyIsAvailable) {
-      toast.error('API key not available');
+      toast.error('Regenerate to reveal your API key first');
       return;
     }
     const value = type === 'command' ? mcpRemoteCommandCopy : claudeConfigCopy;
@@ -165,6 +170,7 @@ export function ApiKeySection() {
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
         Use your API key to access your fitness data from external apps, automations, or AI assistants.
+        For your security, the full key is only shown once at generation. We store a one-way hash; if you lose it, regenerate a new one.
       </div>
 
       {/* API Key Display */}
@@ -183,24 +189,34 @@ export function ApiKeySection() {
         ) : (
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-muted px-3 py-2 text-sm font-mono overflow-hidden">
-              {showKey ? apiKey?.api_key : maskedKey}
+              {showKey && revealedKey ? revealedKey : maskedKey}
             </code>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowKey(!showKey)}
-              title={showKey ? 'Hide' : 'Show'}
-            >
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+            {revealedKey && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowKey(!showKey)}
+                title={showKey ? 'Hide' : 'Show'}
+              >
+                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
               onClick={handleCopy}
-              title="Copy"
+              disabled={!revealedKey}
+              title={revealedKey ? 'Copy' : 'Regenerate to copy'}
             >
               {copiedKey ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
             </Button>
+          </div>
+        )}
+
+        {!revealedKey && !isLoading && apiKey && (
+          <div className="flex items-start gap-2 text-2xs text-muted-foreground bg-muted/50 p-2">
+            <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+            <span>The full key is no longer visible. Regenerate to get a new one (this invalidates the old one).</span>
           </div>
         )}
 
@@ -304,7 +320,7 @@ export function ApiKeySection() {
                 size="icon"
                 onClick={() => copyWithToast('command')}
                 disabled={!keyIsAvailable}
-                title="Copy command with your API key"
+                title={keyIsAvailable ? 'Copy command with your API key' : 'Regenerate to reveal key'}
               >
                 {copiedCommand ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
@@ -325,7 +341,7 @@ export function ApiKeySection() {
                 size="icon"
                 onClick={() => copyWithToast('config')}
                 disabled={!keyIsAvailable}
-                title="Copy Claude config with your API key"
+                title={keyIsAvailable ? 'Copy Claude config with your API key' : 'Regenerate to reveal key'}
               >
                 {copiedConfig ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
