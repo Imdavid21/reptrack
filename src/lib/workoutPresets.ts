@@ -188,7 +188,7 @@ export const phase2Routine: WorkoutRoutine = {
         { name: "Incline Dumbbell Press", category: "primary", targetWeight: "16kg", targetReps: "4x10-12", notes: "3s eccentric", restSeconds: 90, rir: "1-2" },
         { name: "Cable Crossover", category: "primary", targetWeight: "12kg", targetReps: "3x12-15", restSeconds: 90, rir: "1-2" },
         { name: "Arnold Press", category: "primary", targetWeight: "12kg", targetReps: "3x10-12", restSeconds: 90, rir: "1-2" },
-        { name: "Flat Barbell Bench", category: "primary", targetWeight: "55kg", targetReps: "3x10-12", notes: "Add flat bench volume", restSeconds: 90, rir: "1-2" },
+        { name: "Flat Barbell Bench Press", category: "primary", targetWeight: "55kg", targetReps: "3x10-12", notes: "Add flat bench volume", restSeconds: 90, rir: "1-2" },
         { name: "Lateral Raises", category: "accessory", targetWeight: "8kg", targetReps: "4x15-20", restSeconds: 60, rir: "0-1", notes: "Last set to failure" },
         { name: "Bent Over Rear Delt Flyes", category: "accessory", targetWeight: "7kg", targetReps: "4x15-20", restSeconds: 60, rir: "0-1", notes: "Last set to failure" },
         { name: "Dips", category: "accessory", targetWeight: "BW", targetReps: "4x10-12", restSeconds: 90, rir: "1-2" },
@@ -242,7 +242,7 @@ export const phase3Routine: WorkoutRoutine = {
       exercises: [
         { name: "Push-ups", category: "warmup", targetWeight: "BW", targetReps: "2x15" },
         { name: "Incline Barbell Bench Press", category: "primary", targetWeight: "65kg", targetReps: "5x3-5", notes: "Strength peak", restSeconds: 180, rir: "2-3" },
-        { name: "Flat Barbell Bench", category: "primary", targetWeight: "60kg", targetReps: "4x4-6", restSeconds: 180, rir: "2-3" },
+        { name: "Flat Barbell Bench Press", category: "primary", targetWeight: "60kg", targetReps: "4x4-6", restSeconds: 180, rir: "2-3" },
         { name: "Overhead Press", category: "primary", targetWeight: "45kg", targetReps: "4x4-6", restSeconds: 180, rir: "2-3" },
         { name: "Incline Dumbbell Press", category: "accessory", targetWeight: "20kg", targetReps: "3x6-8", restSeconds: 120, rir: "2-3" },
         { name: "Lateral Raises", category: "accessory", targetWeight: "9kg", targetReps: "4x8-10", restSeconds: 120, rir: "1-2" },
