@@ -484,7 +484,7 @@ export function getEquipmentType(exerciseName: string): ExerciseVariant['equipme
 export function getWeightLabel(equipmentType: ExerciseVariant['equipmentType']): string {
   switch (equipmentType) {
     case 'barbell': return 'kg';      // Total weight (bar + plates)
-    case 'dumbbell': return 'kg ea';  // Per hand
+    case 'dumbbell': return 'kg';     // Total weight logged (not per hand)
     case 'cable': return 'kg';        // Stack weight
     case 'machine': return 'kg';      // Stack/plate weight
     case 'bodyweight': return 'kg';   // Added weight
