@@ -1,45 +1,36 @@
 
+# Exercise Library Update Plan
 
-## Optimize Exercise Review UI
+## Problem
+13 naming mismatches between the user's actual logged exercises and the exercise library, plus 4 missing exercises. This causes broken analytics, missing progression charts, and exercises not pre-filling correctly.
 
-### Changes
+## Changes
 
-**1. Merge AI button into "Add Exercise" button**
+### 1. Add missing exercises to `exerciseLibrary.ts`
+- **Push**: Add "Chest Fly" (accessory, Chest), "Close Grip Push-ups" (accessory, Chest/Triceps, bodyweight), "Flat Barbell Bench Press" (primary, Chest)
+- **Pull**: Add "Rear Delt Fly + Lat Raise" (accessory, Rear Delts/Side Delts) — or split into separate if preferred
 
-Combine the separate AI sparkles icon button into the "Add Exercise" button itself. The new button will show `+ Add Exercise` on the left and a sparkles icon divider on the right side -- tapping the left area opens the exercise picker, tapping the sparkles triggers AI suggestions. This keeps the UI cleaner with one combined element instead of two separate buttons.
+### 2. Add aliases to `exerciseClassification.ts`
+Map all 13 naming variants so analytics resolve correctly:
+- "Barbell Curls" → "Barbell Curl"
+- "Cable Seated Row" → "Seated Cable Row"
+- "Cable Tricep Pushdowns" → "Tricep Pushdown"
+- "Deadlifts" → "Conventional Deadlift"
+- "Dumbbell Bicep Curls" → "Dumbbell Curl"
+- "Face Pull" → "Face Pulls"
+- "Flat Dumbbell Bench Press" → "Dumbbell Bench Press"
+- "Leg Extensions" → "Leg Extension"
+- "Lateral Raise Machine" → "Machine Lateral Raise"
+- "Standing Calf Raises" → "Standing Calf Raise"
+- "Flat Barbell Bench" → "Flat Barbell Bench Press" (new entry)
 
-**2. Add "Finish Early" button when resuming a draft**
+### 3. Fix preset name in `workoutPresets.ts`
+- Rename "Flat Barbell Bench" → "Flat Barbell Bench Press" (matching the new library entry) across Phase 2 and Phase 3
 
-When `isResuming` is true (a saved draft with progress exists), add a subtle "Finish Early" text button. This sits between the primary "Resume Workout" button and the "Skip exercises" link. It calls the same finish handler as the active session's finish early.
+### 4. Run a SQL migration to normalize historical exercise names
+Batch UPDATE on `exercise_sets` to rename logged entries to canonical names, ensuring all past data aligns with the library for accurate progression tracking.
 
-- "Resume Workout" remains the big, prominent primary button
-- "Finish Early" is a small, muted text link -- visible but hard to accidentally tap
-- "Skip exercises" stays as-is and remains functionally separate (it logs a quick empty workout, not the same as finishing early)
-
-**3. Keep Skip and Finish Early as separate actions**
-
-- "Skip exercises" = quick-log with no exercise data (handleQuickLog)
-- "Finish Early" = save whatever progress has been recorded so far
-
-### Technical Details
-
-**File: `src/components/workout/ExerciseReview.tsx`**
-
-*Props:* Add optional `onFinishEarly?: () => void` and `isFinishingEarly?: boolean` props.
-
-*Add Exercise + AI row (lines ~661-697):* Replace the two separate buttons with a single combined button group:
-- A container with dashed border and rounded-xl
-- Left section: "+ Add Exercise" (click opens picker)  
-- Right section: sparkles icon with a left divider line (click triggers onSuggest)
-- When AI suggestions are pending or picker is open, render as before
-
-*Bottom actions (lines ~699-717):* When `isResuming` and `onFinishEarly` is provided, insert a "Finish Early" text button between "Resume Workout" and "Skip exercises":
-```
-Resume Workout (primary)
-Finish Early (subtle text)
-Skip exercises -> (existing link)
-```
-
-**File: `src/pages/LogWorkout.tsx`**
-
-Pass `onFinishEarly={handleExercisesDone}` and `isFinishingEarly={isCreating}` to `ExerciseReview` when `isResuming` is true.
+## Technical Details
+- Files modified: `src/lib/exerciseLibrary.ts`, `src/lib/exerciseClassification.ts`, `src/lib/workoutPresets.ts`
+- One database migration to normalize ~13 exercise name variants in `exercise_sets`
+- No UI changes needed — the picker and charts will automatically benefit from consistent naming
