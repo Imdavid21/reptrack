@@ -12,7 +12,11 @@ export type DataTable =
   | 'meals'
   | 'calorie_burns'
   | 'habits'
-  | 'recovery_metrics';
+  | 'recovery_metrics'
+  | 'custom_routines'
+  | 'user_preferences'
+  | 'exercise_templates'
+  | 'deload_weeks';
 
 interface ExportOptions {
   tables: DataTable[];
