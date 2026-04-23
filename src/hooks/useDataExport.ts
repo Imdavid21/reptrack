@@ -333,6 +333,10 @@ export function useDataExport() {
       'calorie_burns',
       'habits',
       'recovery_metrics',
+      'custom_routines',
+      'user_preferences',
+      'exercise_templates',
+      'deload_weeks',
     ];
     
     return await exportToCSV({ tables: allTables });
