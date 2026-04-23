@@ -12,7 +12,11 @@ export type DataTable =
   | 'meals'
   | 'calorie_burns'
   | 'habits'
-  | 'recovery_metrics';
+  | 'recovery_metrics'
+  | 'custom_routines'
+  | 'user_preferences'
+  | 'exercise_templates'
+  | 'deload_weeks';
 
 interface ExportOptions {
   tables: DataTable[];
@@ -71,6 +75,28 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'sleep_quality', 'muscle_soreness', 'fatigue_level', 'stress_level',
     'workout_readiness', 'deload_recommended', 'notes', 'created_at', 'updated_at'
   ],
+  custom_routines: [
+    'id', 'user_id', 'routine_name', 'routine_data', 'is_active', 'created_at'
+  ],
+  user_preferences: [
+    'id', 'user_id', 'age', 'gender', 'height_cm', 'activity_level',
+    'units_system', 'weight_goal_type', 'weight_goal', 'sleep_goal',
+    'weekly_workout_goal', 'daily_calorie_goal', 'daily_water_goal',
+    'onboarding_completed', 'routine_setup_completed', 'rest_days',
+    'training_split', 'dietary_preferences', 'fitness_goal',
+    'created_at', 'updated_at'
+  ],
+  exercise_templates: [
+    'id', 'user_id', 'name', 'canonical_name', 'category', 'equipment',
+    'movement_pattern', 'primary_muscles', 'secondary_muscles',
+    'default_reps', 'default_weight', 'version', 'deprecated_at',
+    'created_at', 'updated_at'
+  ],
+  deload_weeks: [
+    'id', 'user_id', 'week_start', 'week_end', 'trigger_reason',
+    'volume_reduction_percent', 'intensity_reduction_percent',
+    'fatigue_indicators', 'completed', 'notes', 'created_at'
+  ],
 };
 
 // Tables that link via workout_id instead of user_id
@@ -86,6 +112,10 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   calorie_burns: { column: 'date', ascending: true },
   habits: null,
   recovery_metrics: { column: 'date', ascending: true },
+  custom_routines: { column: 'created_at', ascending: true },
+  user_preferences: { column: 'created_at', ascending: true },
+  exercise_templates: { column: 'created_at', ascending: true },
+  deload_weeks: { column: 'week_start', ascending: true },
 };
 
 const PAGE_SIZE = 1000;
@@ -303,6 +333,10 @@ export function useDataExport() {
       'calorie_burns',
       'habits',
       'recovery_metrics',
+      'custom_routines',
+      'user_preferences',
+      'exercise_templates',
+      'deload_weeks',
     ];
     
     return await exportToCSV({ tables: allTables });
