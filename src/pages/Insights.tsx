@@ -462,6 +462,11 @@ function InsightsContent() {
               <CalorieChart />
             </motion.div>
 
+            {/* Daily Protein Intake */}
+            <motion.div variants={staggerItem}>
+              <ProteinChart />
+            </motion.div>
+
             {/* Daily Vitals (Weight + Sleep merged) */}
             <motion.div variants={staggerItem}>
               <DailyVitalsChart />
