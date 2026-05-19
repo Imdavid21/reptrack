@@ -21,6 +21,7 @@ import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { CalorieChart } from '@/components/health/CalorieChart';
+import { ProteinChart } from '@/components/health/ProteinChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
