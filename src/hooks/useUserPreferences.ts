@@ -11,6 +11,7 @@ export interface UserPreferences {
   onboarding_completed: boolean;
   daily_water_goal: number;
   daily_calorie_goal: number;
+  daily_protein_goal: number;
   weekly_workout_goal: number;
   sleep_goal: number;
   weight_goal: number | null;
