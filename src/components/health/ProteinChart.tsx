@@ -1,13 +1,13 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Beef } from 'lucide-react';
+import { Beef, Pencil, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { cn } from '@/lib/utils';
 
 interface ProteinPoint {
@@ -48,12 +48,19 @@ function useProteinHistory() {
 
 export function ProteinChart() {
   const { data = [], isLoading } = useProteinHistory();
-  const { preferences } = useUserPreferences();
-  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
+  const { preferences, updatePreferences } = useUserPreferences();
 
-  const bodyweight = metricsData?.totals?.avgBodyweight || preferences?.weight_goal || 70;
-  // Standard target: 1.6 g/kg bodyweight (training minimum)
-  const dailyTarget = Math.round(bodyweight * 1.6);
+  const dailyTarget = preferences?.daily_protein_goal ?? 180;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<string>(String(dailyTarget));
+
+  const saveTarget = async () => {
+    const v = Math.max(1, Math.min(500, Math.round(Number(draft) || 0)));
+    if (v !== dailyTarget) {
+      await updatePreferences.mutateAsync({ daily_protein_goal: v });
+    }
+    setEditing(false);
+  };
 
   const loggedDays = data.filter(d => d.protein > 0);
   const avgProtein = loggedDays.length
@@ -111,7 +118,41 @@ export function ProteinChart() {
         </div>
         <div className="text-right">
           <div className="text-xs text-muted-foreground">Target</div>
-          <div className="text-sm font-semibold tabular-nums">{dailyTarget}g</div>
+          {editing ? (
+            <div className="flex items-center gap-1 mt-0.5">
+              <input
+                type="number"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveTarget();
+                  if (e.key === 'Escape') { setEditing(false); setDraft(String(dailyTarget)); }
+                }}
+                autoFocus
+                className="w-14 bg-muted/40 rounded-md px-1.5 py-0.5 text-sm font-semibold tabular-nums text-right outline-none border border-border focus:border-insight-mint"
+              />
+              <span className="text-sm font-semibold">g</span>
+              <button onClick={saveTarget} className="p-1 rounded-md hover:bg-muted/50" aria-label="Save target">
+                <Check className="h-3.5 w-3.5 text-insight-mint" />
+              </button>
+              <button
+                onClick={() => { setEditing(false); setDraft(String(dailyTarget)); }}
+                className="p-1 rounded-md hover:bg-muted/50"
+                aria-label="Cancel"
+              >
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setDraft(String(dailyTarget)); setEditing(true); }}
+              className="flex items-center gap-1.5 text-sm font-semibold tabular-nums hover:text-insight-mint transition-colors"
+              aria-label="Edit protein target"
+            >
+              {dailyTarget}g
+              <Pencil className="h-3 w-3 text-muted-foreground" />
+            </button>
+          )}
         </div>
       </div>
 
