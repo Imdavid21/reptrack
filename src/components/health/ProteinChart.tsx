@@ -1,13 +1,13 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Beef } from 'lucide-react';
+import { Beef, Pencil, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { cn } from '@/lib/utils';
 
 interface ProteinPoint {
