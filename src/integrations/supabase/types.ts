@@ -540,6 +540,7 @@ export type Database = {
           age: number | null
           created_at: string | null
           daily_calorie_goal: number | null
+          daily_protein_goal: number
           daily_water_goal: number | null
           dietary_preferences: string[] | null
           fitness_goal: string | null
@@ -563,6 +564,7 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_protein_goal?: number
           daily_water_goal?: number | null
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
@@ -586,6 +588,7 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_protein_goal?: number
           daily_water_goal?: number | null
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
