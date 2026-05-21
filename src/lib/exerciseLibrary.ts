@@ -123,6 +123,9 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Cable Reverse Curls', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12-15', muscleGroup: 'Forearms', exerciseType: 'weighted' },
     { name: 'Wrist Curls', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x15-20', muscleGroup: 'Forearms', exerciseType: 'weighted' },
     { name: 'Reverse Wrist Curls', category: 'accessory', defaultWeight: '5kg', defaultReps: '3x15-20', muscleGroup: 'Forearms', exerciseType: 'weighted' },
+    { name: 'Dumbbell Wrist Curls', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x15-20', muscleGroup: 'Forearms', exerciseType: 'weighted' },
+    { name: 'Behind-the-Back Wrist Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x15-20', muscleGroup: 'Forearms', exerciseType: 'weighted' },
+    { name: 'Zottman Curls', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Forearms', exerciseType: 'weighted' },
     { name: 'Farmer Walks', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x30', muscleGroup: 'Forearms', exerciseType: 'timed' },
     // ─── Lower Back ───────────────────────────────────────────────────────────
     { name: 'Back Extension 90 Degree', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Lower Back', exerciseType: 'bodyweight' },
