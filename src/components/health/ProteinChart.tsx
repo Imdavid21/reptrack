@@ -48,12 +48,19 @@ function useProteinHistory() {
 
 export function ProteinChart() {
   const { data = [], isLoading } = useProteinHistory();
-  const { preferences } = useUserPreferences();
-  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
+  const { preferences, updatePreferences } = useUserPreferences();
 
-  const bodyweight = metricsData?.totals?.avgBodyweight || preferences?.weight_goal || 70;
-  // Standard target: 1.6 g/kg bodyweight (training minimum)
-  const dailyTarget = Math.round(bodyweight * 1.6);
+  const dailyTarget = preferences?.daily_protein_goal ?? 180;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<string>(String(dailyTarget));
+
+  const saveTarget = async () => {
+    const v = Math.max(1, Math.min(500, Math.round(Number(draft) || 0)));
+    if (v !== dailyTarget) {
+      await updatePreferences.mutateAsync({ daily_protein_goal: v });
+    }
+    setEditing(false);
+  };
 
   const loggedDays = data.filter(d => d.protein > 0);
   const avgProtein = loggedDays.length
