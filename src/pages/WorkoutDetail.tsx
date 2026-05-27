@@ -144,6 +144,26 @@ export default function WorkoutDetail() {
     }
   };
 
+  const handleAddSet = async (baseName: string, sets: typeof workout.exercises) => {
+    if (!workoutId) return;
+    const lastSet = sets[sets.length - 1];
+    const nextSetNum = sets.length + 1;
+    const currentMaxOrder = Math.max(...workout.exercises.map(e => e.sort_order), 0);
+    try {
+      await createExercise({
+        workout_id: workoutId,
+        name: `${baseName} (Set ${nextSetNum})`,
+        category: lastSet.category,
+        target_weight: lastSet.actual_weight || lastSet.target_weight || '',
+        target_reps: lastSet.actual_reps || lastSet.target_reps || '',
+        sort_order: currentMaxOrder + 1,
+      });
+      toast.success('Set added');
+    } catch (e) {
+      toast.error('Failed to add set');
+    }
+  };
+
   const completedCount = workout.exercises.filter(e => e.completed).length;
   const totalCount = workout.exercises.length;
 
