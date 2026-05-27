@@ -144,6 +144,26 @@ export default function WorkoutDetail() {
     }
   };
 
+  const handleAddSet = async (baseName: string, sets: typeof workout.exercises) => {
+    if (!workoutId) return;
+    const lastSet = sets[sets.length - 1];
+    const nextSetNum = sets.length + 1;
+    const currentMaxOrder = Math.max(...workout.exercises.map(e => e.sort_order), 0);
+    try {
+      await createExercise({
+        workout_id: workoutId,
+        name: `${baseName} (Set ${nextSetNum})`,
+        category: lastSet.category,
+        target_weight: lastSet.actual_weight || lastSet.target_weight || '',
+        target_reps: lastSet.actual_reps || lastSet.target_reps || '',
+        sort_order: currentMaxOrder + 1,
+      });
+      toast.success('Set added');
+    } catch (e) {
+      toast.error('Failed to add set');
+    }
+  };
+
   const completedCount = workout.exercises.filter(e => e.completed).length;
   const totalCount = workout.exercises.length;
 
@@ -285,6 +305,16 @@ export default function WorkoutDetail() {
                   );
                 })}
               </div>
+
+              {isEditMode && (
+                <button
+                  onClick={() => handleAddSet(baseName, sets)}
+                  className="w-full mt-1 py-1.5 border border-dashed border-border rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Set
+                </button>
+              )}
             </div>
           ))}
 
