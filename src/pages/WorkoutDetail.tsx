@@ -305,6 +305,16 @@ export default function WorkoutDetail() {
                   );
                 })}
               </div>
+
+              {isEditMode && (
+                <button
+                  onClick={() => handleAddSet(baseName, sets)}
+                  className="w-full mt-1 py-1.5 border border-dashed border-border rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Set
+                </button>
+              )}
             </div>
           ))}
 
