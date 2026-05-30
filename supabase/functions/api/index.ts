@@ -121,7 +121,19 @@ serve(async (req) => {
         const offset = parseInt(url.searchParams.get("offset") || "0");
 
         if (workoutId) {
-          // Single workout: direct query, no join needed
+          // Verify the workout belongs to the requesting user before returning exercises
+          const { data: owned, error: ownerErr } = await supabase
+            .from("workouts")
+            .select("id")
+            .eq("id", workoutId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (ownerErr || !owned) {
+            return new Response(
+              JSON.stringify({ error: "Workout not found" }),
+              { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
           ({ data, error } = await supabase
             .from("exercises")
             .select("id, workout_id, name, category, target_weight, target_reps, actual_weight, actual_reps, completed, sort_order")
