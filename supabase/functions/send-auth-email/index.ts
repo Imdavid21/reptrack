@@ -35,6 +35,23 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+async function verifyJwtUser(authHeader: string | null): Promise<{ id: string; email: string | null } | null> {
+  if (!authHeader) return null;
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: authHeader, apikey: anonKey },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    if (!user?.id) return null;
+    return { id: user.id, email: user.email ?? null };
+  } catch {
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders();
 
@@ -43,7 +60,24 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require a valid Supabase JWT — prevents anonymous email-spam abuse
+    const authUser = await verifyJwtUser(req.headers.get("authorization"));
+    if (!authUser) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...getCorsHeaders() } }
+      );
+    }
+
     const { type, email, redirectUrl, newEmail }: AuthEmailRequest = await req.json();
+
+    // Only allow sending auth emails to the authenticated user's own address
+    if (!authUser.email || authUser.email.toLowerCase() !== String(email).toLowerCase()) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     if (!email || !redirectUrl) {
       return new Response(
