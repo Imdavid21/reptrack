@@ -21,6 +21,9 @@ export interface UserPreferences {
   rest_days: number[];
   routine_setup_completed: boolean;
   fitness_goal: string | null;
+  deficit_mode_enabled: boolean;
+  daily_deficit_target: number;
+  maintenance_calories: number | null;
   created_at: string;
   updated_at: string;
 }

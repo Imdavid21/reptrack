@@ -10,6 +10,10 @@ export interface Meal {
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   food_name: string | null;
   calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+  fiber: number | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;

@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil, TrendingDown
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const MEAL_ICONS = {
   breakfast: Coffee,
@@ -55,6 +57,7 @@ export function CalorieTrackerCompact() {
   const { user } = useAuth();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
   const { preferences, updatePreferences } = useUserPreferences();
+  const { totalBurned } = useCalorieBurn();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -78,7 +81,20 @@ export function CalorieTrackerCompact() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const deficitMode = preferences?.deficit_mode_enabled ?? false;
+  const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
+  // Maintenance baseline: explicit override, otherwise infer (cap + target)
+  const maintenance = preferences?.maintenance_calories ?? (dailyGoal + deficitTarget);
+  // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
+  const cap = deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal;
+  const proteinGoal = preferences?.daily_protein_goal ?? 180;
+  const proteinTotal = useMemo(
+    () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
+    [meals]
+  );
+  const remaining = cap + totalBurned - totalCalories; // can go negative
+  const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
     if (isEditingGoal) setEditGoal(dailyGoal);
@@ -279,7 +295,9 @@ export function CalorieTrackerCompact() {
     }
   };
 
-  const progressPercent = Math.min((totalCalories / dailyGoal) * 100, 100);
+  const progressPercent = Math.min((totalCalories / cap) * 100, 100);
+  const overCap = totalCalories > cap + totalBurned;
+  const hitDeficit = netDeficit >= deficitTarget;
 
   const handleSaveCalorieGoal = async () => {
     try {
@@ -314,7 +332,15 @@ export function CalorieTrackerCompact() {
         <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="section-header mb-0">TODAY'S CALORIES</h3>
+              <h3 className="section-header mb-0">
+                {deficitMode ? "DEFICIT TODAY" : "TODAY'S CALORIES"}
+              </h3>
+              {deficitMode && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
+                  <TrendingDown className="h-2.5 w-2.5" />
+                  CUT
+                </span>
+              )}
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
                 className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
@@ -326,17 +352,35 @@ export function CalorieTrackerCompact() {
             <Utensils className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
-              <span className="text-4xl font-bold tabular-nums">
-                {totalCalories.toLocaleString()}
-              </span>
-              <span className="text-lg text-muted-foreground">
-                / {dailyGoal.toLocaleString()}
-              </span>
-              {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
-            </CollapsibleTrigger>
-          </div>
+          {deficitMode ? (
+            <>
+              <CollapsibleTrigger className="flex items-end gap-2 text-left w-full">
+                <span className={cn(
+                  "text-4xl font-bold tabular-nums leading-none",
+                  remaining < 0 ? "text-[hsl(var(--insight-coral))]" : "text-foreground"
+                )}>
+                  {remaining >= 0 ? remaining.toLocaleString() : `${remaining.toLocaleString()}`}
+                </span>
+                <span className="text-xs text-muted-foreground pb-1">kcal left</span>
+                {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+              </CollapsibleTrigger>
+              <div className="text-[11px] text-muted-foreground mt-1 tabular-nums">
+                {totalCalories.toLocaleString()} in · {totalBurned.toLocaleString()} out · cap {cap.toLocaleString()}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
+                <span className="text-4xl font-bold tabular-nums">
+                  {totalCalories.toLocaleString()}
+                </span>
+                <span className="text-lg text-muted-foreground">
+                  / {dailyGoal.toLocaleString()}
+                </span>
+                {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+              </CollapsibleTrigger>
+            </div>
+          )}
 
           {isEditingGoal && (
             <div className="mt-3 p-3 border border-border rounded-xl bg-muted/30 space-y-3 animate-fade-in">
@@ -364,12 +408,47 @@ export function CalorieTrackerCompact() {
 
           <div className="progress-bar mt-4">
             <div
-              className="progress-bar-fill transition-all duration-500"
+              className={cn(
+                "progress-bar-fill transition-all duration-500",
+                overCap && "bg-[hsl(var(--insight-coral))]"
+              )}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          {meals.length > 0 && (
+          {deficitMode && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="p-2 rounded-xl border border-border bg-muted/20">
+                <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
+                <div className={cn(
+                  "text-base font-bold tabular-nums leading-tight",
+                  hitDeficit ? "text-[hsl(var(--insight-mint))]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
+                )}>
+                  {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
+                </div>
+                <div className="text-[10px] text-muted-foreground">of -{deficitTarget}</div>
+              </div>
+              <div className="p-2 rounded-xl border border-border bg-muted/20">
+                <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
+                <div className={cn(
+                  "text-base font-bold tabular-nums leading-tight",
+                  proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
+                )}>
+                  {Math.round(proteinTotal)}g
+                </div>
+                <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
+              </div>
+              <div className="p-2 rounded-xl border border-border bg-muted/20">
+                <div className="text-[10px] text-muted-foreground tracking-wider">BURN</div>
+                <div className="text-base font-bold tabular-nums leading-tight text-foreground">
+                  +{totalBurned}
+                </div>
+                <div className="text-[10px] text-muted-foreground">kcal added</div>
+              </div>
+            </div>
+          )}
+
+          {!deficitMode && meals.length > 0 && (
             <div className="mt-4 space-y-2">
               <h4 className="text-xs text-muted-foreground">RECENT</h4>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
