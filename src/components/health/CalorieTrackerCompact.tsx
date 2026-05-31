@@ -295,7 +295,9 @@ export function CalorieTrackerCompact() {
     }
   };
 
-  const progressPercent = Math.min((totalCalories / dailyGoal) * 100, 100);
+  const progressPercent = Math.min((totalCalories / cap) * 100, 100);
+  const overCap = totalCalories > cap + totalBurned;
+  const hitDeficit = netDeficit >= deficitTarget;
 
   const handleSaveCalorieGoal = async () => {
     try {
