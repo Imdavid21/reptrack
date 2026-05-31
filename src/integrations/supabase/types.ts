@@ -540,13 +540,16 @@ export type Database = {
           age: number | null
           created_at: string | null
           daily_calorie_goal: number | null
+          daily_deficit_target: number
           daily_protein_goal: number
           daily_water_goal: number | null
+          deficit_mode_enabled: boolean
           dietary_preferences: string[] | null
           fitness_goal: string | null
           gender: string | null
           height_cm: number | null
           id: string
+          maintenance_calories: number | null
           onboarding_completed: boolean | null
           rest_days: Json | null
           routine_setup_completed: boolean | null
@@ -564,13 +567,16 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_deficit_target?: number
           daily_protein_goal?: number
           daily_water_goal?: number | null
+          deficit_mode_enabled?: boolean
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          maintenance_calories?: number | null
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
@@ -588,13 +594,16 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_deficit_target?: number
           daily_protein_goal?: number
           daily_water_goal?: number | null
+          deficit_mode_enabled?: boolean
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          maintenance_calories?: number | null
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
