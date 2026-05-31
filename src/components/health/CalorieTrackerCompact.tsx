@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil, TrendingDown
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const MEAL_ICONS = {
   breakfast: Coffee,
