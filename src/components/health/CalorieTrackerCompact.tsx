@@ -336,7 +336,7 @@ export function CalorieTrackerCompact() {
                 {deficitMode ? "DEFICIT TODAY" : "TODAY'S CALORIES"}
               </h3>
               {deficitMode && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[hsl(var(--chart-coral)/0.15)] text-[hsl(var(--chart-coral))] border border-[hsl(var(--chart-coral)/0.3)]">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
                   <TrendingDown className="h-2.5 w-2.5" />
                   CUT
                 </span>
@@ -357,7 +357,7 @@ export function CalorieTrackerCompact() {
               <CollapsibleTrigger className="flex items-end gap-2 text-left w-full">
                 <span className={cn(
                   "text-4xl font-bold tabular-nums leading-none",
-                  remaining < 0 ? "text-[hsl(var(--chart-coral))]" : "text-foreground"
+                  remaining < 0 ? "text-[hsl(var(--insight-coral))]" : "text-foreground"
                 )}>
                   {remaining >= 0 ? remaining.toLocaleString() : `${remaining.toLocaleString()}`}
                 </span>
@@ -410,7 +410,7 @@ export function CalorieTrackerCompact() {
             <div
               className={cn(
                 "progress-bar-fill transition-all duration-500",
-                overCap && "bg-[hsl(var(--chart-coral))]"
+                overCap && "bg-[hsl(var(--insight-coral))]"
               )}
               style={{ width: `${progressPercent}%` }}
             />
@@ -422,7 +422,7 @@ export function CalorieTrackerCompact() {
                 <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
                 <div className={cn(
                   "text-base font-bold tabular-nums leading-tight",
-                  hitDeficit ? "text-[hsl(var(--chart-mint))]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--chart-coral))]"
+                  hitDeficit ? "text-[hsl(var(--insight-mint))]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
                 )}>
                   {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
                 </div>
@@ -432,7 +432,7 @@ export function CalorieTrackerCompact() {
                 <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
                 <div className={cn(
                   "text-base font-bold tabular-nums leading-tight",
-                  proteinTotal >= proteinGoal ? "text-[hsl(var(--chart-mint))]" : "text-foreground"
+                  proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
                 )}>
                   {Math.round(proteinTotal)}g
                 </div>
