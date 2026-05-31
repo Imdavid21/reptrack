@@ -24,6 +24,7 @@ import {
   Edit2,
   Dumbbell,
   Link2,
+  TrendingDown,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
