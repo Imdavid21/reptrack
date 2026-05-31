@@ -12,7 +12,7 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { getSplitDays } from '@/lib/splitTemplates';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
-import { Dumbbell, ChevronRight, Play } from 'lucide-react';
+import { Dumbbell, ChevronRight, Play, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
