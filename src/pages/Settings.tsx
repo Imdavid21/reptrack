@@ -634,6 +634,113 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
+          {/* Deficit Mode */}
+          <MuiCard>
+            <Box
+              onClick={() => toggleSection('deficit')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <TrendingDown size={18} />
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>Deficit Mode</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {preferences?.deficit_mode_enabled
+                      ? `Active · -${preferences?.daily_deficit_target ?? 500} kcal/day`
+                      : 'Track for fat loss'}
+                  </Typography>
+                </Box>
+              </Box>
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: expandedSections.deficit ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            </Box>
+
+            <Collapse in={expandedSections.deficit}>
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>Enable Deficit Mode</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dashboard switches to remaining-calories view
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={preferences?.deficit_mode_enabled ?? false}
+                    onChange={(e) => updatePreferences.mutate({ deficit_mode_enabled: e.target.checked } as any)}
+                    color="primary"
+                  />
+                </Box>
+
+                {preferences?.deficit_mode_enabled && (
+                  <>
+                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                        Maintenance Calories
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                        Your daily kcal at current weight (optional). Used to compute net deficit.
+                      </Typography>
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={preferences?.maintenance_calories ?? ''}
+                        placeholder="e.g. 2400"
+                        onChange={(e) => {
+                          const v = e.target.value === '' ? null : parseInt(e.target.value, 10);
+                          updatePreferences.mutate({ maintenance_calories: v } as any);
+                        }}
+                        inputProps={{ min: 1000, max: 5000, step: 50 }}
+                      />
+                    </Box>
+
+                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                        Daily Deficit Target
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {[
+                          { label: 'Mild · 250', value: 250 },
+                          { label: 'Moderate · 500', value: 500 },
+                          { label: 'Aggressive · 750', value: 750 },
+                        ].map(opt => {
+                          const current = preferences?.daily_deficit_target ?? 500;
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => updatePreferences.mutate({ daily_deficit_target: opt.value } as any)}
+                              className={cn(
+                                'flex-1 min-w-[100px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                                current === opt.value
+                                  ? 'bg-foreground text-background'
+                                  : 'bg-muted text-muted-foreground hover:text-foreground'
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </Box>
+                    </Box>
+                  </>
+                )}
+              </Box>
+            </Collapse>
+          </MuiCard>
+
+
+
           {/* Install as App - only show when NOT running as installed PWA */}
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
           <MuiCard>
