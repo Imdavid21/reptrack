@@ -57,6 +57,7 @@ export function CalorieTrackerCompact() {
   const { user } = useAuth();
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
   const { preferences, updatePreferences } = useUserPreferences();
+  const { totalBurned } = useCalorieBurn();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -80,7 +81,20 @@ export function CalorieTrackerCompact() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const deficitMode = preferences?.deficit_mode_enabled ?? false;
+  const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
+  // Maintenance baseline: explicit override, otherwise infer (cap + target)
+  const maintenance = preferences?.maintenance_calories ?? (dailyGoal + deficitTarget);
+  // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
+  const cap = deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal;
+  const proteinGoal = preferences?.daily_protein_goal ?? 180;
+  const proteinTotal = useMemo(
+    () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
+    [meals]
+  );
+  const remaining = cap + totalBurned - totalCalories; // can go negative
+  const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
     if (isEditingGoal) setEditGoal(dailyGoal);
