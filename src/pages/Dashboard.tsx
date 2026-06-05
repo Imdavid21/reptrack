@@ -160,6 +160,11 @@ export default function Dashboard() {
               </Box>
             </motion.div>
 
+            <motion.div variants={staggerItem}>
+              <ActivityLogger />
+            </motion.div>
+
+
           </Box>
         </motion.div>
       </AnimatedPage>
