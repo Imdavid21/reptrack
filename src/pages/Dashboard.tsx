@@ -7,6 +7,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
+import { ActivityLogger } from '@/components/health/ActivityLogger';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
