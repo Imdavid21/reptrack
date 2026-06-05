@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'prompt',
       includeAssets: ['favicon.png'],
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Cache all static assets aggressively
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff,woff2}'],
         // Extended offline: cache up to 100 entries, keep for 30 days
