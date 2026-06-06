@@ -234,6 +234,38 @@ export function useCalorieBurn(date?: Date) {
       calculatedDuration: workoutDuration,
       calculatedCalories: workoutCaloriesFromDuration,
       primaryCategory,
-    } : null,
+  } : null,
   };
 }
+
+export function useDailyBurnTotals(days: number = 30) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['dailyBurns', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [] as { date: string; calories: number }[];
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data, error } = await supabase
+        .from('calorie_burns')
+        .select('date, calories')
+        .eq('user_id', user.id)
+        .gte('date', format(startDate, 'yyyy-MM-dd'));
+
+      if (error) throw error;
+
+      const totals = (data as { date: string; calories: number | null }[]).reduce((acc, b) => {
+        if (!acc[b.date]) acc[b.date] = 0;
+        acc[b.date] += b.calories || 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      return Object.entries(totals).map(([date, calories]) => ({ date, calories }));
+    },
+    enabled: !!user,
+  });
+}
+
