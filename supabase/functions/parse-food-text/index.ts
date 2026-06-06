@@ -66,6 +66,7 @@ serve(async (req) => {
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      signal: AbortSignal.timeout(45000),
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
