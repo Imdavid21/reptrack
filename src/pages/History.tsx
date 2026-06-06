@@ -5,6 +5,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDailyCalorieTotals } from '@/hooks/useMeals';
+import { useDailyBurnTotals } from '@/hooks/useCalorieBurn';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
 import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
