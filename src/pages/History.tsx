@@ -5,6 +5,7 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDailyCalorieTotals } from '@/hooks/useMeals';
+import { useDailyBurnTotals } from '@/hooks/useCalorieBurn';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
 import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
@@ -24,6 +25,7 @@ export default function History() {
   });
 
   const { data: calorieHistory } = useDailyCalorieTotals(daysToShow);
+  const { data: burnHistory } = useDailyBurnTotals(daysToShow);
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
@@ -56,6 +58,12 @@ export default function History() {
     acc[entry.date] = entry.calories;
     return acc;
   }, {} as Record<string, number>);
+
+  const burnsByDate = (burnHistory || []).reduce((acc, entry) => {
+    acc[entry.date] = entry.calories;
+    return acc;
+  }, {} as Record<string, number>);
+
 
   const startEdit = (dateStr: string) => {
     const metric = metricsByDate[dateStr];
@@ -161,8 +169,12 @@ export default function History() {
 
                   const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
                   const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
-                  const hasCalories = caloriesByDate[dateStr] && caloriesByDate[dateStr] > 0;
+                  const intake = caloriesByDate[dateStr] || 0;
+                  const burn = burnsByDate[dateStr] || 0;
+                  const netCalories = intake - burn;
+                  const hasCalories = intake > 0 || burn > 0;
                   const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
+
                   const isSkipped = (workout as any)?.is_skipped;
 
                   return (
@@ -298,13 +310,14 @@ export default function History() {
                             )}
 
                             {hasCalories && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={`Intake ${intake.toLocaleString()} − Burn ${burn.toLocaleString()}`}>
                                 <Flame size={13} className="text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {caloriesByDate[dateStr].toLocaleString()} cal
+                                <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                                  {netCalories > 0 ? '+' : ''}{netCalories.toLocaleString()} net
                                 </span>
                               </div>
                             )}
+
                           </div>
                         )}
 
