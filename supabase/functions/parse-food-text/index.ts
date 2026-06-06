@@ -66,6 +66,7 @@ serve(async (req) => {
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      signal: AbortSignal.timeout(45000),
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
@@ -168,9 +169,10 @@ Be accurate with portions. When quantities aren't specified, assume reasonable s
     throw new Error("Could not parse AI response");
   } catch (error) {
     console.error("parse-food-text error:", error);
+    const isTimeout = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: isTimeout ? "AI took too long. Try again or enter manually." : (error instanceof Error ? error.message : "Unknown error") }),
+      { status: isTimeout ? 504 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
