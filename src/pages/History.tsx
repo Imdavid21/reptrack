@@ -59,6 +59,12 @@ export default function History() {
     return acc;
   }, {} as Record<string, number>);
 
+  const burnsByDate = (burnHistory || []).reduce((acc, entry) => {
+    acc[entry.date] = entry.calories;
+    return acc;
+  }, {} as Record<string, number>);
+
+
   const startEdit = (dateStr: string) => {
     const metric = metricsByDate[dateStr];
     const sleepHours = metric?.sleep_hours || 0;
