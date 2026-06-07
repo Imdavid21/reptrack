@@ -25,8 +25,10 @@ export default function History() {
     to: new Date(),
   });
 
-  const { data: calorieHistory } = useDailyCalorieTotals(daysToShow);
-  const { data: burnHistory } = useDailyBurnTotals(daysToShow);
+  const { data: calorieHistory } = useCalorieHistory({
+    from: subDays(new Date(), daysToShow - 1),
+    to: new Date(),
+  });
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
