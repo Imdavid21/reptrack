@@ -171,11 +171,9 @@ export default function History() {
 
                   const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
                   const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
-                  const intake = caloriesByDate[dateStr] || 0;
-                  const burn = burnsByDate[dateStr] || 0;
-                  const netCalories = intake - burn;
-                  const hasCalories = intake > 0 || burn > 0;
-                  const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
+                  const calorieEntry = buildDayCalorieEntry(caloriesByDate[dateStr], burnsByDate[dateStr]);
+                  const calorieDisplay = formatCalorieDisplay(calorieEntry, calorieMode);
+                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories;
 
                   const isSkipped = (workout as any)?.is_skipped;
 
