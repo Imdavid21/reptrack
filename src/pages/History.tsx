@@ -309,11 +309,11 @@ export default function History() {
                               </div>
                             )}
 
-                            {hasCalories && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={`Intake ${intake.toLocaleString()} − Burn ${burn.toLocaleString()}`}>
+                            {calorieEntry.hasCalories && (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={calorieDisplay.tooltip}>
                                 <Flame size={13} className="text-muted-foreground" />
                                 <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                                  {netCalories > 0 ? '+' : ''}{netCalories.toLocaleString()} net
+                                  {calorieDisplay.label}
                                 </span>
                               </div>
                             )}
