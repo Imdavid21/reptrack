@@ -12,12 +12,14 @@ import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, E
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
+import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
 
 export default function History() {
   const { workouts } = useWorkouts();
   const navigate = useNavigate();
 
   const [daysToShow, setDaysToShow] = useState(30);
+  const [calorieMode, setCalorieMode] = useState<CalorieDisplayMode>('net');
 
   const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
     from: subDays(new Date(), daysToShow),
@@ -158,6 +160,33 @@ export default function History() {
                 </div>
               </motion.div>
 
+              {/* Calorie display toggle */}
+              <motion.div variants={staggerItem} className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase">
+                  <Flame size={11} /> Calories
+                </div>
+                <div className="inline-flex rounded-xl bg-muted p-0.5">
+                  <button
+                    onClick={() => setCalorieMode('net')}
+                    className={cn(
+                      'px-3 py-1 text-[10px] font-semibold uppercase rounded-lg transition-colors',
+                      calorieMode === 'net' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                    )}
+                  >
+                    Net
+                  </button>
+                  <button
+                    onClick={() => setCalorieMode('split')}
+                    className={cn(
+                      'px-3 py-1 text-[10px] font-semibold uppercase rounded-lg transition-colors',
+                      calorieMode === 'split' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                    )}
+                  >
+                    Split
+                  </button>
+                </div>
+              </motion.div>
+
               {/* Timeline */}
               <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                 {visibleDays.map((date) => {
@@ -169,11 +198,9 @@ export default function History() {
 
                   const hasSleep = metric?.sleep_hours && metric.sleep_hours > 0;
                   const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
-                  const intake = caloriesByDate[dateStr] || 0;
-                  const burn = burnsByDate[dateStr] || 0;
-                  const netCalories = intake - burn;
-                  const hasCalories = intake > 0 || burn > 0;
-                  const hasAnyData = workout || hasSleep || hasWeight || hasCalories;
+                  const calorieEntry = buildDayCalorieEntry(caloriesByDate[dateStr], burnsByDate[dateStr]);
+                  const calorieDisplay = formatCalorieDisplay(calorieEntry, calorieMode);
+                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories;
 
                   const isSkipped = (workout as any)?.is_skipped;
 
@@ -309,11 +336,11 @@ export default function History() {
                               </div>
                             )}
 
-                            {hasCalories && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={`Intake ${intake.toLocaleString()} − Burn ${burn.toLocaleString()}`}>
+                            {calorieEntry.hasCalories && (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={calorieDisplay.tooltip}>
                                 <Flame size={13} className="text-muted-foreground" />
                                 <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                                  {netCalories > 0 ? '+' : ''}{netCalories.toLocaleString()} net
+                                  {calorieDisplay.label}
                                 </span>
                               </div>
                             )}

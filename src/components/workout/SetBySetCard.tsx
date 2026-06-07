@@ -390,12 +390,27 @@ export function SetBySetCard({
   const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipmentType);
 
   // PR comparison depends on exercise type
+  const completedWeightSets = exercise.sets.filter(s => s.completed && s.actualWeight);
+  const currentMaxWeight = Math.max(...completedWeightSets.map(s => parseFloat(s.actualWeight) || 0), 0);
+  // Best reps among sets at the current max weight (for same-weight-more-reps PRs)
+  const currentMaxWeightBestReps = Math.max(
+    ...completedWeightSets
+      .filter(s => (parseFloat(s.actualWeight) || 0) === currentMaxWeight)
+      .map(s => parseInt(s.actualReps) || 0),
+    0
+  );
   const currentMaxValue = isTimed
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualTime).map(s => s.actualTime || 0), 0)
     : isBodyweight
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
-    : Math.max(...exercise.sets.filter(s => s.completed && s.actualWeight).map(s => parseFloat(s.actualWeight) || 0), 0);
-  const isNewPR = personalRecord && currentMaxValue > personalRecord.maxWeight;
+    : currentMaxWeight;
+  const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
+  const isNewPR = personalRecord && (
+    (isTimed || isBodyweight)
+      ? currentMaxValue > personalRecord.maxWeight
+      : currentMaxWeight > personalRecord.maxWeight ||
+        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps)
+  );
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;

@@ -205,11 +205,19 @@ export function usePersonalRecords() {
             };
           }
         } else {
-          // Weighted / weighted_bw: PR = heaviest weight
+          // Weighted / weighted_bw: PR = heaviest weight; same weight + more reps also counts
           const weight = parseFloat(ex.actual_weight || '0');
+          const reps = parseInt(ex.actual_reps || '0');
           if (isNaN(weight) || weight === 0) continue;
 
-          if (!prMap[canonicalName] || weight > prMap[canonicalName].maxWeight) {
+          const existing = prMap[canonicalName];
+          const existingReps = existing ? parseInt(existing.reps) || 0 : 0;
+          const isNew =
+            !existing ||
+            weight > existing.maxWeight ||
+            (weight === existing.maxWeight && reps > existingReps);
+
+          if (isNew) {
             prMap[canonicalName] = {
               exerciseName: canonicalName,
               maxWeight: weight,
