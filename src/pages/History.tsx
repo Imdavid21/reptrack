@@ -12,12 +12,14 @@ import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, E
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
+import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
 
 export default function History() {
   const { workouts } = useWorkouts();
   const navigate = useNavigate();
 
   const [daysToShow, setDaysToShow] = useState(30);
+  const [calorieMode, setCalorieMode] = useState<CalorieDisplayMode>('net');
 
   const { data: metricsData, upsertMetrics, isUpserting } = useDailyMetrics({
     from: subDays(new Date(), daysToShow),
