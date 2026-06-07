@@ -4,8 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
-import { useDailyCalorieTotals } from '@/hooks/useMeals';
-import { useDailyBurnTotals } from '@/hooks/useCalorieBurn';
+import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
 import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
@@ -26,8 +25,10 @@ export default function History() {
     to: new Date(),
   });
 
-  const { data: calorieHistory } = useDailyCalorieTotals(daysToShow);
-  const { data: burnHistory } = useDailyBurnTotals(daysToShow);
+  const { data: calorieHistory } = useCalorieHistory({
+    from: subDays(new Date(), daysToShow - 1),
+    to: new Date(),
+  });
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
@@ -57,12 +58,12 @@ export default function History() {
   }, {} as Record<string, typeof metricsData.dataPoints[0]>);
 
   const caloriesByDate = (calorieHistory || []).reduce((acc, entry) => {
-    acc[entry.date] = entry.calories;
+    acc[entry.date] = entry.intake;
     return acc;
   }, {} as Record<string, number>);
 
-  const burnsByDate = (burnHistory || []).reduce((acc, entry) => {
-    acc[entry.date] = entry.calories;
+  const burnsByDate = (calorieHistory || []).reduce((acc, entry) => {
+    acc[entry.date] = entry.burned;
     return acc;
   }, {} as Record<string, number>);
 
@@ -120,7 +121,7 @@ export default function History() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.calories > 0);
+  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.intake > 0 || e.burned > 0);
 
   return (
     <MainLayout>
