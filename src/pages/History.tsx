@@ -58,12 +58,12 @@ export default function History() {
   }, {} as Record<string, typeof metricsData.dataPoints[0]>);
 
   const caloriesByDate = (calorieHistory || []).reduce((acc, entry) => {
-    acc[entry.date] = entry.calories;
+    acc[entry.date] = entry.intake;
     return acc;
   }, {} as Record<string, number>);
 
-  const burnsByDate = (burnHistory || []).reduce((acc, entry) => {
-    acc[entry.date] = entry.calories;
+  const burnsByDate = (calorieHistory || []).reduce((acc, entry) => {
+    acc[entry.date] = entry.burned;
     return acc;
   }, {} as Record<string, number>);
 
