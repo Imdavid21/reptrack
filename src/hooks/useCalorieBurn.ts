@@ -269,3 +269,54 @@ export function useDailyBurnTotals(days: number = 30) {
   });
 }
 
+export interface BurnEntry {
+  id: string;
+  date: string;
+  source: string;
+  activity_type: string | null;
+  calories: number;
+  duration_minutes: number | null;
+}
+
+export function useManualBurns(days: number = 30) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['manual-burns', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [] as BurnEntry[];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data, error } = await supabase
+        .from('calorie_burns')
+        .select('id, date, source, activity_type, calories, duration_minutes')
+        .eq('user_id', user.id)
+        .eq('source', 'manual')
+        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as BurnEntry[];
+    },
+    enabled: !!user,
+  });
+
+  const deleteBurn = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('calorie_burns').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manual-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+    },
+  });
+
+  return { ...query, deleteBurn };
+}
+
+
