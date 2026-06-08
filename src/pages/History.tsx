@@ -31,6 +31,14 @@ export default function History() {
     to: new Date(),
   });
 
+  const { data: manualBurns = [], deleteBurn } = useManualBurns(daysToShow);
+
+  const burnsByDateList = manualBurns.reduce((acc, b) => {
+    if (!acc[b.date]) acc[b.date] = [];
+    acc[b.date].push(b);
+    return acc;
+  }, {} as Record<string, BurnEntry[]>);
+
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
   const [selectedEditDate, setSelectedEditDate] = useState<string | null>(null);
