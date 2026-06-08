@@ -356,6 +356,38 @@ export default function History() {
                               </div>
                             )}
 
+                            {dayBurns.map((b) => {
+                              const type = (b.activity_type || '').toLowerCase();
+                              const Icon = type === 'cycling' ? Bike : type === 'running' ? PersonStanding : Footprints;
+                              const label = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity';
+                              return (
+                                <div
+                                  key={b.id}
+                                  className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl"
+                                  title={`${label} · ${b.duration_minutes ?? 0} min · ${b.calories} kcal`}
+                                >
+                                  <Icon size={13} className="text-muted-foreground" />
+                                  <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                                    {label} · {b.calories} kcal
+                                  </span>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await deleteBurn.mutateAsync(b.id);
+                                        toast.success(`Removed ${label.toLowerCase()}`);
+                                      } catch {
+                                        toast.error('Failed to remove');
+                                      }
+                                    }}
+                                    className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                    aria-label="Delete activity"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+
                           </div>
                         )}
 
