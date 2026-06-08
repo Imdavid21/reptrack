@@ -210,7 +210,8 @@ export default function History() {
                   const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
                   const calorieEntry = buildDayCalorieEntry(caloriesByDate[dateStr], burnsByDate[dateStr]);
                   const calorieDisplay = formatCalorieDisplay(calorieEntry, calorieMode);
-                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories;
+                  const dayBurns = burnsByDateList[dateStr] || [];
+                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories || dayBurns.length > 0;
 
                   const isSkipped = (workout as any)?.is_skipped;
 
