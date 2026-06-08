@@ -7,11 +7,12 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
+import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Bike, PersonStanding, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
 import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
+import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
 
 export default function History() {
   const { workouts } = useWorkouts();
