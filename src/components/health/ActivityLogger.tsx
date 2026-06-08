@@ -1,29 +1,52 @@
 import { useState, useMemo } from 'react';
-import { Footprints, Plus, X } from 'lucide-react';
+import { Footprints, Bike, PersonStanding, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { toast } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 
-const WALKING_MET = 3.5;
-const PACE_MIN_PER_KM = 12; // ~5 km/h
+export type ActivityKind = 'walking' | 'running' | 'cycling';
+
+export const ACTIVITY_CONFIG: Record<ActivityKind, {
+  label: string;
+  met: number;
+  paceMinPerKm: number; // average pace
+  icon: typeof Footprints;
+  quickKm: number[];
+  paceLabel: string;
+}> = {
+  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h' },
+  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h' },
+  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h' },
+};
 
 /** kcal = MET * weight(kg) * hours */
-export function walkingCalories(km: number, weightKg: number) {
-  const hours = (km * PACE_MIN_PER_KM) / 60;
-  return Math.round(WALKING_MET * weightKg * hours);
+export function activityCalories(kind: ActivityKind, km: number, weightKg: number) {
+  const cfg = ACTIVITY_CONFIG[kind];
+  const hours = (km * cfg.paceMinPerKm) / 60;
+  return Math.round(cfg.met * weightKg * hours);
 }
+
+export function activityDuration(kind: ActivityKind, km: number) {
+  return Math.round(km * ACTIVITY_CONFIG[kind].paceMinPerKm);
+}
+
+// Backwards compat export
+export const walkingCalories = (km: number, weightKg: number) => activityCalories('walking', km, weightKg);
 
 export function ActivityLogger() {
   const { weightKg, addBurn } = useCalorieBurn();
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<ActivityKind>('walking');
   const [km, setKm] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const cfg = ACTIVITY_CONFIG[kind];
   const distance = parseFloat(km) || 0;
-  const kcal = useMemo(() => walkingCalories(distance, weightKg), [distance, weightKg]);
-  const duration = Math.round(distance * PACE_MIN_PER_KM);
+  const kcal = useMemo(() => activityCalories(kind, distance, weightKg), [kind, distance, weightKg]);
+  const duration = activityDuration(kind, distance);
 
   const handleSave = async () => {
     if (distance <= 0) return;
@@ -31,11 +54,11 @@ export function ActivityLogger() {
     try {
       await addBurn.mutateAsync({
         source: 'manual',
-        activity_type: 'walking',
+        activity_type: kind,
         duration_minutes: duration,
         calories: kcal,
       });
-      toast.success(`Logged ${distance} km walk · ${kcal} kcal`);
+      toast.success(`Logged ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal`);
       setKm('');
       setOpen(false);
     } catch (e: any) {
@@ -51,20 +74,44 @@ export function ActivityLogger() {
         onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"
       >
-        <Footprints className="w-4 h-4" />
-        Log Walk
+        <Activity className="w-4 h-4" />
+        Log Activity
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Footprints className="w-5 h-5" />
-              Log Walking
+              <cfg.icon className="w-5 h-5" />
+              Log {cfg.label}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
+            {/* Activity type selector */}
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(ACTIVITY_CONFIG) as ActivityKind[]).map(k => {
+                const c = ACTIVITY_CONFIG[k];
+                const Icon = c.icon;
+                const active = k === kind;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setKind(k)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-colors',
+                      active
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">{c.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="km">Distance (km)</Label>
               <Input
@@ -79,7 +126,7 @@ export function ActivityLogger() {
                 className="h-12 text-lg"
               />
               <div className="flex gap-2">
-                {[2, 3, 4, 5, 7].map(v => (
+                {cfg.quickKm.map(v => (
                   <button
                     key={v}
                     onClick={() => setKm(String(v))}
@@ -103,7 +150,7 @@ export function ActivityLogger() {
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              Based on {weightKg.toFixed(1)} kg · ~5 km/h pace · MET 3.5
+              Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
             </p>
 
             <div className="flex gap-2">

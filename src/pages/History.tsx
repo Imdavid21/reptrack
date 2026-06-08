@@ -7,11 +7,12 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff } from 'lucide-react';
+import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Bike, PersonStanding, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
 import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
+import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
 
 export default function History() {
   const { workouts } = useWorkouts();
@@ -29,6 +30,14 @@ export default function History() {
     from: subDays(new Date(), daysToShow - 1),
     to: new Date(),
   });
+
+  const { data: manualBurns = [], deleteBurn } = useManualBurns(daysToShow);
+
+  const burnsByDateList = manualBurns.reduce((acc, b) => {
+    if (!acc[b.date]) acc[b.date] = [];
+    acc[b.date].push(b);
+    return acc;
+  }, {} as Record<string, BurnEntry[]>);
 
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState<Workout | null>(null);
@@ -121,7 +130,7 @@ export default function History() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.intake > 0 || e.burned > 0);
+  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.intake > 0 || e.burned > 0) || manualBurns.length > 0;
 
   return (
     <MainLayout>
@@ -201,7 +210,8 @@ export default function History() {
                   const hasWeight = metric?.bodyweight && metric.bodyweight > 0;
                   const calorieEntry = buildDayCalorieEntry(caloriesByDate[dateStr], burnsByDate[dateStr]);
                   const calorieDisplay = formatCalorieDisplay(calorieEntry, calorieMode);
-                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories;
+                  const dayBurns = burnsByDateList[dateStr] || [];
+                  const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories || dayBurns.length > 0;
 
                   const isSkipped = (workout as any)?.is_skipped;
 
@@ -345,6 +355,38 @@ export default function History() {
                                 </span>
                               </div>
                             )}
+
+                            {dayBurns.map((b) => {
+                              const type = (b.activity_type || '').toLowerCase();
+                              const Icon = type === 'cycling' ? Bike : type === 'running' ? PersonStanding : Footprints;
+                              const label = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity';
+                              return (
+                                <div
+                                  key={b.id}
+                                  className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl"
+                                  title={`${label} · ${b.duration_minutes ?? 0} min · ${b.calories} kcal`}
+                                >
+                                  <Icon size={13} className="text-muted-foreground" />
+                                  <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                                    {label} · {b.calories} kcal
+                                  </span>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await deleteBurn.mutateAsync(b.id);
+                                        toast.success(`Removed ${label.toLowerCase()}`);
+                                      } catch {
+                                        toast.error('Failed to remove');
+                                      }
+                                    }}
+                                    className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                    aria-label="Delete activity"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                </div>
+                              );
+                            })}
 
                           </div>
                         )}
