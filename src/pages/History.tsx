@@ -130,7 +130,7 @@ export default function History() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.intake > 0 || e.burned > 0);
+  const hasAnyHistory = workouts.length > 0 || (metricsData?.dataPoints || []).some(m => (m.sleep_hours && m.sleep_hours > 0) || (m.bodyweight && m.bodyweight > 0)) || (calorieHistory || []).some(e => e.intake > 0 || e.burned > 0) || manualBurns.length > 0;
 
   return (
     <MainLayout>
