@@ -116,10 +116,10 @@ export function useCalorieHistory(dateRange: DateRange) {
         if (workoutBurnDates.has(date)) return;
 
         const exercises = workout.exercises || [];
-        
+
         // Calculate duration - prioritize stored duration, then started_at/completed_at
         let durationMinutes = workout.workout_duration_minutes;
-        
+
         if (!durationMinutes && workout.started_at && workout.completed_at) {
           durationMinutes = Math.max(
             differenceInMinutes(parseISO(workout.completed_at), parseISO(workout.started_at)),
@@ -127,11 +127,9 @@ export function useCalorieHistory(dateRange: DateRange) {
           );
         }
 
-        // If we have duration, calculate calories
         if (durationMinutes && durationMinutes > 0) {
-          // Get primary category from exercises, or infer from day_name
           let primaryCategory = 'strength';
-          
+
           if (exercises.length > 0) {
             const categoryCounts: Record<string, number> = {};
             exercises.forEach((ex: any) => {
@@ -146,9 +144,10 @@ export function useCalorieHistory(dateRange: DateRange) {
             else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
             else if (dayNameLower.includes('leg')) primaryCategory = 'legs';
           }
-          
+
           const met = MET_VALUES[primaryCategory] || 5.0;
-          const calories = Math.round(met * weightKg * (durationMinutes / 60));
+          const dayWeight = weightByDate[date] || fallbackWeight;
+          const calories = Math.round(met * dayWeight * (durationMinutes / 60));
           burnsByDate[date] = (burnsByDate[date] || 0) + calories;
         }
       });
