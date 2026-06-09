@@ -26,7 +26,7 @@ const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
   protein: { label: 'Protein', unit: 'g', column: 'protein', goalKey: 'daily_protein_goal', defaultGoal: 180, colorVar: '--insight-mint', icon: Beef },
   carbs: { label: 'Carbs', unit: 'g', column: 'carbs', goalKey: 'daily_carbs_goal', defaultGoal: 250, colorVar: '--insight-coral', icon: Wheat },
   fat: { label: 'Fat', unit: 'g', column: 'fat', goalKey: 'daily_fat_goal', defaultGoal: 70, colorVar: '--insight-amber', icon: Droplet },
-  fiber: { label: 'Fiber', unit: 'g', column: 'fiber', goalKey: 'daily_fiber_goal', defaultGoal: 30, colorVar: '--insight-mint', icon: Leaf },
+  fiber: { label: 'Fiber', unit: 'g', column: 'fiber', goalKey: 'daily_fiber_goal', defaultGoal: 30, colorVar: '--insight-violet', icon: Leaf },
 };
 
 interface DataPoint {
