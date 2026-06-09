@@ -21,7 +21,7 @@ import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
 import { MLCoachInsights } from '@/components/analytics/MLCoachInsights';
 import { CalorieChart } from '@/components/health/CalorieChart';
-import { ProteinChart } from '@/components/health/ProteinChart';
+import { MacroChart } from '@/components/health/MacroChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
@@ -463,9 +463,18 @@ function InsightsContent() {
               <CalorieChart />
             </motion.div>
 
-            {/* Daily Protein Intake */}
+            {/* Daily Macros */}
             <motion.div variants={staggerItem}>
-              <ProteinChart />
+              <MacroChart macro="protein" />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <MacroChart macro="carbs" />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <MacroChart macro="fat" />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <MacroChart macro="fiber" />
             </motion.div>
 
             {/* Daily Vitals (Weight + Sleep merged) */}
