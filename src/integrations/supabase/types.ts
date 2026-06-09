@@ -540,7 +540,10 @@ export type Database = {
           age: number | null
           created_at: string | null
           daily_calorie_goal: number | null
+          daily_carbs_goal: number | null
           daily_deficit_target: number
+          daily_fat_goal: number | null
+          daily_fiber_goal: number | null
           daily_protein_goal: number
           daily_water_goal: number | null
           deficit_mode_enabled: boolean
@@ -567,7 +570,10 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_carbs_goal?: number | null
           daily_deficit_target?: number
+          daily_fat_goal?: number | null
+          daily_fiber_goal?: number | null
           daily_protein_goal?: number
           daily_water_goal?: number | null
           deficit_mode_enabled?: boolean
@@ -594,7 +600,10 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
+          daily_carbs_goal?: number | null
           daily_deficit_target?: number
+          daily_fat_goal?: number | null
+          daily_fiber_goal?: number | null
           daily_protein_goal?: number
           daily_water_goal?: number | null
           deficit_mode_enabled?: boolean

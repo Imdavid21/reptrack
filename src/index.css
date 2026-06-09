@@ -73,6 +73,8 @@
     /* Insight accent colors - soft pastels */
     --insight-coral: 0 55% 72%;
     --insight-mint: 145 40% 65%;
+    --insight-amber: 38 70% 65%;
+    --insight-violet: 265 50% 70%;
   }
 
   .dark {
@@ -129,6 +131,10 @@
     /* Insight accent colors - soft pastels for dark */
     --insight-coral: 0 50% 72%;
     --insight-mint: 150 38% 65%;
+    --insight-amber: 38 65% 62%;
+    --insight-violet: 265 45% 70%;
+    --insight-amber: 38 65% 62%;
+    --insight-violet: 265 45% 70%;
   }
 }
 
