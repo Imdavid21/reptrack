@@ -84,8 +84,8 @@ export default defineConfig(({ mode }) => ({
         // Never cache OAuth redirect paths
         navigateFallbackDenylist: [/^\/~oauth/],
         // Don't auto-activate — let the app control the update to preserve auth state
-        skipWaiting: false,
-        clientsClaim: false,
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: 'Reptrack Fitness',
