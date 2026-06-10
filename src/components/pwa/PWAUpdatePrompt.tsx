@@ -14,12 +14,13 @@ export function PWAUpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      // Check for updates every 30 minutes
-      if (registration) {
-        setInterval(() => {
-          registration.update();
-        }, 30 * 60 * 1000);
-      }
+      if (!registration) return;
+      // Check immediately, on tab focus, and every 5 minutes
+      const check = () => registration.update().catch(() => {});
+      check();
+      const onVis = () => { if (document.visibilityState === 'visible') check(); };
+      document.addEventListener('visibilitychange', onVis);
+      setInterval(check, 5 * 60 * 1000);
     },
     onRegisterError(error) {
       console.error('SW registration error:', error);
