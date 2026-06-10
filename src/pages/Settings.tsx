@@ -17,7 +17,7 @@ import {
   Key,
   ChevronRight,
   Smartphone,
-  Code,
+  RefreshCw,
   User,
   ChevronDown,
   Check,
@@ -35,7 +35,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
-import { ApiKeySection } from '@/components/settings/ApiKeySection';
+
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 
 import { Input } from '@/components/ui/input';
@@ -842,6 +842,45 @@ export default function Settings() {
           </MuiCard>
           )}
 
+          {/* Force Update App */}
+          <MuiCard>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                <RefreshCw size={18} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body1" fontWeight={600}>Force Update</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Clear cache and reload to latest version
+                  </Typography>
+                </Box>
+              </Box>
+              <button
+                onClick={async () => {
+                  toast.success('Updating…');
+                  try {
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map(r => r.unregister()));
+                    }
+                    if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map(k => caches.delete(k)));
+                    }
+                  } catch (e) {
+                    console.error('Force update error:', e);
+                  } finally {
+                    window.location.reload();
+                  }
+                }}
+                className="btn-brutalist btn-primary px-4 py-2 text-xs flex items-center gap-1.5 shrink-0"
+              >
+                <RefreshCw size={14} />
+                UPDATE
+              </button>
+            </Box>
+          </MuiCard>
+
+
           {/* ============ ADVANCED SECTION ============ */}
           <Box
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -884,42 +923,6 @@ export default function Settings() {
                 onToggle={() => toggleSection('data')}
               />
 
-              {/* API Access */}
-              <MuiCard>
-                <Box
-                  onClick={() => toggleSection('api')}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    py: 1,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Code size={18} />
-                    <Box>
-                      <Typography variant="body1" fontWeight={600}>API & AI Agents</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        REST API, MCP for Claude, webhooks
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <ChevronRight
-                    size={18}
-                    style={{
-                      transform: expandedSections.api ? 'rotate(90deg)' : 'none',
-                      transition: 'transform 0.2s',
-                    }}
-                  />
-                </Box>
-
-                <Collapse in={expandedSections.api}>
-                  <Box sx={{ mt: 2 }}>
-                    <ApiKeySection />
-                  </Box>
-                </Collapse>
-              </MuiCard>
             </Box>
           </Collapse>
 

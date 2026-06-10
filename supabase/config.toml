@@ -9,14 +9,6 @@ verify_jwt = false
 [functions.parse-food-text]
 verify_jwt = false
 
-[functions.api]
-verify_jwt = false
-
-[functions.api-key]
-verify_jwt = false
-
-[functions.mcp]
-verify_jwt = false
 
 [functions.ai-coach]
 verify_jwt = false
