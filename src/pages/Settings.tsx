@@ -884,42 +884,6 @@ export default function Settings() {
                 onToggle={() => toggleSection('data')}
               />
 
-              {/* API Access */}
-              <MuiCard>
-                <Box
-                  onClick={() => toggleSection('api')}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    py: 1,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Code size={18} />
-                    <Box>
-                      <Typography variant="body1" fontWeight={600}>API & AI Agents</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        REST API, MCP for Claude, webhooks
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <ChevronRight
-                    size={18}
-                    style={{
-                      transform: expandedSections.api ? 'rotate(90deg)' : 'none',
-                      transition: 'transform 0.2s',
-                    }}
-                  />
-                </Box>
-
-                <Collapse in={expandedSections.api}>
-                  <Box sx={{ mt: 2 }}>
-                    <ApiKeySection />
-                  </Box>
-                </Collapse>
-              </MuiCard>
             </Box>
           </Collapse>
 
