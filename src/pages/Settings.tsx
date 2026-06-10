@@ -35,7 +35,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
-import { ApiKeySection } from '@/components/settings/ApiKeySection';
+
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 
 import { Input } from '@/components/ui/input';
