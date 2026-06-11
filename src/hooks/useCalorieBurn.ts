@@ -37,6 +37,7 @@ const MET_VALUES: Record<string, number> = {
   'Legs': 6.0,
   'legs': 6.0,
   'Accessory': 4.0,
+  'accessory': 4.0,
   // General
   'strength': 5.0,
   'cardio': 7.0,
@@ -54,8 +55,8 @@ export function useCalorieBurn(date?: Date) {
   const latestBodyweight = metricsData?.totals?.avgBodyweight;
   const weightKg = latestBodyweight || preferences?.weight_goal || 70;
 
-  // Fetch today's workouts (may have multiple) and pick the longest
-  const { data: todayWorkout } = useQuery({
+  // Fetch today's workouts so manual activity and exercise burn can coexist
+  const { data: todayWorkouts = [] } = useQuery({
     queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
       if (!user) return null;
@@ -78,16 +79,7 @@ export function useCalorieBurn(date?: Date) {
         .order('workout_duration_minutes', { ascending: false });
 
       if (error) throw error;
-      if (!data || data.length === 0) return null;
-
-      // Pick the workout with the longest duration
-      const best = data.reduce((longest, w) => {
-        const dur = w.workout_duration_minutes || 0;
-        const longestDur = longest.workout_duration_minutes || 0;
-        return dur > longestDur ? w : longest;
-      }, data[0]);
-
-      return best as WorkoutWithExercises;
+      return (data || []) as WorkoutWithExercises[];
     },
     enabled: !!user,
   });
@@ -131,6 +123,9 @@ export function useCalorieBurn(date?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['manual-burns'] });
     },
   });
 
