@@ -210,6 +210,9 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['volumeData'] });
       queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
     },
   });
 
@@ -232,6 +235,9 @@ export function useWorkouts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
     },
   });
 
@@ -252,6 +258,9 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['volumeData'] });
       queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
     },
   });
 
