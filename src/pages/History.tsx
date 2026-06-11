@@ -53,13 +53,11 @@ export default function History() {
     end: startOfDay(new Date()),
   }).reverse();
 
-  const workoutsByDate = workouts.reduce((acc, w) => {
-    // Keep the first workout per date (most recently created), don't overwrite duplicates
-    if (!acc[w.date]) {
-      acc[w.date] = w;
-    }
+  const workoutsByDateList = workouts.reduce((acc, w) => {
+    if (!acc[w.date]) acc[w.date] = [];
+    acc[w.date].push(w);
     return acc;
-  }, {} as Record<string, typeof workouts[0]>);
+  }, {} as Record<string, typeof workouts>);
 
   const metricsByDate = (metricsData?.dataPoints || []).reduce((acc, m) => {
     acc[m.date] = m;
@@ -201,7 +199,8 @@ export default function History() {
               <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                 {visibleDays.map((date) => {
                   const dateStr = format(date, 'yyyy-MM-dd');
-                  const workout = workoutsByDate[dateStr];
+                  const dayWorkouts = workoutsByDateList[dateStr] || [];
+                  const workout = dayWorkouts[0];
                   const metric = metricsByDate[dateStr];
                   const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
                   const isEditing = editingDate === dateStr;
@@ -318,16 +317,17 @@ export default function History() {
                         {hasAnyData && !isEditing && (
                           <div className="flex flex-wrap gap-1.5">
                             {/* Workout chip - navigates to detail */}
-                            {workout && !isSkipped && (
+                            {dayWorkouts.filter(w => !(w as any)?.is_skipped).map((dayWorkout) => (
                               <button
-                                onClick={() => navigate(`/app/history/${workout.id}`)}
+                                key={dayWorkout.id}
+                                onClick={() => navigate(`/app/history/${dayWorkout.id}`)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
                               >
                                 <Dumbbell size={13} />
-                                <span className="text-xs font-bold">{workout.day_name}</span>
+                                <span className="text-xs font-bold">{dayWorkout.day_name}</span>
                                 <ChevronRight size={12} className="opacity-50" />
                               </button>
-                            )}
+                            ))}
 
                             {hasSleep && (
                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
