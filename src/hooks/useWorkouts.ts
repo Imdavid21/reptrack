@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useUserPreferences } from './useUserPreferences';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
 
 import type { ExerciseType } from '@/lib/exerciseLibrary';
@@ -55,8 +56,16 @@ export interface Workout {
   habits?: Habits;
 }
 
+function getWorkoutMet(day: string, dayName: string): number {
+  const text = `${day} ${dayName}`.toLowerCase();
+  if (text.includes('leg')) return 6.0;
+  if (text.includes('arm') || text.includes('accessory')) return 4.0;
+  return 5.0;
+}
+
 export function useWorkouts() {
   const { user } = useAuth();
+  const { preferences } = useUserPreferences();
   const queryClient = useQueryClient();
 
   const workoutsQuery = useQuery({
@@ -129,6 +138,10 @@ export function useWorkouts() {
         bodyweight: workout.habits.bodyweight,
         notes: workout.habits.notes,
       } : null;
+      const burnDuration = workout.durationMinutes || 0;
+      const burnCalories = burnDuration > 0
+        ? Math.round(getWorkoutMet(workout.day, workout.day_name) * (preferences?.weight_goal || 70) * (burnDuration / 60))
+        : 0;
 
       try {
         // Try online first
@@ -152,6 +165,20 @@ export function useWorkouts() {
             .from('habits')
             .insert({ workout_id: workoutData.id, ...habitsPayload });
           if (habitsError) throw habitsError;
+        }
+
+        if (burnCalories > 0) {
+          const { error: burnError } = await supabase
+            .from('calorie_burns')
+            .upsert({
+              user_id: user.id,
+              date: workoutDate,
+              source: 'workout',
+              activity_type: `workout:${workoutData.id}`,
+              duration_minutes: burnDuration,
+              calories: burnCalories,
+            }, { onConflict: 'user_id,date,source,activity_type' });
+          if (burnError) throw burnError;
         }
 
         return workoutData;
@@ -197,6 +224,23 @@ export function useWorkouts() {
             });
           }
 
+          if (burnCalories > 0) {
+            await enqueueOperation({
+              table: 'calorie_burns',
+              operation: 'insert',
+              payload: {
+                user_id: user.id,
+                date: workoutDate,
+                source: 'workout',
+                activity_type: `workout:${tempWorkoutId}`,
+                duration_minutes: burnDuration,
+                calories: burnCalories,
+              },
+              groupId,
+              groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1),
+            });
+          }
+
           // Return a fake result so the UI flow continues
           return { id: tempWorkoutId, ...workoutPayload } as any;
         }
@@ -213,6 +257,7 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
     },
   });
 
@@ -238,12 +283,20 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
     },
   });
 
   const deleteWorkoutMutation = useMutation({
     mutationFn: async (workoutId: string) => {
       if (!user) throw new Error('Not authenticated');
+
+      await supabase
+        .from('calorie_burns')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('source', 'workout')
+        .eq('activity_type', `workout:${workoutId}`);
 
       const { error } = await supabase
         .from('workouts')
@@ -261,6 +314,7 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
     },
   });
 
