@@ -59,7 +59,7 @@ export function useCalorieBurn(date?: Date) {
   const { data: todayWorkouts = [] } = useQuery({
     queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from('workouts')
