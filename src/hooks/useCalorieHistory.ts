@@ -52,7 +52,7 @@ export function useCalorieHistory(dateRange: DateRange) {
           .lte('date', endDateStr),
         supabase
           .from('calorie_burns')
-          .select('date, calories, source')
+          .select('date, calories, source, activity_type')
           .eq('user_id', user.id)
           .gte('date', startDateStr)
           .lte('date', endDateStr),
@@ -100,20 +100,22 @@ export function useCalorieHistory(dateRange: DateRange) {
         intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (meal.calories || 0);
       });
 
-      // Group manual burns by date; track WORKOUT-source burns separately so we don't double-count
-      const workoutBurnDates = new Set<string>();
+      // Group persisted burns by date; track per-workout rows so fallback calculations do not double-count
+      const persistedWorkoutBurnIds = new Set<string>();
       const burnsByDate: Record<string, number> = {};
       (burnsRes.data || []).forEach((burn: any) => {
         burnsByDate[burn.date] = (burnsByDate[burn.date] || 0) + (burn.calories || 0);
-        if (burn.source === 'workout') workoutBurnDates.add(burn.date);
+        if (burn.source === 'workout' && burn.activity_type?.startsWith('workout:')) {
+          persistedWorkoutBurnIds.add(burn.activity_type.replace('workout:', ''));
+        }
       });
 
       // Calculate workout calories from workout data
       (workoutsRes.data || []).forEach((workout: any) => {
         const date = workout.date;
 
-        // Only skip if there's already a workout-source manual burn for this date
-        if (workoutBurnDates.has(date)) return;
+        // Only skip the exact workout if its burn has already been persisted
+        if (persistedWorkoutBurnIds.has(workout.id)) return;
 
         const exercises = workout.exercises || [];
 
