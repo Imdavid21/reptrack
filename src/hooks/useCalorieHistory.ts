@@ -59,6 +59,7 @@ export function useCalorieHistory(dateRange: DateRange) {
         supabase
           .from('workouts')
           .select(`
+            id,
             date,
             day_name,
             started_at,
