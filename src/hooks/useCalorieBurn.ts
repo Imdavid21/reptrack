@@ -130,19 +130,13 @@ export function useCalorieBurn(date?: Date) {
   });
 
   // Calculate workout duration
-  const calculateWorkoutDuration = (): number => {
-    if (!todayWorkout) return 0;
+  const calculateWorkoutDuration = (workout: WorkoutWithExercises): number => {
+    if (workout.workout_duration_minutes) return workout.workout_duration_minutes;
 
-    // Use explicit duration if stored
-    if (todayWorkout.workout_duration_minutes) {
-      return todayWorkout.workout_duration_minutes;
-    }
-
-    // Fallback: calculate from started_at to completed_at
-    if (todayWorkout.started_at && todayWorkout.completed_at) {
+    if (workout.started_at && workout.completed_at) {
       const durationMinutes = differenceInMinutes(
-        parseISO(todayWorkout.completed_at),
-        parseISO(todayWorkout.started_at)
+        parseISO(workout.completed_at),
+        parseISO(workout.started_at)
       );
       return Math.max(durationMinutes, 0);
     }
@@ -158,11 +152,8 @@ export function useCalorieBurn(date?: Date) {
   };
 
   // Get primary workout category from exercises or day_name
-  const getPrimaryCategory = (): string => {
-    if (!todayWorkout) return 'strength';
-
-    // Try from exercises table
-    const exercises = todayWorkout.exercises || [];
+  const getPrimaryCategory = (workout: WorkoutWithExercises): string => {
+    const exercises = workout.exercises || [];
     if (exercises.length > 0) {
       const categoryCounts: Record<string, number> = {};
       exercises.forEach(ex => {
@@ -174,10 +165,11 @@ export function useCalorieBurn(date?: Date) {
     }
 
     // Fallback: infer from day_name
-    const dayNameLower = todayWorkout.day_name.toLowerCase();
+    const dayNameLower = workout.day_name.toLowerCase();
     if (dayNameLower.includes('push')) return 'push';
     if (dayNameLower.includes('pull')) return 'pull';
     if (dayNameLower.includes('leg')) return 'legs';
+    if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) return 'accessory';
     return 'strength';
   };
 
@@ -197,20 +189,28 @@ export function useCalorieBurn(date?: Date) {
     }
   };
 
-  // Calculate today's workout calories
-  const workoutDuration = calculateWorkoutDuration();
-  const primaryCategory = getPrimaryCategory();
-  const workoutCaloriesFromDuration = workoutDuration > 0 
-    ? calculateWorkoutCalories(workoutDuration, primaryCategory)
-    : 0;
+  // Calculate today's workout calories across all workouts on the day
+  const workoutSummaries = todayWorkouts.map((workout) => {
+    const calculatedDuration = calculateWorkoutDuration(workout);
+    const primaryCategory = getPrimaryCategory(workout);
+    const calculatedCalories = calculatedDuration > 0
+      ? calculateWorkoutCalories(calculatedDuration, primaryCategory)
+      : 0;
+    return { ...workout, calculatedDuration, calculatedCalories, primaryCategory };
+  });
+  const workoutCaloriesFromDuration = workoutSummaries.reduce((sum, w) => sum + w.calculatedCalories, 0);
+  const primaryWorkout = workoutSummaries.reduce<typeof workoutSummaries[number] | null>((longest, workout) => {
+    if (!longest) return workout;
+    return workout.calculatedDuration > longest.calculatedDuration ? workout : longest;
+  }, null);
 
   const totalBurned = burns.reduce((sum, b) => sum + b.calories, 0);
   const workoutBurned = burns.filter(b => b.source === 'workout').reduce((sum, b) => sum + b.calories, 0);
   const stepBurned = burns.filter(b => b.source === 'steps').reduce((sum, b) => sum + b.calories, 0);
 
-  // Use calculated workout calories if no manual entry exists
+  // Use calculated workout calories if no persisted workout entry exists; keep manual activity too
   const effectiveWorkoutBurned = workoutBurned > 0 ? workoutBurned : workoutCaloriesFromDuration;
-  const effectiveTotalBurned = totalBurned > 0 ? totalBurned : workoutCaloriesFromDuration;
+  const effectiveTotalBurned = totalBurned + (workoutBurned > 0 ? 0 : workoutCaloriesFromDuration);
 
   return {
     burns,
@@ -224,12 +224,7 @@ export function useCalorieBurn(date?: Date) {
     calculateBMR,
     weightKg,
     // Expose workout details
-    todayWorkout: todayWorkout ? {
-      ...todayWorkout,
-      calculatedDuration: workoutDuration,
-      calculatedCalories: workoutCaloriesFromDuration,
-      primaryCategory,
-  } : null,
+    todayWorkout: primaryWorkout,
   };
 }
 
