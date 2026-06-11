@@ -134,6 +134,13 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
+      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['meals'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyCalories'] });
     } catch (err) {
       console.error('[OfflineSync] Queue processing error:', err);
     } finally {
