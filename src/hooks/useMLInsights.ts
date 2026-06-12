@@ -5,6 +5,7 @@ import { useUserPreferences } from './useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { generateMLInsights, WorkoutSummary } from '@/lib/mlInsights';
+import { localDateKey } from '@/lib/dateKey';
 
 export interface DateRangeFilter {
   from: Date;
@@ -72,8 +73,8 @@ export function useMLInsights(dateRange?: DateRangeFilter) {
 
     try {
       // Fetch meals, water, and bodyweight data in parallel
-      const fromDate = dateRange?.from?.toISOString().split('T')[0] || new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-      const toDate = dateRange?.to?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0];
+      const fromDate = localDateKey(dateRange?.from ?? new Date(Date.now() - 30 * 86400000));
+      const toDate = localDateKey(dateRange?.to ?? new Date());
 
       const [mealsResult, waterResult, bodyweightResult] = await Promise.all([
         supabase

@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { startOfDay, endOfDay } from 'date-fns';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import { localDateKey } from '@/lib/dateKey';
 
 export interface WaterLog {
   id: string;
@@ -16,11 +17,18 @@ export function useWaterLogs() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const todayStart = startOfDay(new Date()).toISOString();
-  const todayEnd = endOfDay(new Date()).toISOString();
+  // Stable per-day boundaries: recomputed only when the local calendar day
+  // changes, not on every render. (Previously these were fresh ISO strings on
+  // every render, churning the query key + realtime subscription each frame.)
+  const dayKey = localDateKey();
+  const { todayStart, todayEnd } = useMemo(() => ({
+    todayStart: startOfDay(new Date()).toISOString(),
+    todayEnd: endOfDay(new Date()).toISOString(),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [dayKey]);
 
   const waterLogsQuery = useQuery({
-    queryKey: ['waterLogs', user?.id, todayStart],
+    queryKey: ['waterLogs', user?.id, dayKey],
     queryFn: async () => {
       if (!user) return [];
       
@@ -53,7 +61,6 @@ export function useWaterLogs() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Water log realtime update:', payload);
           // Check if this log is from today
           const timestamp = (payload.new as WaterLog)?.timestamp || (payload.old as WaterLog)?.timestamp;
           if (timestamp) {
@@ -72,14 +79,12 @@ export function useWaterLogs() {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Water logs realtime subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient, todayStart]);
+  }, [user, queryClient]);
 
   const addWaterLogMutation = useMutation({
     mutationFn: async (amount: number = 0.25) => {

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
+import { localDateKey } from '@/lib/dateKey';
 
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
@@ -99,10 +100,8 @@ export function useWorkouts() {
     }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Format date for Supabase (YYYY-MM-DD)
-      const workoutDate = workout.date
-        ? workout.date.toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
+      // Format date for Supabase (YYYY-MM-DD) using LOCAL time, not UTC.
+      const workoutDate = localDateKey(workout.date ?? new Date());
 
       const workoutPayload = {
         user_id: user.id,

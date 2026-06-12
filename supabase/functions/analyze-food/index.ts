@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 function getCorsHeaders() {
   return {
@@ -206,6 +207,11 @@ serve(async (req) => {
     const user = await authResp.json();
 
     console.log(`analyze-food: Authenticated user ${user.id}`);
+
+    // Per-user rate limit (vision calls are the most expensive AI path)
+    if (!(await checkRateLimit({ supabaseUrl, anonKey: supabaseAnonKey, authHeader, bucket: "analyze-food", max: 15, windowSeconds: 60 }))) {
+      return rateLimitResponse(corsHeaders);
+    }
 
     // Validate request body
     let body;

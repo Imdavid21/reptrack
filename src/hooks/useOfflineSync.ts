@@ -9,7 +9,10 @@ export function useOfflineSync() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-  const syncingRef = useRef(false);
+  // Holds the in-flight sync promise. Acts as a mutex so a network flap
+  // (offline→online→offline) can't start two concurrent replays that both
+  // see "not syncing" and double-insert the same queued workout.
+  const syncPromiseRef = useRef<Promise<void> | null>(null);
   const queryClient = useQueryClient();
 
   // Track online/offline status
@@ -68,17 +71,19 @@ export function useOfflineSync() {
     }
   }, []);
 
-  // Process all queued items
+  // Process all queued items. Guarded by a single in-flight promise so
+  // overlapping triggers (online event + pendingCount effect) coalesce into
+  // one run instead of racing and producing duplicate inserts.
   const processQueue = useCallback(async () => {
-    if (syncingRef.current || !navigator.onLine) return;
-    syncingRef.current = true;
+    if (syncPromiseRef.current) return syncPromiseRef.current;
+    if (!navigator.onLine) return;
+
+    const run = (async () => {
     setIsSyncing(true);
 
     try {
       const items = await getQueuedItems();
       if (items.length === 0) {
-        setIsSyncing(false);
-        syncingRef.current = false;
         return;
       }
 
@@ -146,7 +151,14 @@ export function useOfflineSync() {
     } finally {
       await refreshCount();
       setIsSyncing(false);
-      syncingRef.current = false;
+    }
+    })();
+
+    syncPromiseRef.current = run;
+    try {
+      await run;
+    } finally {
+      syncPromiseRef.current = null;
     }
   }, [processItem, queryClient, refreshCount]);
 

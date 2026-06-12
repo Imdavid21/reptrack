@@ -29,6 +29,16 @@ import { ChevronLeft, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { findBestMatch } from '@/lib/exerciseMatching';
 
@@ -138,6 +148,7 @@ export default function LogWorkout() {
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
+  const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
 
   const splitDays = useMemo(() => {
     if (hasCustomRoutine && customDays) return customDays;
@@ -370,20 +381,7 @@ export default function LogWorkout() {
     toast.success(`Added ${newExercise.name}`);
   };
 
-  const handleSwapExercise = (newExercise: WorkoutExercise) => {
-    const current = exercises[currentExerciseIndex];
-    const hasCompletedSets = current?.sets.some(s => s.completed);
-
-    if (hasCompletedSets) {
-      const confirmed = window.confirm(
-        `You have completed sets for "${current.name}". Swapping will discard them. Continue?`
-      );
-      if (!confirmed) {
-        setShowSwapPicker(false);
-        return;
-      }
-    }
-
+  const performSwap = (newExercise: WorkoutExercise) => {
     setExercises(prev =>
       prev.map((ex, idx) =>
         idx === currentExerciseIndex
@@ -394,6 +392,20 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setShowSwapPicker(false);
     toast.success(`Switched to ${newExercise.name}`);
+  };
+
+  const handleSwapExercise = (newExercise: WorkoutExercise) => {
+    const current = exercises[currentExerciseIndex];
+    const hasCompletedSets = current?.sets.some(s => s.completed);
+
+    if (hasCompletedSets) {
+      // Confirm via an accessible dialog instead of window.confirm
+      setShowSwapPicker(false);
+      setPendingSwap(newExercise);
+      return;
+    }
+
+    performSwap(newExercise);
   };
 
   const handleRemoveExercise = (indexToRemove: number) => {
@@ -760,6 +772,30 @@ export default function LogWorkout() {
           )}
         </Box>
       </AnimatedPage>
+
+      {/* Accessible confirm for swapping an exercise that already has logged sets */}
+      <AlertDialog open={pendingSwap !== null} onOpenChange={(open) => { if (!open) setPendingSwap(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard completed sets?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You've completed sets for "{currentExercise?.name}". Swapping to{' '}
+              {pendingSwap?.name ? `"${pendingSwap.name}"` : 'a new exercise'} will discard them. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingSwap(null)}>Keep current</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingSwap) performSwap(pendingSwap);
+                setPendingSwap(null);
+              }}
+            >
+              Swap & discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
