@@ -78,7 +78,7 @@
 
     /* Signature energy accent — refined lime-green (softer than neon), the one
        pop of color used for progress, active states, streaks, and the next-up CTA. */
-    --energy: 142 52% 45%;
+    --energy: 142 62% 33%;
     --energy-foreground: 0 0% 100%;
     --energy-soft: 142 44% 94%;
 
@@ -156,7 +156,7 @@
     --insight-violet: 265 45% 70%;
 
     /* Energy accent — slightly brighter on the true-black dark base */
-    --energy: 142 50% 50%;
+    --energy: 142 55% 42%;
     --energy-foreground: 0 0% 100%;
     --energy-soft: 142 30% 15%;
 
@@ -280,10 +280,11 @@
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Energy badge / chip — solid lime so dark text stays legible in both themes */
+  /* Energy badge / chip — soft tint + ink text, matching every other pillar
+     chip and guaranteeing legibility at small sizes in both themes. */
   .badge-energy {
     @apply inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full;
-    @apply bg-energy text-energy-foreground;
+    @apply bg-energy-soft text-energy-ink;
   }
 
   /* Section header */
