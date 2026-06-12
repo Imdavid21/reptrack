@@ -34,7 +34,18 @@ export function HydrationChart() {
       ...d,
       metGoal: d.total >= dailyGoal,
     }));
-  }, [data?.dailyData]);
+  }, [data?.dailyData, dailyGoal]);
+
+  // Adaptive Y ceiling so high-volume days (athletes drinking >5L) aren't
+  // silently clipped off the top of a hard-coded [0,5] axis.
+  const yMax = useMemo(() => {
+    const peak = Math.max(dailyGoal, ...chartData.map(d => d.total || 0), 0);
+    return Math.max(5, Math.ceil(peak));
+  }, [chartData, dailyGoal]);
+  const yTicks = useMemo(
+    () => Array.from({ length: yMax + 1 }, (_, i) => i),
+    [yMax],
+  );
 
   if (isLoading) {
     return (
@@ -128,8 +139,8 @@ export function HydrationChart() {
               interval="preserveStartEnd"
             />
             <YAxis
-              domain={[0, 5]}
-              ticks={[0, 1, 2, 3, 4, 5]}
+              domain={[0, yMax]}
+              ticks={yTicks}
               tick={{ fill: mutedColor, fontSize: 10 }}
               axisLine={false}
               tickLine={false}

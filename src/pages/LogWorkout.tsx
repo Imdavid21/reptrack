@@ -24,11 +24,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { findBestMatch } from '@/lib/exerciseMatching';
 
@@ -114,6 +124,7 @@ function buildExercisesFromTemplate(
 
 export default function LogWorkout() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
@@ -138,6 +149,7 @@ export default function LogWorkout() {
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
+  const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
 
   const splitDays = useMemo(() => {
     if (hasCustomRoutine && customDays) return customDays;
@@ -249,6 +261,20 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setStep('review');
   };
+
+  // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
+  // that day's review, with last-used weights already applied. Skipped if a
+  // draft was restored so we never clobber an in-progress session.
+  useEffect(() => {
+    if (!loaded || draftRestored) return;
+    const dayParam = searchParams.get('day');
+    if (!dayParam || step !== 'select-day') return;
+    if (!splitDays[dayParam]) return;
+    handleDaySelect(dayParam, new Date(), weekNumber);
+    // consume the param so a back-nav doesn't re-trigger the jump
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, draftRestored, searchParams, splitDays]);
 
   // Start session from review — preserve original start time if already set
   const handleStartSession = () => {
@@ -370,20 +396,7 @@ export default function LogWorkout() {
     toast.success(`Added ${newExercise.name}`);
   };
 
-  const handleSwapExercise = (newExercise: WorkoutExercise) => {
-    const current = exercises[currentExerciseIndex];
-    const hasCompletedSets = current?.sets.some(s => s.completed);
-
-    if (hasCompletedSets) {
-      const confirmed = window.confirm(
-        `You have completed sets for "${current.name}". Swapping will discard them. Continue?`
-      );
-      if (!confirmed) {
-        setShowSwapPicker(false);
-        return;
-      }
-    }
-
+  const performSwap = (newExercise: WorkoutExercise) => {
     setExercises(prev =>
       prev.map((ex, idx) =>
         idx === currentExerciseIndex
@@ -394,6 +407,20 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setShowSwapPicker(false);
     toast.success(`Switched to ${newExercise.name}`);
+  };
+
+  const handleSwapExercise = (newExercise: WorkoutExercise) => {
+    const current = exercises[currentExerciseIndex];
+    const hasCompletedSets = current?.sets.some(s => s.completed);
+
+    if (hasCompletedSets) {
+      // Confirm via an accessible dialog instead of window.confirm
+      setShowSwapPicker(false);
+      setPendingSwap(newExercise);
+      return;
+    }
+
+    performSwap(newExercise);
   };
 
   const handleRemoveExercise = (indexToRemove: number) => {
@@ -760,6 +787,30 @@ export default function LogWorkout() {
           )}
         </Box>
       </AnimatedPage>
+
+      {/* Accessible confirm for swapping an exercise that already has logged sets */}
+      <AlertDialog open={pendingSwap !== null} onOpenChange={(open) => { if (!open) setPendingSwap(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard completed sets?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You've completed sets for "{currentExercise?.name}". Swapping to{' '}
+              {pendingSwap?.name ? `"${pendingSwap.name}"` : 'a new exercise'} will discard them. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingSwap(null)}>Keep current</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingSwap) performSwap(pendingSwap);
+                setPendingSwap(null);
+              }}
+            >
+              Swap & discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

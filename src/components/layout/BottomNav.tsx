@@ -36,18 +36,24 @@ export function BottomNav() {
       elevation={0}
     >
       <BottomNavigation
+        showLabels
         value={currentValue >= 0 ? currentValue : 0}
         onChange={(_, newValue) => {
           navigate(navItems[newValue].path);
         }}
         sx={{
           bgcolor: 'background.paper',
+          height: 60,
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
             py: 1,
             color: 'text.secondary',
             '&.Mui-selected': {
-              color: 'text.primary',
+              color: 'hsl(var(--foreground))',
+            },
+            // Accent dot above the active tab's icon
+            '&.Mui-selected .nav-dot': {
+              opacity: 1,
             },
           },
           '& .MuiBottomNavigationAction-label': {
@@ -57,17 +63,40 @@ export function BottomNav() {
             mt: 0.5,
             '&.Mui-selected': {
               fontSize: '0.625rem',
+              fontWeight: 700,
             },
           },
         }}
       >
-        {navItems.map((item) => (
-          <BottomNavigationAction
-            key={item.path}
-            label={item.label}
-            icon={<item.icon size={20} />}
-          />
-        ))}
+        {navItems.map((item, idx) => {
+          const selected = (currentValue >= 0 ? currentValue : 0) === idx;
+          return (
+            <BottomNavigationAction
+              key={item.path}
+              label={item.label}
+              aria-label={item.label}
+              aria-current={selected ? 'page' : undefined}
+              icon={
+                <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box
+                    className="nav-dot"
+                    sx={{
+                      position: 'absolute',
+                      top: -7,
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      bgcolor: 'hsl(var(--energy))',
+                      opacity: 0,
+                      transition: 'opacity 0.15s ease',
+                    }}
+                  />
+                  <item.icon size={20} />
+                </Box>
+              }
+            />
+          );
+        })}
       </BottomNavigation>
     </Paper>
   );

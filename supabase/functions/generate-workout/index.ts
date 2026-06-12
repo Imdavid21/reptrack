@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 function getCorsHeaders() {
   return {
@@ -42,6 +43,10 @@ serve(async (req) => {
       );
     }
     const user = await authResp.json();
+
+    if (!(await checkRateLimit({ supabaseUrl, anonKey: supabaseAnonKey, authHeader, bucket: "generate-workout", max: 5, windowSeconds: 60 }))) {
+      return rateLimitResponse(corsHeaders);
+    }
 
     const body = await req.json();
     const goals = body.goals;

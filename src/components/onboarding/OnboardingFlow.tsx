@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { Droplets, Dumbbell, Moon, Target, ArrowRight, Check } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
+import { localDateKey } from '@/lib/dateKey';
 import { TrainingSplit } from '@/lib/splitTemplates';
 
 interface OnboardingFlowProps {
@@ -163,7 +164,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
       // Save initial bodyweight to daily_metrics
       if (profile.weight_kg && user) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = localDateKey();
         await supabase.from('daily_metrics').upsert({
           user_id: user.id,
           date: today,

@@ -36,8 +36,14 @@ export interface FoodAnalysis {
 
 interface AnalyzeResult {
   analysis: FoodAnalysis;
+  /** Signed, time-limited URL for the uploaded photo (bucket is private). */
   publicUrl: string;
 }
+
+// Meal photos live in a private bucket. We mint a long-lived signed URL so the
+// image stays displayable in history without exposing the whole bucket to the
+// public internet (the previous behaviour, which leaked every user's photos).
+const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
 const OVERALL_TIMEOUT_MS = 45_000; // 45s max for the entire pipeline
 
@@ -85,9 +91,14 @@ async function doAnalyze(
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: signed, error: signedError } = await supabase.storage
       .from('meal-photos')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, SIGNED_URL_TTL_SECONDS);
+
+    if (signedError || !signed?.signedUrl) {
+      throw signedError || new Error('Could not generate a URL for the uploaded photo.');
+    }
+    const publicUrl = signed.signedUrl;
 
     // Step 3: Analyze (with 1 retry)
     onStep('analyzing');

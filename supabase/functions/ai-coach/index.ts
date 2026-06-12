@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 function getCorsHeaders() {
   return {
@@ -42,6 +43,11 @@ serve(async (req) => {
       );
     }
     const user = await authResp.json();
+
+    // Per-user rate limit (cost protection)
+    if (!(await checkRateLimit({ supabaseUrl, anonKey: supabaseAnonKey, authHeader, bucket: "ai-coach", max: 10, windowSeconds: 60 }))) {
+      return rateLimitResponse(corsHeaders);
+    }
 
     const { summary } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

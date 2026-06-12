@@ -63,6 +63,11 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        energy: {
+          DEFAULT: "hsl(var(--energy))",
+          foreground: "hsl(var(--energy-foreground))",
+          soft: "hsl(var(--energy-soft))",
+        },
         heat: {
           0: "hsl(var(--heat-0))",
           1: "hsl(var(--heat-1))",

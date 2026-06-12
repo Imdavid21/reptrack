@@ -7,7 +7,23 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
-    
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Apply the saved theme synchronously, before first paint, to avoid a
+         flash of the wrong color scheme on load. Mirrors ThemeContext. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('fittrack-theme');
+          var dark = stored ? stored === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var cls = document.documentElement.classList;
+          cls.add(dark ? 'dark' : 'light');
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- PWA caching handled by service worker -->
     
     <title>Reptrack Fitness | Personal Health & Fitness Tracker</title>

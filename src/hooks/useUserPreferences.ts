@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { subDays } from 'date-fns';
+import { localDateKey } from '@/lib/dateKey';
 
 export type TrainingSplit = 'ppl6' | 'upper_lower4' | 'full_body3' | 'ppl5' | 'custom';
 
@@ -30,7 +31,7 @@ export interface UserPreferences {
 
 // Helper function to infer training split from workout history
 async function inferTrainingSplit(userId: string, workoutCount: number): Promise<TrainingSplit> {
-  const thirtyDaysAgo = subDays(new Date(), 30).toISOString().split('T')[0];
+  const thirtyDaysAgo = localDateKey(subDays(new Date(), 30));
   
   const { data: workouts } = await supabase
     .from('workouts')
