@@ -68,6 +68,18 @@ export default {
           foreground: "hsl(var(--energy-foreground))",
           soft: "hsl(var(--energy-soft))",
         },
+        water: {
+          DEFAULT: "hsl(var(--water))",
+          soft: "hsl(var(--water-soft))",
+        },
+        fuel: {
+          DEFAULT: "hsl(var(--fuel))",
+          soft: "hsl(var(--fuel-soft))",
+        },
+        recover: {
+          DEFAULT: "hsl(var(--recover))",
+          soft: "hsl(var(--recover-soft))",
+        },
         heat: {
           0: "hsl(var(--heat-0))",
           1: "hsl(var(--heat-1))",

@@ -190,7 +190,7 @@ export default function Landing() {
           >
             <Link
               to="/signin"
-              className="btn-brutalist btn-primary px-8 py-4 text-base flex items-center justify-center"
+              className="btn-energy px-8 py-4 text-base flex items-center justify-center"
             >
               Start for free
             </Link>
@@ -353,7 +353,7 @@ export default function Landing() {
           </p>
           <Link
             to="/signin"
-            className="btn-brutalist btn-primary px-8 py-4 text-base inline-flex items-center"
+            className="btn-energy px-8 py-4 text-base inline-flex items-center"
           >
             Start for free
           </Link>

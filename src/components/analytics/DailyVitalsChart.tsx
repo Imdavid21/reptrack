@@ -241,10 +241,12 @@ export function DailyVitalsChart() {
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke={primaryColor}
+                  stroke={activeMetric === 'sleep' ? 'hsl(var(--recover))' : primaryColor}
                   strokeWidth={2}
-                  fill={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}
-                  dot={{ r: 3, fill: primaryColor }}
+                  fill={activeMetric === 'sleep'
+                    ? 'hsl(var(--recover) / 0.12)'
+                    : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}
+                  dot={{ r: 3, fill: activeMetric === 'sleep' ? 'hsl(var(--recover))' : primaryColor }}
                   connectNulls
                 />
               </AreaChart>

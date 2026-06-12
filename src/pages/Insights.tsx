@@ -24,9 +24,22 @@ import { CalorieChart } from '@/components/health/CalorieChart';
 import { MacroChart } from '@/components/health/MacroChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
+import { BodyOverviewCard } from '@/components/analytics/BodyOverviewCard';
+import { NextStepsCard } from '@/components/analytics/NextStepsCard';
+import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
+
+// Section label with the pillar's signature color dot, used to group charts.
+function SectionHeader({ label, dotClass }: { label: string; dotClass: string }) {
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <span className={`h-2 w-2 rounded-full ${dotClass}`} aria-hidden />
+      <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">{label}</span>
+    </div>
+  );
+}
 
 const FITNESS_GOALS = [
   { value: 'lose_weight', label: 'Lose Weight' },
@@ -60,13 +73,13 @@ function ProgressCard() {
   useEffect(() => {
     if (preferences) {
       setGoals({
-        daily_calorie_goal: (preferences as any).daily_calorie_goal?.toString() || '',
-        daily_water_goal: (preferences as any).daily_water_goal?.toString() || '',
-        weekly_workout_goal: (preferences as any).weekly_workout_goal?.toString() || '4',
-        sleep_goal: (preferences as any).sleep_goal?.toString() || '8',
-        weight_goal: (preferences as any).weight_goal?.toString() || '',
-        weight_goal_type: (preferences as any).weight_goal_type || 'maintain',
-        fitness_goal: (preferences as any).fitness_goal || '',
+        daily_calorie_goal: preferences.daily_calorie_goal?.toString() || '',
+        daily_water_goal: preferences.daily_water_goal?.toString() || '',
+        weekly_workout_goal: preferences.weekly_workout_goal?.toString() || '4',
+        sleep_goal: preferences.sleep_goal?.toString() || '8',
+        weight_goal: preferences.weight_goal?.toString() || '',
+        weight_goal_type: preferences.weight_goal_type || 'maintain',
+        fitness_goal: preferences.fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -83,9 +96,9 @@ function ProgressCard() {
         weekly_workout_goal: goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4,
         sleep_goal: goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
-        weight_goal_type: goals.weight_goal_type || null,
+        weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
         fitness_goal: goals.fitness_goal || null,
-      } as any);
+      });
       toast.success('Goals updated');
       setIsEditing(false);
     } catch (error) {
@@ -424,6 +437,9 @@ function ProgressCard() {
 }
 
 function InsightsContent() {
+  const { dateRange } = useDateRange();
+  const { overview, isLoading: overviewLoading } = useBodyOverview(dateRange);
+
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
@@ -436,34 +452,36 @@ function InsightsContent() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            {/* Unified Progress Card */}
+            {/* North star: composite body overview + what to do about it */}
+            <motion.div variants={staggerItem}>
+              <BodyOverviewCard overview={overview} isLoading={overviewLoading} />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <NextStepsCard overview={overview} isLoading={overviewLoading} />
+            </motion.div>
+
+            {/* Goals editor + week-over-week summary */}
             <motion.div variants={staggerItem}>
               <ProgressCard />
             </motion.div>
 
-
-            {/* Workout Efficiency */}
+            {/* ---- Training ---- */}
+            <SectionHeader label="Training" dotClass="bg-energy" />
             <motion.div variants={staggerItem}>
               <EfficiencyChart />
             </motion.div>
-
-            {/* Volume Breakdown */}
             <motion.div variants={staggerItem}>
               <VolumeSankeyChart />
             </motion.div>
-
-
-            {/* Per-Exercise Progression */}
             <motion.div variants={staggerItem}>
               <ExerciseProgressionChart />
             </motion.div>
 
-            {/* Energy Balance + Calorie Trends (merged) */}
+            {/* ---- Fuel ---- */}
+            <SectionHeader label="Fuel" dotClass="bg-fuel" />
             <motion.div variants={staggerItem}>
               <CalorieChart />
             </motion.div>
-
-            {/* Daily Macros */}
             <motion.div variants={staggerItem}>
               <MacroChart macro="protein" />
             </motion.div>
@@ -477,17 +495,14 @@ function InsightsContent() {
               <MacroChart macro="fiber" />
             </motion.div>
 
-            {/* Daily Vitals (Weight + Sleep merged) */}
+            {/* ---- Recovery & body ---- */}
+            <SectionHeader label="Recovery & Body" dotClass="bg-recover" />
             <motion.div variants={staggerItem}>
               <DailyVitalsChart />
             </motion.div>
-
-            {/* Hydration Chart */}
             <motion.div variants={staggerItem}>
               <HydrationChart />
             </motion.div>
-
-
 
             {/* AI Coach Insights */}
             <motion.div variants={staggerItem}>

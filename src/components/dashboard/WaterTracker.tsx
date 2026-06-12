@@ -95,7 +95,7 @@ export function WaterTracker() {
             <Pencil className="h-3 w-3" />
           </button>
         </div>
-        <Droplets className="h-4 w-4 text-muted-foreground" />
+        <Droplets className="h-4 w-4 text-water" />
       </div>
 
       <div className="text-4xl font-bold tabular-nums">
@@ -135,7 +135,7 @@ export function WaterTracker() {
 
       <div className="progress-bar mt-4">
         <div
-          className="progress-bar-fill transition-all duration-300"
+          className="progress-bar-fill bg-water transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>

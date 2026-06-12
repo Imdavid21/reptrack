@@ -81,6 +81,15 @@
     --energy: 84 81% 44%;
     --energy-foreground: 0 0% 9%;
     --energy-soft: 84 70% 92%;
+
+    /* Pillar palette — one hue per body domain, used consistently everywhere:
+       Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover. */
+    --water: 199 89% 40%;
+    --water-soft: 199 80% 92%;
+    --fuel: 30 95% 46%;
+    --fuel-soft: 32 90% 92%;
+    --recover: 258 65% 58%;
+    --recover-soft: 258 60% 93%;
   }
 
   .dark {
@@ -144,6 +153,14 @@
     --energy: 82 84% 55%;
     --energy-foreground: 0 0% 7%;
     --energy-soft: 84 30% 16%;
+
+    /* Pillar palette — brightened for the dark base */
+    --water: 199 90% 55%;
+    --water-soft: 199 50% 15%;
+    --fuel: 35 95% 58%;
+    --fuel-soft: 32 50% 15%;
+    --recover: 258 80% 70%;
+    --recover-soft: 258 35% 18%;
   }
 }
 
@@ -239,8 +256,10 @@
     @apply h-2 bg-muted overflow-hidden rounded-full;
   }
 
+  /* Neutral by default; consumers add a pillar utility (bg-energy/bg-water/
+     bg-fuel/bg-recover) which wins via the utilities layer. */
   .progress-bar-fill {
-    @apply h-full bg-energy transition-all duration-300 rounded-full;
+    @apply h-full bg-foreground transition-all duration-300 rounded-full;
   }
 
   /* Energy CTA — the one high-emphasis colored action (e.g. Start next workout) */
