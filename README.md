@@ -30,16 +30,19 @@
 
 ### Core Features
 - **Workout Logging** – Set-by-set exercise tracking with progressive overload, draft persistence, and explicit finish flow
+- **Adaptive Next Workout** – The Today screen picks your next split day and suggests evidence-based progression (double progression) from your own history
 - **Flexible Routines** – Split-based programs (Full Body, Upper/Lower, PPL5, PPL6) with AI generation
 - **Nutrition Tracking** – AI-powered food analysis from photos + text + manual calorie logging
 - **Hydration** – Water intake tracking with visual progress
 - **Daily Check-ins** – Morning/night vitals (sleep, energy, weight, steps)
 - **Analytics** – Strength progression, body composition, ML insights, correlation analysis
 - **Personal Records** – Automatic PR detection across all exercises
-- **AI Coach** – Context-aware workout coaching via OpenAI gpt-4o-mini
+- **AI Coach** – Context-aware coaching insights (Lovable AI Gateway)
 - **Blog/SEO** – Built-in blog with 40+ fitness articles for organic traffic
-- **MCP Server** – Model Context Protocol for AI assistant integration
-- **Public REST API** – API key-authenticated read access to user data
+- **Account control** – Full data export/import (CSV) and one-tap account deletion (GDPR)
+
+> Note: the previously documented public REST API and MCP server edge functions
+> have been removed; the app no longer exposes API-key access.
 
 ---
 
@@ -69,8 +72,13 @@
 ### AI Models
 | Model | Used By |
 |-------|---------|
-| **OpenAI gpt-4o-mini** | ai-coach, generate-workout, food analysis, food parsing |
-| **Lovable AI Gateway** | Fallback / future expansion |
+| **OpenAI gpt-4o** | analyze-food (vision — most accurate for food photos) |
+| **OpenAI gpt-4o-mini** | generate-workout, parse-food-text |
+| **Lovable AI Gateway (gemini-2.5-flash)** | ai-coach insights |
+
+All AI edge functions are JWT-protected and per-user rate limited server-side
+via the `check_rate_limit` RPC (ai-coach 10/min, analyze-food 15/min,
+generate-workout 5/min, parse-food-text 20/min).
 
 ### Native (Capacitor)
 | Package | Version | Purpose |

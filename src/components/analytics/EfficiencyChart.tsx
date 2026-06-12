@@ -29,17 +29,16 @@ export function EfficiencyChart() {
     duration: h.duration,
   })) || [];
 
-  const avgEfficiency = data?.history.length 
-    ? Math.round(data.history.reduce((s, h) => s + h.efficiency, 0) / data.history.length)
-    : 0;
+  const totalDuration = data?.history.reduce((s, h) => s + h.duration, 0) || 0;
+  const totalVolume = data?.history.reduce((s, h) => s + h.volume, 0) || 0;
+  const n = data?.history.length || 0;
 
-  const avgDuration = data?.history.length
-    ? Math.round(data.history.reduce((s, h) => s + h.duration, 0) / data.history.length)
-    : 0;
-
-  const avgVolume = data?.history.length
-    ? Math.round(data.history.reduce((s, h) => s + h.volume, 0) / data.history.length)
-    : 0;
+  // Overall efficiency must be total volume / total duration, NOT the mean of
+  // per-workout efficiencies (that average-of-averages overstates the figure
+  // whenever workout durations vary).
+  const avgEfficiency = totalDuration > 0 ? Math.round(totalVolume / totalDuration) : 0;
+  const avgDuration = n ? Math.round(totalDuration / n) : 0;
+  const avgVolume = n ? Math.round(totalVolume / n) : 0;
 
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
