@@ -26,7 +26,10 @@ import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
 import { BodyOverviewCard } from '@/components/analytics/BodyOverviewCard';
 import { NextStepsCard } from '@/components/analytics/NextStepsCard';
+import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
+import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
+import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
@@ -439,6 +442,7 @@ function ProgressCard() {
 function InsightsContent() {
   const { dateRange } = useDateRange();
   const { overview, isLoading: overviewLoading } = useBodyOverview(dateRange);
+  const { data: muscleData, isLoading: muscleLoading } = useMuscleIntelligence();
 
   return (
     <AnimatedPage>
@@ -467,6 +471,12 @@ function InsightsContent() {
 
             {/* ---- Training ---- */}
             <SectionHeader label="Training" dotClass="bg-energy" />
+            <motion.div variants={staggerItem}>
+              <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <MuscleBalanceCard data={muscleData} isLoading={muscleLoading} />
+            </motion.div>
             <motion.div variants={staggerItem}>
               <EfficiencyChart />
             </motion.div>

@@ -82,9 +82,9 @@ export function NextWorkoutCard() {
           <div className="mt-3 space-y-1.5">
             {upgrades.map((ex) => (
               <div key={ex.name} className="flex items-center gap-2 text-xs">
-                <TrendingUp className="h-3.5 w-3.5 text-energy shrink-0" />
+                <TrendingUp className="h-3.5 w-3.5 text-energy-ink shrink-0" />
                 <span className="font-semibold truncate">{ex.name}</span>
-                <span className="text-energy font-bold tabular-nums shrink-0">{ex.weight} × {ex.reps}</span>
+                <span className="text-energy-ink font-bold tabular-nums shrink-0">{ex.weight} × {ex.reps}</span>
               </div>
             ))}
           </div>

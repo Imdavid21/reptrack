@@ -11,10 +11,10 @@ const PILLAR_META: Record<PillarKey, {
   bar: string;
   chip: string;
 }> = {
-  training: { label: 'Training', icon: Dumbbell, text: 'text-energy', bar: 'bg-energy', chip: 'bg-energy-soft' },
-  fuel: { label: 'Fuel', icon: Flame, text: 'text-fuel', bar: 'bg-fuel', chip: 'bg-fuel-soft' },
-  recovery: { label: 'Recovery', icon: Moon, text: 'text-recover', bar: 'bg-recover', chip: 'bg-recover-soft' },
-  hydration: { label: 'Hydration', icon: Droplets, text: 'text-water', bar: 'bg-water', chip: 'bg-water-soft' },
+  training: { label: 'Training', icon: Dumbbell, text: 'text-energy-ink', bar: 'bg-energy', chip: 'bg-energy-soft' },
+  fuel: { label: 'Fuel', icon: Flame, text: 'text-fuel-ink', bar: 'bg-fuel', chip: 'bg-fuel-soft' },
+  recovery: { label: 'Recovery', icon: Moon, text: 'text-recover-ink', bar: 'bg-recover', chip: 'bg-recover-soft' },
+  hydration: { label: 'Hydration', icon: Droplets, text: 'text-water-ink', bar: 'bg-water', chip: 'bg-water-soft' },
 };
 
 const PILLAR_ORDER: PillarKey[] = ['training', 'fuel', 'recovery', 'hydration'];
@@ -27,7 +27,7 @@ function scoreWord(score: number): string {
 }
 
 function TrendIcon({ trend }: { trend: PillarResult['trend'] }) {
-  if (trend === 'up') return <TrendingUp className="h-3 w-3 text-energy" aria-label="trending up" />;
+  if (trend === 'up') return <TrendingUp className="h-3 w-3 text-energy-ink" aria-label="trending up" />;
   if (trend === 'down') return <TrendingDown className="h-3 w-3 text-destructive" aria-label="trending down" />;
   return <Minus className="h-3 w-3 text-muted-foreground/50" aria-label="flat" />;
 }

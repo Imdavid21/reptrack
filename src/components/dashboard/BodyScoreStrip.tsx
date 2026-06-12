@@ -5,10 +5,10 @@ import { PillarKey } from '@/lib/bodyScore';
 import { haptic } from '@/lib/haptics';
 
 const PILLARS: Array<{ key: PillarKey; icon: typeof Dumbbell; text: string }> = [
-  { key: 'training', icon: Dumbbell, text: 'text-energy' },
-  { key: 'fuel', icon: Flame, text: 'text-fuel' },
-  { key: 'recovery', icon: Moon, text: 'text-recover' },
-  { key: 'hydration', icon: Droplets, text: 'text-water' },
+  { key: 'training', icon: Dumbbell, text: 'text-energy-ink' },
+  { key: 'fuel', icon: Flame, text: 'text-fuel-ink' },
+  { key: 'recovery', icon: Moon, text: 'text-recover-ink' },
+  { key: 'hydration', icon: Droplets, text: 'text-water-ink' },
 ];
 
 /**

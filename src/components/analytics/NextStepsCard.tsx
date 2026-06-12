@@ -4,10 +4,10 @@ import { BodyOverview, NextStep } from '@/lib/bodyScore';
 import { haptic } from '@/lib/haptics';
 
 const STEP_META: Record<NextStep['pillar'], { icon: typeof Dumbbell; chip: string; text: string }> = {
-  training: { icon: Dumbbell, chip: 'bg-energy-soft', text: 'text-energy' },
-  fuel: { icon: Flame, chip: 'bg-fuel-soft', text: 'text-fuel' },
-  recovery: { icon: Moon, chip: 'bg-recover-soft', text: 'text-recover' },
-  hydration: { icon: Droplets, chip: 'bg-water-soft', text: 'text-water' },
+  training: { icon: Dumbbell, chip: 'bg-energy-soft', text: 'text-energy-ink' },
+  fuel: { icon: Flame, chip: 'bg-fuel-soft', text: 'text-fuel-ink' },
+  recovery: { icon: Moon, chip: 'bg-recover-soft', text: 'text-recover-ink' },
+  hydration: { icon: Droplets, chip: 'bg-water-soft', text: 'text-water-ink' },
   body: { icon: Scale, chip: 'bg-muted', text: 'text-foreground' },
 };
 
@@ -34,7 +34,7 @@ export function NextStepsCard({ overview, isLoading }: Props) {
       {overview.nextSteps.length === 0 ? (
         <div className="flex items-center gap-3 py-1">
           <div className="h-8 w-8 rounded-full bg-energy/15 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="h-4.5 w-4.5 text-energy" />
+            <CheckCircle2 className="h-4.5 w-4.5 text-energy-ink" />
           </div>
           <p className="text-xs text-muted-foreground">
             Nothing urgent — training, fuel, recovery and hydration are all on
