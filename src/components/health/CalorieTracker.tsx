@@ -219,7 +219,7 @@ export function CalorieTracker() {
 
         <div className="progress-bar mt-4">
           <div
-            className="progress-bar-fill"
+            className="progress-bar-fill bg-fuel"
             style={{ width: `${progressPercent}%` }}
           />
         </div>

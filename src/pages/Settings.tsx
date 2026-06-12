@@ -534,7 +534,7 @@ export default function Settings() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Dumbbell size={18} />
+                <Dumbbell size={18} className="text-energy" />
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Workout</Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -649,7 +649,7 @@ export default function Settings() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <TrendingDown size={18} />
+                <TrendingDown size={18} className="text-fuel" />
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Deficit Mode</Typography>
                   <Typography variant="caption" color="text.secondary">

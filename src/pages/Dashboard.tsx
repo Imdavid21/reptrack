@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
+import { BodyScoreStrip } from '@/components/dashboard/BodyScoreStrip';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -71,6 +72,11 @@ export default function Dashboard() {
                 </div>
               </motion.div>
             )}
+
+            {/* Body score at a glance → full overview in Insights */}
+            <motion.div variants={staggerItem}>
+              <BodyScoreStrip />
+            </motion.div>
 
             {/* Progress Overview */}
             <motion.div variants={staggerItem}>

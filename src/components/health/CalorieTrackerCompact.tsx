@@ -409,7 +409,7 @@ export function CalorieTrackerCompact() {
           <div className="progress-bar mt-4">
             <div
               className={cn(
-                "progress-bar-fill transition-all duration-500",
+                "progress-bar-fill bg-fuel transition-all duration-500",
                 overCap && "bg-[hsl(var(--insight-coral))]"
               )}
               style={{ width: `${progressPercent}%` }}

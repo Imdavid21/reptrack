@@ -151,7 +151,7 @@ export function HydrationChart() {
               strokeDasharray="4 4"
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="total" radius={[4, 4, 0, 0]} fill={primaryColor} />
+            <Bar dataKey="total" radius={[4, 4, 0, 0]} fill="hsl(var(--water))" />
           </BarChart>
         </ResponsiveContainer>
       </Box>
