@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const activities = [
-  { name: 'Arjun', action: 'logged a push workout' },
-  { name: 'Priya', action: 'hit a new squat PR' },
-  { name: 'Rahul', action: 'tracked 2.4L of water' },
-  { name: 'Sneha', action: 'logged breakfast, 620 kcal' },
-  { name: 'Vikram', action: 'completed leg day' },
-  { name: 'Aisha', action: 'logged 8h of sleep' },
-  { name: 'Karthik', action: 'added 3 sets of deadlifts' },
-  { name: 'Ananya', action: 'hit a bench press PR' },
-  { name: 'Rohan', action: 'tracked a rest day' },
-  { name: 'Meera', action: 'logged her morning check-in' },
-  { name: 'Aditya', action: 'finished an upper body session' },
-  { name: 'Divya', action: 'tracked 1,950 kcal for the day' },
+// Honest, factual capability statements — not fabricated "live" user activity.
+const highlights = [
+  { lead: 'Set-by-set', rest: 'logging — no spreadsheets' },
+  { lead: 'Adaptive', rest: 'next workout from your history' },
+  { lead: 'AI calorie', rest: 'tracking from a single photo' },
+  { lead: 'Progressive overload,', rest: 'tracked automatically' },
+  { lead: 'Works offline', rest: 'right there in the gym' },
+  { lead: 'Your data,', rest: 'exportable anytime' },
 ];
 
 export default function LiveStatTicker() {
@@ -21,12 +16,12 @@ export default function LiveStatTicker() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % activities.length);
+      setIndex((prev) => (prev + 1) % highlights.length);
     }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const current = activities[index];
+  const current = highlights[index];
 
   return (
     <motion.div
@@ -54,8 +49,8 @@ export default function LiveStatTicker() {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="text-xs text-muted-foreground tracking-wide"
           >
-            <span className="font-medium text-foreground">{current.name}</span>{' '}
-            {current.action}
+            <span className="font-medium text-foreground">{current.lead}</span>{' '}
+            {current.rest}
           </motion.span>
         </AnimatePresence>
       </div>

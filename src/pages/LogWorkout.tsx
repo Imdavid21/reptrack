@@ -24,7 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil, Sparkles } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
@@ -124,6 +124,7 @@ function buildExercisesFromTemplate(
 
 export default function LogWorkout() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
@@ -260,6 +261,20 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setStep('review');
   };
+
+  // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
+  // that day's review, with last-used weights already applied. Skipped if a
+  // draft was restored so we never clobber an in-progress session.
+  useEffect(() => {
+    if (!loaded || draftRestored) return;
+    const dayParam = searchParams.get('day');
+    if (!dayParam || step !== 'select-day') return;
+    if (!splitDays[dayParam]) return;
+    handleDaySelect(dayParam, new Date(), weekNumber);
+    // consume the param so a back-nav doesn't re-trigger the jump
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, draftRestored, searchParams, splitDays]);
 
   // Start session from review — preserve original start time if already set
   const handleStartSession = () => {
