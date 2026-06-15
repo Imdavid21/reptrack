@@ -330,9 +330,9 @@ export default function History() {
                             ))}
 
                             {hasSleep && (
-                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
-                                <Moon size={13} className="text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground">
+                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-recover-soft rounded-xl">
+                                <Moon size={13} className="text-recover-ink" />
+                                <span className="text-xs font-medium text-recover-ink">
                                   {formatSleep(metric.sleep_hours)}
                                 </span>
                               </div>
@@ -348,9 +348,9 @@ export default function History() {
                             )}
 
                             {calorieEntry.hasCalories && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl" title={calorieDisplay.tooltip}>
-                                <Flame size={13} className="text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-fuel-soft rounded-xl" title={calorieDisplay.tooltip}>
+                                <Flame size={13} className="text-fuel-ink" />
+                                <span className="text-xs font-medium text-fuel-ink tabular-nums">
                                   {calorieDisplay.label}
                                 </span>
                               </div>
@@ -363,11 +363,11 @@ export default function History() {
                               return (
                                 <div
                                   key={b.id}
-                                  className="group flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl"
+                                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-energy-soft rounded-xl"
                                   title={`${label} · ${b.duration_minutes ?? 0} min · ${b.calories} kcal`}
                                 >
-                                  <Icon size={13} className="text-muted-foreground" />
-                                  <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                                  <Icon size={13} className="text-energy-ink" />
+                                  <span className="text-xs font-medium text-energy-ink tabular-nums">
                                     {label} · {b.calories} kcal
                                   </span>
                                   <button
@@ -379,8 +379,8 @@ export default function History() {
                                         toast.error('Failed to remove');
                                       }
                                     }}
-                                    className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                    aria-label="Delete activity"
+                                    className="ml-0.5 p-0.5 text-energy-ink/50 hover:text-destructive transition-colors"
+                                    aria-label={`Delete ${label.toLowerCase()} activity`}
                                   >
                                     <Trash2 size={11} />
                                   </button>
@@ -404,7 +404,7 @@ export default function History() {
               {/* Load more button */}
               <button
                 onClick={() => setDaysToShow(prev => prev + 30)}
-                className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="w-full py-3 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted/40 transition-colors"
               >
                 Load older ({daysToShow} days shown)
               </button>

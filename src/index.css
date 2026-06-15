@@ -76,20 +76,26 @@
     --insight-amber: 38 70% 65%;
     --insight-violet: 265 50% 70%;
 
-    /* Signature energy accent — the one pop of color on the monochrome base.
-       Volt lime: used for progress, active states, streaks, and the next-up CTA. */
-    --energy: 84 81% 44%;
-    --energy-foreground: 0 0% 9%;
-    --energy-soft: 84 70% 92%;
+    /* Signature energy accent — refined lime-green (softer than neon), the one
+       pop of color used for progress, active states, streaks, and the next-up CTA. */
+    --energy: 142 62% 33%;
+    --energy-foreground: 0 0% 100%;
+    --energy-soft: 142 44% 94%;
 
     /* Pillar palette — one hue per body domain, used consistently everywhere:
-       Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover. */
-    --water: 199 89% 40%;
-    --water-soft: 199 80% 92%;
-    --fuel: 30 95% 46%;
-    --fuel-soft: 32 90% 92%;
-    --recover: 258 65% 58%;
-    --recover-soft: 258 60% 93%;
+       Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover.
+       The base value is for FILLS (bars, badges with dark text). The -ink value
+       is contrast-safe for TEXT/ICONS on cards and soft tints. */
+    --energy-ink: 142 60% 30%;
+    --water: 200 70% 48%;
+    --water-ink: 200 72% 35%;
+    --water-soft: 200 64% 94%;
+    --fuel: 25 82% 55%;
+    --fuel-ink: 22 78% 40%;
+    --fuel-soft: 28 80% 94%;
+    --recover: 256 52% 62%;
+    --recover-ink: 256 46% 50%;
+    --recover-soft: 256 56% 95%;
   }
 
   .dark {
@@ -150,17 +156,21 @@
     --insight-violet: 265 45% 70%;
 
     /* Energy accent — slightly brighter on the true-black dark base */
-    --energy: 82 84% 55%;
-    --energy-foreground: 0 0% 7%;
-    --energy-soft: 84 30% 16%;
+    --energy: 142 55% 42%;
+    --energy-foreground: 0 0% 100%;
+    --energy-soft: 142 30% 15%;
 
-    /* Pillar palette — brightened for the dark base */
-    --water: 199 90% 55%;
-    --water-soft: 199 50% 15%;
-    --fuel: 35 95% 58%;
-    --fuel-soft: 32 50% 15%;
-    --recover: 258 80% 70%;
-    --recover-soft: 258 35% 18%;
+    /* Pillar palette — brightened for the dark base; ink = bright text-safe */
+    --energy-ink: 142 55% 60%;
+    --water: 200 75% 56%;
+    --water-ink: 200 78% 64%;
+    --water-soft: 200 45% 15%;
+    --fuel: 28 85% 60%;
+    --fuel-ink: 30 88% 66%;
+    --fuel-soft: 26 45% 15%;
+    --recover: 256 62% 68%;
+    --recover-ink: 256 70% 74%;
+    --recover-soft: 256 35% 18%;
   }
 }
 
@@ -270,10 +280,11 @@
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Energy badge / chip — solid lime so dark text stays legible in both themes */
+  /* Energy badge / chip — soft tint + ink text, matching every other pillar
+     chip and guaranteeing legibility at small sizes in both themes. */
   .badge-energy {
     @apply inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full;
-    @apply bg-energy text-energy-foreground;
+    @apply bg-energy-soft text-energy-ink;
   }
 
   /* Section header */

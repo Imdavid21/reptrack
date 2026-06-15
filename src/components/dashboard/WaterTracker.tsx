@@ -95,7 +95,7 @@ export function WaterTracker() {
             <Pencil className="h-3 w-3" />
           </button>
         </div>
-        <Droplets className="h-4 w-4 text-water" />
+        <Droplets className="h-4 w-4 text-water-ink" />
       </div>
 
       <div className="text-4xl font-bold tabular-nums">
