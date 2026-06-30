@@ -5,7 +5,8 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { SPLIT_TEMPLATES, TrainingSplit } from '@/lib/splitTemplates';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, Moon, Scale, Loader2, Check, Plus, Minus } from 'lucide-react';
-import { startOfWeek, format, subDays } from 'date-fns';
+import { startOfWeek, format, subDays, isToday } from 'date-fns';
+import { LogDateChip } from '@/components/common/LogDateChip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';
@@ -18,7 +19,9 @@ export function ProgressHeader() {
   const [weight, setWeight] = useState<string>('');
   const [sleepHours, setSleepHours] = useState<string>('7');
   const [sleepMinutes, setSleepMinutes] = useState<string>('0');
+  const [logDate, setLogDate] = useState<Date>(new Date());
   const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const logDateStr = format(logDate, 'yyyy-MM-dd');
 
   // Get last 30 days of metrics to find last logged weight and sleep
   const { data: metricsData, upsertMetrics, isUpserting, isLoading } = useDailyMetrics({
@@ -64,24 +67,29 @@ export function ProgressHeader() {
   // Get today's sleep if already logged
   const todaySleep = metricsData?.dataPoints.find(d => d.date === todayStr)?.sleep_hours;
 
-  // Pre-fill weight with last logged or today's value
+  // The metric already logged for the date being edited (supports back-dating).
+  const logDateMetric = metricsData?.dataPoints.find(d => d.date === logDateStr);
+  const backDated = !isToday(logDate);
+  const dateSuffix = backDated ? ` on ${format(logDate, 'MMM d')}` : '';
+
+  // Pre-fill weight from the selected date's value (or last logged as a hint)
   useEffect(() => {
     if (showWeightDialog) {
-      const prefill = todayWeight ?? lastLoggedWeight ?? '';
+      const prefill = logDateMetric?.bodyweight ?? lastLoggedWeight ?? '';
       setWeight(prefill ? String(prefill) : '');
     }
-  }, [showWeightDialog, todayWeight, lastLoggedWeight]);
+  }, [showWeightDialog, logDateStr, logDateMetric?.bodyweight, lastLoggedWeight]);
 
-  // Pre-fill sleep with today's value or default
+  // Pre-fill sleep from the selected date's value or default
   useEffect(() => {
     if (showSleepDialog) {
-      const prefill = todaySleep ?? 7;
+      const prefill = logDateMetric?.sleep_hours ?? 7;
       const hours = Math.floor(prefill);
       const minutes = Math.round((prefill - hours) * 60);
       setSleepHours(String(hours));
       setSleepMinutes(String(minutes));
     }
-  }, [showSleepDialog, todaySleep]);
+  }, [showSleepDialog, logDateStr, logDateMetric?.sleep_hours]);
 
   const handleSaveWeight = async () => {
     const numWeight = parseFloat(weight);
@@ -89,13 +97,13 @@ export function ProgressHeader() {
       toast.error('Enter a valid weight');
       return;
     }
-    
+
     try {
       await upsertMetrics({
-        date: todayStr,
+        date: logDateStr,
         bodyweight: numWeight,
       });
-      toast.success(`${numWeight} kg logged`);
+      toast.success(`${numWeight} kg logged${dateSuffix}`);
       setShowWeightDialog(false);
     } catch (error) {
       toast.error('Failed to log weight');
@@ -106,19 +114,19 @@ export function ProgressHeader() {
     const hours = parseInt(sleepHours) || 0;
     const minutes = parseInt(sleepMinutes) || 0;
     const totalHours = hours + (minutes / 60);
-    
+
     if (totalHours < 0 || totalHours > 24) {
       toast.error('Enter valid sleep time (0-24h)');
       return;
     }
-    
+
     try {
       await upsertMetrics({
-        date: todayStr,
+        date: logDateStr,
         sleep_hours: Math.round(totalHours * 100) / 100, // Round to 2 decimals
       });
       const displayTime = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-      toast.success(`${displayTime} sleep logged`);
+      toast.success(`${displayTime} sleep logged${dateSuffix}`);
       setShowSleepDialog(false);
     } catch (error) {
       toast.error('Failed to log sleep');
@@ -176,7 +184,7 @@ export function ProgressHeader() {
           
           {/* Sleep Stat - Tappable */}
           <button 
-            onClick={() => setShowSleepDialog(true)}
+            onClick={() => { setLogDate(new Date()); setShowSleepDialog(true); }}
             className="text-center hover:bg-muted/50 transition-colors py-2 rounded-xl relative border-x border-border"
           >
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
@@ -199,7 +207,7 @@ export function ProgressHeader() {
           </button>
           
           <button 
-            onClick={() => setShowWeightDialog(true)}
+            onClick={() => { setLogDate(new Date()); setShowWeightDialog(true); }}
             className="text-center hover:bg-muted/50 transition-colors py-2 rounded-xl relative"
           >
             <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
@@ -227,9 +235,12 @@ export function ProgressHeader() {
       <Dialog open={showSleepDialog} onOpenChange={setShowSleepDialog}>
         <DialogContent className="border-border bg-background max-w-xs">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              ADD SLEEP
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-6">
+              <DialogTitle className="text-sm font-medium">
+                ADD SLEEP
+              </DialogTitle>
+              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -313,9 +324,12 @@ export function ProgressHeader() {
       <Dialog open={showWeightDialog} onOpenChange={setShowWeightDialog}>
         <DialogContent className="border-border bg-background max-w-xs">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              ADD WEIGHT
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-6">
+              <DialogTitle className="text-sm font-medium">
+                ADD WEIGHT
+              </DialogTitle>
+              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">

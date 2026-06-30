@@ -68,6 +68,24 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Tricep Dips', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-12', muscleGroup: 'Triceps', exerciseType: 'bodyweight' },
     { name: 'Bench Tricep Dips', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Triceps', exerciseType: 'bodyweight' },
     { name: 'JM Press', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x8-10', muscleGroup: 'Triceps', exerciseType: 'weighted' },
+    // ─── Added: Chest ─────────────────────────────────────────────────────────
+    { name: 'Floor Press', category: 'primary', defaultWeight: '50kg', defaultReps: '4x6-8', muscleGroup: 'Chest/Triceps', exerciseType: 'weighted' },
+    { name: 'Larsen Press', category: 'primary', defaultWeight: '50kg', defaultReps: '4x6-8', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Spoto Press', category: 'primary', defaultWeight: '50kg', defaultReps: '4x5', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Machine Dip', category: 'primary', defaultWeight: '60kg', defaultReps: '3x10-12', muscleGroup: 'Chest/Triceps', exerciseType: 'weighted' },
+    { name: 'Low-to-High Cable Fly', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x12-15', muscleGroup: 'Upper Chest', exerciseType: 'weighted' },
+    { name: 'High-to-Low Cable Fly', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x12-15', muscleGroup: 'Chest', exerciseType: 'weighted' },
+    { name: 'Deficit Push-ups', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Chest', exerciseType: 'bodyweight' },
+    // ─── Added: Shoulders ─────────────────────────────────────────────────────
+    { name: 'Z Press', category: 'primary', defaultWeight: '30kg', defaultReps: '3x8-10', muscleGroup: 'Shoulders', exerciseType: 'weighted' },
+    { name: 'Behind the Neck Press', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x8-10', muscleGroup: 'Shoulders', exerciseType: 'weighted' },
+    { name: 'Cable Y-Raise', category: 'accessory', defaultWeight: '7.5kg', defaultReps: '3x12-15', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
+    { name: 'Plate Front Raise', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x12-15', muscleGroup: 'Front Delts', exerciseType: 'weighted' },
+    { name: 'Lu Raises', category: 'accessory', defaultWeight: '5kg', defaultReps: '3x12-15', muscleGroup: 'Side Delts', exerciseType: 'weighted' },
+    // ─── Added: Triceps ───────────────────────────────────────────────────────
+    { name: 'Tate Press', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Triceps', exerciseType: 'weighted' },
+    { name: 'California Press', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x8-10', muscleGroup: 'Triceps', exerciseType: 'weighted' },
+    { name: 'Single Arm Tricep Pushdown', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x12-15', muscleGroup: 'Triceps', exerciseType: 'weighted' },
   ],
   'Pull': [
     // ─── Primary Back ─────────────────────────────────────────────────────────
@@ -131,6 +149,21 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Back Extension 90 Degree', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Lower Back', exerciseType: 'bodyweight' },
     { name: 'Back Extension', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Lower Back', exerciseType: 'bodyweight' },
     { name: 'Hyperextension', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Lower Back', exerciseType: 'bodyweight' },
+    // ─── Added: Back & Deadlift variations ────────────────────────────────────
+    { name: 'Trap Bar Deadlift', category: 'primary', defaultWeight: '100kg', defaultReps: '4x5', muscleGroup: 'Posterior Chain', exerciseType: 'weighted' },
+    { name: 'Deficit Deadlift', category: 'primary', defaultWeight: '90kg', defaultReps: '4x5', muscleGroup: 'Posterior Chain', exerciseType: 'weighted' },
+    { name: 'Snatch Grip Deadlift', category: 'primary', defaultWeight: '80kg', defaultReps: '4x5', muscleGroup: 'Back', exerciseType: 'weighted' },
+    { name: 'Seal Row', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
+    { name: 'Kroc Row', category: 'accessory', defaultWeight: '35kg', defaultReps: '3x12-15', muscleGroup: 'Back', exerciseType: 'weighted' },
+    { name: 'Inverted Row', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-15', muscleGroup: 'Back', exerciseType: 'bodyweight' },
+    { name: 'Machine Row', category: 'primary', defaultWeight: '40kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
+    { name: 'Neutral Grip Pulldown', category: 'primary', defaultWeight: '50kg', defaultReps: '3x10-12', muscleGroup: 'Lats', exerciseType: 'weighted' },
+    { name: 'Dumbbell Pullover', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12-15', muscleGroup: 'Lats', exerciseType: 'weighted' },
+    { name: 'Cable Pullover', category: 'accessory', defaultWeight: '25kg', defaultReps: '3x12-15', muscleGroup: 'Lats', exerciseType: 'weighted' },
+    // ─── Added: Biceps ────────────────────────────────────────────────────────
+    { name: 'Drag Curl', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
+    { name: 'Preacher Hammer Curl', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
+    { name: 'Cable Hammer Curl', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12-15', muscleGroup: 'Biceps', exerciseType: 'weighted' },
   ],
   'Legs': [
     // ─── Primary Quads ────────────────────────────────────────────────────────
@@ -184,6 +217,28 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Leg Raises', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Core', exerciseType: 'bodyweight' },
     { name: 'Crunches', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x20', muscleGroup: 'Core', exerciseType: 'bodyweight' },
     { name: 'Mountain Climbers', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x30', muscleGroup: 'Core', exerciseType: 'timed' },
+    // ─── Added: Quads ─────────────────────────────────────────────────────────
+    { name: 'Belt Squat', category: 'primary', defaultWeight: '80kg', defaultReps: '3x10-12', muscleGroup: 'Quads', exerciseType: 'weighted' },
+    { name: 'Zercher Squat', category: 'primary', defaultWeight: '60kg', defaultReps: '3x8-10', muscleGroup: 'Quads', exerciseType: 'weighted' },
+    { name: 'Cyclist Squat', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x12-15', muscleGroup: 'Quads', exerciseType: 'weighted' },
+    { name: 'Heel Elevated Goblet Squat', category: 'accessory', defaultWeight: '24kg', defaultReps: '3x12-15', muscleGroup: 'Quads', exerciseType: 'weighted' },
+    { name: 'ATG Split Squat', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12 each', muscleGroup: 'Quads', exerciseType: 'bodyweight' },
+    { name: 'Single Leg Press', category: 'accessory', defaultWeight: '60kg', defaultReps: '3x12 each', muscleGroup: 'Quads', exerciseType: 'weighted' },
+    { name: 'Reverse Nordic', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x8-10', muscleGroup: 'Quads', exerciseType: 'bodyweight' },
+    // ─── Added: Hamstrings & Glutes ───────────────────────────────────────────
+    { name: 'Glute Ham Raise', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x8-10', muscleGroup: 'Hamstrings', exerciseType: 'bodyweight' },
+    { name: 'Cable Pull Through', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x12-15', muscleGroup: 'Glutes', exerciseType: 'weighted' },
+    { name: 'Frog Pump', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x15-20', muscleGroup: 'Glutes', exerciseType: 'weighted' },
+    { name: 'Hip Abduction Machine', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x15-20', muscleGroup: 'Glutes', exerciseType: 'weighted' },
+    { name: 'Hip Adduction Machine', category: 'accessory', defaultWeight: '40kg', defaultReps: '3x15-20', muscleGroup: 'Adductors', exerciseType: 'weighted' },
+    // ─── Added: Calves & Core ─────────────────────────────────────────────────
+    { name: 'Tibialis Raise', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x15-20', muscleGroup: 'Calves', exerciseType: 'weighted' },
+    { name: 'Pallof Press', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12 each', muscleGroup: 'Core', exerciseType: 'weighted' },
+    { name: 'Cable Woodchopper', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x12 each', muscleGroup: 'Core', exerciseType: 'weighted' },
+    { name: 'Toes to Bar', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x8-12', muscleGroup: 'Core', exerciseType: 'bodyweight' },
+    { name: 'Dragon Flag', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x6-8', muscleGroup: 'Core', exerciseType: 'bodyweight' },
+    { name: 'Dead Bug', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12 each', muscleGroup: 'Core', exerciseType: 'bodyweight' },
+    { name: 'Decline Sit-up', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x15-20', muscleGroup: 'Core', exerciseType: 'bodyweight' },
   ],
 };
 

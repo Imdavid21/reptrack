@@ -16,7 +16,8 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
+import { LogDateChip } from '@/components/common/LogDateChip';
 import { cn } from '@/lib/utils';
 
 const MEAL_ICONS = {
@@ -61,6 +62,9 @@ export function CalorieTrackerCompact() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const [logDate, setLogDate] = useState<Date>(new Date());
+  const mealDateProps = isToday(logDate) ? {} : { date: format(logDate, 'yyyy-MM-dd') };
+  const mealDateSuffix = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [editableFoods, setEditableFoods] = useState<EditableFood[]>([]);
@@ -257,8 +261,9 @@ export function CalorieTrackerCompact() {
         fat: totalFat || undefined,
         fiber: totalFiber || undefined,
         food_quality: analysis?.food_quality,
+        ...mealDateProps,
       });
-      toast.success('Meal logged');
+      toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
     } catch (error) {
       toast.error('Failed to save meal');
@@ -278,8 +283,9 @@ export function CalorieTrackerCompact() {
         calories: parseInt(manualData.calories),
         photo_url: uploadedPhotoUrl || undefined,
         is_confirmed: true,
+        ...mealDateProps,
       });
-      toast.success('Meal logged');
+      toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
     } catch (error) {
       toast.error('Failed to save meal');
@@ -528,10 +534,13 @@ export function CalorieTrackerCompact() {
         </div>
       </Collapsible>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(o) => { if (o) setLogDate(new Date()); setIsDialogOpen(o); }}>
         <DialogContent className="border-border bg-background max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">ADD MEAL</DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-6">
+              <DialogTitle className="text-sm font-medium">ADD MEAL</DialogTitle>
+              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
+            </div>
           </DialogHeader>
 
           {/* Meal type selector - always visible */}

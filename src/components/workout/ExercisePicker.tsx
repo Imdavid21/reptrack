@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { exerciseLibrary, ExerciseOption, getExerciseType } from '@/lib/exerciseLibrary';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
+import { useExercisePreferences } from '@/hooks/useExercisePreferences';
 import { cn } from '@/lib/utils';
-import { Plus, Search, X, Clock } from 'lucide-react';
+import { Plus, Search, X, Star } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,24 +32,6 @@ function parseTargetReps(targetReps: string): { sets: number; reps: string } {
   return { sets: 3, reps: targetReps };
 }
 
-const RECENT_EXERCISES_KEY = 'reptrack_recent_exercises';
-const MAX_RECENT = 10;
-
-function getRecentExercises(): string[] {
-  try {
-    const stored = localStorage.getItem(RECENT_EXERCISES_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function addToRecent(name: string) {
-  const recent = getRecentExercises().filter(n => n !== name);
-  recent.unshift(name);
-  localStorage.setItem(RECENT_EXERCISES_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
-}
-
 // Build muscle group map for each category
 function getMuscleGroups(category: string): string[] {
   const exercises = exerciseLibrary[category] || [];
@@ -67,6 +50,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>(dayType || 'Push');
   const [selectedMuscle, setSelectedMuscle] = useState<string>('All');
+  const { isFavorite, toggleFavorite, recordUsage, sortByPreference, topUsed, favorites } = useExercisePreferences();
 
   const existingNames = new Set(existingExercises.map(e => e.name.toLowerCase()));
 
@@ -103,7 +87,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
       exerciseType: exType,
     };
 
-    addToRecent(option.name);
+    recordUsage([option.name]);
     onAddExercise(newExercise);
     setOpen(false);
     setSearch('');
@@ -123,13 +107,14 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
     );
   }, [isSearching, searchLower, allExercises]);
 
-  // Recently used exercises resolved from library
-  const recentExercises = useMemo(() => {
-    const recentNames = getRecentExercises();
-    return recentNames
+  // "Your exercises" — favorites first, then most-used, resolved to library options.
+  const quickExercises = useMemo(() => {
+    const names = [...favorites, ...topUsed(12).filter(n => !favorites.includes(n))];
+    return names
       .map(name => allExercises.find(ex => ex.name === name))
-      .filter((ex): ex is ExerciseOption => !!ex);
-  }, [allExercises]);
+      .filter((ex): ex is ExerciseOption => !!ex)
+      .slice(0, 8);
+  }, [favorites, topUsed, allExercises]);
 
   // Muscle groups for the active tab
   const muscleGroups = useMemo(() => getMuscleGroups(activeTab), [activeTab]);
@@ -145,7 +130,8 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
     if (selectedMuscle !== 'All') {
       filtered = filtered.filter(ex => ex.muscleGroup === selectedMuscle);
     }
-    return filtered;
+    // Surface the user's favorites / most-used at the top of the list.
+    return sortByPreference(filtered);
   };
 
   const categories = ['Push', 'Pull', 'Legs'] as const;
@@ -166,43 +152,50 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
 
   const renderExerciseRow = (option: ExerciseOption) => {
     const alreadyAdded = existingNames.has(option.name.toLowerCase());
+    const fav = isFavorite(option.name);
     return (
-      <button
+      <div
         key={option.name}
-        onClick={() => !alreadyAdded && handleAddExercise(option)}
-        disabled={alreadyAdded}
         className={cn(
-          'w-full text-left p-3 rounded border transition-colors',
-          alreadyAdded
-            ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
-            : 'hover:bg-muted border-border'
+          'flex items-stretch rounded-xl border transition-colors',
+          alreadyAdded ? 'bg-muted/50 border-border' : 'border-border hover:bg-muted'
         )}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-sm">{option.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {option.muscleGroup} • {option.defaultWeight} • {option.defaultReps}
-              {option.exerciseType && option.exerciseType !== 'weighted' && (
-                <span className="ml-1 text-[10px] uppercase opacity-60">
-                  ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
-                </span>
-              )}
+        <button
+          onClick={() => !alreadyAdded && handleAddExercise(option)}
+          disabled={alreadyAdded}
+          className={cn('flex-1 text-left p-3 min-w-0', alreadyAdded && 'cursor-not-allowed')}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className={cn('font-medium text-sm truncate', alreadyAdded && 'text-muted-foreground')}>{option.name}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {option.muscleGroup} • {option.defaultWeight} • {option.defaultReps}
+                {option.exerciseType && option.exerciseType !== 'weighted' && (
+                  <span className="ml-1 text-[10px] uppercase opacity-60">
+                    ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
+                  </span>
+                )}
+              </div>
+              {alreadyAdded && <div className="text-[11px] text-muted-foreground mt-0.5">Already in workout</div>}
             </div>
+            <span className={cn(
+              'shrink-0 text-xs px-2 py-0.5 rounded-md',
+              option.category === 'primary' ? 'bg-energy-soft text-energy-ink' : 'bg-muted text-muted-foreground'
+            )}>
+              {option.category}
+            </span>
           </div>
-          <span className={cn(
-            'text-xs px-2 py-0.5 rounded',
-            option.category === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted'
-          )}>
-            {option.category}
-          </span>
-        </div>
-        {alreadyAdded && (
-          <div className="text-xs text-muted-foreground mt-1">
-            Already in workout
-          </div>
-        )}
-      </button>
+        </button>
+        <button
+          onClick={() => toggleFavorite(option.name)}
+          aria-label={fav ? `Remove ${option.name} from favorites` : `Add ${option.name} to favorites`}
+          aria-pressed={fav}
+          className="shrink-0 px-3 flex items-center justify-center text-muted-foreground hover:text-energy-ink transition-colors"
+        >
+          <Star className={cn('h-4 w-4', fav && 'fill-energy text-energy-ink')} />
+        </button>
+      </div>
     );
   };
 
@@ -258,15 +251,15 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
           </div>
         ) : (
           <>
-            {/* Recently used section */}
-            {recentExercises.length > 0 && (
+            {/* Your exercises — favorites + most used */}
+            {quickExercises.length > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center gap-1 px-1">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Recent</span>
+                  <Star className="h-3 w-3 text-energy-ink" />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Your exercises</span>
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                  {recentExercises.slice(0, 6).map((option) => {
+                  {quickExercises.map((option) => {
                     const alreadyAdded = existingNames.has(option.name.toLowerCase());
                     return (
                       <button

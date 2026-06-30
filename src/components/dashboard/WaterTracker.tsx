@@ -1,7 +1,8 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { Droplets, Plus, ChevronDown, Pencil, Check } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, ChevronDown, Pencil, Check } from 'lucide-react';
+import { format, isToday } from 'date-fns';
+import { LogDateChip } from '@/components/common/LogDateChip';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export function WaterTracker() {
   const [selectedSize, setSelectedSize] = useState(WATER_SIZES[0]);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [editGoal, setEditGoal] = useState(3);
+  const [logDate, setLogDate] = useState<Date>(new Date());
   const prevTotalRef = useRef(totalToday);
 
   const dailyGoal = preferences?.daily_water_goal ?? 3;
@@ -58,13 +60,14 @@ export function WaterTracker() {
 
   const handleLogWater = async (amount?: number) => {
     const logAmount = amount || selectedSize.value;
+    const backDated = !isToday(logDate);
     try {
       setIsAnimating(true);
       haptic('light');
-      
-      await addWaterLog(logAmount);
-      toast.success(`+${Math.round(logAmount * 1000)}ml`);
-      
+
+      await addWaterLog({ amount: logAmount, loggedAt: backDated ? logDate : undefined });
+      toast.success(`+${Math.round(logAmount * 1000)}ml${backDated ? ` on ${format(logDate, 'MMM d')}` : ''}`);
+
       setTimeout(() => setIsAnimating(false), 150);
     } catch (error) {
       setIsAnimating(false);
@@ -95,7 +98,7 @@ export function WaterTracker() {
             <Pencil className="h-3 w-3" />
           </button>
         </div>
-        <Droplets className="h-4 w-4 text-water-ink" />
+        <LogDateChip date={logDate} onChange={setLogDate} align="end" />
       </div>
 
       <div className="text-4xl font-bold tabular-nums">

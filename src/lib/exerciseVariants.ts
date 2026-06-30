@@ -450,6 +450,88 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
   'Wall Sit': [
     { name: 'Wall Sit', defaultWeight: 'BW', equipmentType: 'bodyweight' },
   ],
+
+  // ─── Added variation groups (for the new library exercises + common swaps) ──
+  'Floor Press': [
+    { name: 'Floor Press', defaultWeight: '50kg', equipmentType: 'barbell' },
+    { name: 'Dumbbell Floor Press', defaultWeight: '24kg', equipmentType: 'dumbbell' },
+  ],
+  'Machine Dip': [
+    { name: 'Machine Dip', defaultWeight: '60kg', equipmentType: 'machine' },
+    { name: 'Weighted Dips', defaultWeight: '+10kg', equipmentType: 'bodyweight' },
+  ],
+  'Low-to-High Cable Fly': [
+    { name: 'Low-to-High Cable Fly', defaultWeight: '12kg', equipmentType: 'cable' },
+    { name: 'Incline Dumbbell Flyes', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+  ],
+  'Behind the Neck Press': [
+    { name: 'Behind the Neck Press', defaultWeight: '30kg', equipmentType: 'barbell' },
+    { name: 'Overhead Press', defaultWeight: '40kg', equipmentType: 'barbell' },
+  ],
+  'Cable Y-Raise': [
+    { name: 'Cable Y-Raise', defaultWeight: '7.5kg', equipmentType: 'cable' },
+    { name: 'Bent Over Rear Delt Flyes', defaultWeight: '8kg', equipmentType: 'dumbbell' },
+  ],
+  'Tate Press': [
+    { name: 'Tate Press', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+    { name: 'Skull Crushers', defaultWeight: '25kg', equipmentType: 'barbell' },
+  ],
+  'Trap Bar Deadlift': [
+    { name: 'Trap Bar Deadlift', defaultWeight: '100kg', equipmentType: 'barbell' },
+    { name: 'Conventional Deadlift', defaultWeight: '100kg', equipmentType: 'barbell' },
+  ],
+  'Seal Row': [
+    { name: 'Seal Row', defaultWeight: '40kg', equipmentType: 'barbell' },
+    { name: 'Chest Supported Row', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+  ],
+  'Kroc Row': [
+    { name: 'Kroc Row', defaultWeight: '35kg', equipmentType: 'dumbbell' },
+    { name: 'Single Arm Dumbbell Row', defaultWeight: '30kg', equipmentType: 'dumbbell' },
+  ],
+  'Machine Row': [
+    { name: 'Machine Row', defaultWeight: '40kg', equipmentType: 'machine' },
+    { name: 'Seated Cable Row', defaultWeight: '50kg', equipmentType: 'cable' },
+  ],
+  'Neutral Grip Pulldown': [
+    { name: 'Neutral Grip Pulldown', defaultWeight: '50kg', equipmentType: 'cable' },
+    { name: 'Lat Pulldown', defaultWeight: '55kg', equipmentType: 'cable' },
+  ],
+  'Dumbbell Pullover': [
+    { name: 'Dumbbell Pullover', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+    { name: 'Cable Pullover', defaultWeight: '25kg', equipmentType: 'cable' },
+  ],
+  'Cable Pullover': [
+    { name: 'Cable Pullover', defaultWeight: '25kg', equipmentType: 'cable' },
+    { name: 'Dumbbell Pullover', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+  ],
+  'Cable Hammer Curl': [
+    { name: 'Cable Hammer Curl', defaultWeight: '15kg', equipmentType: 'cable' },
+    { name: 'Hammer Curls', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+  ],
+  'Preacher Hammer Curl': [
+    { name: 'Preacher Hammer Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+    { name: 'Hammer Curls', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+  ],
+  'Belt Squat': [
+    { name: 'Belt Squat', defaultWeight: '80kg', equipmentType: 'machine' },
+    { name: 'Hack Squat', defaultWeight: '80kg', equipmentType: 'machine' },
+  ],
+  'Heel Elevated Goblet Squat': [
+    { name: 'Heel Elevated Goblet Squat', defaultWeight: '24kg', equipmentType: 'dumbbell' },
+    { name: 'Goblet Squats', defaultWeight: '20kg', equipmentType: 'dumbbell' },
+  ],
+  'Single Leg Press': [
+    { name: 'Single Leg Press', defaultWeight: '60kg', equipmentType: 'machine' },
+    { name: 'Leg Press', defaultWeight: '150kg', equipmentType: 'machine' },
+  ],
+  'Cable Pull Through': [
+    { name: 'Cable Pull Through', defaultWeight: '30kg', equipmentType: 'cable' },
+    { name: 'Hip Thrust', defaultWeight: '80kg', equipmentType: 'barbell' },
+  ],
+  'Glute Ham Raise': [
+    { name: 'Glute Ham Raise', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+    { name: 'Nordic Curls', defaultWeight: 'BW', equipmentType: 'bodyweight' },
+  ],
 };
 
 // Get all variants for an exercise (returns original if no variants exist)

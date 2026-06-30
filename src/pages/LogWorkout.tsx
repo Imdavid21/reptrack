@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
+import { WorkoutDateSelector } from '@/components/workout/WorkoutDateSelector';
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExercisePicker } from '@/components/workout/ExercisePicker';
@@ -20,6 +21,8 @@ import { getExerciseType } from '@/lib/exerciseLibrary';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useLastUsedWeights } from '@/hooks/useLastUsedWeights';
+import { useExercisePreferences } from '@/hooks/useExercisePreferences';
+import { getExerciseVariants } from '@/lib/exerciseVariants';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
@@ -73,11 +76,21 @@ function buildExercisesFromTemplate(
   dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string; restSeconds?: number; rir?: string; notes?: string }>; bias?: 'heavy' | 'volume' },
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string; perSet?: Array<{ weight: number; reps: number }> }>,
   fitnessGoal?: string | null,
+  preferredVariants?: Record<string, string>,
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   const bias = (dayData as any).bias as 'heavy' | 'volume' | undefined;
 
-  return workExercises.map((ex, idx) => {
+  return workExercises.map((templateEx, idx) => {
+    // Honor the user's remembered preferred variation of this movement.
+    const preferred = preferredVariants?.[templateEx.name];
+    const ex = preferred
+      ? {
+          ...templateEx,
+          name: preferred,
+          targetWeight: getExerciseVariants(templateEx.name).find(v => v.name === preferred)?.defaultWeight ?? templateEx.targetWeight,
+        }
+      : templateEx;
     const exType = getExerciseType(ex.name, ex.targetWeight, ex.targetReps);
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
 
@@ -132,6 +145,7 @@ export default function LogWorkout() {
   const { getPRForExercise } = usePersonalRecords();
   const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
   const { customDays, hasCustomRoutine, isLoading: routineLoading } = useCustomRoutine();
+  const { recordUsage, setPreferredVariant, preferredVariants } = useExercisePreferences();
 
   const [step, setStep] = useState<Step>('select-day');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -254,7 +268,7 @@ export default function LogWorkout() {
 
     const dayInfo = splitDays[day];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
     }
 
     setCurrentExerciseIndex(0);
@@ -329,7 +343,7 @@ export default function LogWorkout() {
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
           // Only swap if we got valid exercises
           setPreSuggestionExercises(backup);
           setExercises(suggested);
@@ -397,6 +411,7 @@ export default function LogWorkout() {
   };
 
   const performSwap = (newExercise: WorkoutExercise) => {
+    const previousName = exercises[currentExerciseIndex]?.name;
     setExercises(prev =>
       prev.map((ex, idx) =>
         idx === currentExerciseIndex
@@ -404,6 +419,10 @@ export default function LogWorkout() {
           : ex
       )
     );
+    // Remember this as the user's preferred variation of the original movement.
+    if (previousName && previousName !== newExercise.name) {
+      setPreferredVariant(previousName, newExercise.name);
+    }
     setCurrentSetIndex(0);
     setShowSwapPicker(false);
     toast.success(`Switched to ${newExercise.name}`);
@@ -484,6 +503,10 @@ export default function LogWorkout() {
         startedAt: workoutStartTime || undefined,
         completedAt: new Date(),
       });
+      // Remember which exercises the user actually trained (for the picker).
+      recordUsage(
+        exercises.filter(ex => ex.sets.some(s => s.completed)).map(ex => ex.name)
+      );
       clearDraft();
       if (!navigator.onLine) {
         toast.success('Workout saved offline — will sync when back online 📴');
@@ -529,7 +552,7 @@ export default function LogWorkout() {
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
     }
     setPreSuggestionExercises(null);
   };
@@ -563,7 +586,7 @@ export default function LogWorkout() {
         const firstDayKey = Object.keys(routine.days)[0];
         const firstDay = routine.days[firstDayKey] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
           const newSplitDays = getSplitDays(split);
           const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
           setSelectedDay(dayKey);
@@ -597,15 +620,18 @@ export default function LogWorkout() {
             justifyContent: 'center',
           }),
         }}>
-          {/* Back Button */}
+          {/* Back Button + date (review) */}
           {step === 'review' && (
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
-            >
-              <ChevronLeft size={16} />
-              Select Split
-            </button>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
+              >
+                <ChevronLeft size={16} />
+                Select Split
+              </button>
+              <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+            </div>
           )}
 
           {/* Split selector - only on day selection */}
@@ -622,8 +648,13 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Logging for</span>
+                <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+              </div>
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
+                selectedDate={selectedDate}
                 onSelect={handleDaySelect}
               />
 

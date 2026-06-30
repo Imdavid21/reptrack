@@ -87,8 +87,15 @@ export function useWaterLogs() {
   }, [user, queryClient]);
 
   const addWaterLogMutation = useMutation({
-    mutationFn: async (amount: number = 0.25) => {
+    // `loggedAt` lets the user back-date a log; defaults to now (today).
+    mutationFn: async ({ amount = 0.25, loggedAt }: { amount?: number; loggedAt?: Date } = {}) => {
       if (!user) throw new Error('Not authenticated');
+
+      // For a back-date, anchor the timestamp to local noon so day-bucketing
+      // (which keys off local date) lands on the intended calendar day.
+      const timestamp = loggedAt
+        ? new Date(loggedAt.getFullYear(), loggedAt.getMonth(), loggedAt.getDate(), 12, 0, 0).toISOString()
+        : undefined;
 
       const { data, error } = await supabase
         .from('water_logs')
@@ -96,6 +103,7 @@ export function useWaterLogs() {
           user_id: user.id,
           amount,
           method: 'manual',
+          ...(timestamp ? { timestamp } : {}),
         })
         .select()
         .single();
@@ -104,7 +112,10 @@ export function useWaterLogs() {
       return data;
     },
     onSuccess: () => {
+      // Refresh today's view plus the history/analytics that bucket by date.
       queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['hydrationData'] });
+      queryClient.invalidateQueries({ queryKey: ['bodyOverview'] });
     },
   });
 
