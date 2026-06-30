@@ -17,17 +17,20 @@ function getDefaultDayForDate(date: Date, numDays: number): string | null {
 interface DaySelectorWithCheckinProps {
   selectedDay: string;
   onSelect: (day: string, date: Date, weekNumber: number) => void;
+  /** The date the workout is being logged for (supports back-dating). */
+  selectedDate?: Date;
 }
 
 export function DaySelectorWithCheckin({
   selectedDay,
   onSelect,
+  selectedDate: selectedDateProp,
 }: DaySelectorWithCheckinProps) {
   const { preferences } = useUserPreferences();
   const splitDays = preferences ? getSplitDays(preferences.training_split) : defaultRoutine.days;
   const days = Object.entries(splitDays);
   const { workouts } = useWorkouts();
-  const selectedDate = new Date();
+  const selectedDate = selectedDateProp ?? new Date();
 
   // Track which day_names have been completed this week
   const completedDayNames = useMemo(() => {
