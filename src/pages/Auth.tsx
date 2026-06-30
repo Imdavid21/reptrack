@@ -20,9 +20,9 @@ function getPasswordStrength(pw: string): { label: string; color: string; percen
   if (pw.length === 0) return { label: '', color: '', percent: 0 };
   const hasMixed = /[a-z]/.test(pw) && /[A-Z]/.test(pw);
   const hasNum = /\d/.test(pw);
-  if (pw.length >= 10 && hasMixed && hasNum) return { label: 'Strong', color: 'bg-green-500', percent: 100 };
-  if (pw.length >= 8) return { label: 'Medium', color: 'bg-yellow-500', percent: 66 };
-  return { label: 'Weak', color: 'bg-red-500', percent: 33 };
+  if (pw.length >= 10 && hasMixed && hasNum) return { label: 'Strong', color: 'bg-energy', percent: 100 };
+  if (pw.length >= 8) return { label: 'Medium', color: 'bg-fuel', percent: 66 };
+  return { label: 'Weak', color: 'bg-destructive', percent: 33 };
 }
 
 function LastUsedBadge() {

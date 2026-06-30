@@ -136,7 +136,7 @@ export default function Changelog() {
         <div className="space-y-8">
           {changelogEntries.map((entry) => (
             <article key={entry.date} className="relative pl-6 border-l-2 border-border">
-              <div className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-primary" />
+              <div className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-energy" />
               <time className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
                 {new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', {
                   month: 'long',
