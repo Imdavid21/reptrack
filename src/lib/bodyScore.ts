@@ -67,6 +67,42 @@ export interface BodyOverviewInput {
   nextDayKey?: string;
 }
 
+export interface ScorePoint {
+  date: string;
+  score: number | null;
+}
+
+/**
+ * Rolling overall-body-score series. For each window (one per day in the
+ * range, each carrying its own trailing-window bounds) we slice the full data
+ * and run the same scoring engine, so the trend line is exactly the headline
+ * score computed day by day. Pure: date math happens in the caller.
+ */
+export function computeScoreSeries(
+  windows: Array<{ date: string; fromKey: string; toKey: string }>,
+  data: {
+    workoutDates: string[];
+    meals: BodyOverviewInput['meals'];
+    waterByDay: Record<string, number>;
+    metrics: BodyOverviewInput['metrics'];
+  },
+  goals: BodyOverviewInput['goals'],
+  windowDays: number,
+): ScorePoint[] {
+  return windows.map((w) => {
+    const inRange = (d?: string) => !!d && d >= w.fromKey && d <= w.toKey;
+    const input: BodyOverviewInput = {
+      rangeDays: windowDays,
+      goals,
+      workoutDates: data.workoutDates.filter(inRange),
+      meals: data.meals.filter((m) => inRange(m.date)),
+      waterByDay: Object.fromEntries(Object.entries(data.waterByDay).filter(([d]) => inRange(d))),
+      metrics: data.metrics.filter((m) => inRange(m.date)),
+    };
+    return { date: w.date, score: computeBodyOverview(input).overall };
+  });
+}
+
 /**
  * The water goal preference has historically been written in liters in some
  * flows ("3") and milliliters in others ("3000"). Normalize to liters.

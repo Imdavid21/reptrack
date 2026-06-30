@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeBodyOverview, normalizeWaterGoalLiters, BodyOverviewInput } from './bodyScore';
+import { computeBodyOverview, normalizeWaterGoalLiters, computeScoreSeries, BodyOverviewInput } from './bodyScore';
 
 const baseGoals = {
   weeklyWorkouts: 4,
@@ -146,6 +146,45 @@ describe('computeBodyOverview', () => {
     const step = o.nextSteps.find(s => s.id === 'sleep-short');
     expect(step).toBeDefined();
     expect(step!.title).toContain('90 min');
+  });
+
+  it('computes a rolling score per window from the same engine', () => {
+    const goals = { ...baseGoals };
+    const data = {
+      workoutDates: [] as string[],
+      meals: [] as BodyOverviewInput['meals'],
+      // Hydration is the only scored pillar so we can predict the number.
+      waterByDay: {
+        '2026-06-01': 1.5, '2026-06-02': 1.5, '2026-06-03': 1.5,
+        '2026-06-08': 3, '2026-06-09': 3, '2026-06-10': 3,
+      },
+      metrics: [] as BodyOverviewInput['metrics'],
+    };
+    const series = computeScoreSeries(
+      [
+        { date: '2026-06-03', fromKey: '2026-05-28', toKey: '2026-06-03' },
+        { date: '2026-06-10', fromKey: '2026-06-04', toKey: '2026-06-10' },
+      ],
+      data,
+      goals,
+      7,
+    );
+    // Each 7-day window has zero workouts → training scores 0 (a week of no
+    // training drags the score down). Hydration is 50 then 100.
+    // Overall = (0*0.35 + hydration*0.15) / (0.35 + 0.15).
+    expect(series.map(p => p.score)).toEqual([15, 30]);
+  });
+
+  it('returns a null score for a short window with too little data', () => {
+    // 6-day window (< 7) → training is null too, so with only 1 water day
+    // no pillar is scorable and the overall is null.
+    const series = computeScoreSeries(
+      [{ date: '2026-06-03', fromKey: '2026-05-29', toKey: '2026-06-03' }],
+      { workoutDates: [], meals: [], waterByDay: { '2026-06-01': 2 }, metrics: [] },
+      { ...baseGoals },
+      6,
+    );
+    expect(series[0].score).toBeNull();
   });
 
   it('never returns more than 4 next steps', () => {

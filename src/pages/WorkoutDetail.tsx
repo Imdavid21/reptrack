@@ -229,7 +229,7 @@ export default function WorkoutDetail() {
                       key={set.id}
                       className={cn(
                         'grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 items-center p-1.5 rounded-lg transition-all',
-                        set.completed && !isEditing && 'bg-primary/5',
+                        set.completed && !isEditing && 'bg-energy/5',
                         isEditing && 'bg-muted ring-1 ring-ring',
                         !isEditing && !isEditMode && 'cursor-pointer hover:bg-muted/50',
                         isEditMode && 'border border-dashed border-border'
@@ -241,7 +241,7 @@ export default function WorkoutDetail() {
                       {/* Set number */}
                       <div className={cn(
                         'h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-medium mx-auto',
-                        set.completed ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        set.completed ? 'bg-energy text-energy-foreground' : 'bg-muted text-muted-foreground'
                       )}>
                         {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
                       </div>

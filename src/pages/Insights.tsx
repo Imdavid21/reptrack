@@ -25,6 +25,7 @@ import { MacroChart } from '@/components/health/MacroChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
 import { ExerciseProgressionChart } from '@/components/analytics/ExerciseProgressionChart';
 import { BodyOverviewCard } from '@/components/analytics/BodyOverviewCard';
+import { BodyScoreTrendCard } from '@/components/analytics/BodyScoreTrendCard';
 import { NextStepsCard } from '@/components/analytics/NextStepsCard';
 import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
 import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
@@ -441,7 +442,7 @@ function ProgressCard() {
 
 function InsightsContent() {
   const { dateRange } = useDateRange();
-  const { overview, isLoading: overviewLoading } = useBodyOverview(dateRange);
+  const { overview, trend, isLoading: overviewLoading } = useBodyOverview(dateRange);
   const { data: muscleData, isLoading: muscleLoading } = useMuscleIntelligence();
 
   return (
@@ -456,9 +457,12 @@ function InsightsContent() {
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            {/* North star: composite body overview + what to do about it */}
+            {/* North star: composite body overview + trend + what to do about it */}
             <motion.div variants={staggerItem}>
               <BodyOverviewCard overview={overview} isLoading={overviewLoading} />
+            </motion.div>
+            <motion.div variants={staggerItem}>
+              <BodyScoreTrendCard trend={trend} isLoading={overviewLoading} />
             </motion.div>
             <motion.div variants={staggerItem}>
               <NextStepsCard overview={overview} isLoading={overviewLoading} />
