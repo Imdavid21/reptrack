@@ -13,31 +13,33 @@ export interface WaterLog {
   method: 'manual' | 'automation';
 }
 
-export function useWaterLogs() {
+export function useWaterLogs(date?: Date) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Stable per-day boundaries: recomputed only when the local calendar day
-  // changes, not on every render. (Previously these were fresh ISO strings on
-  // every render, churning the query key + realtime subscription each frame.)
-  const dayKey = localDateKey();
-  const { todayStart, todayEnd } = useMemo(() => ({
-    todayStart: startOfDay(new Date()).toISOString(),
-    todayEnd: endOfDay(new Date()).toISOString(),
+  // Stable per-day boundaries for the viewed day (today by default, or a
+  // back-dated day so existing entries are shown and can be added to).
+  const dayKey = localDateKey(date ?? new Date());
+  const { dayStart, dayEnd } = useMemo(() => {
+    const base = date ?? new Date();
+    return {
+      dayStart: startOfDay(base).toISOString(),
+      dayEnd: endOfDay(base).toISOString(),
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [dayKey]);
+  }, [dayKey]);
 
   const waterLogsQuery = useQuery({
     queryKey: ['waterLogs', user?.id, dayKey],
     queryFn: async () => {
       if (!user) return [];
-      
+
       const { data, error } = await supabase
         .from('water_logs')
         .select('*')
         .eq('user_id', user.id)
-        .gte('timestamp', todayStart)
-        .lte('timestamp', todayEnd)
+        .gte('timestamp', dayStart)
+        .lte('timestamp', dayEnd)
         .order('timestamp', { ascending: false });
 
       if (error) throw error;

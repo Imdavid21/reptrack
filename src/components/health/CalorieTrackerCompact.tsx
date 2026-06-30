@@ -63,8 +63,13 @@ export function CalorieTrackerCompact() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
   const [logDate, setLogDate] = useState<Date>(new Date());
-  const mealDateProps = isToday(logDate) ? {} : { date: format(logDate, 'yyyy-MM-dd') };
-  const mealDateSuffix = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
+  const viewingToday = isToday(logDate);
+  const mealDateProps = viewingToday ? {} : { date: format(logDate, 'yyyy-MM-dd') };
+  const mealDateSuffix = viewingToday ? '' : ` on ${format(logDate, 'MMM d')}`;
+  // When back-dating, load that day's existing meals so they're visible and
+  // can be added to / removed instead of silently duplicated. (Deduped with the
+  // main today query when not back-dating.)
+  const { meals: backDatedMeals, deleteMeal: deleteBackDatedMeal } = useMeals(viewingToday ? undefined : logDate);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [editableFoods, setEditableFoods] = useState<EditableFood[]>([]);
@@ -542,6 +547,33 @@ export function CalorieTrackerCompact() {
               <LogDateChip date={logDate} onChange={setLogDate} align="end" />
             </div>
           </DialogHeader>
+
+          {/* Existing meals already logged on a back-dated day */}
+          {!viewingToday && backDatedMeals.length > 0 && (
+            <div className="rounded-xl border border-energy/30 bg-energy-soft/50 p-2.5 space-y-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-energy-ink">
+                Already on {format(logDate, 'MMM d')} · {backDatedMeals.reduce((s, m) => s + (m.calories || 0), 0)} kcal
+              </div>
+              {backDatedMeals.map((m) => (
+                <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="truncate">{m.food_name || m.ai_detected_food || 'Meal'}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="tabular-nums text-muted-foreground">{m.calories ?? 0} kcal</span>
+                    <button
+                      onClick={async () => {
+                        try { await deleteBackDatedMeal(m.id); toast.success('Meal removed'); }
+                        catch { toast.error('Failed to remove'); }
+                      }}
+                      aria-label="Remove meal"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Meal type selector - always visible */}
           <div className="flex gap-1 flex-wrap">
