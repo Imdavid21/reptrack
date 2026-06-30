@@ -4,8 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
+import { LogDateChip } from '@/components/common/LogDateChip';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { format, isToday } from 'date-fns';
 
 export type ActivityKind = 'walking' | 'running' | 'cycling';
 
@@ -42,6 +44,7 @@ export function ActivityLogger() {
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [km, setKm] = useState('');
   const [saving, setSaving] = useState(false);
+  const [logDate, setLogDate] = useState<Date>(new Date());
 
   const cfg = ACTIVITY_CONFIG[kind];
   const distance = parseFloat(km) || 0;
@@ -57,9 +60,12 @@ export function ActivityLogger() {
         activity_type: kind,
         duration_minutes: duration,
         calories: kcal,
+        ...(isToday(logDate) ? {} : { date: format(logDate, 'yyyy-MM-dd') }),
       });
-      toast.success(`Logged ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal`);
+      const when = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
+      toast.success(`Logged ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setKm('');
+      setLogDate(new Date());
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to log activity');
@@ -81,10 +87,13 @@ export function ActivityLogger() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <cfg.icon className="w-5 h-5" />
-              Log {cfg.label}
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-6">
+              <DialogTitle className="flex items-center gap-2">
+                <cfg.icon className="w-5 h-5" />
+                Log {cfg.label}
+              </DialogTitle>
+              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
+            </div>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">

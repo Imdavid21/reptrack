@@ -103,15 +103,17 @@ export function useCalorieBurn(date?: Date) {
   });
 
   const addBurn = useMutation({
-    mutationFn: async (burn: Omit<CalorieBurn, 'id' | 'user_id' | 'date'>) => {
+    // An optional `date` lets the user back-date the burn; defaults to today.
+    mutationFn: async (burn: Omit<CalorieBurn, 'id' | 'user_id' | 'date'> & { date?: string }) => {
       if (!user) throw new Error('No user');
 
+      const { date: burnDate, ...rest } = burn;
       const { data, error } = await supabase
         .from('calorie_burns')
         .upsert({
           user_id: user.id,
-          date: dateStr,
-          ...burn,
+          date: burnDate ?? dateStr,
+          ...rest,
         }, {
           onConflict: 'user_id,date,source,activity_type'
         })

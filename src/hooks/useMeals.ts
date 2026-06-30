@@ -61,6 +61,8 @@ export function useMeals(date?: Date) {
       is_confirmed?: boolean;
       food_quality?: string;
       notes?: string;
+      /** Optional back-date (yyyy-MM-dd); defaults to the hook's date. */
+      date?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
@@ -69,7 +71,7 @@ export function useMeals(date?: Date) {
         .insert({
           user_id: user.id,
           date: dateStr,
-          ...meal,
+          ...meal, // a `date` in here overrides the default
         })
         .select()
         .single();
