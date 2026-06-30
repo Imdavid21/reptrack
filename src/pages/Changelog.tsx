@@ -1,8 +1,72 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/layout/Logo';
 import { useSEO } from '@/hooks/useSEO';
+import { APP_VERSION } from '@/lib/version';
 
 const changelogEntries = [
+  {
+    date: '2026-06-15',
+    title: 'Back-dated logging for everything',
+    items: [
+      'Log workouts, water, food, activity, sleep, and weight for any past day',
+      'A single date control on each logger — defaults to today, future dates disabled',
+      'Back-dated entries flow into History, charts, and your Body Score automatically',
+    ],
+  },
+  {
+    date: '2026-06-15',
+    title: 'Smarter exercise library',
+    items: [
+      '45+ new exercises across Push/Pull/Legs/Core (204 total) with equipment variations',
+      'Star your favorites and a "Your exercises" quick row for one-tap adding',
+      'The app remembers your preferred variation of a movement and reuses it next time',
+    ],
+  },
+  {
+    date: '2026-06-14',
+    title: 'Body Score over time',
+    items: [
+      'New trend line showing your overall Body Score across the selected range',
+      'See at a glance whether your trajectory is climbing, holding, or slipping',
+    ],
+  },
+  {
+    date: '2026-06-13',
+    title: 'Muscle intelligence & growth signals',
+    items: [
+      'Whole-body muscle map: weekly sets per muscle vs evidence-based volume landmarks',
+      'Flags undertrained, overtrained, and never-trained muscles with movements to add',
+      'Automatic PR detection plus plateau alerts that suggest switching to a fresh variation',
+      'Room-to-grow prompts for muscles with space for more productive volume',
+    ],
+  },
+  {
+    date: '2026-06-13',
+    title: 'Refreshed design',
+    items: [
+      'Modern, soft color system with one consistent hue per domain (training, fuel, recovery, hydration)',
+      'Redesigned History timeline, 404 page, and accessible date pickers',
+      'No more dark-mode flash on load; clearer, higher-contrast text throughout',
+    ],
+  },
+  {
+    date: '2026-06-12',
+    title: 'Insights north star: your Body Overview',
+    items: [
+      'One composite Body Score built from four pillars — training, fuel, recovery, hydration',
+      'Honest scoring that only counts a pillar once it has enough data',
+      'A prioritized "Do these next" list with concrete, one-tap actions',
+    ],
+  },
+  {
+    date: '2026-06-12',
+    title: 'Reliability & security hardening',
+    items: [
+      'Fixed new-account sign-up and closed cross-user data exposure',
+      'Meal photos are now private; workouts and metrics save on the correct local date',
+      'Reliable offline sync (no duplicate entries), account deletion, and AI rate limiting',
+    ],
+  },
   {
     date: '2026-02-10',
     title: 'Energy Balance & Calorie Accuracy',
@@ -130,7 +194,10 @@ export default function Changelog() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold tracking-tight mb-1">Changelog</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-2xl font-bold tracking-tight">Changelog</h1>
+          <span className="badge-energy">v{APP_VERSION}</span>
+        </div>
         <p className="text-sm text-muted-foreground mb-8">All notable updates to Reps & Reminders.</p>
 
         <div className="space-y-8">

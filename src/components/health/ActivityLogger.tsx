@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Footprints, Bike, PersonStanding, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCalorieBurn } from '@/hooks/useCalorieBurn';
+import { useCalorieBurn, useManualBurns } from '@/hooks/useCalorieBurn';
 import { LogDateChip } from '@/components/common/LogDateChip';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export const walkingCalories = (km: number, weightKg: number) => activityCalorie
 
 export function ActivityLogger() {
   const { weightKg, addBurn } = useCalorieBurn();
+  const { data: manualBurns = [] } = useManualBurns(180);
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [km, setKm] = useState('');
@@ -50,6 +51,25 @@ export function ActivityLogger() {
   const distance = parseFloat(km) || 0;
   const kcal = useMemo(() => activityCalories(kind, distance, weightKg), [kind, distance, weightKg]);
   const duration = activityDuration(kind, distance);
+
+  // Existing activity of this type already logged on the selected date.
+  const logDateStr = format(logDate, 'yyyy-MM-dd');
+  const existing = useMemo(
+    () => manualBurns.find(b => b.date === logDateStr && b.activity_type === kind),
+    [manualBurns, logDateStr, kind],
+  );
+
+  // When opening or changing date/type, preload any existing entry so the user
+  // updates it instead of unknowingly overwriting it (addBurn upserts per day+type).
+  useEffect(() => {
+    if (!open) return;
+    if (existing?.duration_minutes) {
+      setKm((existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm).toFixed(1));
+    } else {
+      setKm('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, logDateStr, kind]);
 
   const handleSave = async () => {
     if (distance <= 0) return;
@@ -63,7 +83,8 @@ export function ActivityLogger() {
         ...(isToday(logDate) ? {} : { date: format(logDate, 'yyyy-MM-dd') }),
       });
       const when = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
-      toast.success(`Logged ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
+      const verb = existing ? 'Updated' : 'Logged';
+      toast.success(`${verb} ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setKm('');
       setLogDate(new Date());
       setOpen(false);
@@ -77,7 +98,7 @@ export function ActivityLogger() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { setLogDate(new Date()); setOpen(true); }}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"
       >
         <Activity className="w-4 h-4" />
@@ -158,6 +179,12 @@ export function ActivityLogger() {
               </div>
             </div>
 
+            {existing && (
+              <p className="text-[11px] text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">
+                Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} — {existing.calories} kcal already logged.
+              </p>
+            )}
+
             <p className="text-[11px] text-muted-foreground">
               Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
             </p>
@@ -174,7 +201,7 @@ export function ActivityLogger() {
                 disabled={distance <= 0 || saving}
                 className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Add Burn'}
+                {saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}
               </button>
             </div>
           </div>

@@ -25,13 +25,16 @@ const WATER_SIZES = [
 ];
 
 export function WaterTracker() {
-  const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs();
+  const [logDate, setLogDate] = useState<Date>(new Date());
+  const viewingToday = isToday(logDate);
+  // Show (and add to) the selected day's logs — today by default, or a
+  // back-dated day so its existing entries are visible and can be added to.
+  const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs(viewingToday ? undefined : logDate);
   const { preferences, updatePreferences } = useUserPreferences();
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedSize, setSelectedSize] = useState(WATER_SIZES[0]);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [editGoal, setEditGoal] = useState(3);
-  const [logDate, setLogDate] = useState<Date>(new Date());
   const prevTotalRef = useRef(totalToday);
 
   const dailyGoal = preferences?.daily_water_goal ?? 3;
@@ -89,7 +92,7 @@ export function WaterTracker() {
     <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="section-header mb-0">TODAY'S WATER</h3>
+          <h3 className="section-header mb-0">{viewingToday ? "TODAY'S WATER" : `${format(logDate, 'MMM d').toUpperCase()} WATER`}</h3>
           <button
             onClick={() => setIsEditingGoal(!isEditingGoal)}
             className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"

@@ -1,8 +1,8 @@
 # HEALTH/OS – Personal Health Operating System
 
-> **Version:** 2.0.0 | **Platform:** Progressive Web App (PWA) + Capacitor Native  
+> **Version:** 4.0.0 | **Platform:** Progressive Web App (PWA) + Capacitor Native  
 > **Production:** https://reps-and-reminders.lovable.app  
-> **Last Updated:** February 2026
+> **Last Updated:** June 2026
 
 ---
 
@@ -881,4 +881,4 @@ The `useDraftWorkout` hook provides multi-layer persistence for in-progress work
 
 ---
 
-*Documentation last updated: February 2026*
+*Documentation last updated: June 2026*

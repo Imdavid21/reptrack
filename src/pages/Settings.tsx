@@ -35,6 +35,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
+import { APP_VERSION } from '@/lib/version';
 
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 import { DangerZoneSection } from '@/components/settings/DangerZoneSection';
@@ -944,8 +945,14 @@ export default function Settings() {
           {/* Version */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3, mt: 'auto' }}>
             <Logo size="sm" />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontFamily: '"Space Grotesk", sans-serif' }}>
-              v3.2
+            <Typography
+              component="a"
+              href="/changelog"
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, display: 'block', fontFamily: '"Space Grotesk", sans-serif', textDecoration: 'none', '&:hover': { color: 'text.primary' } }}
+            >
+              v{APP_VERSION}
             </Typography>
           </Box>
         </Box>
