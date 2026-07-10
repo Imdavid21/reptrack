@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Footprints, Bike, PersonStanding, Activity } from 'lucide-react';
+import { Footprints, Bike, PersonStanding, Activity, Swords } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,30 +9,37 @@ import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { format, isToday } from 'date-fns';
 
-export type ActivityKind = 'walking' | 'running' | 'cycling';
+export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 
 export const ACTIVITY_CONFIG: Record<ActivityKind, {
   label: string;
   met: number;
-  paceMinPerKm: number; // average pace
+  paceMinPerKm: number; // minutes per unit (km or minute)
   icon: typeof Footprints;
   quickKm: number[];
   paceLabel: string;
+  unit: 'km' | 'min';
 }> = {
-  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h' },
-  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h' },
-  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h' },
+  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h', unit: 'km' },
+  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h', unit: 'km' },
+  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h', unit: 'km' },
+  boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
 /** kcal = MET * weight(kg) * hours */
-export function activityCalories(kind: ActivityKind, km: number, weightKg: number) {
+export function activityCalories(kind: ActivityKind, value: number, weightKg: number) {
   const cfg = ACTIVITY_CONFIG[kind];
-  const hours = (km * cfg.paceMinPerKm) / 60;
+  const hours = cfg.unit === 'min'
+    ? value / 60
+    : (value * cfg.paceMinPerKm) / 60;
   return Math.round(cfg.met * weightKg * hours);
 }
 
-export function activityDuration(kind: ActivityKind, km: number) {
-  return Math.round(km * ACTIVITY_CONFIG[kind].paceMinPerKm);
+export function activityDuration(kind: ActivityKind, value: number) {
+  const cfg = ACTIVITY_CONFIG[kind];
+  return cfg.unit === 'min'
+    ? Math.round(value)
+    : Math.round(value * cfg.paceMinPerKm);
 }
 
 // Backwards compat export
