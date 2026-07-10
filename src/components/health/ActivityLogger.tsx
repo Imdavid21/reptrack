@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Footprints, Bike, PersonStanding, Activity } from 'lucide-react';
+import { Footprints, Bike, PersonStanding, Activity, Swords } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,30 +9,37 @@ import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { format, isToday } from 'date-fns';
 
-export type ActivityKind = 'walking' | 'running' | 'cycling';
+export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 
 export const ACTIVITY_CONFIG: Record<ActivityKind, {
   label: string;
   met: number;
-  paceMinPerKm: number; // average pace
+  paceMinPerKm: number; // minutes per unit (km or minute)
   icon: typeof Footprints;
   quickKm: number[];
   paceLabel: string;
+  unit: 'km' | 'min';
 }> = {
-  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h' },
-  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h' },
-  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h' },
+  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h', unit: 'km' },
+  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h', unit: 'km' },
+  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h', unit: 'km' },
+  boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
 /** kcal = MET * weight(kg) * hours */
-export function activityCalories(kind: ActivityKind, km: number, weightKg: number) {
+export function activityCalories(kind: ActivityKind, value: number, weightKg: number) {
   const cfg = ACTIVITY_CONFIG[kind];
-  const hours = (km * cfg.paceMinPerKm) / 60;
+  const hours = cfg.unit === 'min'
+    ? value / 60
+    : (value * cfg.paceMinPerKm) / 60;
   return Math.round(cfg.met * weightKg * hours);
 }
 
-export function activityDuration(kind: ActivityKind, km: number) {
-  return Math.round(km * ACTIVITY_CONFIG[kind].paceMinPerKm);
+export function activityDuration(kind: ActivityKind, value: number) {
+  const cfg = ACTIVITY_CONFIG[kind];
+  return cfg.unit === 'min'
+    ? Math.round(value)
+    : Math.round(value * cfg.paceMinPerKm);
 }
 
 // Backwards compat export
@@ -43,14 +50,14 @@ export function ActivityLogger() {
   const { data: manualBurns = [] } = useManualBurns(180);
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
-  const [km, setKm] = useState('');
+  const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [logDate, setLogDate] = useState<Date>(new Date());
 
   const cfg = ACTIVITY_CONFIG[kind];
-  const distance = parseFloat(km) || 0;
-  const kcal = useMemo(() => activityCalories(kind, distance, weightKg), [kind, distance, weightKg]);
-  const duration = activityDuration(kind, distance);
+  const numericValue = parseFloat(value) || 0;
+  const kcal = useMemo(() => activityCalories(kind, numericValue, weightKg), [kind, numericValue, weightKg]);
+  const duration = activityDuration(kind, numericValue);
 
   // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
@@ -64,15 +71,16 @@ export function ActivityLogger() {
   useEffect(() => {
     if (!open) return;
     if (existing?.duration_minutes) {
-      setKm((existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm).toFixed(1));
+      const factor = cfg.unit === 'min' ? 1 : ACTIVITY_CONFIG[kind].paceMinPerKm;
+      setValue((existing.duration_minutes / factor).toFixed(cfg.unit === 'min' ? 0 : 1));
     } else {
-      setKm('');
+      setValue('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, logDateStr, kind]);
 
   const handleSave = async () => {
-    if (distance <= 0) return;
+    if (numericValue <= 0) return;
     setSaving(true);
     try {
       await addBurn.mutateAsync({
@@ -84,8 +92,9 @@ export function ActivityLogger() {
       });
       const when = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
       const verb = existing ? 'Updated' : 'Logged';
-      toast.success(`${verb} ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
-      setKm('');
+      const unitLabel = cfg.unit === 'min' ? 'min' : 'km';
+      toast.success(`${verb} ${Math.round(numericValue)} ${unitLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
+      setValue('');
       setLogDate(new Date());
       setOpen(false);
     } catch (e: any) {
@@ -119,7 +128,7 @@ export function ActivityLogger() {
 
           <div className="space-y-4 pt-2">
             {/* Activity type selector */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {(Object.keys(ACTIVITY_CONFIG) as ActivityKind[]).map(k => {
                 const c = ACTIVITY_CONFIG[k];
                 const Icon = c.icon;
@@ -143,15 +152,17 @@ export function ActivityLogger() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="km">Distance (km)</Label>
+              <Label htmlFor="activity-value">
+                {cfg.unit === 'min' ? 'Duration (min)' : 'Distance (km)'}
+              </Label>
               <Input
-                id="km"
+                id="activity-value"
                 type="number"
                 inputMode="decimal"
-                step="0.1"
-                placeholder="4.0"
-                value={km}
-                onChange={(e) => setKm(e.target.value)}
+                step={cfg.unit === 'min' ? '1' : '0.1'}
+                placeholder={cfg.unit === 'min' ? '30' : '4.0'}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
                 autoFocus
                 className="h-12 text-lg"
               />
@@ -159,10 +170,10 @@ export function ActivityLogger() {
                 {cfg.quickKm.map(v => (
                   <button
                     key={v}
-                    onClick={() => setKm(String(v))}
+                    onClick={() => setValue(String(v))}
                     className="flex-1 py-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors"
                   >
-                    {v}km
+                    {v}{cfg.unit === 'min' ? 'm' : 'km'}
                   </button>
                 ))}
               </div>
@@ -198,7 +209,7 @@ export function ActivityLogger() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={distance <= 0 || saving}
+                disabled={numericValue <= 0 || saving}
                 className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}
