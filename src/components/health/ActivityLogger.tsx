@@ -50,14 +50,14 @@ export function ActivityLogger() {
   const { data: manualBurns = [] } = useManualBurns(180);
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
-  const [km, setKm] = useState('');
+  const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [logDate, setLogDate] = useState<Date>(new Date());
 
   const cfg = ACTIVITY_CONFIG[kind];
-  const distance = parseFloat(km) || 0;
-  const kcal = useMemo(() => activityCalories(kind, distance, weightKg), [kind, distance, weightKg]);
-  const duration = activityDuration(kind, distance);
+  const numericValue = parseFloat(value) || 0;
+  const kcal = useMemo(() => activityCalories(kind, numericValue, weightKg), [kind, numericValue, weightKg]);
+  const duration = activityDuration(kind, numericValue);
 
   // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
@@ -71,15 +71,16 @@ export function ActivityLogger() {
   useEffect(() => {
     if (!open) return;
     if (existing?.duration_minutes) {
-      setKm((existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm).toFixed(1));
+      const factor = cfg.unit === 'min' ? 1 : ACTIVITY_CONFIG[kind].paceMinPerKm;
+      setValue((existing.duration_minutes / factor).toFixed(cfg.unit === 'min' ? 0 : 1));
     } else {
-      setKm('');
+      setValue('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, logDateStr, kind]);
 
   const handleSave = async () => {
-    if (distance <= 0) return;
+    if (numericValue <= 0) return;
     setSaving(true);
     try {
       await addBurn.mutateAsync({
@@ -91,8 +92,9 @@ export function ActivityLogger() {
       });
       const when = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
       const verb = existing ? 'Updated' : 'Logged';
-      toast.success(`${verb} ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
-      setKm('');
+      const unitLabel = cfg.unit === 'min' ? 'min' : 'km';
+      toast.success(`${verb} ${Math.round(numericValue)} ${unitLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
+      setValue('');
       setLogDate(new Date());
       setOpen(false);
     } catch (e: any) {
