@@ -209,7 +209,7 @@ export function ActivityLogger() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={distance <= 0 || saving}
+                disabled={numericValue <= 0 || saving}
                 className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}
