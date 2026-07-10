@@ -128,7 +128,7 @@ export function ActivityLogger() {
 
           <div className="space-y-4 pt-2">
             {/* Activity type selector */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {(Object.keys(ACTIVITY_CONFIG) as ActivityKind[]).map(k => {
                 const c = ACTIVITY_CONFIG[k];
                 const Icon = c.icon;
@@ -152,15 +152,17 @@ export function ActivityLogger() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="km">Distance (km)</Label>
+              <Label htmlFor="activity-value">
+                {cfg.unit === 'min' ? 'Duration (min)' : 'Distance (km)'}
+              </Label>
               <Input
-                id="km"
+                id="activity-value"
                 type="number"
                 inputMode="decimal"
-                step="0.1"
-                placeholder="4.0"
-                value={km}
-                onChange={(e) => setKm(e.target.value)}
+                step={cfg.unit === 'min' ? '1' : '0.1'}
+                placeholder={cfg.unit === 'min' ? '30' : '4.0'}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
                 autoFocus
                 className="h-12 text-lg"
               />
@@ -168,10 +170,10 @@ export function ActivityLogger() {
                 {cfg.quickKm.map(v => (
                   <button
                     key={v}
-                    onClick={() => setKm(String(v))}
+                    onClick={() => setValue(String(v))}
                     className="flex-1 py-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors"
                   >
-                    {v}km
+                    {v}{cfg.unit === 'min' ? 'm' : 'km'}
                   </button>
                 ))}
               </div>
