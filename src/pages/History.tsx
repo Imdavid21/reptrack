@@ -13,6 +13,7 @@ import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
 import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
 import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
+import { ACTIVITY_CONFIG, type ActivityKind } from '@/components/health/ActivityLogger';
 
 export default function History() {
   const { workouts } = useWorkouts();
