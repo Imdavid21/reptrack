@@ -35,7 +35,8 @@ export function DangerZoneSection() {
     if (confirmText.trim().toUpperCase() !== CONFIRM_WORD) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.rpc('delete_my_account');
+      // Cast because the generated types can lag behind schema migrations.
+      const { error } = await (supabase.rpc as any)('delete_my_account');
       if (error) throw error;
       // Session belongs to a now-deleted user; clear it and leave the app.
       await signOut();
