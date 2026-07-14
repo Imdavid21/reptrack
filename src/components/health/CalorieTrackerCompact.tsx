@@ -16,8 +16,8 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
-import { format, isToday } from 'date-fns';
-import { LogDateChip } from '@/components/common/LogDateChip';
+import { format } from 'date-fns';
+import { useLogDate } from '@/contexts/LogDateContext';
 import { cn } from '@/lib/utils';
 
 const MEAL_ICONS = {
@@ -56,20 +56,18 @@ type EditableFood = {
 
 export function CalorieTrackerCompact() {
   const { user } = useAuth();
-  const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals();
+  const { logDate, isBackDated } = useLogDate();
+  const viewingToday = !isBackDated;
+  const mealDateSuffix = viewingToday ? '' : ` on ${format(logDate, 'MMM d')}`;
+  // The whole card reads and writes the shared dashboard date: today by default,
+  // or a back-dated day (so its meals/burns show and new meals save there).
+  const mealsDate = viewingToday ? undefined : logDate;
+  const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals(mealsDate);
   const { preferences, updatePreferences } = useUserPreferences();
-  const { totalBurned } = useCalorieBurn();
+  const { totalBurned } = useCalorieBurn(mealsDate);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
-  const [logDate, setLogDate] = useState<Date>(new Date());
-  const viewingToday = isToday(logDate);
-  const mealDateProps = viewingToday ? {} : { date: format(logDate, 'yyyy-MM-dd') };
-  const mealDateSuffix = viewingToday ? '' : ` on ${format(logDate, 'MMM d')}`;
-  // When back-dating, load that day's existing meals so they're visible and
-  // can be added to / removed instead of silently duplicated. (Deduped with the
-  // main today query when not back-dating.)
-  const { meals: backDatedMeals, deleteMeal: deleteBackDatedMeal } = useMeals(viewingToday ? undefined : logDate);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [editableFoods, setEditableFoods] = useState<EditableFood[]>([]);
@@ -266,7 +264,6 @@ export function CalorieTrackerCompact() {
         fat: totalFat || undefined,
         fiber: totalFiber || undefined,
         food_quality: analysis?.food_quality,
-        ...mealDateProps,
       });
       toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
@@ -288,7 +285,6 @@ export function CalorieTrackerCompact() {
         calories: parseInt(manualData.calories),
         photo_url: uploadedPhotoUrl || undefined,
         is_confirmed: true,
-        ...mealDateProps,
       });
       toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
@@ -344,7 +340,9 @@ export function CalorieTrackerCompact() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <h3 className="section-header mb-0">
-                {deficitMode ? "DEFICIT TODAY" : "TODAY'S CALORIES"}
+                {viewingToday
+                  ? (deficitMode ? "DEFICIT TODAY" : "TODAY'S CALORIES")
+                  : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'DEFICIT' : 'CALORIES'}`}
               </h3>
               {deficitMode && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
@@ -539,41 +537,11 @@ export function CalorieTrackerCompact() {
         </div>
       </Collapsible>
 
-      <Dialog open={isDialogOpen} onOpenChange={(o) => { if (o) setLogDate(new Date()); setIsDialogOpen(o); }}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-border bg-background max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center justify-between gap-2 pr-6">
-              <DialogTitle className="text-sm font-medium">ADD MEAL</DialogTitle>
-              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
-            </div>
+            <DialogTitle className="text-sm font-medium">ADD MEAL{mealDateSuffix.toUpperCase()}</DialogTitle>
           </DialogHeader>
-
-          {/* Existing meals already logged on a back-dated day */}
-          {!viewingToday && backDatedMeals.length > 0 && (
-            <div className="rounded-xl border border-energy/30 bg-energy-soft/50 p-2.5 space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-energy-ink">
-                Already on {format(logDate, 'MMM d')} · {backDatedMeals.reduce((s, m) => s + (m.calories || 0), 0)} kcal
-              </div>
-              {backDatedMeals.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate">{m.food_name || m.ai_detected_food || 'Meal'}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="tabular-nums text-muted-foreground">{m.calories ?? 0} kcal</span>
-                    <button
-                      onClick={async () => {
-                        try { await deleteBackDatedMeal(m.id); toast.success('Meal removed'); }
-                        catch { toast.error('Failed to remove'); }
-                      }}
-                      aria-label="Remove meal"
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Meal type selector - always visible */}
           <div className="flex gap-1 flex-wrap">

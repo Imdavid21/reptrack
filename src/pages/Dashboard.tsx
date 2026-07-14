@@ -9,6 +9,8 @@ import { BodyScoreStrip } from '@/components/dashboard/BodyScoreStrip';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
+import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
+import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { Dumbbell, ChevronRight, TrendingDown } from 'lucide-react';
@@ -21,7 +23,7 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <AnimatedPage>
-
+       <LogDateProvider>
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -29,6 +31,11 @@ export default function Dashboard() {
           style={{ minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+
+            {/* Single shared date control for all dashboard logging */}
+            <motion.div variants={staggerItem}>
+              <DashboardDateBar />
+            </motion.div>
 
             {/* Resume workout banner */}
             {draft && hasProgress && (
@@ -111,6 +118,7 @@ export default function Dashboard() {
 
           </Box>
         </motion.div>
+       </LogDateProvider>
       </AnimatedPage>
     </MainLayout>
   );
