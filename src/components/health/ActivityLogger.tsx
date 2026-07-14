@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalorieBurn, useManualBurns } from '@/hooks/useCalorieBurn';
-import { LogDateChip } from '@/components/common/LogDateChip';
+import { useLogDate } from '@/contexts/LogDateContext';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import { format, isToday } from 'date-fns';
+import { format } from 'date-fns';
 
 export type ActivityKind = 'walking' | 'running' | 'cycling';
 
@@ -41,11 +41,11 @@ export const walkingCalories = (km: number, weightKg: number) => activityCalorie
 export function ActivityLogger() {
   const { weightKg, addBurn } = useCalorieBurn();
   const { data: manualBurns = [] } = useManualBurns(180);
+  const { logDate, isBackDated } = useLogDate();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [km, setKm] = useState('');
   const [saving, setSaving] = useState(false);
-  const [logDate, setLogDate] = useState<Date>(new Date());
 
   const cfg = ACTIVITY_CONFIG[kind];
   const distance = parseFloat(km) || 0;
@@ -80,13 +80,12 @@ export function ActivityLogger() {
         activity_type: kind,
         duration_minutes: duration,
         calories: kcal,
-        ...(isToday(logDate) ? {} : { date: format(logDate, 'yyyy-MM-dd') }),
+        ...(isBackDated ? { date: logDateStr } : {}),
       });
-      const when = isToday(logDate) ? '' : ` on ${format(logDate, 'MMM d')}`;
+      const when = isBackDated ? ` on ${format(logDate, 'MMM d')}` : '';
       const verb = existing ? 'Updated' : 'Logged';
       toast.success(`${verb} ${distance} km ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setKm('');
-      setLogDate(new Date());
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to log activity');
@@ -98,23 +97,20 @@ export function ActivityLogger() {
   return (
     <>
       <button
-        onClick={() => { setLogDate(new Date()); setOpen(true); }}
+        onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"
       >
         <Activity className="w-4 h-4" />
-        Log Activity
+        Log Activity{isBackDated ? ` · ${format(logDate, 'MMM d')}` : ''}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between gap-2 pr-6">
-              <DialogTitle className="flex items-center gap-2">
-                <cfg.icon className="w-5 h-5" />
-                Log {cfg.label}
-              </DialogTitle>
-              <LogDateChip date={logDate} onChange={setLogDate} align="end" />
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <cfg.icon className="w-5 h-5" />
+              Log {cfg.label}{isBackDated ? ` · ${format(logDate, 'MMM d')}` : ''}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">

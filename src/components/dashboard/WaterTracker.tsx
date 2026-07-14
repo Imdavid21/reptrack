@@ -1,8 +1,8 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useLogDate } from '@/contexts/LogDateContext';
 import { Plus, ChevronDown, Pencil, Check } from 'lucide-react';
-import { format, isToday } from 'date-fns';
-import { LogDateChip } from '@/components/common/LogDateChip';
+import { format } from 'date-fns';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -25,9 +25,9 @@ const WATER_SIZES = [
 ];
 
 export function WaterTracker() {
-  const [logDate, setLogDate] = useState<Date>(new Date());
-  const viewingToday = isToday(logDate);
-  // Show (and add to) the selected day's logs — today by default, or a
+  const { logDate, isBackDated } = useLogDate();
+  const viewingToday = !isBackDated;
+  // Show (and add to) the shared dashboard date — today by default, or a
   // back-dated day so its existing entries are visible and can be added to.
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs(viewingToday ? undefined : logDate);
   const { preferences, updatePreferences } = useUserPreferences();
@@ -63,7 +63,7 @@ export function WaterTracker() {
 
   const handleLogWater = async (amount?: number) => {
     const logAmount = amount || selectedSize.value;
-    const backDated = !isToday(logDate);
+    const backDated = isBackDated;
     try {
       setIsAnimating(true);
       haptic('light');
@@ -101,7 +101,6 @@ export function WaterTracker() {
             <Pencil className="h-3 w-3" />
           </button>
         </div>
-        <LogDateChip date={logDate} onChange={setLogDate} align="end" />
       </div>
 
       <div className="text-4xl font-bold tabular-nums">
