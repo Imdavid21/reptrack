@@ -7,12 +7,13 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Bike, PersonStanding, Trash2 } from 'lucide-react';
+import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
 import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
 import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
+import { ACTIVITY_CONFIG, type ActivityKind } from '@/components/health/ActivityLogger';
 
 export default function History() {
   const { workouts } = useWorkouts();
@@ -357,14 +358,19 @@ export default function History() {
                             )}
 
                             {dayBurns.map((b) => {
-                              const type = (b.activity_type || '').toLowerCase();
-                              const Icon = type === 'cycling' ? Bike : type === 'running' ? PersonStanding : Footprints;
-                              const label = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity';
+                              const type = (b.activity_type || '') as ActivityKind;
+                              const config = ACTIVITY_CONFIG[type];
+                              const Icon = config?.icon || Footprints;
+                              const label = config?.label || (type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity');
+                              const unit = config?.unit === 'min' ? 'min' : 'km';
+                              const unitValue = config?.unit === 'min'
+                                ? (b.duration_minutes ?? 0)
+                                : ((b.duration_minutes ?? 0) / (config?.paceMinPerKm || 1));
                               return (
                                 <div
                                   key={b.id}
                                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-energy-soft rounded-xl"
-                                  title={`${label} · ${b.duration_minutes ?? 0} min · ${b.calories} kcal`}
+                                  title={`${label} · ${unitValue} ${unit} · ${b.calories} kcal`}
                                 >
                                   <Icon size={13} className="text-energy-ink" />
                                   <span className="text-xs font-medium text-energy-ink tabular-nums">
