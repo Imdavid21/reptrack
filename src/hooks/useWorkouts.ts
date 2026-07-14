@@ -32,6 +32,10 @@ export interface WorkoutExercise {
   restSeconds?: number;
   /** Reps in reserve target (e.g. "2-3") */
   rir?: string;
+  /** Corrective/functional work that shouldn't be skipped for time. */
+  mandatory?: boolean;
+  /** Short progression rule shown to the user. */
+  progression?: string;
 }
 
 export interface Habits {

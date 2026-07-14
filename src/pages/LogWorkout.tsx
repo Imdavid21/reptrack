@@ -73,7 +73,7 @@ function findLastUsed(
 }
 
 function buildExercisesFromTemplate(
-  dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string; restSeconds?: number; rir?: string; notes?: string }>; bias?: 'heavy' | 'volume' },
+  dayData: { exercises: Array<{ name: string; category: string; targetWeight: string; targetReps: string; restSeconds?: number; rir?: string; notes?: string; mandatory?: boolean; progression?: string }>; bias?: 'heavy' | 'volume' },
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string; perSet?: Array<{ weight: number; reps: number }> }>,
   fitnessGoal?: string | null,
   preferredVariants?: Record<string, string>,
@@ -131,6 +131,8 @@ function buildExercisesFromTemplate(
       exerciseType: exType,
       restSeconds: programming.restSeconds,
       rir: programming.rir,
+      mandatory: templateEx.mandatory,
+      progression: templateEx.progression,
     } as WorkoutExercise;
   });
 }

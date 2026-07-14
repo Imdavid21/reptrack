@@ -196,6 +196,9 @@ function ExerciseItemCard({
         >
           <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             {exercise.name}
+            {exercise.mandatory && (
+              <span className="text-[10px] bg-energy text-energy-foreground px-1 py-0.5 rounded uppercase font-bold shrink-0">must</span>
+            )}
             {exercise.exerciseType === 'timed' && (
               <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">timed</span>
             )}
@@ -206,6 +209,9 @@ function ExerciseItemCard({
               <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw+</span>
             )}
           </div>
+          {exercise.progression && (
+            <div className="text-[10px] text-muted-foreground/80 italic truncate mt-0.5">{exercise.progression}</div>
+          )}
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
             {isFromHistory && !activeSession && (
               <>

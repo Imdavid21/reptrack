@@ -46,6 +46,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Landmine Press', category: 'primary', defaultWeight: '20kg', defaultReps: '3x10-12', muscleGroup: 'Shoulders', exerciseType: 'weighted' },
     // ─── Shoulder Accessories ─────────────────────────────────────────────────
     { name: 'Lateral Raises', category: 'accessory', defaultWeight: '10kg', defaultReps: '4x12-15', muscleGroup: 'Side Delts', exerciseType: 'weighted' },
+    { name: 'Dumbbell Lateral Raises', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x15', muscleGroup: 'Side Delts', exerciseType: 'weighted' },
     { name: 'Cable Lateral Raise', category: 'accessory', defaultWeight: '7.5kg', defaultReps: '4x12-15', muscleGroup: 'Side Delts', exerciseType: 'weighted' },
     { name: 'Machine Lateral Raise', category: 'accessory', defaultWeight: '25kg', defaultReps: '3x12-15', muscleGroup: 'Side Delts', exerciseType: 'weighted' },
     { name: 'Front Raises', category: 'accessory', defaultWeight: '8kg', defaultReps: '3x12-15', muscleGroup: 'Front Delts', exerciseType: 'weighted' },
@@ -212,6 +213,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     // ─── Core ─────────────────────────────────────────────────────────────────
     { name: 'Ab Wheel Rollout', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Core', exerciseType: 'bodyweight' },
     { name: 'Hanging Leg Raises', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x10-15', muscleGroup: 'Core', exerciseType: 'bodyweight' },
+    { name: 'Hanging Knee Raises', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12', muscleGroup: 'Core', exerciseType: 'bodyweight' },
     { name: 'Cable Crunches', category: 'accessory', defaultWeight: '30kg', defaultReps: '3x15-20', muscleGroup: 'Core', exerciseType: 'weighted' },
     { name: 'Russian Twists', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x20', muscleGroup: 'Core', exerciseType: 'weighted' },
     { name: 'Leg Raises', category: 'accessory', defaultWeight: 'BW', defaultReps: '3x12-15', muscleGroup: 'Core', exerciseType: 'bodyweight' },

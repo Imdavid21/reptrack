@@ -6,6 +6,10 @@ export interface Exercise {
   notes?: string;
   restSeconds?: number;
   rir?: string;
+  /** Corrective/functional work that cannot be dropped for time. */
+  mandatory?: boolean;
+  /** Short progression rule shown to the user (e.g. "Reps before weight"). */
+  progression?: string;
 }
 
 export interface WorkoutDay {
