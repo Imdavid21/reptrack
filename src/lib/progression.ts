@@ -51,8 +51,6 @@ export function suggestProgression(
   targetReps: string | undefined,
   lastUsed: LastUsedLite | undefined | null,
   templateWeight?: string,
-  /** Cut phase: hold working weight instead of chasing new load (§2.2). */
-  holdIntensity = false,
 ): ProgressionSuggestion {
   const { sets, low, high } = parseRepRange(targetReps);
   const repLabel = low === high ? `${low}` : `${low}-${high}`;
@@ -69,7 +67,7 @@ export function suggestProgression(
 
   const { weight: lastWeight, reps: lastReps } = lastUsed;
 
-  // Bodyweight / unweighted → progress on reps (still fine during a cut).
+  // Bodyweight / unweighted → progress on reps.
   if (!lastWeight || lastWeight <= 0) {
     const target = Math.max(lastReps + 1, low);
     return {
@@ -78,17 +76,6 @@ export function suggestProgression(
       sets,
       note: lastReps > 0 ? `Aim for ${target} reps (last: ${lastReps})` : `Aim for ${repLabel} reps`,
       trend: 'up',
-    };
-  }
-
-  // Cut phase: hold the weight and match reps — don't chase new PRs.
-  if (holdIntensity) {
-    return {
-      weight: `${fmt(lastWeight)}kg`,
-      reps: repLabel,
-      sets,
-      note: `Cut — hold ${fmt(lastWeight)}kg, match your ${lastReps} reps`,
-      trend: 'hold',
     };
   }
 

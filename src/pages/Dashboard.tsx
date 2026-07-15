@@ -6,19 +6,19 @@ import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
 import { BodyScoreStrip } from '@/components/dashboard/BodyScoreStrip';
-import { BurnTargetHero } from '@/components/dashboard/BurnTargetHero';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
 import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
-import { CoachPrompts } from '@/components/dashboard/CoachPrompts';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
-import { Dumbbell, ChevronRight } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { Dumbbell, ChevronRight, TrendingDown } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { draft, hasProgress } = useDraftWorkout();
+  const { preferences } = useUserPreferences();
 
   return (
     <MainLayout>
@@ -35,11 +35,6 @@ export default function Dashboard() {
             {/* Single shared date control for all dashboard logging */}
             <motion.div variants={staggerItem}>
               <DashboardDateBar />
-            </motion.div>
-
-            {/* Coach nudges: log today, leg volume, sleep/weight gaps, protein */}
-            <motion.div variants={staggerItem}>
-              <CoachPrompts />
             </motion.div>
 
             {/* Resume workout banner */}
@@ -75,10 +70,15 @@ export default function Dashboard() {
             )}
 
 
-            {/* Headline: calories left to burn today */}
-            <motion.div variants={staggerItem}>
-              <BurnTargetHero />
-            </motion.div>
+            {/* Deficit mode badge */}
+            {preferences?.deficit_mode_enabled && (
+              <motion.div variants={staggerItem}>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
+                  <TrendingDown className="h-3 w-3" />
+                  DEFICIT MODE · -{preferences?.daily_deficit_target ?? 500} KCAL
+                </div>
+              </motion.div>
+            )}
 
             {/* Body score at a glance → full overview in Insights */}
             <motion.div variants={staggerItem}>

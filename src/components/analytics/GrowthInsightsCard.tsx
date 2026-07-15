@@ -1,5 +1,5 @@
 import { Skeleton } from '@mui/material';
-import { Trophy, RefreshCw, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Trophy, RefreshCw, TrendingUp, ArrowRight } from 'lucide-react';
 import { MuscleIntelligence } from '@/lib/muscleInsights';
 
 interface Props {
@@ -15,7 +15,7 @@ export function GrowthInsightsCard({ data, isLoading }: Props) {
   if (isLoading) return <Skeleton variant="rounded" height={180} sx={{ borderRadius: 3 }} />;
   if (!data) return null;
 
-  const hasContent = data.prs.length > 0 || data.plateaus.length > 0 || data.growthRoom.length > 0 || data.regressions.length > 0;
+  const hasContent = data.prs.length > 0 || data.plateaus.length > 0 || data.growthRoom.length > 0;
   if (!hasContent) return null;
 
   return (
@@ -48,33 +48,22 @@ export function GrowthInsightsCard({ data, isLoading }: Props) {
             <RefreshCw className="h-4 w-4 text-recover-ink" />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight flex items-center gap-1.5">
+            <div className="text-sm font-semibold leading-tight">
               {p.exercise} has stalled
-              <span className="text-[9px] font-bold uppercase tracking-wide bg-recover-soft text-recover-ink px-1 py-0.5 rounded shrink-0">
-                {p.intervention === 'mini-deload' ? 'step 1' : p.intervention === 'stimulus-change' ? 'step 2' : 'deload'}
-              </span>
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
               No new top-end in {p.sessionsStalled} sessions (best ≈ {p.bestE1rm}kg 1RM).{' '}
-              <span className="inline-flex items-center gap-0.5">
-                {p.intervention === 'stimulus-change' && p.switchTo && <ArrowRight className="h-3 w-3 text-recover-ink" />}
-                <span className="text-foreground">{p.interventionAction}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {/* Regressions (§2.3) — expected on a cut, flagged for trend */}
-      {data.regressions.slice(0, 2).map(r => (
-        <div key={`reg-${r.exercise}`} className="flex items-start gap-3">
-          <div className="h-8 w-8 rounded-lg bg-fuel-soft flex items-center justify-center shrink-0">
-            <TrendingDown className="h-4 w-4 text-fuel-ink" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight">{r.exercise} dipped {r.dropPct}%</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Below your recent sessions. On a cut this is expected — hold the weight, keep protein and sleep up, and it'll rebound.
+              {p.switchTo ? (
+                <>
+                  Switch to{' '}
+                  <span className="inline-flex items-center gap-0.5 font-semibold text-foreground">
+                    {p.switchTo} <ArrowRight className="h-3 w-3" />
+                  </span>{' '}
+                  for fresh stimulus, then come back stronger.
+                </>
+              ) : (
+                'Try a new variation, rep range, or a small deload to break through.'
+              )}
             </div>
           </div>
         </div>

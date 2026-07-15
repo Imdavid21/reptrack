@@ -31,8 +31,6 @@ export interface MuscleBalance {
   suggestion?: string;
 }
 
-export type InterventionLevel = 'mini-deload' | 'stimulus-change' | 'deload-week';
-
 export interface PlateauInsight {
   exercise: string;
   /** Best estimated 1RM seen for this lift, in kg. */
@@ -41,32 +39,6 @@ export interface PlateauInsight {
   sessionsStalled: number;
   /** Variation to switch to for new stimulus, if one is known. */
   switchTo?: string;
-  /** Escalation step to try next (§4). */
-  intervention: InterventionLevel;
-  /** One-line description of that step. */
-  interventionAction: string;
-}
-
-/**
- * Escalation ladder for a stalled lift (§4):
- *  - 3-4 stalled sessions → mini-deload (drop 1-2 reps for one session, then resume)
- *  - 5+ stalled sessions  → stimulus change (variation swap or rep-range change)
- *  - 2+ lifts stalled at once → deload week (systemic fatigue, not one lift)
- */
-export function recommendIntervention(
-  sessionsStalled: number,
-  simultaneousStalls: number,
-  switchTo?: string,
-): { level: InterventionLevel; action: string } {
-  if (simultaneousStalls >= 2) {
-    return { level: 'deload-week', action: 'Multiple lifts stalled — take a deload week (volume −40-50% for 5-7 days).' };
-  }
-  if (sessionsStalled >= 5) {
-    return switchTo
-      ? { level: 'stimulus-change', action: `Mini-deload didn't take — switch to ${switchTo} or change the rep range for 3 weeks.` }
-      : { level: 'stimulus-change', action: 'Mini-deload didn\'t take — change the rep range for 3 weeks or swap the variation.' };
-  }
-  return { level: 'mini-deload', action: 'Drop 1-2 reps per set for one session, then resume the progression.' };
 }
 
 export interface PRInsight {
@@ -77,19 +49,11 @@ export interface PRInsight {
   reps: number;
 }
 
-export interface RegressionInsight {
-  exercise: string;
-  /** % drop of the latest session vs the average of the prior 3. */
-  dropPct: number;
-}
-
 export interface MuscleIntelligence {
   balance: MuscleBalance[];
   untrained: string[];
   plateaus: PlateauInsight[];
   prs: PRInsight[];
-  /** Lifts whose latest session dropped >10% below the prior 3 (§2.3). */
-  regressions: RegressionInsight[];
   /** Muscles with room to add a set or two for more growth. */
   growthRoom: string[];
   weeks: number;
@@ -182,23 +146,12 @@ export function analyzeMuscles(sets: InsightSet[], rangeDays: number): MuscleInt
 
   const plateaus: PlateauInsight[] = [];
   const prs: PRInsight[] = [];
-  const regressions: RegressionInsight[] = [];
 
   for (const [exercise, dayMap] of byExercise) {
     const sessions = [...dayMap.entries()]
       .map(([date, e1rm]) => ({ date, e1rm }))
       .sort((a, b) => a.date.localeCompare(b.date));
     if (sessions.length < 2) continue;
-
-    // Regression (§2.3): latest session >10% below the average of the prior 3.
-    if (sessions.length >= 4) {
-      const latest = sessions[sessions.length - 1].e1rm;
-      const prior3 = sessions.slice(-4, -1);
-      const avg = prior3.reduce((s, x) => s + x.e1rm, 0) / prior3.length;
-      if (avg > 0 && latest < avg * 0.9) {
-        regressions.push({ exercise, dropPct: Math.round((1 - latest / avg) * 100) });
-      }
-    }
 
     // Running best + how many sessions since it was last beaten.
     let best = 0;
@@ -229,25 +182,14 @@ export function analyzeMuscles(sets: InsightSet[], rangeDays: number): MuscleInt
         bestE1rm: Math.round(best * 10) / 10,
         sessionsStalled,
         switchTo: pickVariation(exercise),
-        intervention: 'mini-deload',
-        interventionAction: '',
       });
     }
-  }
-
-  // Attach the escalation step now that we know how many lifts are stalled at once.
-  for (const p of plateaus) {
-    const rec = recommendIntervention(p.sessionsStalled, plateaus.length, p.switchTo);
-    p.intervention = rec.level;
-    p.interventionAction = rec.action;
   }
 
   plateaus.sort((a, b) => b.sessionsStalled - a.sessionsStalled);
   prs.sort((a, b) => b.e1rm - a.e1rm);
 
-  regressions.sort((a, b) => b.dropPct - a.dropPct);
-
-  return { balance, untrained, plateaus, prs, regressions, growthRoom, weeks };
+  return { balance, untrained, plateaus, prs, growthRoom, weeks };
 }
 
 /** Pick a different-equipment variation of the same lift, if we know one. */
