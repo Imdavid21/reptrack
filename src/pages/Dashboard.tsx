@@ -11,6 +11,7 @@ import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
 import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
+import { CoachPrompts } from '@/components/dashboard/CoachPrompts';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { Dumbbell, ChevronRight } from 'lucide-react';
@@ -34,6 +35,11 @@ export default function Dashboard() {
             {/* Single shared date control for all dashboard logging */}
             <motion.div variants={staggerItem}>
               <DashboardDateBar />
+            </motion.div>
+
+            {/* Coach nudges: log today, leg volume, sleep/weight gaps, protein */}
+            <motion.div variants={staggerItem}>
+              <CoachPrompts />
             </motion.div>
 
             {/* Resume workout banner */}
