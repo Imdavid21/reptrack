@@ -67,7 +67,7 @@ export function useNextWorkout(): NextWorkout | null {
       .filter((e: { category: string }) => e.category !== 'warmup')
       .map((ex: { name: string; category: string; targetWeight?: string; targetReps?: string }) => {
         const last = findBestMatch(ex.name, lastUsedMap) as { weight: number; reps: number } | undefined;
-        const suggestion = suggestProgression(ex.name, ex.targetReps, last, ex.targetWeight);
+        const suggestion = suggestProgression(ex.name, ex.targetReps, last, ex.targetWeight, preferences?.deficit_mode_enabled ?? false);
         return { name: ex.name, category: ex.category, ...suggestion };
       });
 

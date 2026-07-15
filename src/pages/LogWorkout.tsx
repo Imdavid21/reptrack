@@ -7,6 +7,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerItem } from '@/components/layout/AnimatedPage';
 import { DaySelectorWithCheckin } from '@/components/workout/DaySelectorWithCheckin';
 import { WorkoutDateSelector } from '@/components/workout/WorkoutDateSelector';
+import { DeficitGuardBanner } from '@/components/workout/DeficitGuardBanner';
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
 import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExercisePicker } from '@/components/workout/ExercisePicker';
@@ -77,6 +78,7 @@ function buildExercisesFromTemplate(
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string; perSet?: Array<{ weight: number; reps: number }> }>,
   fitnessGoal?: string | null,
   preferredVariants?: Record<string, string>,
+  deficitMode = false,
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   const bias = (dayData as any).bias as 'heavy' | 'volume' | undefined;
@@ -102,7 +104,10 @@ function buildExercisesFromTemplate(
       fitnessGoal,
     );
 
-    const numSets = programming.sets;
+    // Deficit mode (§2.1): trim one set from non-mandatory accessories to cut
+    // ~10-20% weekly volume — never from primaries or mandatory correctives.
+    const canTrim = deficitMode && ex.category === 'accessory' && !templateEx.mandatory;
+    const numSets = canTrim ? Math.max(1, programming.sets - 1) : programming.sets;
     const reps = lastUsed ? String(lastUsed.reps) : programming.reps;
     const weight = lastUsed ? `${lastUsed.weight}kg` : ex.targetWeight;
 
@@ -270,7 +275,7 @@ export default function LogWorkout() {
 
     const dayInfo = splitDays[day];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.deficit_mode_enabled));
     }
 
     setCurrentExerciseIndex(0);
@@ -345,7 +350,7 @@ export default function LogWorkout() {
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.deficit_mode_enabled);
           // Only swap if we got valid exercises
           setPreSuggestionExercises(backup);
           setExercises(suggested);
@@ -554,7 +559,7 @@ export default function LogWorkout() {
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.deficit_mode_enabled));
     }
     setPreSuggestionExercises(null);
   };
@@ -588,7 +593,7 @@ export default function LogWorkout() {
         const firstDayKey = Object.keys(routine.days)[0];
         const firstDay = routine.days[firstDayKey] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.deficit_mode_enabled);
           const newSplitDays = getSplitDays(split);
           const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
           setSelectedDay(dayKey);
@@ -650,6 +655,7 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              <DeficitGuardBanner />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Logging for</span>
                 <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
