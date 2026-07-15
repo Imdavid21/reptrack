@@ -31,6 +31,8 @@ export interface MuscleBalance {
   suggestion?: string;
 }
 
+export type InterventionLevel = 'mini-deload' | 'stimulus-change' | 'deload-week';
+
 export interface PlateauInsight {
   exercise: string;
   /** Best estimated 1RM seen for this lift, in kg. */
@@ -39,6 +41,32 @@ export interface PlateauInsight {
   sessionsStalled: number;
   /** Variation to switch to for new stimulus, if one is known. */
   switchTo?: string;
+  /** Escalation step to try next (§4). */
+  intervention: InterventionLevel;
+  /** One-line description of that step. */
+  interventionAction: string;
+}
+
+/**
+ * Escalation ladder for a stalled lift (§4):
+ *  - 3-4 stalled sessions → mini-deload (drop 1-2 reps for one session, then resume)
+ *  - 5+ stalled sessions  → stimulus change (variation swap or rep-range change)
+ *  - 2+ lifts stalled at once → deload week (systemic fatigue, not one lift)
+ */
+export function recommendIntervention(
+  sessionsStalled: number,
+  simultaneousStalls: number,
+  switchTo?: string,
+): { level: InterventionLevel; action: string } {
+  if (simultaneousStalls >= 2) {
+    return { level: 'deload-week', action: 'Multiple lifts stalled — take a deload week (volume −40-50% for 5-7 days).' };
+  }
+  if (sessionsStalled >= 5) {
+    return switchTo
+      ? { level: 'stimulus-change', action: `Mini-deload didn't take — switch to ${switchTo} or change the rep range for 3 weeks.` }
+      : { level: 'stimulus-change', action: 'Mini-deload didn\'t take — change the rep range for 3 weeks or swap the variation.' };
+  }
+  return { level: 'mini-deload', action: 'Drop 1-2 reps per set for one session, then resume the progression.' };
 }
 
 export interface PRInsight {
@@ -182,8 +210,17 @@ export function analyzeMuscles(sets: InsightSet[], rangeDays: number): MuscleInt
         bestE1rm: Math.round(best * 10) / 10,
         sessionsStalled,
         switchTo: pickVariation(exercise),
+        intervention: 'mini-deload',
+        interventionAction: '',
       });
     }
+  }
+
+  // Attach the escalation step now that we know how many lifts are stalled at once.
+  for (const p of plateaus) {
+    const rec = recommendIntervention(p.sessionsStalled, plateaus.length, p.switchTo);
+    p.intervention = rec.level;
+    p.interventionAction = rec.action;
   }
 
   plateaus.sort((a, b) => b.sessionsStalled - a.sessionsStalled);

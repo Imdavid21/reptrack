@@ -48,22 +48,18 @@ export function GrowthInsightsCard({ data, isLoading }: Props) {
             <RefreshCw className="h-4 w-4 text-recover-ink" />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight">
+            <div className="text-sm font-semibold leading-tight flex items-center gap-1.5">
               {p.exercise} has stalled
+              <span className="text-[9px] font-bold uppercase tracking-wide bg-recover-soft text-recover-ink px-1 py-0.5 rounded shrink-0">
+                {p.intervention === 'mini-deload' ? 'step 1' : p.intervention === 'stimulus-change' ? 'step 2' : 'deload'}
+              </span>
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
               No new top-end in {p.sessionsStalled} sessions (best ≈ {p.bestE1rm}kg 1RM).{' '}
-              {p.switchTo ? (
-                <>
-                  Switch to{' '}
-                  <span className="inline-flex items-center gap-0.5 font-semibold text-foreground">
-                    {p.switchTo} <ArrowRight className="h-3 w-3" />
-                  </span>{' '}
-                  for fresh stimulus, then come back stronger.
-                </>
-              ) : (
-                'Try a new variation, rep range, or a small deload to break through.'
-              )}
+              <span className="inline-flex items-center gap-0.5">
+                {p.intervention === 'stimulus-change' && p.switchTo && <ArrowRight className="h-3 w-3 text-recover-ink" />}
+                <span className="text-foreground">{p.interventionAction}</span>
+              </span>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeMuscles, estimateOneRepMax, pickVariation, InsightSet } from './muscleInsights';
+import { analyzeMuscles, estimateOneRepMax, pickVariation, recommendIntervention, InsightSet } from './muscleInsights';
 
 function benchSet(date: string, weight: number, reps: number): InsightSet {
   return { exercise_name: 'Barbell Bench Press', actual_weight: weight, actual_reps: reps, workout_date: date };
@@ -99,5 +99,22 @@ describe('analyzeMuscles — PRs and plateaus', () => {
     const res = analyzeMuscles([benchSet('2026-06-01', 80, 5)], 14);
     expect(res.plateaus).toHaveLength(0);
     expect(res.prs).toHaveLength(0);
+  });
+});
+
+describe('recommendIntervention (§4 escalation ladder)', () => {
+  it('starts with a mini-deload at 3-4 stalled sessions', () => {
+    expect(recommendIntervention(3, 1).level).toBe('mini-deload');
+    expect(recommendIntervention(4, 1).level).toBe('mini-deload');
+  });
+  it('escalates to a stimulus change at 5+ stalled sessions', () => {
+    const r = recommendIntervention(5, 1, 'Dumbbell Bench Press');
+    expect(r.level).toBe('stimulus-change');
+    expect(r.action).toContain('Dumbbell Bench Press');
+  });
+  it('recommends a deload week when 2+ lifts are stalled at once', () => {
+    expect(recommendIntervention(3, 2).level).toBe('deload-week');
+    // systemic takes priority even over a single-lift stimulus change
+    expect(recommendIntervention(6, 3).level).toBe('deload-week');
   });
 });
