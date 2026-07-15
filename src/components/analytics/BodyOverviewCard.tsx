@@ -93,8 +93,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
         <div className="min-w-0">
           <div className="text-base font-bold leading-tight">{scoreWord(overview.overall)}</div>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Across training, fuel, recovery and hydration — based on{' '}
-            {overview.activeDays} active day{overview.activeDays === 1 ? '' : 's'} in the last {overview.rangeDays}.
+            Across training, fuel, recovery and hydration.
           </p>
         </div>
       </div>
