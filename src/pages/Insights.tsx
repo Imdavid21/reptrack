@@ -29,6 +29,7 @@ import { BodyScoreTrendCard } from '@/components/analytics/BodyScoreTrendCard';
 import { NextStepsCard } from '@/components/analytics/NextStepsCard';
 import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
 import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
+import { WeeklyReviewCard } from '@/components/analytics/WeeklyReviewCard';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
@@ -475,6 +476,9 @@ function InsightsContent() {
 
             {/* ---- Training ---- */}
             <SectionHeader label="Training" dotClass="bg-energy" />
+            <motion.div variants={staggerItem}>
+              <WeeklyReviewCard stalledCount={muscleData?.plateaus.length ?? 0} />
+            </motion.div>
             <motion.div variants={staggerItem}>
               <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
             </motion.div>

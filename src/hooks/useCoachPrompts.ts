@@ -44,6 +44,20 @@ export function useCoachPrompts(): CoachPrompt[] {
       .sort((a, b) => b.date.localeCompare(a.date))[0]?.bodyweight ?? undefined;
   }, [metricsData]);
 
+  // Track cut duration in localStorage: stamp the start the first time we see
+  // deficit mode on for this user; clear it when the cut ends.
+  const cutWeeks = useMemo(() => {
+    if (!user) return 0;
+    const key = `reptrack_cut_start_${user.id}`;
+    try {
+      if (!deficitMode) { localStorage.removeItem(key); return 0; }
+      let start = localStorage.getItem(key);
+      if (!start) { start = localDateKey(); localStorage.setItem(key, start); }
+      const days = Math.max(0, Math.round((Date.now() - new Date(`${start}T00:00:00`).getTime()) / 86_400_000));
+      return Math.floor(days / 7);
+    } catch { return 0; }
+  }, [user, deficitMode]);
+
   return useMemo(() => buildCoachPrompts({
     todayKey: localDateKey(),
     workouts: workouts.map(w => ({ date: w.date, day_name: w.day_name })),
@@ -51,5 +65,6 @@ export function useCoachPrompts(): CoachPrompt[] {
     deficitMode,
     avgProtein: avgProtein ?? undefined,
     bodyweightKg: latestBodyweight,
-  }), [workouts, metricsData, deficitMode, avgProtein, latestBodyweight]);
+    cutWeeks,
+  }), [workouts, metricsData, deficitMode, avgProtein, latestBodyweight, cutWeeks]);
 }

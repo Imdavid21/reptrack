@@ -69,6 +69,12 @@ describe('buildCoachPrompts', () => {
     expect(p.find(x => x.id === 'log-gaps')).toBeUndefined();
   });
 
+  it('suggests a deload after 4+ weeks cutting', () => {
+    expect(buildCoachPrompts(baseInput({ deficitMode: true, cutWeeks: 5 })).find(x => x.id === 'deload-due')).toBeTruthy();
+    expect(buildCoachPrompts(baseInput({ deficitMode: true, cutWeeks: 2 })).find(x => x.id === 'deload-due')).toBeUndefined();
+    expect(buildCoachPrompts(baseInput({ deficitMode: false, cutWeeks: 8 })).find(x => x.id === 'deload-due')).toBeUndefined();
+  });
+
   it('flags the protein floor only in deficit mode', () => {
     const withLowProtein = { avgProtein: 120, bodyweightKg: 80 }; // 1.5 g/kg
     expect(buildCoachPrompts(baseInput({ deficitMode: false, ...withLowProtein })).find(x => x.id === 'protein-floor')).toBeUndefined();

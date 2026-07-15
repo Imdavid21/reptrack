@@ -102,6 +102,30 @@ describe('analyzeMuscles — PRs and plateaus', () => {
   });
 });
 
+describe('regression detection (§2.3)', () => {
+  it('flags a >10% drop below the prior 3 sessions', () => {
+    const res = analyzeMuscles([
+      benchSet('2026-06-01', 100, 5),
+      benchSet('2026-06-04', 100, 5),
+      benchSet('2026-06-08', 100, 5),
+      benchSet('2026-06-11', 80, 5), // ~20% drop
+    ], 28);
+    const reg = res.regressions.find(r => r.exercise === 'Barbell Bench Press');
+    expect(reg).toBeDefined();
+    expect(reg!.dropPct).toBeGreaterThanOrEqual(15);
+  });
+
+  it('does not flag small dips within 10%', () => {
+    const res = analyzeMuscles([
+      benchSet('2026-06-01', 100, 5),
+      benchSet('2026-06-04', 100, 5),
+      benchSet('2026-06-08', 100, 5),
+      benchSet('2026-06-11', 97, 5), // ~3% dip
+    ], 28);
+    expect(res.regressions).toHaveLength(0);
+  });
+});
+
 describe('recommendIntervention (§4 escalation ladder)', () => {
   it('starts with a mini-deload at 3-4 stalled sessions', () => {
     expect(recommendIntervention(3, 1).level).toBe('mini-deload');
