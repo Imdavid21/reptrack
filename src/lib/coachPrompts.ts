@@ -39,10 +39,12 @@ export interface CoachInput {
   deficitMode: boolean;
   avgProtein?: number;
   bodyweightKg?: number;
+  /** Weeks spent in the current cut (for the periodic deload suggestion §2.5). */
+  cutWeeks?: number;
 }
 
 export interface CoachPrompt {
-  id: 'no-activity' | 'leg-ratio' | 'log-gaps' | 'protein-floor';
+  id: 'no-activity' | 'leg-ratio' | 'log-gaps' | 'protein-floor' | 'deload-due';
   severity: 'info' | 'warn';
   title: string;
   detail: string;
@@ -96,6 +98,16 @@ export function buildCoachPrompts(input: CoachInput): CoachPrompt[] {
       severity: 'info',
       title: 'Sleep & bodyweight logs have gaps',
       detail: 'No sleep or weight logged for 3 days — these matter most during a cut. Log tonight.',
+    });
+  }
+
+  // Periodic deload during a long cut (§2.5): every 4-6 weeks.
+  if (input.deficitMode && (input.cutWeeks ?? 0) >= 4) {
+    prompts.push({
+      id: 'deload-due',
+      severity: 'warn',
+      title: `Deload week due — ${input.cutWeeks} weeks cutting`,
+      detail: 'Take a deload (volume −40-50% for 5-7 days) to shed fatigue before it costs you strength.',
     });
   }
 

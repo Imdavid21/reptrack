@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CalendarClock, Dumbbell, Moon, Beef, ChevronRight } from 'lucide-react';
+import { CalendarClock, Dumbbell, Moon, Beef, BatteryLow, ChevronRight } from 'lucide-react';
 import { useCoachPrompts } from '@/hooks/useCoachPrompts';
 import type { CoachPrompt } from '@/lib/coachPrompts';
 import { haptic } from '@/lib/haptics';
@@ -9,6 +9,7 @@ const META: Record<CoachPrompt['id'], { icon: typeof Dumbbell; route: string }> 
   'leg-ratio': { icon: Dumbbell, route: '/app/log' },
   'log-gaps': { icon: Moon, route: '/app' },
   'protein-floor': { icon: Beef, route: '/app' },
+  'deload-due': { icon: BatteryLow, route: '/app/insights' },
 };
 
 /**
