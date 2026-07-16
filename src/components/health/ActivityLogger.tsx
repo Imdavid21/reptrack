@@ -58,12 +58,18 @@ export function ActivityLogger() {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [value, setValue] = useState('');
+  const [minutes, setMinutes] = useState('');
   const [saving, setSaving] = useState(false);
 
   const cfg = ACTIVITY_CONFIG[kind];
   const numericValue = parseFloat(value) || 0;
-  const kcal = useMemo(() => activityCalories(kind, numericValue, weightKg), [kind, numericValue, weightKg]);
-  const duration = activityDuration(kind, numericValue);
+  const numericMinutes = parseFloat(minutes) || 0;
+  const kcal = useMemo(
+    () => activityCalories(kind, numericValue, weightKg, numericMinutes),
+    [kind, numericValue, numericMinutes, weightKg],
+  );
+  const duration = activityDuration(kind, numericValue, numericMinutes);
+  const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
 
   // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
@@ -77,10 +83,18 @@ export function ActivityLogger() {
   useEffect(() => {
     if (!open) return;
     if (existing?.duration_minutes) {
-      const factor = cfg.unit === 'min' ? 1 : ACTIVITY_CONFIG[kind].paceMinPerKm;
-      setValue((existing.duration_minutes / factor).toFixed(cfg.unit === 'min' ? 0 : 1));
+      if (cfg.unit === 'min') {
+        setValue(String(existing.duration_minutes));
+        setMinutes('');
+      } else {
+        // Best-effort: derive km from default pace, expose minutes as override.
+        const km = existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm;
+        setValue(km.toFixed(1));
+        setMinutes(String(existing.duration_minutes));
+      }
     } else {
       setValue('');
+      setMinutes('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, logDateStr, kind]);
@@ -101,6 +115,7 @@ export function ActivityLogger() {
       const unitLabel = cfg.unit === 'min' ? 'min' : 'km';
       toast.success(`${verb} ${Math.round(numericValue)} ${unitLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setValue('');
+      setMinutes('');
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to log activity');
@@ -108,6 +123,7 @@ export function ActivityLogger() {
       setSaving(false);
     }
   };
+
 
   return (
     <>
