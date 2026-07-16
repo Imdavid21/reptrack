@@ -363,18 +363,23 @@ export function CalorieTrackerCompact() {
 
           {deficitMode ? (
             <>
-              <CollapsibleTrigger className="flex items-end gap-2 text-left w-full">
-                <span className={cn(
-                  "text-4xl font-bold tabular-nums leading-none",
-                  remaining < 0 ? "text-[hsl(var(--insight-coral))]" : "text-foreground"
-                )}>
-                  {remaining >= 0 ? remaining.toLocaleString() : `${remaining.toLocaleString()}`}
-                </span>
-                <span className="text-xs text-muted-foreground pb-1">kcal left</span>
+              <CollapsibleTrigger className="flex items-end gap-3 text-left w-full">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-4xl font-bold tabular-nums leading-none",
+                      hitDeficit ? "text-[#8FBC94]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
+                    )}>
+                      {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
+                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground">{hitDeficit ? 'on track' : 'behind pace'}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{remaining.toLocaleString()} kcal left to eat</span>
+                </div>
                 {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
               </CollapsibleTrigger>
               <div className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-                {totalCalories.toLocaleString()} in · {totalBurned.toLocaleString()} out · cap {cap.toLocaleString()}
+                {totalCalories.toLocaleString()} in · {totalBurned.toLocaleString()} out · Intake cap: {cap.toLocaleString()}
               </div>
             </>
           ) : (
@@ -418,10 +423,14 @@ export function CalorieTrackerCompact() {
           <div className="progress-bar mt-4">
             <div
               className={cn(
-                "progress-bar-fill bg-fuel transition-all duration-500",
-                overCap && "bg-[hsl(var(--insight-coral))]"
+                "progress-bar-fill transition-all duration-500",
+                deficitMode ? (
+                  netDeficit >= deficitTarget ? "bg-[#8FBC94]" : "bg-[#E8A87C]"
+                ) : (
+                  overCap ? "bg-[hsl(var(--insight-coral))]" : "bg-fuel"
+                )
               )}
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `${deficitMode ? Math.max(0, Math.min((netDeficit / deficitTarget) * 100, 100)) : progressPercent}%` }}
             />
           </div>
 
