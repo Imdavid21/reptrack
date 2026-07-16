@@ -26,20 +26,26 @@ export const ACTIVITY_CONFIG: Record<ActivityKind, {
   boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
-/** kcal = MET * weight(kg) * hours */
-export function activityCalories(kind: ActivityKind, value: number, weightKg: number) {
+/**
+ * kcal = MET * weight(kg) * hours
+ * For km-based activities, `minutesOverride` (if > 0) replaces the default pace-derived duration.
+ */
+export function activityCalories(
+  kind: ActivityKind,
+  value: number,
+  weightKg: number,
+  minutesOverride?: number,
+) {
   const cfg = ACTIVITY_CONFIG[kind];
-  const hours = cfg.unit === 'min'
-    ? value / 60
-    : (value * cfg.paceMinPerKm) / 60;
-  return Math.round(cfg.met * weightKg * hours);
+  const minutes = activityDuration(kind, value, minutesOverride);
+  return Math.round(cfg.met * weightKg * (minutes / 60));
 }
 
-export function activityDuration(kind: ActivityKind, value: number) {
+export function activityDuration(kind: ActivityKind, value: number, minutesOverride?: number) {
   const cfg = ACTIVITY_CONFIG[kind];
-  return cfg.unit === 'min'
-    ? Math.round(value)
-    : Math.round(value * cfg.paceMinPerKm);
+  if (cfg.unit === 'min') return Math.round(value);
+  if (minutesOverride && minutesOverride > 0) return Math.round(minutesOverride);
+  return Math.round(value * cfg.paceMinPerKm);
 }
 
 // Backwards compat export
