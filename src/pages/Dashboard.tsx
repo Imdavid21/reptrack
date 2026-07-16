@@ -70,15 +70,6 @@ export default function Dashboard() {
             )}
 
 
-            {/* Deficit mode badge */}
-            {preferences?.deficit_mode_enabled && (
-              <motion.div variants={staggerItem}>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
-                  <TrendingDown className="h-3 w-3" />
-                  DEFICIT MODE · -{preferences?.daily_deficit_target ?? 500} KCAL
-                </div>
-              </motion.div>
-            )}
 
 
             {/* Progress Overview */}
