@@ -100,7 +100,6 @@ export function CalorieTrackerCompact() {
     () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
     [meals]
   );
-  const remaining = cap + totalBurned - totalCalories; // can go negative
   const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
@@ -359,26 +358,43 @@ export function CalorieTrackerCompact() {
           </div>
 
           {deficitMode ? (
-            <>
-              <CollapsibleTrigger className="flex items-end gap-3 text-left w-full">
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-4xl font-bold tabular-nums leading-none",
-                      hitDeficit ? "text-[#8FBC94]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
-                    )}>
-                      {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
-                    </span>
-                    <span className="text-xs font-semibold text-muted-foreground">{hitDeficit ? 'on track' : 'behind pace'}</span>
+            <CollapsibleTrigger className="block w-full text-left">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                  <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
+                  <div className={cn(
+                    "text-xl font-bold tabular-nums leading-tight",
+                    hitDeficit ? "text-[#8FBC94]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
+                  )}>
+                    {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
                   </div>
-                  <span className="text-xs text-muted-foreground">{remaining.toLocaleString()} kcal left to eat</span>
+                  <div className="text-[10px] text-muted-foreground">of -{deficitTarget}</div>
                 </div>
-                {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
-              </CollapsibleTrigger>
-              <div className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-                {totalCalories.toLocaleString()} in · {totalBurned.toLocaleString()} out · Intake cap: {cap.toLocaleString()}
+                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                  <div className="text-[10px] text-muted-foreground tracking-wider">IN</div>
+                  <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalCalories.toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground">calories eaten</div>
+                </div>
+                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                  <div className="text-[10px] text-muted-foreground tracking-wider">OUT</div>
+                  <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground">calories burned</div>
+                </div>
+                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                  <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
+                  <div className={cn(
+                    "text-xl font-bold tabular-nums leading-tight",
+                    proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
+                  )}>
+                    {Math.round(proteinTotal)}g
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
+                </div>
               </div>
-            </>
+              <div className="flex justify-center mt-1.5">
+                {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              </div>
+            </CollapsibleTrigger>
           ) : (
             <div className="flex items-center gap-2">
               <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
@@ -417,32 +433,15 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          <div className="progress-bar mt-4">
-            <div
-              className={cn(
-                "progress-bar-fill transition-all duration-500",
-                deficitMode ? (
-                  netDeficit >= deficitTarget ? "bg-[#8FBC94]" : "bg-[#E8A87C]"
-                ) : (
-                  overCap ? "bg-[hsl(var(--insight-coral))]" : "bg-fuel"
-                )
-              )}
-              style={{ width: `${deficitMode ? Math.max(0, Math.min((netDeficit / deficitTarget) * 100, 100)) : progressPercent}%` }}
-            />
-          </div>
-
-          {deficitMode && (
-            <div className="mt-3 p-2 rounded-xl border border-border bg-muted/20 flex items-center justify-between">
-              <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
-              <div className="flex items-baseline gap-1">
-                <span className={cn(
-                  "text-base font-bold tabular-nums leading-tight",
-                  proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
-                )}>
-                  {Math.round(proteinTotal)}g
-                </span>
-                <span className="text-[10px] text-muted-foreground">of {proteinGoal}g</span>
-              </div>
+          {!deficitMode && (
+            <div className="progress-bar mt-4">
+              <div
+                className={cn(
+                  "progress-bar-fill bg-fuel transition-all duration-500",
+                  overCap && "bg-[hsl(var(--insight-coral))]"
+                )}
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
           )}
 
