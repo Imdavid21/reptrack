@@ -80,10 +80,6 @@ export default function Dashboard() {
               </motion.div>
             )}
 
-            {/* Body score at a glance → full overview in Insights */}
-            <motion.div variants={staggerItem}>
-              <BodyScoreStrip />
-            </motion.div>
 
             {/* Progress Overview */}
             <motion.div variants={staggerItem}>
