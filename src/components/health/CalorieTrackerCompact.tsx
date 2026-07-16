@@ -8,7 +8,7 @@ import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil, TrendingDown
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -344,12 +344,6 @@ export function CalorieTrackerCompact() {
                   ? (deficitMode ? "DEFICIT TODAY" : "TODAY'S CALORIES")
                   : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'DEFICIT' : 'CALORIES'}`}
               </h3>
-              {deficitMode && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider bg-[hsl(var(--insight-coral)/0.15)] text-[hsl(var(--insight-coral))] border border-[hsl(var(--insight-coral)/0.3)]">
-                  <TrendingDown className="h-2.5 w-2.5" />
-                  CUT
-                </span>
-              )}
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
                 className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
@@ -435,33 +429,16 @@ export function CalorieTrackerCompact() {
           </div>
 
           {deficitMode && (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="p-2 rounded-xl border border-border bg-muted/20">
-                <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
-                <div className={cn(
-                  "text-base font-bold tabular-nums leading-tight",
-                  hitDeficit ? "text-[hsl(var(--insight-mint))]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
-                )}>
-                  {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
-                </div>
-                <div className="text-[10px] text-muted-foreground">of -{deficitTarget}</div>
-              </div>
-              <div className="p-2 rounded-xl border border-border bg-muted/20">
-                <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
-                <div className={cn(
+            <div className="mt-3 p-2 rounded-xl border border-border bg-muted/20 flex items-center justify-between">
+              <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
+              <div className="flex items-baseline gap-1">
+                <span className={cn(
                   "text-base font-bold tabular-nums leading-tight",
                   proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
                 )}>
                   {Math.round(proteinTotal)}g
-                </div>
-                <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
-              </div>
-              <div className="p-2 rounded-xl border border-border bg-muted/20">
-                <div className="text-[10px] text-muted-foreground tracking-wider">BURN</div>
-                <div className="text-base font-bold tabular-nums leading-tight text-foreground">
-                  +{totalBurned}
-                </div>
-                <div className="text-[10px] text-muted-foreground">kcal added</div>
+                </span>
+                <span className="text-[10px] text-muted-foreground">of {proteinGoal}g</span>
               </div>
             </div>
           )}
