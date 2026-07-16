@@ -169,16 +169,21 @@ export function resolveCanonicalName(name: string): string {
 export function normalizeExerciseName(name: string): string {
   // First resolve any known alias to the canonical form
   const resolved = resolveCanonicalName(name);
-  return resolved
-    .toLowerCase()
+  const lower = resolved.toLowerCase();
+  // For calf raises, "seated" vs "standing" denote genuinely different lifts
+  // loaded very differently, so keep the position token instead of stripping it
+  // — otherwise both collapse to "calfraise" and findBestMatch pre-fills a
+  // seated calf raise with standing-calf-raise weights (and vice versa).
+  const isCalf = /\bcalf\b/.test(lower);
+  return lower
     .replace(/\bdumbbell\b/g, 'db')
     .replace(/\bbarbell\b/g, 'bb')
     .replace(/\boverhead press\b/g, 'ohp')
     .replace(/\bpush-?ups?\b/g, 'pushup')
     .replace(/\bpull-?ups?\b/g, 'pullup')
     .replace(/\bcable rope\b/g, 'cable')
-    .replace(/\bseated\b/g, '')
-    .replace(/\bstanding\b/g, '')
+    .replace(/\bseated\b/g, isCalf ? 'seated' : '')
+    .replace(/\bstanding\b/g, isCalf ? 'standing' : '')
     .replace(/\bpress\b/g, '')
     .replace(/\bflyes?\b/g, 'fly')
     .replace(/s\b/g, '') // strip trailing s (plurals)

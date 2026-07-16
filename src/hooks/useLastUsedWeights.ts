@@ -21,9 +21,16 @@ export interface LastUsedData {
  * Hook to get last used weight/reps for each exercise.
  * This helps pre-fill values when logging sets.
  *
- * For each exercise we find the most recent workout that included it
- * and store every completed set from that workout so the UI can show
- * per-set "last:" hints (e.g. Set 1 today shows Set 1 from last time).
+ * Reads from the `exercises` table — the table every workout write actually
+ * populates (one row per completed set, named "<Exercise> (Set N)", with
+ * `actual_weight`/`actual_reps` stored as strings). An earlier version queried a
+ * separate `exercise_sets` table that nothing ever writes to, so this hook
+ * always returned {} — silently disabling every "last: …" prefill and starving
+ * the progression engine (useNextWorkout) of history.
+ *
+ * For each exercise we find the most recent workout that included it and store
+ * every completed set from that workout so the UI can show per-set "last:" hints
+ * (e.g. Set 1 today shows Set 1 from last time).
  */
 export function useLastUsedWeights() {
   const { user } = useAuth();
@@ -33,64 +40,74 @@ export function useLastUsedWeights() {
     queryFn: async () => {
       if (!user) return {};
 
-      // Get most recent completed sets per exercise
-      // Note: we don't filter out null actual_weight so bodyweight/timed exercises are included
+      // Every completed set row, joined to its workout for the date.
+      // `exercises` has no created_at column, so we order recency by the
+      // workout date (and set number within a workout).
       const { data, error } = await supabase
-        .from('exercise_sets')
+        .from('exercises')
         .select(`
-          exercise_name,
+          name,
           actual_weight,
           actual_reps,
-          set_number,
+          sort_order,
           workout_id,
-          created_at,
           workouts!inner (user_id, date)
         `)
         .eq('workouts.user_id', user.id)
-        .eq('completed', true)
-        .order('created_at', { ascending: false });
+        .eq('completed', true);
 
       if (error) throw error;
 
-      // Track the most recent workout_id per exercise, and collect all sets from it.
-      // Data is ordered created_at DESC, so the first row for an exercise is from
-      // its most recent workout.
-      const lastUsedMap: Record<string, LastUsedData> = {};
-      const seenWorkout: Record<string, string> = {}; // exercise -> workout_id
+      // Flatten rows, stripping the " (Set N)" suffix to get the exercise name
+      // and parsing the string weight/reps columns to numbers.
+      const rows = (data || []).map((r) => {
+        const rawName = r.name || '';
+        const baseName = rawName.replace(/\s*\(Set \d+\)$/, '').trim();
+        const setMatch = rawName.match(/\(Set (\d+)\)$/);
+        const setNumber = setMatch ? parseInt(setMatch[1], 10) : 1;
+        const workout = r.workouts as unknown as { date: string };
+        return {
+          baseName,
+          setNumber,
+          weight: parseFloat(r.actual_weight || '0') || 0,
+          reps: parseFloat(r.actual_reps || '0') || 0,
+          workoutId: r.workout_id as string,
+          date: workout?.date ?? '',
+        };
+      });
 
-      for (const set of data || []) {
-        const name = set.exercise_name;
-
-        // First time we see this exercise → record which workout it came from
-        if (!seenWorkout[name]) {
-          seenWorkout[name] = set.workout_id;
-          lastUsedMap[name] = {
-            weight: set.actual_weight || 0,
-            reps: set.actual_reps || 0,
-            sets: 0,
-            date: (set.workouts as any).date,
-            perSet: [],
-          };
-        }
-
-        // Only collect sets from the same (most recent) workout
-        if (set.workout_id !== seenWorkout[name]) continue;
-
-        const entry = lastUsedMap[name];
-        entry.sets++;
-
-        if (set.actual_reps) {
-          entry.perSet.push({
-            weight: set.actual_weight || 0,
-            reps: set.actual_reps,
-          });
+      // Most recent workout per exercise = the one with the greatest date.
+      // Date keys are 'yyyy-MM-dd', so string comparison orders them correctly.
+      const mostRecent: Record<string, { workoutId: string; date: string }> = {};
+      for (const row of rows) {
+        if (!row.baseName) continue;
+        const cur = mostRecent[row.baseName];
+        if (!cur || row.date > cur.date) {
+          mostRecent[row.baseName] = { workoutId: row.workoutId, date: row.date };
         }
       }
 
-      // perSet is currently newest-first (created_at DESC) → reverse to
-      // get Set 1 at index 0, Set 2 at index 1, etc.
-      for (const entry of Object.values(lastUsedMap)) {
-        entry.perSet.reverse();
+      // Collect every set from that most-recent workout, ordered by set number.
+      const collected: Record<string, Array<{ setNumber: number; weight: number; reps: number }>> = {};
+      const dateByName: Record<string, string> = {};
+      for (const row of rows) {
+        const best = mostRecent[row.baseName];
+        if (!best || row.workoutId !== best.workoutId) continue;
+        (collected[row.baseName] ??= []).push({ setNumber: row.setNumber, weight: row.weight, reps: row.reps });
+        dateByName[row.baseName] = best.date;
+      }
+
+      const lastUsedMap: Record<string, LastUsedData> = {};
+      for (const [name, sets] of Object.entries(collected)) {
+        sets.sort((a, b) => a.setNumber - b.setNumber);
+        const perSet: LastUsedSetData[] = sets.map((s) => ({ weight: s.weight, reps: s.reps }));
+        lastUsedMap[name] = {
+          weight: perSet[0]?.weight ?? 0,
+          reps: perSet[0]?.reps ?? 0,
+          sets: perSet.length,
+          date: dateByName[name],
+          perSet,
+        };
       }
 
       return lastUsedMap;

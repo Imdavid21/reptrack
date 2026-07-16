@@ -153,8 +153,23 @@ export function useCalorieBurn(date?: Date) {
     return Math.round(met * weightKg * (durationMinutes / 60));
   };
 
-  // Get primary workout category from exercises or day_name
+  // Get primary workout category for the MET lookup.
+  // MET_VALUES is keyed by movement pattern (push/pull/legs/accessory), so we
+  // must derive from day_name FIRST. Deriving from exercise.category is wrong —
+  // that column is the training-role enum ('primary'/'accessory'/'warmup'), so
+  // the majority is almost always 'primary', which isn't a MET key and silently
+  // falls through to the 5.0 default. That made leg days (MET 6.0) unreachable
+  // and under-counted their burn by ~20-33%.
   const getPrimaryCategory = (workout: WorkoutWithExercises): string => {
+    const dayNameLower = (workout.day_name || '').toLowerCase();
+    if (dayNameLower.includes('push')) return 'push';
+    if (dayNameLower.includes('pull')) return 'pull';
+    if (dayNameLower.includes('leg')) return 'legs';
+    if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) return 'accessory';
+
+    // Day name unhelpful (Full Body / custom): fall back to the majority
+    // training role, but only 'accessory' maps to a real MET; anything else
+    // (primary/warmup) is general strength.
     const exercises = workout.exercises || [];
     if (exercises.length > 0) {
       const categoryCounts: Record<string, number> = {};
@@ -163,15 +178,8 @@ export function useCalorieBurn(date?: Date) {
         categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
       });
       const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-      if (top) return top;
+      if (top === 'accessory') return 'accessory';
     }
-
-    // Fallback: infer from day_name
-    const dayNameLower = workout.day_name.toLowerCase();
-    if (dayNameLower.includes('push')) return 'push';
-    if (dayNameLower.includes('pull')) return 'pull';
-    if (dayNameLower.includes('leg')) return 'legs';
-    if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) return 'accessory';
     return 'strength';
   };
 

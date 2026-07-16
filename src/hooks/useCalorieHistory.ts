@@ -131,21 +131,24 @@ export function useCalorieHistory(dateRange: DateRange) {
         }
 
         if (durationMinutes && durationMinutes > 0) {
+          // Derive the MET category from the day's movement pattern first.
+          // exercise.category is the training-role enum ('primary'/'accessory'/
+          // 'warmup'), not a MET key, so counting it made push/pull/legs METs
+          // unreachable and under-counted burn (legs especially).
           let primaryCategory = 'strength';
-
-          if (exercises.length > 0) {
+          const dayNameLower = (workout.day_name || '').toLowerCase();
+          if (dayNameLower.includes('push')) primaryCategory = 'push';
+          else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
+          else if (dayNameLower.includes('leg')) primaryCategory = 'legs';
+          else if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) primaryCategory = 'accessory';
+          else if (exercises.length > 0) {
             const categoryCounts: Record<string, number> = {};
             exercises.forEach((ex: any) => {
               const cat = ex.category.toLowerCase();
               categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
             });
-            primaryCategory = Object.entries(categoryCounts)
-              .sort((a, b) => b[1] - a[1])[0]?.[0] || 'strength';
-          } else if (workout.day_name) {
-            const dayNameLower = workout.day_name.toLowerCase();
-            if (dayNameLower.includes('push')) primaryCategory = 'push';
-            else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
-            else if (dayNameLower.includes('leg')) primaryCategory = 'legs';
+            const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+            if (top === 'accessory') primaryCategory = 'accessory';
           }
 
           const met = MET_VALUES[primaryCategory] || 5.0;

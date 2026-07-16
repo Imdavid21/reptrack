@@ -130,10 +130,11 @@ export function WaterTracker() {
           />
           <button
             onClick={handleSaveGoal}
-            className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
+            disabled={updatePreferences.isPending}
+            className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="h-3 w-3" />
-            SAVE
+            {updatePreferences.isPending ? 'SAVING…' : 'SAVE'}
           </button>
         </div>
       )}

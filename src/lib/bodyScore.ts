@@ -129,6 +129,29 @@ function halfTrend(values: Array<{ date: string; v: number }>): 'up' | 'down' | 
   return 'flat';
 }
 
+/**
+ * Trend of training *frequency* across the range. Splits the date span into two
+ * equal-time halves and compares how many sessions landed in each. Feeding
+ * halfTrend a constant `v` per workout (as this used to) always yields 'flat'
+ * because every value is identical; this compares real session counts instead.
+ * All dates are parsed the same way, so the relative comparison is
+ * timezone-agnostic.
+ */
+function sessionFrequencyTrend(dates: string[]): 'up' | 'down' | 'flat' {
+  if (dates.length < 4) return 'flat';
+  const times = dates.map(d => new Date(d).getTime()).sort((a, b) => a - b);
+  const span = times[times.length - 1] - times[0];
+  if (span <= 0) return 'flat';
+  const mid = times[0] + span / 2;
+  const firstHalf = times.filter(t => t < mid).length;
+  const secondHalf = times.length - firstHalf;
+  if (firstHalf === 0) return secondHalf > 0 ? 'up' : 'flat';
+  const change = (secondHalf - firstHalf) / firstHalf;
+  if (change > 0.05) return 'up';
+  if (change < -0.05) return 'down';
+  return 'flat';
+}
+
 export function computeBodyOverview(input: BodyOverviewInput): BodyOverview {
   const { rangeDays, goals } = input;
   const weeks = Math.max(rangeDays / 7, 0.5);
@@ -144,7 +167,7 @@ export function computeBodyOverview(input: BodyOverviewInput): BodyOverview {
     score: trainingScore,
     valueLabel: `${sessionsPerWeek.toFixed(1)} sessions/wk`,
     daysWithData: workoutDays.size,
-    trend: halfTrend(input.workoutDates.map(d => ({ date: d, v: 1 }))),
+    trend: sessionFrequencyTrend(input.workoutDates),
   };
 
   // ---- Fuel (nutrition) ----

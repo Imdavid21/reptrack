@@ -144,6 +144,8 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
           </div>
           <button
             onClick={handleSkip}
+            aria-label="Skip rest timer"
+            title="Skip rest"
             className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="h-3 w-3" />

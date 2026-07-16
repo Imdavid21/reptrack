@@ -43,8 +43,12 @@ export function useDraftWorkout() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as DraftWorkout;
-        // Restore drafts from today OR yesterday (covers midnight rollover & force-close scenarios)
-        const draftTime = new Date(parsed.date).getTime();
+        // Staleness must be measured from when the draft was last SAVED, not from
+        // parsed.date — parsed.date is the workout's (possibly back-dated) logging
+        // date, so basing staleness on it makes any back-dated session look >24h
+        // old the instant it's saved and silently discards the in-progress sets.
+        const referenceTime = parsed.lastSavedAt ?? parsed.date;
+        const draftTime = new Date(referenceTime).getTime();
         const now = Date.now();
         const hoursSinceDraft = (now - draftTime) / (1000 * 60 * 60);
         if (hoursSinceDraft < 24) {

@@ -404,26 +404,30 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['kickback',       { bodyPart: 'Triceps',    muscleGroup: 'arms' }],
   ['mountain climb', { bodyPart: 'Core',       muscleGroup: 'core' }],
   ['nordic',         { bodyPart: 'Hamstrings', muscleGroup: 'legs' }],
-  // Single-word fallbacks
-  ['squat',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
-  ['lunge',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
-  ['row',      { bodyPart: 'Back',      muscleGroup: 'back' }],
-  ['curl',     { bodyPart: 'Biceps',    muscleGroup: 'arms' }],
-  ['fly',      { bodyPart: 'Chest',     muscleGroup: 'chest' }],
-  ['flye',     { bodyPart: 'Chest',     muscleGroup: 'chest' }],
-  ['press',    { bodyPart: 'Chest',     muscleGroup: 'chest' }],
-  ['dip',      { bodyPart: 'Chest',     muscleGroup: 'chest' }],
-  ['push',     { bodyPart: 'Chest',     muscleGroup: 'chest' }],
+  // Presses that are NOT chest — matched before the generic 'press' fallback.
+  ['pallof',         { bodyPart: 'Core',       muscleGroup: 'core' }],
+  ['z press',        { bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
+  ['behind the neck',{ bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
+  ['military',       { bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
+  ['landmine press', { bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
+  // Single-word fallbacks.
+  // ORDER MATTERS: classify() returns the first pattern that `includes()`
+  // matches, so specific/disambiguating tokens MUST precede the generic ones.
+  // Otherwise generic 'press'/'push' swallow "Tricep Pushdown" (→ Triceps),
+  // "Z Press"/"Behind the Neck Press" (→ Shoulders), "Pallof Press" (→ Core),
+  // etc. and mislabel them all as Chest — inflating chest volume and starving
+  // shoulders/triceps/core in the muscle-balance analytics.
   ['pulldown', { bodyPart: 'Back',      muscleGroup: 'back' }],
-  ['extension',{ bodyPart: 'Triceps',   muscleGroup: 'arms' }],
   ['pushdown', { bodyPart: 'Triceps',   muscleGroup: 'arms' }],
   ['skull',    { bodyPart: 'Triceps',   muscleGroup: 'arms' }],
   ['tricep',   { bodyPart: 'Triceps',   muscleGroup: 'arms' }],
   ['bicep',    { bodyPart: 'Biceps',    muscleGroup: 'arms' }],
   ['hammer',   { bodyPart: 'Biceps',    muscleGroup: 'arms' }],
   ['shoulder', { bodyPart: 'Shoulders', muscleGroup: 'shoulders' }],
-  ['lateral',  { bodyPart: 'Shoulders', muscleGroup: 'shoulders' }],
   ['arnold',   { bodyPart: 'Shoulders', muscleGroup: 'shoulders' }],
+  ['lateral',  { bodyPart: 'Shoulders', muscleGroup: 'shoulders' }],
+  ['squat',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
+  ['lunge',    { bodyPart: 'Quads',     muscleGroup: 'legs' }],
   ['calf',     { bodyPart: 'Calves',    muscleGroup: 'legs' }],
   ['glute',    { bodyPart: 'Glutes',    muscleGroup: 'legs' }],
   ['rdl',      { bodyPart: 'Hamstrings',muscleGroup: 'legs' }],
@@ -434,6 +438,15 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['plank',    { bodyPart: 'Core',      muscleGroup: 'core' }],
   ['crunch',   { bodyPart: 'Core',      muscleGroup: 'core' }],
   ['ab ',      { bodyPart: 'Core',      muscleGroup: 'core' }],
+  // Generic catch-alls — keep LAST so the specific tokens above win.
+  ['row',      { bodyPart: 'Back',      muscleGroup: 'back' }],
+  ['curl',     { bodyPart: 'Biceps',    muscleGroup: 'arms' }],
+  ['fly',      { bodyPart: 'Chest',     muscleGroup: 'chest' }],
+  ['flye',     { bodyPart: 'Chest',     muscleGroup: 'chest' }],
+  ['extension',{ bodyPart: 'Triceps',   muscleGroup: 'arms' }],
+  ['press',    { bodyPart: 'Chest',     muscleGroup: 'chest' }],
+  ['dip',      { bodyPart: 'Chest',     muscleGroup: 'chest' }],
+  ['push',     { bodyPart: 'Chest',     muscleGroup: 'chest' }],
 ];
 
 // ── Category fallback ────────────────────────────────────────────────────────

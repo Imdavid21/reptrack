@@ -31,12 +31,16 @@ export function useBodyPartsProgress(dateRange?: DateRangeFilter) {
       const startDate = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : '1900-01-01';
       const endDate = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : '2100-01-01';
 
-      // Fetch exercise sets with workout dates
+      // Read the `exercises` table (one row per completed set) — the table
+      // workouts actually write to. A prior version queried an `exercise_sets`
+      // table nothing populates, so this always returned []. `name` carries a
+      // " (Set N)" suffix and weight/reps are stored as strings, so we strip and
+      // parse below.
       const { data: sets, error } = await supabase
-        .from('exercise_sets')
+        .from('exercises')
         .select(`
-          exercise_name,
-          exercise_category,
+          name,
+          category,
           actual_weight,
           actual_reps,
           completed,
@@ -49,26 +53,31 @@ export function useBodyPartsProgress(dateRange?: DateRangeFilter) {
 
       if (error || !sets) return [];
 
-      // Group by body part and week
-      const bodyPartData = new Map<string, Map<string, { volume: number; maxWeight: number }>>();
+      // Group by body part and week. Track weekStart (a real Date) alongside the
+      // display label so weeks sort chronologically instead of by parsing the
+      // ambiguous "MMM d" label string.
+      const bodyPartData = new Map<string, Map<string, { volume: number; maxWeight: number; weekStart: number }>>();
 
       sets.forEach((set: any) => {
-        const bodyPart = getBodyPart(set.exercise_name, set.exercise_category);
+        const exerciseName = (set.name || '').replace(/\s*\(Set \d+\)$/, '').trim();
+        const bodyPart = getBodyPart(exerciseName, set.category);
         const workoutDate = set.workouts?.date;
         if (!workoutDate) return;
 
         const weekStart = startOfWeek(parseISO(workoutDate), { weekStartsOn: 1 });
         const weekLabel = format(weekStart, 'MMM d');
-        const volume = (set.actual_weight || 0) * (set.actual_reps || 0);
+        const weight = parseFloat(set.actual_weight || '0') || 0;
+        const reps = parseFloat(set.actual_reps || '0') || 0;
+        const volume = weight * reps;
 
         if (!bodyPartData.has(bodyPart)) {
           bodyPartData.set(bodyPart, new Map());
         }
 
         const weeks = bodyPartData.get(bodyPart)!;
-        const existing = weeks.get(weekLabel) || { volume: 0, maxWeight: 0 };
+        const existing = weeks.get(weekLabel) || { volume: 0, maxWeight: 0, weekStart: weekStart.getTime() };
         existing.volume += volume;
-        existing.maxWeight = Math.max(existing.maxWeight, set.actual_weight || 0);
+        existing.maxWeight = Math.max(existing.maxWeight, weight);
         weeks.set(weekLabel, existing);
       });
 
@@ -81,12 +90,10 @@ export function useBodyPartsProgress(dateRange?: DateRangeFilter) {
             weekLabel,
             volume: data.volume,
             maxWeight: data.maxWeight,
+            weekStart: data.weekStart,
           }))
-          .sort((a, b) => {
-            const dateA = new Date(a.weekLabel);
-            const dateB = new Date(b.weekLabel);
-            return dateA.getTime() - dateB.getTime();
-          });
+          .sort((a, b) => a.weekStart - b.weekStart)
+          .map(({ weekStart, ...rest }) => rest);
 
         const totalVolume = weeksArray.reduce((sum, w) => sum + w.volume, 0);
         

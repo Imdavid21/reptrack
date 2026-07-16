@@ -72,6 +72,11 @@ serve(async (req) => {
       summary.exerciseProgress = summary.exerciseProgress.slice(0, 50);
     }
 
+    // Bound individual free-text string fields too — the array cap above doesn't
+    // stop a single oversized field (e.g. fitness_goal or an exercise name) from
+    // inflating token spend or widening the prompt-injection surface.
+    const clip = (s: unknown, n: number): string => (typeof s === "string" ? s.slice(0, n) : "");
+
     const systemPrompt = `You are a brutally honest, data-driven strength & conditioning coach. You analyze a user's complete fitness picture – training, nutrition, hydration, sleep, and body composition – and deliver 4-6 specific, actionable insights.
 
 RULES:
@@ -96,7 +101,7 @@ RULES:
       if (p.age) profileParts.push(`Age: ${p.age}`);
       if (p.gender) profileParts.push(`Gender: ${p.gender}`);
       if (p.height_cm) profileParts.push(`Height: ${p.height_cm}cm`);
-      if (p.fitness_goal) profileParts.push(`Goal: ${p.fitness_goal}`);
+      if (p.fitness_goal) profileParts.push(`Goal: ${clip(p.fitness_goal, 200)}`);
       if (p.daily_calorie_goal) profileParts.push(`Calorie goal: ${p.daily_calorie_goal} kcal`);
       if (p.daily_water_goal) profileParts.push(`Water goal: ${p.daily_water_goal} ml`);
       if (p.weekly_workout_goal) profileParts.push(`Workout goal: ${p.weekly_workout_goal}/week`);
@@ -107,7 +112,7 @@ RULES:
     if (summary.exerciseProgress?.length > 0) {
       sections.push(`EXERCISE PROGRESS (weight changes):\n${
         summary.exerciseProgress.map((e: any) =>
-          `- ${e.name}: ${e.startWeight}kg → ${e.currentWeight}kg (${e.change > 0 ? '+' : ''}${e.change.toFixed(1)}kg)`
+          `- ${clip(e.name, 80)}: ${e.startWeight}kg → ${e.currentWeight}kg (${e.change > 0 ? '+' : ''}${Number(e.change ?? 0).toFixed(1)}kg)`
         ).join('\n')
       }`);
     } else {
@@ -272,8 +277,9 @@ RULES:
     });
   } catch (error) {
     console.error("Error in ai-coach function:", error);
+    // Log the detail server-side; return a generic message to the client.
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Failed to generate insights. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

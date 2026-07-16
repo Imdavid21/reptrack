@@ -92,17 +92,32 @@ export function useUserPreferences() {
         if (workoutCount && workoutCount > 0) {
           // Infer training split from workout patterns
           const inferredSplit = await inferTrainingSplit(user.id, workoutCount);
-          
-          const { data: newPrefs } = await supabase
+
+          // Upsert (not insert) so a concurrent first-load in another tab that
+          // already created the row doesn't throw a unique-constraint error and
+          // leave this query returning undefined (which React Query rejects,
+          // wedging the whole app on the loading state).
+          const { data: newPrefs, error: insertError } = await supabase
             .from('user_preferences')
-            .insert({
+            .upsert({
               user_id: user.id,
               onboarding_completed: true, // Skip onboarding for existing users
               routine_setup_completed: true, // Skip routine setup for existing users
               training_split: inferredSplit,
-            })
+            }, { onConflict: 'user_id' })
             .select()
-            .single();
+            .maybeSingle();
+
+          // On any write error, fall back to re-reading the existing row rather
+          // than returning undefined.
+          if (insertError || !newPrefs) {
+            const { data: existing } = await supabase
+              .from('user_preferences')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            return (existing ?? null) as UserPreferences | null;
+          }
           return newPrefs as UserPreferences;
         }
       }

@@ -23,6 +23,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
+import { parseDateKey } from '@/lib/dateKey';
 
 interface WorkoutEditSheetProps {
     workout: Workout | null;
@@ -57,9 +58,9 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
     };
 
     const displayDate = workout
-        ? format(new Date(workout.date), 'MMM d, yyyy')
+        ? format(parseDateKey(workout.date), 'MMM d, yyyy')
         : dateStr
-            ? format(new Date(dateStr), 'MMM d, yyyy')
+            ? format(parseDateKey(dateStr), 'MMM d, yyyy')
             : '';
 
     const title = workout ? workout.day_name : 'Edit Day';

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 /**
  * Returns a YYYY-MM-DD key in the user's LOCAL timezone.
@@ -15,4 +15,17 @@ export function localDateKey(date: Date = new Date()): string {
 /** Convenience: today's local date key. */
 export function todayKey(): string {
   return localDateKey(new Date());
+}
+
+/**
+ * Parses a stored `YYYY-MM-DD` day key back into a Date at LOCAL midnight.
+ *
+ * Do NOT use `new Date('2026-07-13')` for this — JS parses a date-only string as
+ * UTC midnight, which is the *previous* calendar day for anyone west of GMT.
+ * Comparing that against local week/month boundaries (startOfWeek, getMonth,
+ * differenceInDays) silently drops or misattributes entries. `parseISO` treats a
+ * date-only string as local time, which is what every dated read wants.
+ */
+export function parseDateKey(dayKey: string): Date {
+  return parseISO(dayKey);
 }

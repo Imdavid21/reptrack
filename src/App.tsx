@@ -6,6 +6,7 @@ import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
+import { Toaster } from "sonner";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 
@@ -97,6 +98,12 @@ function MuiThemedApp() {
   return (
     <MuiThemeProvider theme={isDark ? darkTheme : lightTheme}>
       <CssBaseline />
+      <Toaster
+        theme={isDark ? 'dark' : 'light'}
+        position="top-center"
+        richColors
+        closeButton
+      />
       <BrowserRouter>
         <OfflineBanner />
         {isStandalone && <PWAUpdatePrompt />}

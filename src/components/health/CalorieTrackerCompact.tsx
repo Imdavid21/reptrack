@@ -533,6 +533,8 @@ export function CalorieTrackerCompact() {
                           <span className="tabular-nums text-muted-foreground">{meal.calories}</span>
                           <button
                             onClick={() => handleDeleteMeal(meal.id)}
+                            aria-label={`Delete ${meal.food_name || 'meal'}`}
+                            title="Delete"
                             className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
                           >
                             <Trash2 className="h-3 w-3" />

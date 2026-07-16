@@ -108,10 +108,15 @@ export function derivePersonalizedProgramming(
   const templateMatch = exercise.targetReps.match(/^\d+x(.+)$/);
   if (templateMatch) {
     finalReps = templateMatch[1];
-    // Also take template set count
+    // Also take template set count. Only override with history when it's within
+    // the sane 2-8 range (same bound as step 4) — otherwise a session the user
+    // cut short (e.g. 1 completed set) or padded (12 sets) would re-program that
+    // anomalous count every time instead of the template's prescription.
     const templateSets = parseInt(exercise.targetReps);
     if (!isNaN(templateSets)) {
-      finalSets = lastUsed?.sets ?? templateSets;
+      finalSets = (lastUsed && lastUsed.sets >= 2 && lastUsed.sets <= 8)
+        ? lastUsed.sets
+        : templateSets;
     }
   }
 

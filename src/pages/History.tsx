@@ -12,6 +12,7 @@ import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
 import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } from '@/lib/historyCalories';
+import { parseDateKey } from '@/lib/dateKey';
 import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
 import { ACTIVITY_CONFIG, type ActivityKind } from '@/components/health/ActivityLogger';
 
@@ -124,7 +125,7 @@ export default function History() {
 
   // Stats
   const thisMonthWorkouts = workouts.filter(w => {
-    const d = new Date(w.date);
+    const d = parseDateKey(w.date);
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });

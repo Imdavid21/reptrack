@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Local env overrides — keep real secrets (OpenAI/Resend/service_role keys) here,
+# never in the committed .env (which holds only public VITE_ build config).
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

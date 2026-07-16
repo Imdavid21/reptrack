@@ -248,6 +248,7 @@ export function ProgressHeader() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => adjustSleepHours(-1)}
+                    aria-label="Decrease hours"
                     className="p-2 border border-border hover:bg-muted transition-colors"
                   >
                     <Minus className="h-3 w-3" />
@@ -262,6 +263,7 @@ export function ProgressHeader() {
                   />
                   <button
                     onClick={() => adjustSleepHours(1)}
+                    aria-label="Increase hours"
                     className="p-2 border border-border hover:bg-muted transition-colors"
                   >
                     <Plus className="h-3 w-3" />
@@ -275,6 +277,7 @@ export function ProgressHeader() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => adjustSleepMinutes(-15)}
+                    aria-label="Decrease minutes"
                     className="p-2 border border-border hover:bg-muted transition-colors"
                   >
                     <Minus className="h-3 w-3" />
@@ -289,6 +292,7 @@ export function ProgressHeader() {
                   />
                   <button
                     onClick={() => adjustSleepMinutes(15)}
+                    aria-label="Increase minutes"
                     className="p-2 border border-border hover:bg-muted transition-colors"
                   >
                     <Plus className="h-3 w-3" />
@@ -330,6 +334,7 @@ export function ProgressHeader() {
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => adjustWeight(-0.1)}
+                aria-label="Decrease weight"
                 className="p-3 border border-border hover:bg-muted transition-colors"
               >
                 <Minus className="h-4 w-4" />
@@ -349,6 +354,7 @@ export function ProgressHeader() {
               
               <button
                 onClick={() => adjustWeight(0.1)}
+                aria-label="Increase weight"
                 className="p-3 border border-border hover:bg-muted transition-colors"
               >
                 <Plus className="h-4 w-4" />

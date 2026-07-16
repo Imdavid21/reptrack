@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { Check } from 'lucide-react';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import { parseDateKey } from '@/lib/dateKey';
 
 function getDefaultDayForDate(date: Date, numDays: number): string | null {
   const dayOfWeek = date.getDay();
@@ -41,7 +42,7 @@ export function DaySelectorWithCheckin({
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
     const thisWeek = workouts.filter(w => {
-      const d = new Date(w.date);
+      const d = parseDateKey(w.date);
       return d >= weekStart && d <= weekEnd;
     });
 
@@ -52,10 +53,10 @@ export function DaySelectorWithCheckin({
     if (!workouts || workouts.length === 0) return 1;
     const mostRecentWorkout = workouts[0];
     const lastWeek = mostRecentWorkout.week_number;
-    const lastWorkoutDate = new Date(mostRecentWorkout.date).toDateString();
+    const lastWorkoutDate = parseDateKey(mostRecentWorkout.date).toDateString();
     const today = new Date().toDateString();
     if (lastWorkoutDate === today) return lastWeek;
-    const lastWorkoutDateObj = new Date(mostRecentWorkout.date);
+    const lastWorkoutDateObj = parseDateKey(mostRecentWorkout.date);
     const daysSince = Math.floor((Date.now() - lastWorkoutDateObj.getTime()) / (1000 * 60 * 60 * 24));
     if (daysSince >= 7) return Math.min(12, lastWeek + 1);
     return lastWeek;

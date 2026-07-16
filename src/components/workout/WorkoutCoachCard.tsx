@@ -7,6 +7,7 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { supabase } from '@/integrations/supabase/client';
 import { haptic } from '@/lib/haptics';
 import { startOfWeek, endOfWeek, differenceInDays } from 'date-fns';
+import { parseDateKey } from '@/lib/dateKey';
 
 const categoryIcons: Record<string, React.ReactNode> = {
   strength: <TrendingUp size={14} />,
@@ -47,7 +48,7 @@ export function WorkoutCoachCard() {
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
     const thisWeekWorkouts = workouts.filter(w => {
-      const d = new Date(w.date);
+      const d = parseDateKey(w.date);
       return d >= weekStart && d <= weekEnd;
     });
 
@@ -56,8 +57,8 @@ export function WorkoutCoachCard() {
 
     // Last workout info
     const lastWorkout = workouts[0];
-    const daysSinceLastWorkout = lastWorkout 
-      ? differenceInDays(now, new Date(lastWorkout.date))
+    const daysSinceLastWorkout = lastWorkout
+      ? differenceInDays(now, parseDateKey(lastWorkout.date))
       : null;
 
     // Find which muscle groups haven't been hit this week

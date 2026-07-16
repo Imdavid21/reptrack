@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useWorkoutDetails } from '@/hooks/useWorkoutDetails';
 import { format } from 'date-fns';
+import { parseDateKey } from '@/lib/dateKey';
 import { Check, Edit2, Loader2, Trash2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,7 +176,7 @@ export default function WorkoutDetail() {
           <div>
             <h2 className="font-bold text-lg">{workout.day_name}</h2>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(workout.date), 'EEEE, MMM d')}
+              {format(parseDateKey(workout.date), 'EEEE, MMM d')}
             </p>
           </div>
           <div className="flex items-center gap-2">

@@ -175,8 +175,9 @@ Be accurate with portions. When quantities aren't specified, assume reasonable s
   } catch (error) {
     console.error("parse-food-text error:", error);
     const isTimeout = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    // Generic client message (timeout is safe/actionable to surface); detail is logged above.
     return new Response(
-      JSON.stringify({ error: isTimeout ? "AI took too long. Try again or enter manually." : (error instanceof Error ? error.message : "Unknown error") }),
+      JSON.stringify({ error: isTimeout ? "AI took too long. Try again or enter manually." : "Failed to parse food. Please try again or enter manually." }),
       { status: isTimeout ? 504 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

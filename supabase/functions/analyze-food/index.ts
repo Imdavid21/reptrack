@@ -41,7 +41,10 @@ type OpenAIResponse = {
 async function callOpenAI(imageUrl: string, apiKey: string, context: string | undefined, attempt: number = 1): Promise<OpenAIResponse> {
   console.log(`OpenAI API call attempt ${attempt}/${MAX_RETRIES + 1}`);
 
-  const contextNote = context ? `\n\nAdditional context from the user: "${context}"` : '';
+  // User-supplied context goes in the USER message (below), never the system
+  // prompt — system position is the strongest prompt-injection lever, and it's
+  // already length-capped by the caller.
+  const userContextNote = context ? `\n\nAdditional context from the user: "${context}"` : '';
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -80,14 +83,14 @@ UNCERTAINTY — be honest:
 
 MACRO CALCULATION:
 - Always provide protein, carbs, fat, and fiber for each item and totals.
-- Use standard USDA nutritional values as your baseline.${contextNote}`
+- Use standard USDA nutritional values as your baseline.`
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Analyze this food image carefully. Count every individual item, identify cooking methods, and estimate all sauces and condiments. Provide precise portion sizes and accurate calorie/macro estimates."
+              text: `Analyze this food image carefully. Count every individual item, identify cooking methods, and estimate all sauces and condiments. Provide precise portion sizes and accurate calorie/macro estimates.${userContextNote}`
             },
             {
               type: "image_url",
@@ -226,7 +229,10 @@ serve(async (req) => {
     }
 
     const { imageUrl, context } = body;
-    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}, context=${context || "none"}`);
+    // Cap free-text context: bound token/cost abuse and shrink the injection
+    // surface. Every other AI function caps its free-text input; this one didn't.
+    const safeContext = typeof context === "string" ? context.slice(0, 200) : undefined;
+    console.log(`analyze-food: imageUrl=${imageUrl ? imageUrl.substring(0, 80) + "..." : "MISSING"}, context=${safeContext || "none"}`);
 
     if (!imageUrl) {
       console.error("analyze-food: No imageUrl in request body");
@@ -266,7 +272,7 @@ serve(async (req) => {
 
     console.log("analyze-food: Calling OpenAI...");
 
-    const data = await callOpenAI(imageUrl, OPENAI_API_KEY, context);
+    const data = await callOpenAI(imageUrl, OPENAI_API_KEY, safeContext);
     console.log("analyze-food: OpenAI response received, extracting result...");
 
     // Extract the function call result
@@ -336,12 +342,9 @@ serve(async (req) => {
       );
     }
 
-    const fallbackMessage = error instanceof Error
-      ? error.message
-      : "Failed to analyze food. Please try again.";
-    
+    // Don't leak internal/upstream error text to the client; log it server-side.
     return new Response(
-      JSON.stringify({ error: fallbackMessage }),
+      JSON.stringify({ error: "Failed to analyze food. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

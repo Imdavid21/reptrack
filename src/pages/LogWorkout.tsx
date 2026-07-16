@@ -199,8 +199,11 @@ export default function LogWorkout() {
   useEffect(() => {
     if (loaded && draft && !draftRestored && draft.exercises.length > 0) {
       setSelectedDay(draft.day);
-      // Always use current date when restoring a draft to avoid stale dates
-      setSelectedDate(new Date());
+      // Restore the date the workout was actually logged for. draft.date is an
+      // ISO timestamp of the (possibly back-dated) session, so honoring it keeps
+      // a back-dated in-progress workout attributed to its intended day instead
+      // of silently jumping to today on resume.
+      setSelectedDate(draft.date ? new Date(draft.date) : new Date());
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       const validStep: Step = draft.step === 'exercises' ? 'exercises' :
@@ -243,6 +246,42 @@ export default function LogWorkout() {
     return () => clearTimeout(timeoutId);
   }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
 
+  const handleDaySelect = (day: string, date: Date, week: number) => {
+    setSelectedDay(day);
+    setSelectedDate(date);
+    setWeekNumber(week);
+
+    const dayInfo = splitDays[day];
+    if (dayInfo) {
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
+    }
+
+    setCurrentExerciseIndex(0);
+    setCurrentSetIndex(0);
+    setStep('review');
+  };
+
+  // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
+  // that day's review, with last-used weights already applied. Skipped if a
+  // draft was restored so we never clobber an in-progress session.
+  // NOTE: this hook MUST stay above the early returns below — React requires
+  // hooks to run in the same order every render, and gating it behind a
+  // loading/`return` guard is what previously crashed this page on a cold
+  // load/refresh straight onto /app/log. The prefs-loading check now lives
+  // inside the effect body instead (splitDays changes when prefs resolve, so
+  // the effect re-runs and proceeds then).
+  useEffect(() => {
+    if (prefsLoading || routineLoading) return;
+    if (!loaded || draftRestored) return;
+    const dayParam = searchParams.get('day');
+    if (!dayParam || step !== 'select-day') return;
+    if (!splitDays[dayParam]) return;
+    handleDaySelect(dayParam, new Date(), weekNumber);
+    // consume the param so a back-nav doesn't re-trigger the jump
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, draftRestored, searchParams, splitDays, prefsLoading, routineLoading]);
+
   if (prefsLoading || routineLoading) {
     return (
       <MainLayout>
@@ -262,35 +301,6 @@ export default function LogWorkout() {
       </MainLayout>
     );
   }
-
-  const handleDaySelect = (day: string, date: Date, week: number) => {
-    setSelectedDay(day);
-    setSelectedDate(date);
-    setWeekNumber(week);
-
-    const dayInfo = splitDays[day];
-    if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
-    }
-
-    setCurrentExerciseIndex(0);
-    setCurrentSetIndex(0);
-    setStep('review');
-  };
-
-  // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
-  // that day's review, with last-used weights already applied. Skipped if a
-  // draft was restored so we never clobber an in-progress session.
-  useEffect(() => {
-    if (!loaded || draftRestored) return;
-    const dayParam = searchParams.get('day');
-    if (!dayParam || step !== 'select-day') return;
-    if (!splitDays[dayParam]) return;
-    handleDaySelect(dayParam, new Date(), weekNumber);
-    // consume the param so a back-nav doesn't re-trigger the jump
-    setSearchParams({}, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, draftRestored, searchParams, splitDays]);
 
   // Start session from review — preserve original start time if already set
   const handleStartSession = () => {
