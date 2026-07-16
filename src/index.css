@@ -11,39 +11,39 @@
   :root {
     /* Core palette - Pure black & white */
     --background: 0 0% 98%; /* near white */
-    --foreground: 0 0% 9%; /* near black */
+    --foreground: 0 0% 0%; /* pure black */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 0%;
 
-    /* Primary - Black */
-    --primary: 0 0% 9%;
+    /* Primary - Pure Black */
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Light gray */
     --secondary: 0 0% 93%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary-foreground: 0 0% 0%;
 
     --muted: 0 0% 93%;
     --muted-foreground: 0 0% 45%;
 
     /* Accent is a subtle surface (shadcn semantics) */
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
+    --accent-foreground: 0 0% 0%;
 
-    /* Monochrome destructive/warning */
-    --destructive: 0 0% 25%;
+    /* Soft destructive/warning - soft red */
+    --destructive: 0 86% 68%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Status colors - grayscale */
-    --success: 0 0% 35%;
+    /* Status colors - soft tones */
+    --success: 130 40% 43%;
     --success-foreground: 0 0% 100%;
-    --success-light: 0 0% 93%;
-    --warning: 0 0% 50%;
-    --warning-foreground: 0 0% 0%;
+    --success-light: 130 40% 88%;
+    --warning: 0 86% 68%;
+    --warning-foreground: 0 0% 100%;
 
     /* Borders and inputs */
     --border: 0 0% 90%;
@@ -53,65 +53,64 @@
     /* Radius - Modern rounded */
     --radius: 12px;
 
-    /* Heatmap intensity levels - grayscale */
+    /* Heatmap intensity levels - soft warm spectrum */
     --heat-0: 0 0% 93%;
-    --heat-1: 0 0% 80%;
-    --heat-2: 0 0% 60%;
-    --heat-3: 0 0% 40%;
-    --heat-4: 0 0% 15%;
+    --heat-1: 40 80% 85%;
+    --heat-2: 20 85% 72%;
+    --heat-3: 0 86% 68%;
+    --heat-4: 0 80% 45%;
 
     /* Progress bar */
     --progress-radius: 6px;
 
-    /* Chart colors - darker grayscale spectrum */
+    /* Chart colors - softer spectrum */
     --chart-1: 0 0% 8%;   /* near black - primary emphasis */
-    --chart-2: 0 0% 20%;  /* very dark gray */
-    --chart-3: 0 0% 35%;  /* dark gray */
-    --chart-4: 0 0% 50%;  /* mid gray */
-    --chart-5: 0 0% 65%;  /* light gray */
+    --chart-2: 130 40% 50%;  /* soft green */
+    --chart-3: 0 86% 68%;  /* soft red */
+    --chart-4: 200 60% 60%;  /* soft blue */
+    --chart-5: 40 80% 68%;  /* soft orange */
 
     /* Insight accent colors - soft pastels */
-    --insight-coral: 0 55% 72%;
-    --insight-mint: 145 40% 65%;
-    --insight-amber: 38 70% 65%;
+    --insight-coral: 0 86% 68%;
+    --insight-mint: 130 40% 60%;
+    --insight-amber: 40 80% 68%;
     --insight-violet: 265 50% 70%;
 
-    /* Signature energy accent — refined lime-green (softer than neon), the one
-       pop of color used for progress, active states, streaks, and the next-up CTA. */
-    --energy: 142 62% 33%;
+    /* Signature energy accent — soft green, the one pop of color used for progress, active states, streaks, and the next-up CTA. */
+    --energy: 130 40% 50%;
     --energy-foreground: 0 0% 100%;
-    --energy-soft: 142 44% 94%;
+    --energy-soft: 130 40% 88%;
 
     /* Pillar palette — one hue per body domain, used consistently everywhere:
        Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover.
        The base value is for FILLS (bars, badges with dark text). The -ink value
        is contrast-safe for TEXT/ICONS on cards and soft tints. */
-    --energy-ink: 142 60% 30%;
-    --water: 200 70% 48%;
-    --water-ink: 200 72% 35%;
-    --water-soft: 200 64% 94%;
-    --fuel: 25 82% 55%;
-    --fuel-ink: 22 78% 40%;
-    --fuel-soft: 28 80% 94%;
+    --energy-ink: 130 40% 40%;
+    --water: 200 70% 55%;
+    --water-ink: 200 72% 40%;
+    --water-soft: 200 64% 90%;
+    --fuel: 40 80% 62%;
+    --fuel-ink: 35 78% 45%;
+    --fuel-soft: 40 80% 90%;
     --recover: 256 52% 62%;
     --recover-ink: 256 46% 50%;
-    --recover-soft: 256 56% 95%;
+    --recover-soft: 256 56% 92%;
   }
 
   .dark {
     /* Ultra-dark base - true black foundation */
-    --background: 0 0% 2%;
-    --foreground: 0 0% 96%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 96%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
 
     /* Primary - bright white on black */
-    --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 2%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 10%;
     --secondary-foreground: 0 0% 90%;
@@ -122,55 +121,55 @@
     --accent: 0 0% 10%;
     --accent-foreground: 0 0% 90%;
 
-    --destructive: 0 0% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 86% 75%;
+    --destructive-foreground: 0 0% 0%;
 
-    --success: 0 0% 65%;
-    --success-foreground: 0 0% 2%;
-    --success-light: 0 0% 12%;
-    --warning: 0 0% 50%;
-    --warning-foreground: 0 0% 100%;
+    --success: 130 40% 68%;
+    --success-foreground: 0 0% 0%;
+    --success-light: 130 40% 15%;
+    --warning: 0 86% 75%;
+    --warning-foreground: 0 0% 0%;
 
     --border: 0 0% 12%;
     --input: 0 0% 12%;
     --ring: 0 0% 80%;
 
-    /* Heatmap - from near-invisible to bright */
+    /* Heatmap - from near-invisible to bright soft palette */
     --heat-0: 0 0% 8%;
-    --heat-1: 0 0% 22%;
-    --heat-2: 0 0% 40%;
-    --heat-3: 0 0% 62%;
-    --heat-4: 0 0% 88%;
+    --heat-1: 40 80% 35%;
+    --heat-2: 20 85% 52%;
+    --heat-3: 0 86% 68%;
+    --heat-4: 130 40% 75%;
 
-    /* Chart colors - high contrast on black */
-    --chart-1: 0 0% 96%;
-    --chart-2: 0 0% 78%;
-    --chart-3: 0 0% 60%;
-    --chart-4: 0 0% 44%;
-    --chart-5: 0 0% 30%;
+    /* Chart colors - soft contrast on black */
+    --chart-1: 0 0% 100%;
+    --chart-2: 130 40% 68%;
+    --chart-3: 0 86% 75%;
+    --chart-4: 200 70% 65%;
+    --chart-5: 40 80% 70%;
 
     /* Insight accent colors - soft pastels for dark */
-    --insight-coral: 0 50% 72%;
-    --insight-mint: 150 38% 65%;
-    --insight-amber: 38 65% 62%;
+    --insight-coral: 0 86% 75%;
+    --insight-mint: 130 40% 68%;
+    --insight-amber: 40 80% 70%;
     --insight-violet: 265 45% 70%;
 
-    /* Energy accent — slightly brighter on the true-black dark base */
-    --energy: 142 55% 42%;
-    --energy-foreground: 0 0% 100%;
-    --energy-soft: 142 30% 15%;
+    /* Energy accent — soft green on the true-black dark base */
+    --energy: 130 40% 62%;
+    --energy-foreground: 0 0% 0%;
+    --energy-soft: 130 40% 15%;
 
-    /* Pillar palette — brightened for the dark base; ink = bright text-safe */
-    --energy-ink: 142 55% 60%;
-    --water: 200 75% 56%;
-    --water-ink: 200 78% 64%;
-    --water-soft: 200 45% 15%;
-    --fuel: 28 85% 60%;
-    --fuel-ink: 30 88% 66%;
-    --fuel-soft: 26 45% 15%;
-    --recover: 256 62% 68%;
-    --recover-ink: 256 70% 74%;
-    --recover-soft: 256 35% 18%;
+    /* Pillar palette — softened for the dark base; ink = bright text-safe */
+    --energy-ink: 130 40% 70%;
+    --water: 200 70% 62%;
+    --water-ink: 200 72% 70%;
+    --water-soft: 200 60% 18%;
+    --fuel: 40 80% 68%;
+    --fuel-ink: 40 80% 75%;
+    --fuel-soft: 40 70% 18%;
+    --recover: 256 52% 68%;
+    --recover-ink: 256 60% 75%;
+    --recover-soft: 256 45% 20%;
   }
 }
 

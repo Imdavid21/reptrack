@@ -364,7 +364,7 @@ export function CalorieTrackerCompact() {
                   <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
-                    hitDeficit ? "text-[#8FBC94]" : netDeficit > 0 ? "text-foreground" : "text-[hsl(var(--insight-coral))]"
+                    hitDeficit ? "text-[#DAF1DC]" : netDeficit > 0 ? "text-foreground" : "text-[#ff9b9b]"
                   )}>
                     {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
                   </div>
