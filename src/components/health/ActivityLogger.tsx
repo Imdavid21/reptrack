@@ -208,7 +208,38 @@ export function ActivityLogger() {
               </div>
             </div>
 
-            {existing && (
+            {cfg.unit === 'km' && (
+              <div className="space-y-2">
+                <Label htmlFor="activity-minutes" className="flex items-center justify-between">
+                  <span>Time (min) <span className="text-muted-foreground font-normal">— optional</span></span>
+                  {usingCustomTime && (
+                    <span className="text-[10px] text-muted-foreground">using your time</span>
+                  )}
+                </Label>
+                <Input
+                  id="activity-minutes"
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  placeholder={`default ${activityDuration(kind, numericValue || 1)} min for ${numericValue || 1} km`}
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Burn</div>
+                <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Duration</div>
+                <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
+              </div>
+            </div>
+
               <p className="text-[11px] text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">
                 Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} — {existing.calories} kcal already logged.
               </p>
