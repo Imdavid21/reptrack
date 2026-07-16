@@ -197,17 +197,6 @@ export function ActivityLogger() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Burn</div>
-                <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Duration</div>
-                <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
-              </div>
-            </div>
-
             {cfg.unit === 'km' && (
               <div className="space-y-2">
                 <Label htmlFor="activity-minutes" className="flex items-center justify-between">
@@ -240,10 +229,12 @@ export function ActivityLogger() {
               </div>
             </div>
 
+            {existing && (
               <p className="text-[11px] text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">
                 Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} — {existing.calories} kcal already logged.
               </p>
             )}
+
 
             <p className="text-[11px] text-muted-foreground">
               Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
