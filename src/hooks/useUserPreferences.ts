@@ -129,12 +129,15 @@ export function useUserPreferences() {
       return data;
     },
     onSuccess: (data) => {
-      // Seed the cache with the authoritative saved row so the change is
-      // reflected immediately, then reconcile in the background.
+      // Seed the cache with the authoritative saved row directly — this is
+      // the only query key this resource ever uses, so there's nothing left
+      // to invalidate. Deliberately skip invalidateQueries: it would trigger
+      // an immediate background refetch racing this write, and a slow/flaky
+      // connection (e.g. gym wifi) can let that refetch resolve with a stale
+      // service-worker-cached GET, silently clobbering the row we just saved.
       if (data) {
         queryClient.setQueryData(['user-preferences', user?.id], data);
       }
-      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
     },
   });
 
@@ -154,13 +157,15 @@ export function useUserPreferences() {
     },
     onSuccess: (data) => {
       // The update returns the freshly-saved row (e.g. the new training_split).
-      // Write it straight into the cache so the UI updates instantly and the
-      // change can't be lost to a deduped or stale background refetch — the
-      // root cause of a changed split appearing to revert to its default.
+      // Write it straight into the cache so the UI updates instantly. Skip
+      // invalidateQueries on purpose — this is the only query key this
+      // resource uses, so there's nothing else to reconcile, and forcing an
+      // immediate refetch here just races this write against a possibly
+      // stale service-worker-cached GET (see api-cache in vite.config.ts),
+      // which is exactly how a saved training_split could appear to revert.
       if (data) {
         queryClient.setQueryData(['user-preferences', user?.id], data);
       }
-      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
     },
   });
 

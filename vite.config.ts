@@ -23,20 +23,18 @@ export default defineConfig(({ mode }) => ({
         // Extended offline: cache up to 100 entries, keep for 30 days
         runtimeCaching: [
           {
-            // Cache Supabase API calls (GET only) with network-first strategy
+            // Supabase REST rows are mutable, per-user, and change constantly
+            // (preferences, workouts, etc). NetworkFirst's whole point is to
+            // fall back to a cached response when the network is slow, but
+            // that means any GET slower than the timeout can silently hand
+            // back a days-old row right after the user just saved a change —
+            // e.g. a training split update appearing to revert on gym wifi.
+            // NetworkOnly means these calls never read from or write to the
+            // cache, so a slow network surfaces as a real (retryable) error
+            // instead of quietly wrong data. Offline writes are unaffected —
+            // they already queue through src/lib/offlineSyncQueue.ts.
             urlPattern: /^https:\/\/kfifgbqkykyvnrirxwze\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 5,
-            },
+            handler: 'NetworkOnly',
           },
           {
             // Cache Google Fonts
