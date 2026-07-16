@@ -560,11 +560,15 @@ export default function LogWorkout() {
   };
 
   // Change training split (persists to preferences)
-  const handleSplitChange = (newSplit: TrainingSplit) => {
-    updatePreferences.mutate({ training_split: newSplit });
-    // Reset selection since days changed
-    setSelectedDay('');
-    setExercises([]);
+  const handleSplitChange = async (newSplit: TrainingSplit) => {
+    try {
+      await updatePreferences.mutateAsync({ training_split: newSplit });
+      // Reset selection since days changed
+      setSelectedDay('');
+      setExercises([]);
+    } catch (error) {
+      toast.error('Failed to change split — please try again');
+    }
   };
 
   // AI goal-based routine generation
