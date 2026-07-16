@@ -26,20 +26,26 @@ export const ACTIVITY_CONFIG: Record<ActivityKind, {
   boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
-/** kcal = MET * weight(kg) * hours */
-export function activityCalories(kind: ActivityKind, value: number, weightKg: number) {
+/**
+ * kcal = MET * weight(kg) * hours
+ * For km-based activities, `minutesOverride` (if > 0) replaces the default pace-derived duration.
+ */
+export function activityCalories(
+  kind: ActivityKind,
+  value: number,
+  weightKg: number,
+  minutesOverride?: number,
+) {
   const cfg = ACTIVITY_CONFIG[kind];
-  const hours = cfg.unit === 'min'
-    ? value / 60
-    : (value * cfg.paceMinPerKm) / 60;
-  return Math.round(cfg.met * weightKg * hours);
+  const minutes = activityDuration(kind, value, minutesOverride);
+  return Math.round(cfg.met * weightKg * (minutes / 60));
 }
 
-export function activityDuration(kind: ActivityKind, value: number) {
+export function activityDuration(kind: ActivityKind, value: number, minutesOverride?: number) {
   const cfg = ACTIVITY_CONFIG[kind];
-  return cfg.unit === 'min'
-    ? Math.round(value)
-    : Math.round(value * cfg.paceMinPerKm);
+  if (cfg.unit === 'min') return Math.round(value);
+  if (minutesOverride && minutesOverride > 0) return Math.round(minutesOverride);
+  return Math.round(value * cfg.paceMinPerKm);
 }
 
 // Backwards compat export
@@ -52,12 +58,18 @@ export function ActivityLogger() {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [value, setValue] = useState('');
+  const [minutes, setMinutes] = useState('');
   const [saving, setSaving] = useState(false);
 
   const cfg = ACTIVITY_CONFIG[kind];
   const numericValue = parseFloat(value) || 0;
-  const kcal = useMemo(() => activityCalories(kind, numericValue, weightKg), [kind, numericValue, weightKg]);
-  const duration = activityDuration(kind, numericValue);
+  const numericMinutes = parseFloat(minutes) || 0;
+  const kcal = useMemo(
+    () => activityCalories(kind, numericValue, weightKg, numericMinutes),
+    [kind, numericValue, numericMinutes, weightKg],
+  );
+  const duration = activityDuration(kind, numericValue, numericMinutes);
+  const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
 
   // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
@@ -71,10 +83,18 @@ export function ActivityLogger() {
   useEffect(() => {
     if (!open) return;
     if (existing?.duration_minutes) {
-      const factor = cfg.unit === 'min' ? 1 : ACTIVITY_CONFIG[kind].paceMinPerKm;
-      setValue((existing.duration_minutes / factor).toFixed(cfg.unit === 'min' ? 0 : 1));
+      if (cfg.unit === 'min') {
+        setValue(String(existing.duration_minutes));
+        setMinutes('');
+      } else {
+        // Best-effort: derive km from default pace, expose minutes as override.
+        const km = existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm;
+        setValue(km.toFixed(1));
+        setMinutes(String(existing.duration_minutes));
+      }
     } else {
       setValue('');
+      setMinutes('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, logDateStr, kind]);
@@ -95,6 +115,7 @@ export function ActivityLogger() {
       const unitLabel = cfg.unit === 'min' ? 'min' : 'km';
       toast.success(`${verb} ${Math.round(numericValue)} ${unitLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setValue('');
+      setMinutes('');
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to log activity');
@@ -102,6 +123,7 @@ export function ActivityLogger() {
       setSaving(false);
     }
   };
+
 
   return (
     <>
@@ -175,6 +197,27 @@ export function ActivityLogger() {
               </div>
             </div>
 
+            {cfg.unit === 'km' && (
+              <div className="space-y-2">
+                <Label htmlFor="activity-minutes" className="flex items-center justify-between">
+                  <span>Time (min) <span className="text-muted-foreground font-normal">— optional</span></span>
+                  {usingCustomTime && (
+                    <span className="text-[10px] text-muted-foreground">using your time</span>
+                  )}
+                </Label>
+                <Input
+                  id="activity-minutes"
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  placeholder={`default ${activityDuration(kind, numericValue || 1)} min for ${numericValue || 1} km`}
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Burn</div>
@@ -191,6 +234,7 @@ export function ActivityLogger() {
                 Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} — {existing.calories} kcal already logged.
               </p>
             )}
+
 
             <p className="text-[11px] text-muted-foreground">
               Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
