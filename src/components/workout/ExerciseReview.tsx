@@ -194,19 +194,19 @@ function ExerciseItemCard({
           }}
           className="flex-1 min-w-0 text-left"
         >
-          <div className="font-semibold text-sm truncate flex items-center gap-1.5">
-            {exercise.name}
+          <div className="font-semibold text-sm flex items-center gap-1.5 min-w-0">
+            <span className="truncate">{exercise.name}</span>
             {exercise.mandatory && (
               <span className="text-[10px] bg-energy text-energy-foreground px-1 py-0.5 rounded uppercase font-bold shrink-0">must</span>
             )}
             {exercise.exerciseType === 'timed' && (
-              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">timed</span>
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">timed</span>
             )}
             {exercise.exerciseType === 'bodyweight' && (
-              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw</span>
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">bw</span>
             )}
             {exercise.exerciseType === 'weighted_bw' && (
-              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground">bw+</span>
+              <span className="text-[10px] bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">bw+</span>
             )}
           </div>
           {exercise.progression && (

@@ -128,7 +128,12 @@ export function useUserPreferences() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Seed the cache with the authoritative saved row so the change is
+      // reflected immediately, then reconcile in the background.
+      if (data) {
+        queryClient.setQueryData(['user-preferences', user?.id], data);
+      }
       queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
     },
   });
@@ -136,7 +141,7 @@ export function useUserPreferences() {
   const updatePreferences = useMutation({
     mutationFn: async (prefs: Partial<UserPreferences>) => {
       if (!user) throw new Error('No user');
-      
+
       const { data, error } = await supabase
         .from('user_preferences')
         .update(prefs)
@@ -147,7 +152,14 @@ export function useUserPreferences() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // The update returns the freshly-saved row (e.g. the new training_split).
+      // Write it straight into the cache so the UI updates instantly and the
+      // change can't be lost to a deduped or stale background refetch — the
+      // root cause of a changed split appearing to revert to its default.
+      if (data) {
+        queryClient.setQueryData(['user-preferences', user?.id], data);
+      }
       queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
     },
   });
