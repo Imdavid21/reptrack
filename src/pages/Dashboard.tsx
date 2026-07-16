@@ -5,7 +5,6 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
-import { BodyScoreStrip } from '@/components/dashboard/BodyScoreStrip';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -13,7 +12,7 @@ import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { Dumbbell, ChevronRight, TrendingDown } from 'lucide-react';
+import { Dumbbell, ChevronRight } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
