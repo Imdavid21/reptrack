@@ -8,7 +8,7 @@ import { AnalysisProgress } from './AnalysisProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
-  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil
+  Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil, Flame
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,7 +64,7 @@ export function CalorieTrackerCompact() {
   const mealsDate = viewingToday ? undefined : logDate;
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals(mealsDate);
   const { preferences, updatePreferences } = useUserPreferences();
-  const { totalBurned } = useCalorieBurn(mealsDate);
+  const { totalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -305,6 +305,9 @@ export function CalorieTrackerCompact() {
   const progressPercent = Math.min((totalCalories / cap) * 100, 100);
   const overCap = totalCalories > cap + totalBurned;
   const hitDeficit = netDeficit >= deficitTarget;
+  // Workout calories are calculated from duration when no burn entry was persisted yet.
+  const hasPersistedWorkoutBurn = burns.some(b => b.source === 'workout');
+  const showCalculatedWorkout = !hasPersistedWorkoutBurn && !!todayWorkout && todayWorkout.calculatedCalories > 0;
 
   const handleSaveCalorieGoal = async () => {
     try {
@@ -479,6 +482,35 @@ export function CalorieTrackerCompact() {
 
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
             <div className="mt-4 pt-4 border-t border-border space-y-3 overflow-hidden">
+              {(burns.length > 0 || showCalculatedWorkout) && (
+                <div className="space-y-1 overflow-hidden">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Flame className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Burned</span>
+                    </div>
+                    <span className="tabular-nums shrink-0">{totalBurned} cal</span>
+                  </div>
+                  {showCalculatedWorkout && (
+                    <div className="flex items-start justify-between text-sm pl-5 min-w-0 gap-2">
+                      <span className="break-words min-w-0 flex-1 leading-snug">
+                        {todayWorkout.day_name}{todayWorkout.calculatedDuration ? ` · ${todayWorkout.calculatedDuration} min` : ''}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground shrink-0">{todayWorkout.calculatedCalories}</span>
+                    </div>
+                  )}
+                  {burns.map((burn) => (
+                    <div key={burn.id} className="flex items-start justify-between text-sm pl-5 min-w-0 gap-2">
+                      <span className="break-words min-w-0 flex-1 leading-snug capitalize">
+                        {(burn.activity_type || burn.source).replace(/_/g, ' ')}
+                        {burn.duration_minutes ? ` · ${burn.duration_minutes} min` : ''}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground shrink-0">{burn.calories}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
                 const Icon = MEAL_ICONS[type];
                 const mealsOfType = mealsByType[type];
