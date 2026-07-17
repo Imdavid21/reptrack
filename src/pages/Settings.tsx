@@ -631,19 +631,31 @@ export default function Settings() {
                       { value: 'mix', label: 'Mix', hint: 'Alternates by day' },
                     ] as const).map(opt => {
                       const current = preferences?.training_focus || 'mix';
+                      const isLoading = updatePreferences.isPending;
                       return (
                         <button
                           key={opt.value}
-                          onClick={() => updatePreferences.mutate({ training_focus: opt.value })}
+                          onClick={() => {
+                            updatePreferences.mutate({ training_focus: opt.value }, {
+                              onError: (err) => {
+                                toast.error('Failed to save training focus');
+                                console.error('Training focus update error:', err);
+                              },
+                              onSuccess: () => {
+                                toast.success(`Training focus set to ${opt.label}`);
+                              },
+                            });
+                          }}
+                          disabled={isLoading}
                           title={opt.hint}
                           className={cn(
-                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
+                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                             current === opt.value
                               ? 'bg-foreground text-background'
                               : 'bg-muted text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          {opt.label}
+                          {isLoading ? <Loader2 className="h-4 w-4 inline animate-spin" /> : opt.label}
                         </button>
                       );
                     })}
