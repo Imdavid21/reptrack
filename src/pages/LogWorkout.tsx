@@ -14,7 +14,7 @@ import { ExercisePicker } from '@/components/workout/ExercisePicker';
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
 import { getSplitDays, resolveSplitDays, TrainingSplit } from '@/lib/splitTemplates';
-import { derivePersonalizedProgramming } from '@/lib/programmingEngine';
+import { derivePersonalizedProgramming, TrainingFocus } from '@/lib/programmingEngine';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { getExerciseType } from '@/lib/exerciseLibrary';
@@ -77,6 +77,7 @@ function buildExercisesFromTemplate(
   lastUsedMap?: Record<string, { weight: number; reps: number; sets: number; date: string; perSet?: Array<{ weight: number; reps: number }> }>,
   fitnessGoal?: string | null,
   preferredVariants?: Record<string, string>,
+  trainingFocus?: TrainingFocus | null,
 ): WorkoutExercise[] {
   const workExercises = dayData.exercises.filter(ex => ex.category !== 'warmup');
   const bias = (dayData as any).bias as 'heavy' | 'volume' | undefined;
@@ -94,17 +95,21 @@ function buildExercisesFromTemplate(
     const exType = getExerciseType(ex.name, ex.targetWeight, ex.targetReps);
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
 
-    // Use programming engine for personalized sets/reps/rest/rir
+    // Programming engine derives sets/reps/rest/rir for the chosen training
+    // focus AND the actual weight/rep target — evidence-based double
+    // progression against the user's own last session, not just a verbatim
+    // copy of what they did last time.
     const programming = derivePersonalizedProgramming(
       ex as any,
       bias,
       lastUsed as any,
       fitnessGoal,
+      trainingFocus,
     );
 
     const numSets = programming.sets;
-    const reps = lastUsed ? String(lastUsed.reps) : programming.reps;
-    const weight = lastUsed ? `${lastUsed.weight}kg` : ex.targetWeight;
+    const reps = programming.reps;
+    const weight = programming.weight;
 
     const setsArray: ExerciseSet[] = Array.from({ length: numSets }, (_, i) => {
       const set: ExerciseSet = {
@@ -132,7 +137,10 @@ function buildExercisesFromTemplate(
       restSeconds: programming.restSeconds,
       rir: programming.rir,
       mandatory: templateEx.mandatory,
-      progression: templateEx.progression,
+      // Prefer the live, personalized rationale ("+2.5kg — hit 8 reps last
+      // time") over the template's generic static hint — it's the same UI
+      // slot, and the live note is always more useful once there's history.
+      progression: programming.note || templateEx.progression,
     } as WorkoutExercise;
   });
 }
@@ -254,7 +262,7 @@ export default function LogWorkout() {
 
     const dayInfo = splitDays[day];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null));
     }
 
     setCurrentExerciseIndex(0);
@@ -356,7 +364,7 @@ export default function LogWorkout() {
       if (routine?.days) {
         const firstDay = Object.values(routine.days)[0] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null);
           // Only swap if we got valid exercises
           setPreSuggestionExercises(backup);
           setExercises(suggested);
@@ -565,7 +573,7 @@ export default function LogWorkout() {
     setSelectedDay(dayKey);
     const dayInfo = splitDays[dayKey];
     if (dayInfo) {
-      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants));
+      setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null));
     }
     setPreSuggestionExercises(null);
   };
@@ -610,7 +618,7 @@ export default function LogWorkout() {
         const firstDayKey = Object.keys(routine.days)[0];
         const firstDay = routine.days[firstDayKey] as any;
         if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants);
+          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null);
           const newSplitDays = getSplitDays(split);
           const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
           setSelectedDay(dayKey);

@@ -6,6 +6,16 @@ import { localDateKey } from '@/lib/dateKey';
 
 export type TrainingSplit = 'ppl6' | 'upper_lower4' | 'full_body3' | 'ppl5' | 'custom';
 
+/**
+ * How sets/reps/rest get programmed for every exercise:
+ *  - 'strength': low reps, more rest, always — regardless of the day's own bias.
+ *  - 'volume': high reps, more sets, shorter rest — regardless of day bias.
+ *  - 'mix' (default): alternate per the day's own heavy/volume bias, honoring
+ *    each split's hand-curated per-exercise prescription (today's behavior).
+ * See src/lib/programmingEngine.ts for where this is applied.
+ */
+export type TrainingFocus = 'volume' | 'strength' | 'mix';
+
 export interface UserPreferences {
   id: string;
   user_id: string;
@@ -19,6 +29,7 @@ export interface UserPreferences {
   weight_goal_type: 'lose' | 'gain' | 'maintain' | null;
   units_system: 'metric' | 'imperial';
   training_split: TrainingSplit;
+  training_focus: TrainingFocus;
   rest_days: number[];
   routine_setup_completed: boolean;
   fitness_goal: string | null;

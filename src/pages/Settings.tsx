@@ -616,6 +616,40 @@ export default function Settings() {
                   </Box>
                 </Box>
 
+                {/* Training Focus */}
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Training Focus
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                    How sets &amp; reps get programmed for every exercise, adapted from your own logged history
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {([
+                      { value: 'volume', label: 'Volume', hint: 'More sets, higher reps' },
+                      { value: 'strength', label: 'Strength', hint: 'Fewer reps, more rest' },
+                      { value: 'mix', label: 'Mix', hint: 'Alternates by day' },
+                    ] as const).map(opt => {
+                      const current = preferences?.training_focus || 'mix';
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => updatePreferences.mutate({ training_focus: opt.value })}
+                          title={opt.hint}
+                          className={cn(
+                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
+                            current === opt.value
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
                 {/* Auto-start rest timer toggle */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>

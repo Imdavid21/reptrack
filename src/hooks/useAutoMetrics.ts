@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, differenceInMinutes } from 'date-fns';
+import { estimateOneRepMax } from '@/lib/muscleInsights';
 
 export interface AutoMetrics {
   performanceScore: number;
@@ -18,6 +19,8 @@ export interface DailyAutoMetrics {
   efficiency: number;
   volume: number;
   duration: number;
+  /** Peak estimated 1RM (Epley) across all completed weighted sets that day, in kg. 0 if no weighted sets. */
+  strengthIndex: number;
 }
 
 export interface DateRangeFilter {
@@ -75,17 +78,21 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
         .order('date', { ascending: true });
 
       // Calculate metrics per workout, then aggregate by date
-      const workoutMetricsById = new Map<string, { volume: number; duration: number; date: string }>();
+      const workoutMetricsById = new Map<string, { volume: number; duration: number; date: string; strengthIndex: number }>();
 
       workouts?.forEach(w => {
         let volume = 0;
-        
+        let strengthIndex = 0;
+
         // Calculate volume from exercises table (string values)
         (w.exercises || []).forEach((ex: any) => {
           if (!ex.completed) return;
           const weight = parseWeight(ex.actual_weight);
           const reps = parseReps(ex.actual_reps);
           volume += weight * reps;
+          // estimateOneRepMax returns 0 for weight/reps <= 0, so bodyweight/timed
+          // sets (weight 0) naturally don't contribute to the strength index.
+          strengthIndex = Math.max(strengthIndex, estimateOneRepMax(weight, reps));
         });
 
         // Skip workouts with no exercise data (ghost/empty entries)
@@ -99,16 +106,18 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
         // Default to 45 min if no duration data but has exercises
         if (duration <= 0) duration = 45;
 
-        workoutMetricsById.set(w.id, { volume, duration, date: w.date });
+        workoutMetricsById.set(w.id, { volume, duration, date: w.date, strengthIndex });
       });
 
-      // Aggregate by date (sum volume and duration for same-day workouts)
-      const workoutMetrics = new Map<string, { volume: number; duration: number; date: string }>();
+      // Aggregate by date (sum volume/duration for same-day workouts; strength
+      // index takes the peak across them, since 1RM isn't additive).
+      const workoutMetrics = new Map<string, { volume: number; duration: number; date: string; strengthIndex: number }>();
       workoutMetricsById.forEach((metrics) => {
         const existing = workoutMetrics.get(metrics.date);
         if (existing) {
           existing.volume += metrics.volume;
           existing.duration += metrics.duration;
+          existing.strengthIndex = Math.max(existing.strengthIndex, metrics.strengthIndex);
         } else {
           workoutMetrics.set(metrics.date, { ...metrics });
         }
@@ -148,6 +157,7 @@ export function useAutoMetrics(dateRange?: DateRangeFilter) {
           efficiency: Math.round(efficiency),
           volume: metrics.volume,
           duration: metrics.duration,
+          strengthIndex: Math.round(metrics.strengthIndex),
         };
 
         history.push(dailyMetric);
