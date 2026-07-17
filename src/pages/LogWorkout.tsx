@@ -577,6 +577,13 @@ export default function LogWorkout() {
       // Reset selection since days changed
       setSelectedDay('');
       setExercises([]);
+      setStep('select-day');
+      // A saved draft from the OLD split (e.g. a Push A session started before
+      // switching to Full Body) must not survive the switch — the draft-restore
+      // effect on mount would otherwise repopulate the exercise list with the
+      // previous split's exercises the next time this page loads, even though
+      // the day picker correctly shows the new split.
+      clearDraft();
     } catch (error) {
       toast.error('Failed to change split — please try again');
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveSplitDays } from './splitTemplates';
+import { resolveSplitDays, getSplitDays, SPLIT_TEMPLATES, TrainingSplit } from './splitTemplates';
 import type { WorkoutDay } from './workoutPresets';
 import { getBodyPart } from './exerciseClassification';
 import { derivePersonalizedProgramming } from './programmingEngine';
@@ -43,6 +43,26 @@ describe('resolveSplitDays', () => {
     const names = Object.values(days).map(d => d.name);
     expect(names).toContain('Push A');
     expect(Object.keys(days).length).toBe(6);
+  });
+});
+
+// ── The "MUST" badge is data-driven: every real split needs at least one
+// mandatory corrective, or the badge silently never appears on that split ──
+describe('mandatory correctives exist on every real split', () => {
+  const realSplits: TrainingSplit[] = ['ppl6', 'ppl5', 'upper_lower4', 'full_body3'];
+
+  it.each(realSplits)('%s has at least one mandatory exercise', (split) => {
+    const days = getSplitDays(split);
+    const hasMandatory = Object.values(days).some(day =>
+      day.exercises.some(ex => ex.mandatory === true)
+    );
+    expect(hasMandatory).toBe(true);
+  });
+
+  it('SPLIT_TEMPLATES has an entry for every TrainingSplit id used above', () => {
+    for (const split of realSplits) {
+      expect(SPLIT_TEMPLATES[split]).toBeDefined();
+    }
   });
 });
 
