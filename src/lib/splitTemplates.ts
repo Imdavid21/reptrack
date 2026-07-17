@@ -275,3 +275,23 @@ export function getSplitTemplate(split: TrainingSplit): SplitTemplate {
 export function getSplitDays(split: TrainingSplit): Record<string, WorkoutDay> {
   return getSplitTemplate(split).days;
 }
+
+/**
+ * Resolve the day set every screen should use for a given split.
+ *
+ * A stored custom routine ONLY wins when the user's split is explicitly
+ * 'custom'. For every real split (Full Body, Upper/Lower, PPL…) the template is
+ * the single source of truth. This is the one place that decision lives, so the
+ * day picker, the review flow, and the next-workout suggestion can't disagree —
+ * previously a leftover active custom routine silently overrode the chosen split
+ * in the review flow only, so picking Full Body still showed Push/Pull/Legs.
+ */
+export function resolveSplitDays(
+  split: TrainingSplit | undefined | null,
+  customDays: Record<string, WorkoutDay> | null | undefined,
+  hasCustomRoutine: boolean,
+): Record<string, WorkoutDay> {
+  const effective = (split || 'ppl6') as TrainingSplit;
+  if (effective === 'custom' && hasCustomRoutine && customDays) return customDays;
+  return getSplitDays(effective);
+}

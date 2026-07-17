@@ -3,7 +3,7 @@ import { useWorkouts } from './useWorkouts';
 import { useUserPreferences } from './useUserPreferences';
 import { useCustomRoutine } from './useCustomRoutine';
 import { useLastUsedWeights } from './useLastUsedWeights';
-import { getSplitDays } from '@/lib/splitTemplates';
+import { resolveSplitDays } from '@/lib/splitTemplates';
 import { findBestMatch } from '@/lib/exerciseMatching';
 import { suggestProgression, ProgressionSuggestion } from '@/lib/progression';
 import { localDateKey } from '@/lib/dateKey';
@@ -42,8 +42,10 @@ export function useNextWorkout(): NextWorkout | null {
   const { lastUsedMap } = useLastUsedWeights();
 
   return useMemo(() => {
-    const split = preferences?.training_split || 'ppl6';
-    const days = hasCustomRoutine && customDays ? customDays : getSplitDays(split);
+    // Same resolution as the workout screen: the chosen split is authoritative
+    // unless it's explicitly 'custom', so the "next workout" suggestion can't be
+    // hijacked by a leftover custom routine.
+    const days = resolveSplitDays(preferences?.training_split, customDays, hasCustomRoutine);
     const entries = Object.entries(days);
     if (entries.length === 0) return null;
 

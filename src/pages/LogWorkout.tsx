@@ -13,7 +13,7 @@ import { ExercisePicker } from '@/components/workout/ExercisePicker';
 
 import { SplitSelector } from '@/components/workout/SplitSelector';
 import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
-import { getSplitDays, TrainingSplit } from '@/lib/splitTemplates';
+import { getSplitDays, resolveSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { derivePersonalizedProgramming } from '@/lib/programmingEngine';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
@@ -168,9 +168,10 @@ export default function LogWorkout() {
   const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
 
   const splitDays = useMemo(() => {
-    if (hasCustomRoutine && customDays) return customDays;
-    const split = preferences?.training_split || 'ppl6';
-    return getSplitDays(split);
+    // Single source of truth: the chosen training split wins unless it's
+    // explicitly 'custom'. A leftover active custom routine must not override
+    // the split the user picked (that's what made Full Body render as PPL here).
+    return resolveSplitDays(preferences?.training_split, customDays, hasCustomRoutine);
   }, [preferences?.training_split, hasCustomRoutine, customDays]);
 
   const { completedSets, totalSets } = useMemo(() => {

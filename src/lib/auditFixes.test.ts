@@ -1,10 +1,50 @@
 import { describe, it, expect } from 'vitest';
+import { resolveSplitDays } from './splitTemplates';
+import type { WorkoutDay } from './workoutPresets';
 import { getBodyPart } from './exerciseClassification';
 import { derivePersonalizedProgramming } from './programmingEngine';
 import { normalizeExerciseName, findBestMatch } from './exerciseMatching';
 import { computeBodyOverview, BodyOverviewInput } from './bodyScore';
 import type { Exercise } from './workoutPresets';
 import type { LastUsedData } from '@/hooks/useLastUsedWeights';
+
+// ── Split resolution: the chosen split wins unless it's explicitly 'custom' ──
+describe('resolveSplitDays', () => {
+  const customDays: Record<string, WorkoutDay> = {
+    'Day 1': { name: 'Push A', focus: 'Chest & Triceps', exercises: [] },
+  };
+
+  it('uses the template split even when an active custom routine exists', () => {
+    // The reported bug: picking Full Body still rendered the custom PPL routine.
+    const days = resolveSplitDays('full_body3', customDays, true);
+    const names = Object.values(days).map(d => d.name);
+    expect(names.some(n => n.includes('Full Body'))).toBe(true);
+    expect(names).not.toContain('Push A');
+  });
+
+  it('honors Upper/Lower over a leftover custom routine', () => {
+    const days = resolveSplitDays('upper_lower4', customDays, true);
+    const names = Object.values(days).map(d => d.name);
+    expect(names.some(n => n.includes('Upper'))).toBe(true);
+    expect(names).not.toContain('Push A');
+  });
+
+  it('only applies a custom routine when the split is explicitly custom', () => {
+    expect(resolveSplitDays('custom', customDays, true)).toBe(customDays);
+  });
+
+  it('ignores a custom routine flag with no days, falling back to template', () => {
+    const days = resolveSplitDays('custom', null, true);
+    expect(Object.keys(days).length).toBe(0); // getSplitDays('custom') → empty
+  });
+
+  it('defaults to ppl6 when split is missing', () => {
+    const days = resolveSplitDays(undefined, null, false);
+    const names = Object.values(days).map(d => d.name);
+    expect(names).toContain('Push A');
+    expect(Object.keys(days).length).toBe(6);
+  });
+});
 
 // ── C2: exercise classification — specific tokens must beat generic press/push ──
 describe('getBodyPart classification precedence', () => {
