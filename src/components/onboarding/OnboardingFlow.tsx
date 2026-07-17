@@ -214,7 +214,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-border">
+      <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between border-b border-border shrink-0">
         <Logo size="sm" />
         <div className="flex gap-1">
           {STEPS.map((_, i) => (
@@ -263,7 +263,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t border-border safe-area-bottom">
+      <div className="p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-border shrink-0">
         <Button
           className="w-full h-12"
           onClick={handleNext}

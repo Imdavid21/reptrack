@@ -46,7 +46,7 @@ export function PWAPrompt() {
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-8 md:w-96"
+                    className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 md:left-auto md:right-8 md:w-96 md:bottom-4"
                 >
                     <div className="bg-card/95 backdrop-blur-sm border border-border shadow-xl rounded-xl p-4 relative overflow-hidden">
                         {/* Glossy effect */}

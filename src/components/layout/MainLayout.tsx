@@ -22,7 +22,7 @@ export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: 'calc(80px + env(safe-area-inset-bottom))' }}>
       {showBack && (
         <Box
           component="header"

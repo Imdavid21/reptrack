@@ -214,7 +214,7 @@ export default function Auth() {
       <button
         type="button"
         onClick={toggleTheme}
-        className="fixed top-4 right-4 p-2.5 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 z-50 shadow-sm"
+        className="fixed top-[calc(1rem+env(safe-area-inset-top))] right-4 p-2.5 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 z-50 shadow-sm"
         aria-label="Toggle theme"
       >
         {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
