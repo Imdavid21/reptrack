@@ -38,7 +38,6 @@ import { Logo } from '@/components/layout/Logo';
 import { APP_VERSION } from '@/lib/version';
 
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
-import { DangerZoneSection } from '@/components/settings/DangerZoneSection';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -984,9 +983,6 @@ export default function Settings() {
               Sign Out
             </button>
           </MuiCard>
-
-          {/* Danger zone — permanent account deletion (GDPR) */}
-          <DangerZoneSection />
 
           {/* Version */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3, mt: 'auto' }}>
