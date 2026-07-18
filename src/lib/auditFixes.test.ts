@@ -64,6 +64,19 @@ describe('mandatory correctives exist on every real split', () => {
       expect(SPLIT_TEMPLATES[split]).toBeDefined();
     }
   });
+
+  // Regression: upper_lower4 shipped with no bias field on any day at all.
+  // derivePersonalizedProgramming defaults an unset bias to 'volume', so in
+  // 'mix' focus every Upper/Lower day — including the two meant to be heavy
+  // — silently got volume-day rest times and RIR (120s/90s, 1-2 RIR) instead
+  // of the heavy day's 180s/120s, 2-3 RIR. A day missing bias doesn't error
+  // anywhere, so this needs an explicit check rather than relying on tsc.
+  it.each(realSplits)('%s sets an explicit heavy/volume bias on every day', (split) => {
+    const days = getSplitDays(split);
+    for (const [dayKey, day] of Object.entries(days)) {
+      expect(day.bias, `${split} ${dayKey} (${day.name}) has no bias set`).toMatch(/^(heavy|volume)$/);
+    }
+  });
 });
 
 // ── C2: exercise classification — specific tokens must beat generic press/push ──

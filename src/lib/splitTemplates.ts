@@ -102,6 +102,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 1': {
         name: 'Push A',
         focus: 'Chest & Shoulders',
+        bias: 'heavy',
         exercises: [
           { name: 'Barbell Bench Press', category: 'primary', targetWeight: '60kg', targetReps: '4x6-8' },
           { name: 'Incline DB Press', category: 'primary', targetWeight: '18kg', targetReps: '3x8-10' },
@@ -114,6 +115,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 2': {
         name: 'Pull A',
         focus: 'Back & Biceps',
+        bias: 'heavy',
         exercises: [
           { name: 'Barbell Row', category: 'primary', targetWeight: '50kg', targetReps: '4x6-8' },
           { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '3x8-12' },
@@ -126,6 +128,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 3': {
         name: 'Legs',
         focus: 'Quads & Hamstrings',
+        bias: 'heavy',
         exercises: [
           { name: 'Squats', category: 'primary', targetWeight: '80kg', targetReps: '4x6-8' },
           { name: 'Romanian Deadlift', category: 'primary', targetWeight: '60kg', targetReps: '3x8-10' },
@@ -138,6 +141,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 4': {
         name: 'Push B',
         focus: 'Shoulders & Triceps',
+        bias: 'volume',
         exercises: [
           { name: 'Overhead Press', category: 'primary', targetWeight: '40kg', targetReps: '4x6-8' },
           { name: 'Incline Barbell Press', category: 'primary', targetWeight: '50kg', targetReps: '3x8-10' },
@@ -150,6 +154,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 5': {
         name: 'Pull B',
         focus: 'Back Width',
+        bias: 'volume',
         exercises: [
           { name: 'Deadlift', category: 'primary', targetWeight: '100kg', targetReps: '4x5-6' },
           { name: 'Lat Pulldown', category: 'primary', targetWeight: '50kg', targetReps: '3x8-10' },
@@ -166,54 +171,60 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
   upper_lower4: {
     id: 'upper_lower4',
     name: 'Upper/Lower (4-day)',
-    description: 'Balanced split with adequate recovery',
+    description: 'Each muscle trained twice a week from a different angle — horizontal press/pull up top on A, vertical press/pull on B; squat pattern on Lower A, hip-hinge pattern on Lower B. Heaviest compound first, isolation next, mandatory correctives last.',
     daysPerWeek: 4,
     days: {
       'Day 1': {
         name: 'Upper A',
-        focus: 'Push Emphasis',
+        focus: 'Horizontal press/pull — chest, mid-back, front/side delts',
+        bias: 'heavy',
         exercises: [
-          { name: 'Bench Press', category: 'primary', targetWeight: '60kg', targetReps: '4x6-8' },
-          { name: 'Barbell Row', category: 'primary', targetWeight: '50kg', targetReps: '4x6-8' },
-          { name: 'Overhead Press', category: 'primary', targetWeight: '40kg', targetReps: '3x8-10' },
-          { name: 'Pull-ups', category: 'accessory', targetWeight: 'BW', targetReps: '3x8-12' },
-          { name: 'Lateral Raises', category: 'accessory', targetWeight: '8kg', targetReps: '3x12-15' },
-          { name: 'Tricep Pushdowns', category: 'accessory', targetWeight: '20kg', targetReps: '3x12-15' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Barbell Bench Press', category: 'primary', targetWeight: '60kg', targetReps: '4x6-8', progression: 'Reps before weight, then +2.5kg once all 4x8' },
+          { name: 'Barbell Row', category: 'primary', targetWeight: '50kg', targetReps: '4x6-8', progression: 'Reps before weight, then +2.5kg once all 4x8' },
+          { name: 'Overhead Press', category: 'primary', targetWeight: '40kg', targetReps: '3x8-10', progression: 'Reps before weight' },
+          { name: 'Lateral Raises', category: 'accessory', targetWeight: '8kg', targetReps: '3x12-15', progression: 'Add reps' },
+          { name: 'Barbell Curl', category: 'accessory', targetWeight: '20kg', targetReps: '3x10-12', progression: 'Add reps' },
+          { name: 'Tricep Pushdown', category: 'accessory', targetWeight: '20kg', targetReps: '3x12-15', progression: 'Add reps' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
         ],
       },
       'Day 2': {
         name: 'Lower A',
-        focus: 'Quad Focus',
+        focus: 'Squat pattern — quads, glutes, hamstrings',
+        bias: 'heavy',
         exercises: [
-          { name: 'Squats', category: 'primary', targetWeight: '80kg', targetReps: '4x6-8' },
-          { name: 'Romanian Deadlift', category: 'primary', targetWeight: '60kg', targetReps: '3x8-10' },
-          { name: 'Leg Press', category: 'primary', targetWeight: '120kg', targetReps: '3x10-12' },
-          { name: 'Leg Curl', category: 'accessory', targetWeight: '30kg', targetReps: '3x12-15' },
-          { name: 'Calf Raises', category: 'accessory', targetWeight: 'BW', targetReps: '4x12-15' },
+          { name: 'Barbell Squat', category: 'primary', targetWeight: '80kg', targetReps: '4x6-8', progression: 'Reps before weight, then +2.5kg once all 4x8' },
+          { name: 'Romanian Deadlift', category: 'primary', targetWeight: '60kg', targetReps: '3x8-10', progression: 'Reps before weight' },
+          { name: 'Leg Press', category: 'primary', targetWeight: '120kg', targetReps: '3x10-12', progression: 'Add reps, then weight' },
+          { name: 'Leg Curl', category: 'accessory', targetWeight: '30kg', targetReps: '3x12-15', progression: 'Add reps' },
+          { name: 'Standing Calf Raise', category: 'accessory', targetWeight: '40kg', targetReps: '4x12-15', progression: 'Add reps' },
+          { name: 'Hanging Knee Raises', category: 'accessory', targetWeight: 'BW', targetReps: '3x12', mandatory: true, progression: 'Core control under fatigue — do not skip' },
         ],
       },
       'Day 3': {
         name: 'Upper B',
-        focus: 'Pull Emphasis',
+        focus: 'Vertical press/pull — back width, upper chest, arms',
+        bias: 'volume',
         exercises: [
-          { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '4x6-8' },
-          { name: 'Incline Dumbbell Press', category: 'primary', targetWeight: '18kg', targetReps: '4x8-10' },
-          { name: 'Cable Rows', category: 'primary', targetWeight: '45kg', targetReps: '3x10-12' },
-          { name: 'Lateral Raises', category: 'accessory', targetWeight: '7kg', targetReps: '3x12-15' },
-          { name: 'Bicep Curls', category: 'accessory', targetWeight: '12kg', targetReps: '3x12-15' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '4x8-10', progression: 'Add reps toward 4x10-12, then start adding weight' },
+          { name: 'Incline Dumbbell Press', category: 'primary', targetWeight: '18kg', targetReps: '4x8-10', progression: 'Reps before weight' },
+          { name: 'Seated Cable Row', category: 'primary', targetWeight: '45kg', targetReps: '3x10-12', progression: 'Add reps' },
+          { name: 'Lateral Raises', category: 'accessory', targetWeight: '7kg', targetReps: '3x15-20', progression: 'Add reps' },
+          { name: 'Dumbbell Curl', category: 'accessory', targetWeight: '12kg', targetReps: '3x12-15', progression: 'Add reps' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
         ],
       },
       'Day 4': {
         name: 'Lower B',
-        focus: 'Hamstring Focus',
+        focus: 'Hip hinge — glutes, hamstrings, calves',
+        bias: 'volume',
         exercises: [
-          { name: 'Deadlift', category: 'primary', targetWeight: '100kg', targetReps: '4x5-6' },
-          { name: 'Bulgarian Split Squat', category: 'primary', targetWeight: '14kg', targetReps: '3x8-10' },
-          { name: 'Leg Curl', category: 'primary', targetWeight: '35kg', targetReps: '4x10-12' },
-          { name: 'Leg Extension', category: 'accessory', targetWeight: '40kg', targetReps: '3x12-15' },
-          { name: 'Seated Calf Raise', category: 'accessory', targetWeight: '25kg', targetReps: '4x15-20' },
+          { name: 'Hip Thrust', category: 'primary', targetWeight: '80kg', targetReps: '4x10-15', progression: 'Add reps' },
+          { name: 'Bulgarian Split Squat', category: 'primary', targetWeight: '14kg', targetReps: '3x8-10 each', progression: 'Reps before weight' },
+          { name: 'Leg Curl', category: 'primary', targetWeight: '35kg', targetReps: '4x10-12', progression: 'Add reps' },
+          { name: 'Leg Extension', category: 'accessory', targetWeight: '40kg', targetReps: '3x12-15', progression: 'Add reps' },
+          { name: 'Seated Calf Raise', category: 'accessory', targetWeight: '25kg', targetReps: '4x15-20', progression: 'Add reps' },
+          { name: 'Farmer Walks', category: 'accessory', targetWeight: '30kg', targetReps: '4x40', mandatory: true, progression: 'Grip, traps, core under load — do not skip' },
         ],
       },
     },
@@ -228,6 +239,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 1': {
         name: 'Full Body A',
         focus: 'Strength Foundation',
+        bias: 'heavy',
         exercises: [
           { name: 'Squats', category: 'primary', targetWeight: '70kg', targetReps: '4x6-8' },
           { name: 'Bench Press', category: 'primary', targetWeight: '55kg', targetReps: '4x6-8' },
@@ -239,6 +251,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 2': {
         name: 'Full Body B',
         focus: 'Power & Volume',
+        bias: 'heavy',
         exercises: [
           { name: 'Deadlift', category: 'primary', targetWeight: '90kg', targetReps: '4x5-6' },
           { name: 'Incline Dumbbell Press', category: 'primary', targetWeight: '16kg', targetReps: '4x8-10' },
@@ -251,6 +264,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
       'Day 3': {
         name: 'Full Body C',
         focus: 'Hypertrophy',
+        bias: 'volume',
         exercises: [
           { name: 'Front Squats', category: 'primary', targetWeight: '50kg', targetReps: '4x8-10' },
           { name: 'Dumbbell Bench Press', category: 'primary', targetWeight: '18kg', targetReps: '4x8-10' },
