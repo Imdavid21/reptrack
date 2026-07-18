@@ -128,10 +128,11 @@ export function CalorieTrackerCompact() {
     setTextInput('');
     setContextHint('');
     setManualData({ food_name: '', calories: '' });
-    setPreviewUrl(null);
+    setPreviewUrls([]);
     setUploadedPhotoUrl(null);
     setAnalysisError(null);
-    setLastFile(null);
+    setLastFiles([]);
+    setAnalysisProgressText('');
   };
 
   const handleCameraClick = () => {
