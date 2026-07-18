@@ -82,7 +82,8 @@
     --energy-soft: 130 40% 88%;
 
     /* Pillar palette — one hue per body domain, used consistently everywhere:
-       Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover.
+       Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover,
+       Strength progress = strength.
        The base value is for FILLS (bars, badges with dark text). The -ink value
        is contrast-safe for TEXT/ICONS on cards and soft tints. */
     --energy-ink: 130 40% 40%;
@@ -95,6 +96,9 @@
     --recover: 256 52% 62%;
     --recover-ink: 256 46% 50%;
     --recover-soft: 256 56% 92%;
+    --strength: 180 55% 45%;
+    --strength-ink: 180 60% 32%;
+    --strength-soft: 180 50% 90%;
   }
 
   .dark {
@@ -170,6 +174,9 @@
     --recover: 256 52% 68%;
     --recover-ink: 256 60% 75%;
     --recover-soft: 256 45% 20%;
+    --strength: 180 55% 55%;
+    --strength-ink: 180 60% 72%;
+    --strength-soft: 180 45% 18%;
   }
 }
 

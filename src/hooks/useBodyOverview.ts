@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useNextWorkout } from './useNextWorkout';
+import { useExerciseSets } from './useExerciseSets';
 import { localDateKey } from '@/lib/dateKey';
 import {
   computeBodyOverview,
@@ -13,6 +14,8 @@ import {
   BodyOverview,
   BodyOverviewInput,
   ScorePoint,
+  StrengthSetInput,
+  STRENGTH_LOOKBACK_DAYS,
 } from '@/lib/bodyScore';
 
 export interface BodyOverviewRange {
@@ -46,6 +49,24 @@ export function useBodyOverview(range?: BodyOverviewRange) {
     1,
     Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000) + 1,
   );
+
+  // Strength progress needs more history than the other pillars — a primary
+  // lift on a 6-day split recurs about once a week, so judging a trend needs
+  // multiple weeks even when the display range itself is short. Always look
+  // back at least STRENGTH_LOOKBACK_DAYS, wider still if the range already is.
+  const strengthFrom = startOfDay(subDays(to, Math.max(STRENGTH_LOOKBACK_DAYS, rangeDays) - 1));
+  const { data: exerciseSetsData } = useExerciseSets({ from: strengthFrom, to });
+  const strengthSets: StrengthSetInput[] = useMemo(() => (
+    (exerciseSetsData?.sets ?? [])
+      .filter(s => !!s.workout_date)
+      .map(s => ({
+        date: s.workout_date as string,
+        exercise_name: s.exercise_name,
+        category: s.training_category,
+        actual_weight: s.actual_weight,
+        actual_reps: s.actual_reps,
+      }))
+  ), [exerciseSetsData]);
 
   const query = useQuery({
     queryKey: ['bodyOverview', user?.id, widenedFromKey, toKey],
@@ -110,10 +131,14 @@ export function useBodyOverview(range?: BodyOverviewRange) {
       meals: data.meals.filter(m => inMain(m.date)),
       waterByDay: Object.fromEntries(Object.entries(data.waterByDay).filter(([d]) => inMain(d))),
       metrics: data.metrics.filter(m => inMain(m.date)),
+      // NOT filtered by inMain — strength deliberately uses its own wider
+      // lookback (strengthFrom..to) computed above, independent of the
+      // display range.
+      strengthSets,
       nextDayName: nextWorkout?.dayName,
       nextDayKey: nextWorkout?.dayKey,
     });
-  }, [data, goals, rangeDays, fromKey, toKey, nextWorkout?.dayName, nextWorkout?.dayKey]);
+  }, [data, goals, rangeDays, fromKey, toKey, strengthSets, nextWorkout?.dayName, nextWorkout?.dayKey]);
 
   const trend: ScorePoint[] = useMemo(() => {
     if (!data) return [];
@@ -121,9 +146,9 @@ export function useBodyOverview(range?: BodyOverviewRange) {
       const dateKey = localDateKey(d);
       return { date: dateKey, fromKey: localDateKey(subDays(d, TRAILING_DAYS - 1)), toKey: dateKey };
     });
-    return computeScoreSeries(windows, data, goals, TRAILING_DAYS);
+    return computeScoreSeries(windows, { ...data, strengthSets }, goals, TRAILING_DAYS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, goals, fromKey, toKey]);
+  }, [data, goals, fromKey, toKey, strengthSets]);
 
   return {
     overview,

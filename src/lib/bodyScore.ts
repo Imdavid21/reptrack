@@ -1,16 +1,28 @@
 /**
  * Body Overview engine — the "north star" synthesis layer.
  *
- * Pure functions that turn raw logs (workouts, meals, water, sleep, weight)
- * into: one overall body score, four pillar scores (Training / Fuel /
- * Recovery / Hydration), and a short list of concrete, data-grounded next
- * steps. Honesty rules baked in:
+ * Pure functions that turn raw logs (workouts, meals, water, sleep, weight,
+ * logged sets) into: one overall body score, five pillar scores (Training /
+ * Fuel / Recovery / Hydration / Strength), and a short list of concrete,
+ * data-grounded next steps. Honesty rules baked in:
  *  - a pillar only gets a score when it has enough data (min sample sizes)
  *  - every output carries the day-count it was computed from
  *  - the overall score is renormalized over the pillars that actually exist
  */
 
-export type PillarKey = 'training' | 'fuel' | 'recovery' | 'hydration';
+import { getCanonicalName } from './exerciseMatching';
+import { getExerciseType } from './exerciseLibrary';
+
+export type PillarKey = 'training' | 'fuel' | 'recovery' | 'hydration' | 'strength';
+
+/**
+ * How far back the strength-progress pillar looks, independent of whatever
+ * display range the other four pillars use. Primary lifts on a 6-day split
+ * recur roughly weekly, so judging a trend needs multiple weeks of history,
+ * not the 7-14 day window "did you sleep enough" or "did you hit your
+ * protein" can answer honestly on.
+ */
+export const STRENGTH_LOOKBACK_DAYS = 56;
 
 export interface PillarResult {
   key: PillarKey;
@@ -62,9 +74,29 @@ export interface BodyOverviewInput {
   /** Liters per yyyy-MM-dd day. */
   waterByDay: Record<string, number>;
   metrics: Array<{ date: string; sleep_hours: number | null; bodyweight: number | null }>;
+  /**
+   * Completed sets for the strength-progress pillar. Unlike every other
+   * field above, callers should widen this well beyond rangeDays/the display
+   * range (see STRENGTH_LOOKBACK_DAYS) — a primary lift on a 6-day split
+   * recurs about once a week, so a 7-14 day window rarely contains two
+   * sessions of the same exercise to compare.
+   */
+  strengthSets?: StrengthSetInput[];
   /** Name of the next scheduled split day, for the training CTA. */
   nextDayName?: string;
   nextDayKey?: string;
+}
+
+export interface StrengthSetInput {
+  /** yyyy-MM-dd workout date. */
+  date: string;
+  exercise_name: string;
+  /** Raw training-role category from the exercises table: 'warmup' |
+   * 'primary' | 'accessory'. Warmup sets are excluded; primary lifts count
+   * double toward the aggregate score. */
+  category: string;
+  actual_weight: number | null;
+  actual_reps: number | null;
 }
 
 export interface ScorePoint {
@@ -85,6 +117,7 @@ export function computeScoreSeries(
     meals: BodyOverviewInput['meals'];
     waterByDay: Record<string, number>;
     metrics: BodyOverviewInput['metrics'];
+    strengthSets?: StrengthSetInput[];
   },
   goals: BodyOverviewInput['goals'],
   windowDays: number,
@@ -98,6 +131,12 @@ export function computeScoreSeries(
       meals: data.meals.filter((m) => inRange(m.date)),
       waterByDay: Object.fromEntries(Object.entries(data.waterByDay).filter(([d]) => inRange(d))),
       metrics: data.metrics.filter((m) => inRange(m.date)),
+      // Same narrow per-window bound as everything else above, so this stays
+      // consistent with the file's "date math happens in the caller" rule —
+      // in practice this window is usually too short for strength to score
+      // (see STRENGTH_LOOKBACK_DAYS), which just means the pillar is null
+      // for most points on the rolling trend line, not wrong.
+      strengthSets: (data.strengthSets ?? []).filter((s) => inRange(s.date)),
     };
     return { date: w.date, score: computeBodyOverview(input).overall };
   });
@@ -150,6 +189,134 @@ function sessionFrequencyTrend(dates: string[]): 'up' | 'down' | 'flat' {
   if (change > 0.05) return 'up';
   if (change < -0.05) return 'down';
   return 'flat';
+}
+
+// ---- Strength progress ----
+
+/** Epley estimated 1RM: a set's weight/reps projected to a single max rep. */
+function epley1RM(weight: number, reps: number): number {
+  return weight * (1 + reps / 30);
+}
+
+// A rep or two of real progress often moves e1RM by only a couple of percent
+// (e.g. 60kg x8 -> 60kg x9 is +2.6%), so the "up" bar is intentionally low.
+// The "down" bar is higher so a single off day (poor sleep, low reps) doesn't
+// read as decline — only a sustained drop should.
+const STRENGTH_PROGRESS_THRESHOLD = 0.03;
+const STRENGTH_DECLINE_THRESHOLD = -0.05;
+// Need at least two sessions of an exercise to compare a "before" and
+// "after"; need at least this many such exercises before the aggregate
+// score reflects more than one lift's noise.
+const MIN_SESSIONS_PER_EXERCISE = 2;
+const MIN_QUALIFYING_EXERCISES = 3;
+
+type ExerciseTrendState = 'progressing' | 'plateaued' | 'declining';
+
+interface ExerciseTrend {
+  name: string;
+  isPrimary: boolean;
+  state: ExerciseTrendState;
+}
+
+/**
+ * Classify every exercise with enough repeat sessions in `sets` as
+ * progressing/plateaued/declining, using whichever metric fits how that
+ * exercise is actually measured (estimated 1RM for weighted lifts, reps for
+ * bodyweight, duration for timed) rather than assuming everything is a
+ * barbell number. Reuses the same canonical-name and exercise-type
+ * resolution as PR tracking, so a naming variant doesn't fragment one lift's
+ * history into two untracked slivers the way it used to for PRs.
+ */
+function computeExerciseTrends(sets: StrengthSetInput[]): ExerciseTrend[] {
+  const byExercise = new Map<string, { isPrimary: boolean; sessions: Map<string, number> }>();
+
+  for (const s of sets) {
+    if (s.category === 'warmup') continue;
+
+    const name = getCanonicalName(s.exercise_name);
+    const type = getExerciseType(name);
+
+    let value: number | null = null;
+    if (type === 'timed' || type === 'bodyweight') {
+      // Timed exercises store their duration in actual_reps (seconds), same
+      // convention usePersonalRecords.ts's PR tracking already relies on.
+      if (s.actual_reps && s.actual_reps > 0) value = s.actual_reps;
+    } else if (s.actual_weight && s.actual_weight > 0 && s.actual_reps && s.actual_reps > 0) {
+      // weighted or weighted_bw (the added-weight column doubles as "weight" here)
+      value = epley1RM(s.actual_weight, s.actual_reps);
+    }
+    if (value == null) continue;
+
+    let entry = byExercise.get(name);
+    if (!entry) {
+      entry = { isPrimary: s.category === 'primary', sessions: new Map() };
+      byExercise.set(name, entry);
+    }
+    // Session-best: multiple sets of the same exercise on the same day
+    // collapse to their single best value, so a light warm-up-ish set
+    // doesn't understate a day's real performance.
+    const prevBest = entry.sessions.get(s.date) ?? 0;
+    if (value > prevBest) entry.sessions.set(s.date, value);
+  }
+
+  const trends: ExerciseTrend[] = [];
+  for (const [name, { isPrimary, sessions }] of byExercise) {
+    if (sessions.size < MIN_SESSIONS_PER_EXERCISE) continue;
+
+    const points = [...sessions.entries()]
+      .map(([date, v]) => ({ date, v }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const mid = Math.floor(points.length / 2);
+    const avg = (xs: typeof points) => xs.reduce((s, p) => s + p.v, 0) / xs.length;
+    const firstAvg = avg(points.slice(0, mid));
+    const secondAvg = avg(points.slice(mid));
+    const change = firstAvg > 0 ? (secondAvg - firstAvg) / firstAvg : 0;
+
+    let state: ExerciseTrendState = 'plateaued';
+    if (change > STRENGTH_PROGRESS_THRESHOLD) state = 'progressing';
+    else if (change < STRENGTH_DECLINE_THRESHOLD) state = 'declining';
+
+    trends.push({ name, isPrimary, state });
+  }
+  return trends;
+}
+
+function computeStrengthProgress(sets: StrengthSetInput[]): PillarResult {
+  const trends = computeExerciseTrends(sets);
+  const distinctDays = new Set(sets.map(s => s.date)).size;
+
+  if (trends.length < MIN_QUALIFYING_EXERCISES) {
+    return {
+      key: 'strength',
+      score: null,
+      valueLabel: trends.length > 0
+        ? `Only ${trends.length} lift${trends.length === 1 ? '' : 's'} with enough history`
+        : 'Not enough data yet',
+      daysWithData: distinctDays,
+      trend: 'flat',
+    };
+  }
+
+  let weightedSum = 0;
+  let weightTotal = 0;
+  let progressingCount = 0;
+  let decliningCount = 0;
+  for (const t of trends) {
+    const weight = t.isPrimary ? 2 : 1;
+    const points = t.state === 'progressing' ? 1 : t.state === 'plateaued' ? 0.5 : 0;
+    weightedSum += points * weight;
+    weightTotal += weight;
+    if (t.state === 'progressing') progressingCount++;
+    if (t.state === 'declining') decliningCount++;
+  }
+
+  return {
+    key: 'strength',
+    score: Math.round(clamp((weightedSum / weightTotal) * 100)),
+    valueLabel: `${progressingCount} of ${trends.length} lifts trending up`,
+    daysWithData: distinctDays,
+    trend: progressingCount > decliningCount ? 'up' : decliningCount > progressingCount ? 'down' : 'flat',
+  };
 }
 
 export function computeBodyOverview(input: BodyOverviewInput): BodyOverview {
@@ -249,9 +416,12 @@ export function computeBodyOverview(input: BodyOverviewInput): BodyOverview {
     trend: halfTrend(sleepEntries),
   };
 
+  // ---- Strength progress ----
+  const strength = computeStrengthProgress(input.strengthSets ?? []);
+
   // ---- Overall (renormalized over scored pillars) ----
-  const weights: Record<PillarKey, number> = { training: 0.35, fuel: 0.25, recovery: 0.25, hydration: 0.15 };
-  const pillars = { training, fuel, recovery, hydration };
+  const weights: Record<PillarKey, number> = { training: 0.3, strength: 0.2, fuel: 0.2, recovery: 0.2, hydration: 0.1 };
+  const pillars = { training, fuel, recovery, hydration, strength };
   let weightSum = 0;
   let scoreSum = 0;
   (Object.keys(pillars) as PillarKey[]).forEach(k => {
@@ -356,6 +526,32 @@ function buildNextSteps(o: BodyOverview, input: BodyOverviewInput): NextStep[] {
         priority: 75,
       });
     }
+  }
+
+  // Strength progress — surface the single most useful finding: a declining
+  // primary lift beats a general "plateaued" note (something changed, worth
+  // investigating), and a real plateau beats staying silent.
+  const strengthTrends = computeExerciseTrends(input.strengthSets ?? []);
+  const decliningPrimary = strengthTrends.find(t => t.isPrimary && t.state === 'declining');
+  const plateauedPrimary = strengthTrends.filter(t => t.isPrimary && t.state === 'plateaued');
+  if (decliningPrimary) {
+    steps.push({
+      id: 'strength-declining',
+      pillar: 'strength',
+      title: `${decliningPrimary.name} is trending down`,
+      detail: 'Recent sessions are below your recent best — consider a deload, more recovery, or checking food intake.',
+      route: '/app/insights',
+      priority: 65,
+    });
+  } else if (plateauedPrimary.length >= 2) {
+    steps.push({
+      id: 'strength-plateaued',
+      pillar: 'strength',
+      title: 'Multiple lifts have plateaued',
+      detail: `${plateauedPrimary.slice(0, 2).map(t => t.name).join(', ')} haven't moved recently — try adding a rep or a small weight jump.`,
+      route: '/app/insights',
+      priority: 50,
+    });
   }
 
   // Hydration
