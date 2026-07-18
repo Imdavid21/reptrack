@@ -45,7 +45,11 @@ interface AnalyzeResult {
 // public internet (the previous behaviour, which leaked every user's photos).
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
-const OVERALL_TIMEOUT_MS = 45_000; // 45s max for the entire pipeline
+// The analyze-food model reasons over the image before answering (more detail =
+// more accurate identification), which runs meaningfully slower than a plain
+// vision call — give the pipeline enough headroom that a legitimate slow
+// analysis doesn't get cut off mid-flight.
+const OVERALL_TIMEOUT_MS = 75_000;
 
 export async function analyzeFoodImage(
   file: File,

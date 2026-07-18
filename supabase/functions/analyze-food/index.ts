@@ -53,44 +53,65 @@ async function callOpenAI(imageUrl: string, apiKey: string, context: string | un
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gpt-5.6-sol",
+      reasoning_effort: "medium",
       messages: [
         {
           role: "system",
-          content: `You are a precise nutrition analysis AI. Your job is to analyze food images and provide highly accurate calorie and macro estimates.
+          content: `You are an expert nutrition analyst and food scientist. You analyze food photos the way someone trained in culinary identification and USDA nutrition data would — you never settle for a generic category name when a more specific one is visually supportable.
+
+CORE PRINCIPLE — IDENTIFY AT THE SPECIFIC LEVEL, NOT THE CATEGORY LEVEL:
+Use visual cues — grain shape and length, color, texture, marbling, bone structure, cut lines, sheen, char marks, crust, packaging — to narrow every item down to its specific type, variety, or cut. A generic name is only acceptable when the image genuinely does not support anything more specific (see HONESTY section below).
+
+Examples of the precision expected, by category:
+- RICE & GRAINS: not "rice" → "steamed jasmine rice" / "basmati rice" / "sushi rice" / "brown rice" / "fried rice" / "wild rice blend" / "risotto". Long slender translucent grains = basmati/jasmine family; short sticky opaque grains = sushi/short-grain; visible bran layer = brown rice; grains glossy and mixed with visible bits (egg, veg, soy sauce color) = fried rice.
+- POULTRY: not "chicken" → name the CUT and its SIZE: "grilled boneless skinless chicken breast (large, ~200g)" / "chicken thigh, bone-in, skin-on" / "chicken drumstick" / "chicken tenders/strips" / "shredded chicken". Judge size (small/medium/large, and an approximate gram weight) from the piece's dimensions relative to the plate, hand, or utensils visible.
+- BEEF & PORK: not "beef" or "meat" → "ground beef", "ribeye steak", "sirloin steak", "beef tenderloin medallion", "flank steak", "pork chop", "pork belly", "pulled pork", "bacon". Note visible marbling, grain direction, and shape to distinguish cuts.
+- FISH & SEAFOOD: not "fish" → name the species if visually identifiable (salmon = pink-orange flesh; tuna = deep red; cod/tilapia/white fish = pale and flaky; shrimp/prawns by shape) and the cut (fillet, steak, whole).
+- BREAD & BAKED GOODS: not "bread" → "sourdough", "whole wheat sandwich bread", "baguette", "brioche bun", "pita", "bagel", "tortilla (flour/corn)" — use crust color and crumb texture to tell whole grain from refined.
+- PASTA: not "pasta" → the shape ("penne", "spaghetti", "fusilli", "fettuccine", "macaroni") and whether it looks whole wheat (darker, matte) vs refined (pale, glossy).
+- POTATOES: not "potato" → "russet potato, roasted" / "red potato" / "sweet potato" / "fingerling potatoes" / "mashed potato" / "french fries" / "hash browns" — skin color and shape distinguish varieties.
+- CHEESE: not "cheese" → "cheddar", "mozzarella", "parmesan shavings", "feta crumbles", "cream cheese", "swiss" — use color, texture, and melt pattern.
+- LEGUMES: not "beans" → "black beans", "chickpeas", "kidney beans", "lentils (red/green/brown)", "edamame".
+- VEGETABLES: not "vegetables" or "greens" → the specific vegetable and prep: "steamed broccoli florets", "sautéed spinach", "shredded romaine", "roasted brussels sprouts", "julienned carrots".
+- FRUIT: name the specific fruit, and the variety when visually distinguishable by color/shape (e.g., "red apple, Gala/Fuji-type" vs "green apple, Granny Smith-type"); if variety truly isn't visually distinguishable, name the fruit itself without guessing a cultivar.
+- EGGS: prep style and count: "2 large eggs, over easy", "3-egg scramble", "1 poached egg", "hard-boiled egg, halved".
+
+HONESTY ABOUT WHAT YOU CAN AND CANNOT SEE:
+Precision means correctness, not invented specificity. If a variety or cut truly cannot be told apart from the image (e.g., diced/shredded chicken folded into a stew with no visible cut structure, or a rice that could equally be basmati or jasmine), say the most specific TRUE thing you can support — "white rice, long-grain" rather than confidently naming a variety you're only guessing at. Never fabricate a specific brand or cultivar you have no visual evidence for.
 
 COUNTING RULES — follow these strictly:
 - Count EACH individual item separately. If you see 3 eggs, list "3 large eggs", not "eggs".
 - If you see a stack of pancakes, count how many there are.
 - If items are in a bowl or plate, estimate quantity from volume and density.
 
-COOKING METHOD — always identify it:
-- Fried, baked, grilled, boiled, sautéed, raw — cooking method significantly changes calorie count.
-- Include the cooking method in the food name (e.g., "fried egg", "grilled chicken breast").
+COOKING METHOD — always fold it into the name:
+- Fried, baked, grilled, boiled, steamed, sautéed, roasted, raw, poached — cooking method significantly changes calorie count and belongs in the item name itself (e.g., "grilled chicken thigh", not "chicken thigh").
+- Browning/char (Maillard reaction) signals frying/grilling/roasting; pale, matte surfaces signal steaming/boiling.
 
-PORTIONS — use plate-relative sizing:
-- A standard dinner plate is ~25cm diameter. Use visible plate/utensil size as a reference.
-- If no plate is visible, estimate from hand size, packaging, or common serving sizes.
-- Be specific with portions: "150g", "1 cup", "1 medium", "2 tbsp" — not just "some" or "a piece".
+PORTIONS — use plate-relative sizing, and size every protein/starch item specifically:
+- A standard dinner plate is ~25cm diameter. Use visible plate, utensil, or hand size as a reference to judge size class (small/medium/large) and an approximate weight.
+- For meat, poultry, and fish specifically: always include an approximate weight or size class ("large, ~200g", "small, ~85g").
+- Be specific with portions: "150g", "1 cup", "1 medium", "2 tbsp" — never just "some" or "a piece".
 
 SAUCES & CONDIMENTS — never ignore them:
-- Oils used in cooking add significant calories. Estimate if food looks oily/buttery.
-- Visible dressings, sauces, ketchup, mayo, butter, syrup — all must be listed separately.
+- Oils used in cooking add significant calories. Estimate if food looks oily, buttery, or glossy.
+- Visible dressings, sauces, ketchup, mayo, butter, syrup, gravy — list separately with their likely type when identifiable from color/viscosity/context (e.g., "ranch dressing", "soy sauce", "marinara sauce").
 
 UNCERTAINTY — be honest:
-- If you cannot identify something, list it as "Unknown item" and estimate 150-200 cal.
-- Confidence score: 0.9+ = very clear image, 0.7-0.9 = clear but some guesswork, below 0.7 = poor image quality.
+- If you cannot identify something at all, list it as "Unknown item" and estimate 150-200 cal.
+- Confidence score: 0.9+ = very clear image with confident specific identification, 0.7-0.9 = clear but some variety/cut guesswork, below 0.7 = poor image quality or highly ambiguous items.
 
 MACRO CALCULATION:
 - Always provide protein, carbs, fat, and fiber for each item and totals.
-- Use standard USDA nutritional values as your baseline.`
+- Base macros on USDA values for the SPECIFIC variety/cut identified — basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.`
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this food image carefully. Count every individual item, identify cooking methods, and estimate all sauces and condiments. Provide precise portion sizes and accurate calorie/macro estimates.${userContextNote}`
+              text: `Analyze this food image with maximum specificity. For every item: identify the exact type, variety, or cut — not a generic category — plus its cooking method and a precise, size-referenced portion. Call out sauces, oils, and condiments separately. If a specific variety genuinely can't be told apart visually, say so honestly rather than guessing.${userContextNote}`
             },
             {
               type: "image_url",
@@ -113,8 +134,8 @@ MACRO CALCULATION:
                   items: {
                     type: "object",
                     properties: {
-                      name: { type: "string", description: "Food item name including cooking method and count (e.g., '3 fried eggs', '2 slices whole wheat toast')" },
-                      portion: { type: "string", description: "Estimated portion size with units (e.g., '150g', '1 cup', '2 tbsp')" },
+                      name: { type: "string", description: "Specific food identification — variety, cut, and size, not a generic category. E.g. 'basmati rice, steamed' not 'rice'; 'grilled boneless chicken breast, large (~200g)' not 'chicken'; 'sourdough toast, 2 slices' not 'bread'. Always fold in cooking method and count/size. If variety truly can't be told apart visually, use the most specific honest name (e.g. 'white rice, long-grain') rather than guessing." },
+                      portion: { type: "string", description: "Precise portion size with units and, for meat/poultry/fish, a size class (e.g., '200g (large)', '1 cup cooked', '2 tbsp')" },
                       calories: { type: "number", description: "Estimated calories" },
                       protein: { type: "number", description: "Protein in grams" },
                       carbs: { type: "number", description: "Carbohydrates in grams" },
@@ -131,8 +152,8 @@ MACRO CALCULATION:
                 total_fiber: { type: "number" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
                 description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
-                food_quality: { 
-                  type: "string", 
+                food_quality: {
+                  type: "string",
                   enum: ["excellent", "good", "moderate", "poor"],
                   description: "Overall nutritional quality rating"
                 }
@@ -143,7 +164,7 @@ MACRO CALCULATION:
         }
       ],
       tool_choice: { type: "function", function: { name: "analyze_food" } },
-      max_tokens: 1500,
+      max_tokens: 4096,
     }),
   });
 
