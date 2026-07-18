@@ -77,10 +77,11 @@ export function CalorieTrackerCompact() {
   const [textInput, setTextInput] = useState('');
   const [contextHint, setContextHint] = useState('');
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [lastFiles, setLastFiles] = useState<File[]>([]);
+  const [analysisProgressText, setAnalysisProgressText] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -127,10 +128,11 @@ export function CalorieTrackerCompact() {
     setTextInput('');
     setContextHint('');
     setManualData({ food_name: '', calories: '' });
-    setPreviewUrl(null);
+    setPreviewUrls([]);
     setUploadedPhotoUrl(null);
     setAnalysisError(null);
-    setLastFile(null);
+    setLastFiles([]);
+    setAnalysisProgressText('');
   };
 
   const handleCameraClick = () => {
@@ -154,18 +156,43 @@ export function CalorieTrackerCompact() {
     setIsDialogOpen(true);
   };
 
-  const runAnalysis = async (file: File, hint?: string) => {
-    if (!user) return;
+  const runAnalysis = async (files: File[], hint?: string) => {
+    if (!user || files.length === 0) return;
     setIsAnalyzing(true);
     setAnalysis(null);
     setEditableFoods([]);
     setAnalysisError(null);
     setAnalysisStep('compressing');
+    setAnalysisProgressText('');
 
     try {
-      const result = await analyzeFoodImage(file, user.id, setAnalysisStep, hint);
-      setUploadedPhotoUrl(result.publicUrl);
-      setAnalysis(result.analysis);
+      const mergedFoods: FoodAnalysis['foods'] = [];
+      let firstUrl: string | null = null;
+      let confSum = 0;
+      const descriptions: string[] = [];
+      let qualitySeen: string | undefined;
+
+      for (let i = 0; i < files.length; i++) {
+        if (files.length > 1) {
+          setAnalysisProgressText(`Image ${i + 1} of ${files.length}`);
+        }
+        const result = await analyzeFoodImage(files[i], user.id, setAnalysisStep, hint);
+        if (!firstUrl) firstUrl = result.publicUrl;
+        mergedFoods.push(...result.analysis.foods);
+        confSum += result.analysis.confidence || 0;
+        if (result.analysis.description) descriptions.push(result.analysis.description);
+        if (!qualitySeen && result.analysis.food_quality) qualitySeen = result.analysis.food_quality;
+      }
+
+      setUploadedPhotoUrl(firstUrl);
+      const merged: FoodAnalysis = {
+        foods: mergedFoods,
+        total_calories: mergedFoods.reduce((s, f) => s + (f.calories || 0), 0),
+        confidence: confSum / files.length,
+        description: descriptions.join(' + '),
+        food_quality: qualitySeen,
+      };
+      setAnalysis(merged);
     } catch (error) {
       console.error('Analysis failed:', error);
       const message = error instanceof FoodAnalysisError
@@ -174,23 +201,29 @@ export function CalorieTrackerCompact() {
       setAnalysisError(message);
     } finally {
       setIsAnalyzing(false);
+      setAnalysisProgressText('');
     }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !user) return;
 
     setIsDialogOpen(true);
 
-    const reader = new FileReader();
-    reader.onload = (e) => setPreviewUrl(e.target?.result as string);
-    reader.readAsDataURL(file);
+    // Load previews in parallel
+    const urls = await Promise.all(files.map(f => new Promise<string>((resolve) => {
+      const r = new FileReader();
+      r.onload = (ev) => resolve(ev.target?.result as string);
+      r.readAsDataURL(f);
+    })));
+    setPreviewUrls(urls);
 
-    setLastFile(file);
-    await runAnalysis(file, contextHint || undefined);
+    setLastFiles(files);
+    await runAnalysis(files, contextHint || undefined);
     e.target.value = '';
   };
+
 
   const handleTextAnalyze = async () => {
     if (!textInput.trim()) {
@@ -326,6 +359,7 @@ export function CalorieTrackerCompact() {
         type="file"
         accept="image/*"
         capture="environment"
+        multiple
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -333,6 +367,7 @@ export function CalorieTrackerCompact() {
         ref={galleryInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -587,9 +622,21 @@ export function CalorieTrackerCompact() {
             {/* Image Mode: Show preview and analysis */}
             {imageMode && !analysis && !manualMode && (
               <>
-                {previewUrl && (
-                  <div className="aspect-video bg-muted overflow-hidden rounded-xl">
-                    <img src={previewUrl} alt="Food" className="w-full h-full object-cover" />
+                {previewUrls.length > 0 && (
+                  <div className={cn(
+                    "grid gap-2",
+                    previewUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  )}>
+                    {previewUrls.map((url, i) => (
+                      <div key={i} className="aspect-video bg-muted overflow-hidden rounded-xl relative">
+                        <img src={url} alt={`Food ${i + 1}`} className="w-full h-full object-cover" />
+                        {previewUrls.length > 1 && (
+                          <span className="absolute top-1 left-1 bg-background/80 text-[10px] px-1.5 py-0.5 rounded tabular-nums">
+                            {i + 1}/{previewUrls.length}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -607,7 +654,12 @@ export function CalorieTrackerCompact() {
                 )}
 
                 {isAnalyzing && (
-                  <AnalysisProgress currentStep={analysisStep} />
+                  <div className="space-y-2">
+                    <AnalysisProgress currentStep={analysisStep} />
+                    {analysisProgressText && (
+                      <p className="text-xs text-muted-foreground text-center tabular-nums">{analysisProgressText}</p>
+                    )}
+                  </div>
                 )}
 
                 {analysisError && !isAnalyzing && (
@@ -624,8 +676,8 @@ export function CalorieTrackerCompact() {
                         ENTER MANUALLY
                       </button>
                       <button
-                        onClick={() => { if (lastFile) runAnalysis(lastFile, contextHint || undefined); }}
-                        disabled={!lastFile}
+                        onClick={() => { if (lastFiles.length) runAnalysis(lastFiles, contextHint || undefined); }}
+                        disabled={lastFiles.length === 0}
                         className="btn-brutalist flex items-center justify-center gap-2 text-sm"
                       >
                         <Camera className="h-4 w-4" />
@@ -684,9 +736,16 @@ export function CalorieTrackerCompact() {
             {/* Editable analysis results */}
             {analysis && !manualMode && (
               <div className="space-y-4">
-                {previewUrl && (
-                  <div className="aspect-video bg-muted overflow-hidden rounded-xl">
-                    <img src={previewUrl} alt="Food" className="w-full h-full object-cover" />
+                {previewUrls.length > 0 && (
+                  <div className={cn(
+                    "grid gap-2",
+                    previewUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  )}>
+                    {previewUrls.map((url, i) => (
+                      <div key={i} className="aspect-video bg-muted overflow-hidden rounded-xl">
+                        <img src={url} alt={`Food ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -752,7 +811,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrl(null); }}
+                    onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrls([]); }}
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm"
                   >
                     <X className="h-4 w-4" />
