@@ -5,6 +5,7 @@ import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
 import { format, eachDayOfInterval, parseISO, differenceInMinutes, subDays } from 'date-fns';
 import { DateRange } from '@/contexts/DateRangeContext';
+import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
 
 interface CalorieDataPoint {
   date: string;
@@ -12,15 +13,6 @@ interface CalorieDataPoint {
   burned: number;
   net: number;
 }
-
-// MET values for calorie calculation
-const MET_VALUES: Record<string, number> = {
-  'push': 5.0,
-  'pull': 5.0,
-  'legs': 6.0,
-  'accessory': 4.0,
-  'strength': 5.0,
-};
 
 export function useCalorieHistory(dateRange: DateRange) {
   const { user } = useAuth();
@@ -32,7 +24,7 @@ export function useCalorieHistory(dateRange: DateRange) {
     to: dateRange.to,
   });
   const avgBodyweight = metricsData?.totals?.avgBodyweight;
-  const fallbackWeight = avgBodyweight || preferences?.weight_goal || 70;
+  const fallbackWeight = resolveBodyweightKg(avgBodyweight, preferences?.weight_goal);
 
   const startDateStr = format(dateRange.from, 'yyyy-MM-dd');
   const endDateStr = format(dateRange.to, 'yyyy-MM-dd');
@@ -131,29 +123,14 @@ export function useCalorieHistory(dateRange: DateRange) {
         }
 
         if (durationMinutes && durationMinutes > 0) {
-          // Derive the MET category from the day's movement pattern first.
-          // exercise.category is the training-role enum ('primary'/'accessory'/
-          // 'warmup'), not a MET key, so counting it made push/pull/legs METs
-          // unreachable and under-counted burn (legs especially).
-          let primaryCategory = 'strength';
-          const dayNameLower = (workout.day_name || '').toLowerCase();
-          if (dayNameLower.includes('push')) primaryCategory = 'push';
-          else if (dayNameLower.includes('pull')) primaryCategory = 'pull';
-          else if (dayNameLower.includes('leg')) primaryCategory = 'legs';
-          else if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) primaryCategory = 'accessory';
-          else if (exercises.length > 0) {
-            const categoryCounts: Record<string, number> = {};
-            exercises.forEach((ex: any) => {
-              const cat = ex.category.toLowerCase();
-              categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-            });
-            const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-            if (top === 'accessory') primaryCategory = 'accessory';
-          }
-
-          const met = MET_VALUES[primaryCategory] || 5.0;
+          // MET category derivation and the MET table itself live in
+          // lib/workoutCalories.ts (single source of truth).
           const dayWeight = weightByDate[date] || fallbackWeight;
-          const calories = Math.round(met * dayWeight * (durationMinutes / 60));
+          const calories = calculateWorkoutCalories(
+            { day_name: workout.day_name, exercises },
+            dayWeight,
+            durationMinutes
+          );
           burnsByDate[date] = (burnsByDate[date] || 0) + calories;
         }
       });

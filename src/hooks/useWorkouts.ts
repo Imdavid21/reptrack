@@ -2,8 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
+import { useDailyMetrics } from './useDailyMetrics';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
 import { localDateKey } from '@/lib/dateKey';
+import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
 
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
@@ -61,17 +63,14 @@ export interface Workout {
   habits?: Habits;
 }
 
-function getWorkoutMet(day: string, dayName: string): number {
-  const text = `${day} ${dayName}`.toLowerCase();
-  if (text.includes('leg')) return 6.0;
-  if (text.includes('arm') || text.includes('accessory')) return 4.0;
-  return 5.0;
-}
-
 export function useWorkouts() {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
   const queryClient = useQueryClient();
+  // Same 30-day-average bodyweight window useCalorieBurn.ts uses, so the
+  // number persisted here at workout-creation time matches what the rest of
+  // the app computes on the fly for the same day.
+  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
 
   const workoutsQuery = useQuery({
     queryKey: ['workouts', user?.id],
@@ -142,9 +141,12 @@ export function useWorkouts() {
         notes: workout.habits.notes,
       } : null;
       const burnDuration = workout.durationMinutes || 0;
-      const burnCalories = burnDuration > 0
-        ? Math.round(getWorkoutMet(workout.day, workout.day_name) * (preferences?.weight_goal || 70) * (burnDuration / 60))
-        : 0;
+      const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
+      const burnCalories = calculateWorkoutCalories(
+        { day: workout.day, day_name: workout.day_name, exercises: workout.exercises },
+        weightKg,
+        burnDuration
+      );
 
       try {
         // Try online first

@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { getWorkoutMetCategory, WORKOUT_MET_VALUES, resolveBodyweightKg } from '@/lib/workoutCalories';
 
 interface CalorieBurn {
   id: string;
@@ -27,23 +28,6 @@ interface WorkoutWithExercises {
   }[];
 }
 
-// MET values for different activities
-const MET_VALUES: Record<string, number> = {
-  // Strength training
-  'Push': 5.0,
-  'push': 5.0,
-  'Pull': 5.0,
-  'pull': 5.0,
-  'Legs': 6.0,
-  'legs': 6.0,
-  'Accessory': 4.0,
-  'accessory': 4.0,
-  // General
-  'strength': 5.0,
-  'cardio': 7.0,
-  'hiit': 8.0,
-};
-
 export function useCalorieBurn(date?: Date) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
@@ -52,8 +36,7 @@ export function useCalorieBurn(date?: Date) {
 
   // Get actual bodyweight from daily metrics, fall back to weight_goal, then 70kg
   const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
-  const latestBodyweight = metricsData?.totals?.avgBodyweight;
-  const weightKg = latestBodyweight || preferences?.weight_goal || 70;
+  const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
 
   // Fetch today's workouts so manual activity and exercise burn can coexist
   const { data: todayWorkouts = [] } = useQuery({
@@ -146,42 +129,17 @@ export function useCalorieBurn(date?: Date) {
     return 0;
   };
 
-  // Calculate calories burned from workout duration and type
+  // Calculate calories burned from an already-resolved category (the MET
+  // table itself lives in lib/workoutCalories.ts, single source of truth).
   const calculateWorkoutCalories = (durationMinutes: number, category: string = 'strength') => {
-    const met = MET_VALUES[category] || 5.0;
-    // Calories = MET × weight(kg) × duration(hours)
+    const met = WORKOUT_MET_VALUES[category] ?? 5.0;
     return Math.round(met * weightKg * (durationMinutes / 60));
   };
 
-  // Get primary workout category for the MET lookup.
-  // MET_VALUES is keyed by movement pattern (push/pull/legs/accessory), so we
-  // must derive from day_name FIRST. Deriving from exercise.category is wrong —
-  // that column is the training-role enum ('primary'/'accessory'/'warmup'), so
-  // the majority is almost always 'primary', which isn't a MET key and silently
-  // falls through to the 5.0 default. That made leg days (MET 6.0) unreachable
-  // and under-counted their burn by ~20-33%.
-  const getPrimaryCategory = (workout: WorkoutWithExercises): string => {
-    const dayNameLower = (workout.day_name || '').toLowerCase();
-    if (dayNameLower.includes('push')) return 'push';
-    if (dayNameLower.includes('pull')) return 'pull';
-    if (dayNameLower.includes('leg')) return 'legs';
-    if (dayNameLower.includes('arm') || dayNameLower.includes('accessory')) return 'accessory';
-
-    // Day name unhelpful (Full Body / custom): fall back to the majority
-    // training role, but only 'accessory' maps to a real MET; anything else
-    // (primary/warmup) is general strength.
-    const exercises = workout.exercises || [];
-    if (exercises.length > 0) {
-      const categoryCounts: Record<string, number> = {};
-      exercises.forEach(ex => {
-        const cat = ex.category.toLowerCase();
-        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-      });
-      const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-      if (top === 'accessory') return 'accessory';
-    }
-    return 'strength';
-  };
+  // Category derivation also lives in lib/workoutCalories.ts — see that file
+  // for why day_name is checked before exercise.category.
+  const getPrimaryCategory = (workout: WorkoutWithExercises): string =>
+    getWorkoutMetCategory({ day_name: workout.day_name, exercises: workout.exercises });
 
   // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)
   const calculateStepCalories = (steps: number) => {
