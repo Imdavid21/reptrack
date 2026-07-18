@@ -77,10 +77,11 @@ export function CalorieTrackerCompact() {
   const [textInput, setTextInput] = useState('');
   const [contextHint, setContextHint] = useState('');
   const [manualData, setManualData] = useState({ food_name: '', calories: '' });
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [lastFiles, setLastFiles] = useState<File[]>([]);
+  const [analysisProgressText, setAnalysisProgressText] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
