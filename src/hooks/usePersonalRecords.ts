@@ -13,17 +13,19 @@ export interface PersonalRecord {
 }
 
 // Canonical name mapping for exercise variants
-const EXERCISE_ALIASES: Record<string, string> = {
+export const EXERCISE_ALIASES: Record<string, string> = {
   // Chest
   'Barbell Bench': 'Barbell Bench Press',
   'Flat Barbell Bench': 'Barbell Bench Press',
   'BB Bench Press': 'Barbell Bench Press',
+  'Bench Press': 'Barbell Bench Press',
   'DB Press': 'Dumbbell Bench Press',
   'Flat Dumbbell Bench Press': 'Dumbbell Bench Press',
   'Flat DB Press': 'Dumbbell Bench Press',
   'DB Flat Bench': 'Dumbbell Bench Press',
   'Incline Barbell Bench': 'Incline Barbell Bench Press',
   'Incline BB Bench': 'Incline Barbell Bench Press',
+  'Incline Barbell Press': 'Incline Barbell Bench Press',
   'Incline DB Press': 'Incline Dumbbell Press',
   'Incline DB Bench Press': 'Incline Dumbbell Press',
   'Chest Fly': 'Cable Flyes',
@@ -32,6 +34,7 @@ const EXERCISE_ALIASES: Record<string, string> = {
   'Pec Fly': 'Cable Flyes',
   'Pec Deck': 'Cable Flyes',
   'Cable Fly': 'Cable Flyes',
+  'Cable Crossover': 'Cable Flyes',
   // Shoulders
   'Barbell OHP': 'Overhead Press',
   'Barbell Overhead Press': 'Overhead Press',
@@ -44,6 +47,7 @@ const EXERCISE_ALIASES: Record<string, string> = {
   'Lateral Raise': 'Lateral Raises',
   'Dumbbell Lateral Raise': 'Lateral Raises',
   'Dumbbell Lateral Raises': 'Lateral Raises',
+  'DB Lateral Raise': 'Lateral Raises',
   'Lateral Raise Machine': 'Lateral Raises',
   'Machine Lateral Raise': 'Lateral Raises',
   'Face Pull': 'Face Pulls',
@@ -58,6 +62,7 @@ const EXERCISE_ALIASES: Record<string, string> = {
   'Bent Over Barbell Row': 'Barbell Row',
   'Pendlay Row': 'Barbell Row',
   'Cable Row': 'Seated Cable Row',
+  'Cable Rows': 'Seated Cable Row',
   'Seated Row': 'Seated Cable Row',
   'Cable Seated Row': 'Seated Cable Row',
   'Single Arm Dumbbell Rows': 'Single Arm Dumbbell Row',
@@ -88,6 +93,8 @@ const EXERCISE_ALIASES: Record<string, string> = {
   'Dumbbell Overhead Extension': 'Overhead Tricep Extension',
   'DB Overhead Extension': 'Overhead Tricep Extension',
   'Overhead Extension': 'Overhead Tricep Extension',
+  'Overhead Cable Tricep Extension': 'Overhead Tricep Extension',
+  'Cable Rope Overhead Tricep Extension': 'Overhead Tricep Extension',
   'Dumbbell Skull Crushers': 'Skull Crushers',
   // Biceps
   'Barbell Curls': 'Barbell Curl',
@@ -139,7 +146,7 @@ const EXERCISE_ALIASES: Record<string, string> = {
   'Wide Push-ups': 'Push-ups',
 };
 
-function getCanonicalName(name: string): string {
+export function getCanonicalName(name: string): string {
   const baseName = name.replace(/\s*\(Set \d+\)$/, '').trim();
   return EXERCISE_ALIASES[baseName] || baseName;
 }
