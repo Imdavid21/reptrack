@@ -156,18 +156,43 @@ export function CalorieTrackerCompact() {
     setIsDialogOpen(true);
   };
 
-  const runAnalysis = async (file: File, hint?: string) => {
-    if (!user) return;
+  const runAnalysis = async (files: File[], hint?: string) => {
+    if (!user || files.length === 0) return;
     setIsAnalyzing(true);
     setAnalysis(null);
     setEditableFoods([]);
     setAnalysisError(null);
     setAnalysisStep('compressing');
+    setAnalysisProgressText('');
 
     try {
-      const result = await analyzeFoodImage(file, user.id, setAnalysisStep, hint);
-      setUploadedPhotoUrl(result.publicUrl);
-      setAnalysis(result.analysis);
+      const mergedFoods: FoodAnalysis['foods'] = [];
+      let firstUrl: string | null = null;
+      let confSum = 0;
+      const descriptions: string[] = [];
+      let qualitySeen: string | undefined;
+
+      for (let i = 0; i < files.length; i++) {
+        if (files.length > 1) {
+          setAnalysisProgressText(`Image ${i + 1} of ${files.length}`);
+        }
+        const result = await analyzeFoodImage(files[i], user.id, setAnalysisStep, hint);
+        if (!firstUrl) firstUrl = result.publicUrl;
+        mergedFoods.push(...result.analysis.foods);
+        confSum += result.analysis.confidence || 0;
+        if (result.analysis.description) descriptions.push(result.analysis.description);
+        if (!qualitySeen && result.analysis.food_quality) qualitySeen = result.analysis.food_quality;
+      }
+
+      setUploadedPhotoUrl(firstUrl);
+      const merged: FoodAnalysis = {
+        foods: mergedFoods,
+        total_calories: mergedFoods.reduce((s, f) => s + (f.calories || 0), 0),
+        confidence: confSum / files.length,
+        description: descriptions.join(' + '),
+        food_quality: qualitySeen,
+      };
+      setAnalysis(merged);
     } catch (error) {
       console.error('Analysis failed:', error);
       const message = error instanceof FoodAnalysisError
@@ -176,23 +201,29 @@ export function CalorieTrackerCompact() {
       setAnalysisError(message);
     } finally {
       setIsAnalyzing(false);
+      setAnalysisProgressText('');
     }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !user) return;
 
     setIsDialogOpen(true);
 
-    const reader = new FileReader();
-    reader.onload = (e) => setPreviewUrl(e.target?.result as string);
-    reader.readAsDataURL(file);
+    // Load previews in parallel
+    const urls = await Promise.all(files.map(f => new Promise<string>((resolve) => {
+      const r = new FileReader();
+      r.onload = (ev) => resolve(ev.target?.result as string);
+      r.readAsDataURL(f);
+    })));
+    setPreviewUrls(urls);
 
-    setLastFile(file);
-    await runAnalysis(file, contextHint || undefined);
+    setLastFiles(files);
+    await runAnalysis(files, contextHint || undefined);
     e.target.value = '';
   };
+
 
   const handleTextAnalyze = async () => {
     if (!textInput.trim()) {
