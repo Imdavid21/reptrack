@@ -530,7 +530,6 @@ export type Database = {
           rest_days: Json | null
           routine_setup_completed: boolean | null
           sleep_goal: number | null
-          training_focus: string | null
           training_split: string | null
           units_system: string | null
           updated_at: string | null
@@ -561,7 +560,6 @@ export type Database = {
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
           sleep_goal?: number | null
-          training_focus?: string | null
           training_split?: string | null
           units_system?: string | null
           updated_at?: string | null
@@ -592,7 +590,6 @@ export type Database = {
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
           sleep_goal?: number | null
-          training_focus?: string | null
           training_split?: string | null
           units_system?: string | null
           updated_at?: string | null
