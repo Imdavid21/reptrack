@@ -53,8 +53,14 @@ async function callOpenAI(imageUrl: string, apiKey: string, context: string | un
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-5.6-sol",
-      reasoning_effort: "medium",
+      // Terra (not flagship Sol) + low reasoning effort: most of the precision
+      // gain over gpt-4o comes from the prompt itself, not from spending heavily
+      // on Sol's frontier reasoning budget. This keeps a real, if smaller,
+      // reasoning allowance — enough to weigh grain shape/color/cut cues — while
+      // avoiding Sol's $30/M output rate and its much larger reasoning-token
+      // burn at "medium". See cost comparison in commit history if revisiting.
+      model: "gpt-5.6-terra",
+      reasoning_effort: "low",
       messages: [
         {
           role: "system",
