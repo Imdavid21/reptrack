@@ -359,6 +359,7 @@ export function CalorieTrackerCompact() {
         type="file"
         accept="image/*"
         capture="environment"
+        multiple
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -366,6 +367,7 @@ export function CalorieTrackerCompact() {
         ref={galleryInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleFileSelect}
         className="hidden"
       />
