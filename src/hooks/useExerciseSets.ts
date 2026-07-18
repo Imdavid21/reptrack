@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, startOfWeek, parseISO } from 'date-fns';
-import { stripSetSuffix } from '@/lib/exerciseClassification';
+import { stripSetSuffix, getBodyPart } from '@/lib/exerciseClassification';
 
 export interface ExerciseSet {
   id: string;
@@ -59,11 +59,42 @@ function parseReps(reps: string | number | null): number {
   return match ? parseInt(match[0], 10) : 0;
 }
 
-function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' {
+// Chest/Shoulders/Triceps push weight away from the body; Back/Biceps/
+// Forearms pull it toward the body. Core has no clean push/pull/legs home,
+// so it's deliberately excluded — see categorizeExercise's fallback.
+const BODY_PART_TO_PPL: Record<string, 'push' | 'pull' | 'legs'> = {
+  Chest: 'push',
+  Shoulders: 'push',
+  Triceps: 'push',
+  Back: 'pull',
+  Biceps: 'pull',
+  Forearms: 'pull',
+  Quads: 'legs',
+  Hamstrings: 'legs',
+  Glutes: 'legs',
+  Calves: 'legs',
+};
+
+export function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' | null {
   const lower = dayName.toLowerCase();
   if (lower.includes('push')) return 'push';
   if (lower.includes('pull')) return 'pull';
-  return 'legs';
+  // "Lower" (Upper/Lower split) is a leg day but doesn't contain "leg".
+  if (lower.includes('leg') || lower.includes('lower')) return 'legs';
+  return null; // Upper / Full Body / custom — day name alone says nothing
+}
+
+// Bucketing an entire workout into one push/pull/legs category by day name
+// alone is wrong for Upper (push+pull combined) and Full Body (everything)
+// days — every exercise in the workout used to get silently misattributed
+// to the same guess. Classify each exercise individually by the muscle it
+// actually trains first; only fall back to the day-level guess (and then
+// the historical default of 'legs') for exercises with no clean push/pull/
+// legs home, like Core.
+export function categorizeExercise(exerciseName: string, dayName: string): 'push' | 'pull' | 'legs' {
+  const fromBodyPart = BODY_PART_TO_PPL[getBodyPart(exerciseName)];
+  if (fromBodyPart) return fromBodyPart;
+  return categorizeByDayName(dayName) || 'legs';
 }
 
 export function useExerciseSets(dateRange?: DateRangeFilter) {
@@ -116,14 +147,15 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
 
       if (error) throw error;
 
-      // Map exercises to ExerciseSet format, deriving push/pull/legs from workout day_name
+      // Map exercises to ExerciseSet format, deriving push/pull/legs per exercise
       const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {
         const dayName = ex.workouts?.day_name || '';
+        const exerciseName = stripSetSuffix(ex.name);
         return {
           id: ex.id,
           workout_id: ex.workout_id,
-          exercise_name: stripSetSuffix(ex.name),
-          exercise_category: categorizeByDayName(dayName),
+          exercise_name: exerciseName,
+          exercise_category: categorizeExercise(exerciseName, dayName),
           set_number: ex.sort_order ?? idx + 1,
           target_weight: parseWeight(ex.target_weight),
           target_reps: parseReps(ex.target_reps),

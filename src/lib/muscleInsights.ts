@@ -86,7 +86,7 @@ const MOVEMENT_IDEAS: Record<string, string> = {
   Glutes: 'Hip Thrust',
   Calves: 'Standing Calf Raise',
   Core: 'Hanging Leg Raise',
-  Forearms: 'Farmer Carry',
+  Forearms: 'Farmer Walks',
 };
 
 const TRACKED_MUSCLES = Object.keys(LANDMARKS);

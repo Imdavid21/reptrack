@@ -189,6 +189,11 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'farmer walk':                { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'farmers walk':               { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'farmers carry':              { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  // Grip-endurance hold — no exact/pattern match existed, so this mandatory
+  // corrective (ppl6/ppl5/full_body3, "do not skip") was silently invisible
+  // to growth tracking, contributing zero volume to any muscle bucket.
+  'dead hang':                  { bodyPart: 'Forearms', muscleGroup: 'arms' },
+  'dead hangs':                 { bodyPart: 'Forearms', muscleGroup: 'arms' },
 
   // ─── ARMS — Forearms ──────────────────────────────────────────────────────
   'barbell reverse curls':      { bodyPart: 'Forearms', muscleGroup: 'arms' },
@@ -359,6 +364,8 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'sit-ups':                    { bodyPart: 'Core', muscleGroup: 'core' },
   'hanging leg raise':          { bodyPart: 'Core', muscleGroup: 'core' },
   'hanging leg raises':         { bodyPart: 'Core', muscleGroup: 'core' },
+  'hanging knee raise':         { bodyPart: 'Core', muscleGroup: 'core' },
+  'hanging knee raises':        { bodyPart: 'Core', muscleGroup: 'core' },
   'cable crunch':               { bodyPart: 'Core', muscleGroup: 'core' },
   'cable crunches':             { bodyPart: 'Core', muscleGroup: 'core' },
   'russian twist':              { bodyPart: 'Core', muscleGroup: 'core' },
@@ -483,10 +490,12 @@ export function getBodyPart(name: string, fallbackCategory?: string): string {
   const cls = classify(name);
   if (cls) return cls.bodyPart;
 
-  // category fallback
-  if (fallbackCategory && CATEGORY_FALLBACK[fallbackCategory]) {
-    return CATEGORY_FALLBACK[fallbackCategory].bodyPart;
-  }
+  // category fallback — lowercased, since real callers pass Title Case
+  // ('Push'/'Pull'/'Legs'/'Core' from AddExerciseSheet's custom-exercise
+  // category) and this table's keys are lowercase; the lookup was silently
+  // never matching before.
+  const fallback = fallbackCategory && CATEGORY_FALLBACK[fallbackCategory.toLowerCase()];
+  if (fallback) return fallback.bodyPart;
   return 'Other';
 }
 
