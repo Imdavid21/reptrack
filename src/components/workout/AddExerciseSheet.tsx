@@ -13,8 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { defaultRoutine } from '@/lib/workoutPresets'; // To get some presets?
-import { getSplitDays } from '@/lib/splitTemplates';
 
 interface AddExerciseSheetProps {
     open: boolean;

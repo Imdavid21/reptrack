@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { defaultRoutine } from '@/lib/workoutPresets';
-import { getSplitDays } from '@/lib/splitTemplates';
+import { resolveSplitDays } from '@/lib/splitTemplates';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { cn } from '@/lib/utils';
 import { useWorkouts } from '@/hooks/useWorkouts';
@@ -28,7 +27,12 @@ export function DaySelectorWithCheckin({
   selectedDate: selectedDateProp,
 }: DaySelectorWithCheckinProps) {
   const { preferences } = useUserPreferences();
-  const splitDays = preferences ? getSplitDays(preferences.training_split) : defaultRoutine.days;
+  // Same resolution splitTemplates.ts's resolveSplitDays uses everywhere else,
+  // so this never shows different exercises than the day picker will once
+  // preferences finish loading — it used to fall back to workoutPresets.ts's
+  // separately-authored phase1Routine, whose Day 1 "Push A" is entirely
+  // different exercises/weights than the real ppl6 template's Push A.
+  const splitDays = resolveSplitDays(preferences?.training_split, null, false);
   const days = Object.entries(splitDays);
   const { workouts } = useWorkouts();
   const selectedDate = selectedDateProp ?? new Date();
