@@ -622,9 +622,21 @@ export function CalorieTrackerCompact() {
             {/* Image Mode: Show preview and analysis */}
             {imageMode && !analysis && !manualMode && (
               <>
-                {previewUrl && (
-                  <div className="aspect-video bg-muted overflow-hidden rounded-xl">
-                    <img src={previewUrl} alt="Food" className="w-full h-full object-cover" />
+                {previewUrls.length > 0 && (
+                  <div className={cn(
+                    "grid gap-2",
+                    previewUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  )}>
+                    {previewUrls.map((url, i) => (
+                      <div key={i} className="aspect-video bg-muted overflow-hidden rounded-xl relative">
+                        <img src={url} alt={`Food ${i + 1}`} className="w-full h-full object-cover" />
+                        {previewUrls.length > 1 && (
+                          <span className="absolute top-1 left-1 bg-background/80 text-[10px] px-1.5 py-0.5 rounded tabular-nums">
+                            {i + 1}/{previewUrls.length}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
