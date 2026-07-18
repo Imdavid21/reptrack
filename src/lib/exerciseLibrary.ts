@@ -1,3 +1,5 @@
+import { getCanonicalName } from './exerciseMatching';
+
 export type ExerciseType = 'weighted' | 'bodyweight' | 'weighted_bw' | 'timed';
 
 export interface ExerciseOption {
@@ -113,7 +115,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Meadows Row', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
     { name: 'Straight Arm Pulldown', category: 'accessory', defaultWeight: '25kg', defaultReps: '3x12-15', muscleGroup: 'Lats', exerciseType: 'weighted' },
     { name: 'Face Pulls', category: 'accessory', defaultWeight: '20kg', defaultReps: '4x15-20', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
-    { name: 'Reverse Flyes', category: 'accessory', defaultWeight: '10kg', defaultReps: '4x12-15', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
+    { name: 'Reverse Fly', category: 'accessory', defaultWeight: '10kg', defaultReps: '4x12-15', muscleGroup: 'Rear Delts', exerciseType: 'weighted' },
     { name: 'Lever Seated Row Machine', category: 'primary', defaultWeight: '30kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
     { name: 'Plate Loaded Row', category: 'primary', defaultWeight: '40kg', defaultReps: '3x10-12', muscleGroup: 'Back', exerciseType: 'weighted' },
     // ─── Traps ────────────────────────────────────────────────────────────────
@@ -125,7 +127,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Barbell Curl', category: 'accessory', defaultWeight: '25kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
     { name: 'EZ Bar Curl', category: 'accessory', defaultWeight: '25kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
     { name: 'Dumbbell Curl', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
-    { name: 'Hammer Curls', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x12-15', muscleGroup: 'Biceps', exerciseType: 'weighted' },
+    { name: 'Hammer Curl', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x12-15', muscleGroup: 'Biceps', exerciseType: 'weighted' },
     { name: 'Incline Dumbbell Curl', category: 'accessory', defaultWeight: '10kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
     { name: 'Cable Curl', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12-15', muscleGroup: 'Biceps', exerciseType: 'weighted' },
     { name: 'EZ Bar Preacher Curls', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x10-12', muscleGroup: 'Biceps', exerciseType: 'weighted' },
@@ -186,6 +188,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
     { name: 'Barbell Hip Thrust', category: 'primary', defaultWeight: '80kg', defaultReps: '3x10-12', muscleGroup: 'Glutes', exerciseType: 'weighted' },
     // ─── Quad Accessories ─────────────────────────────────────────────────────
     { name: 'Walking Lunges', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x12 each', muscleGroup: 'Quads/Glutes', exerciseType: 'weighted' },
+    { name: 'Dumbbell Lunges', category: 'accessory', defaultWeight: '12kg', defaultReps: '3x10-12', muscleGroup: 'Quads/Glutes', exerciseType: 'weighted' },
     { name: 'Reverse Lunges', category: 'accessory', defaultWeight: '20kg', defaultReps: '3x10 each', muscleGroup: 'Quads/Glutes', exerciseType: 'weighted' },
     { name: 'Step Ups', category: 'accessory', defaultWeight: '15kg', defaultReps: '3x10 each', muscleGroup: 'Quads/Glutes', exerciseType: 'weighted' },
     { name: 'Leg Extension', category: 'accessory', defaultWeight: '45kg', defaultReps: '3x12-15', muscleGroup: 'Quads', exerciseType: 'weighted' },
@@ -258,22 +261,26 @@ export function inferExerciseType(defaultWeight: string, defaultReps?: string): 
   return 'weighted';
 }
 
-/** Look up exercise type from library, falling back to inference */
+/**
+ * Look up exercise type from library, falling back to inference.
+ *
+ * Canonicalizes the name first so a naming variant not spelled out verbatim
+ * in this library (e.g. "Bench Press" for "Barbell Bench Press") still finds
+ * the library's real classification instead of silently missing it — that
+ * gap used to send every unmatched name straight to inferExerciseType with
+ * no weight/reps hints, which unconditionally defaults to 'weighted'. Called
+ * with no hints (as usePersonalRecords.ts does), a bodyweight or timed
+ * exercise that missed the exact-match would get misclassified as weighted,
+ * and since its actual_weight is legitimately 0, the PR loop's `weight === 0`
+ * guard would silently skip it forever — a PR that can never record.
+ */
 export function getExerciseType(exerciseName: string, defaultWeight?: string, defaultReps?: string): ExerciseType {
+  const canonicalName = getCanonicalName(exerciseName);
   // Search library for explicit type
   for (const category of Object.values(exerciseLibrary)) {
-    const found = category.find(ex => ex.name === exerciseName);
+    const found = category.find(ex => ex.name === exerciseName || ex.name === canonicalName);
     if (found?.exerciseType) return found.exerciseType;
   }
   // Infer from weight/reps
   return inferExerciseType(defaultWeight || '', defaultReps);
 }
-
-export const dayTemplates = [
-  { key: 'Day 1', name: 'Push A', focus: 'Chest & Shoulders', type: 'Push' },
-  { key: 'Day 2', name: 'Pull A', focus: 'Back & Biceps', type: 'Pull' },
-  { key: 'Day 3', name: 'Legs A', focus: 'Quads & Glutes', type: 'Legs' },
-  { key: 'Day 4', name: 'Push B', focus: 'Shoulders & Chest', type: 'Push' },
-  { key: 'Day 5', name: 'Pull B', focus: 'Back Width', type: 'Pull' },
-  { key: 'Day 6', name: 'Legs B', focus: 'Hamstrings & Posterior', type: 'Legs' },
-];

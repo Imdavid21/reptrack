@@ -37,6 +37,7 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'bent over row': 'Barbell Row',
   'pendlay row': 'Barbell Row',
   'back squat': 'Barbell Squat',
+  'front squats': 'Front Squat',
   'bb squat': 'Barbell Squat',
   'squat': 'Barbell Squat',
   'squats': 'Barbell Squat',

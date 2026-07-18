@@ -1,3 +1,5 @@
+import { getCanonicalName } from './exerciseMatching';
+
 // Maps exercises to their barbell/dumbbell alternatives
 export interface ExerciseVariant {
   name: string;
@@ -229,10 +231,10 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
   // Rear Delts / Face Pulls
   'Face Pulls': [
     { name: 'Face Pulls', defaultWeight: '20kg', equipmentType: 'cable' },
-    { name: 'Reverse Flyes', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+    { name: 'Reverse Fly', defaultWeight: '10kg', equipmentType: 'dumbbell' },
   ],
-  'Reverse Flyes': [
-    { name: 'Reverse Flyes', defaultWeight: '10kg', equipmentType: 'dumbbell' },
+  'Reverse Fly': [
+    { name: 'Reverse Fly', defaultWeight: '10kg', equipmentType: 'dumbbell' },
     { name: 'Face Pulls', defaultWeight: '20kg', equipmentType: 'cable' },
   ],
 
@@ -251,8 +253,8 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
     { name: 'Barbell Curl', defaultWeight: '25kg', equipmentType: 'barbell' },
     { name: 'Cable Curl', defaultWeight: '20kg', equipmentType: 'cable' },
   ],
-  'Hammer Curls': [
-    { name: 'Hammer Curls', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+  'Hammer Curl': [
+    { name: 'Hammer Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
   ],
   'Incline Dumbbell Curl': [
     { name: 'Incline Dumbbell Curl', defaultWeight: '10kg', equipmentType: 'dumbbell' },
@@ -506,11 +508,11 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
   ],
   'Cable Hammer Curl': [
     { name: 'Cable Hammer Curl', defaultWeight: '15kg', equipmentType: 'cable' },
-    { name: 'Hammer Curls', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+    { name: 'Hammer Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
   ],
   'Preacher Hammer Curl': [
     { name: 'Preacher Hammer Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
-    { name: 'Hammer Curls', defaultWeight: '12kg', equipmentType: 'dumbbell' },
+    { name: 'Hammer Curl', defaultWeight: '12kg', equipmentType: 'dumbbell' },
   ],
   'Belt Squat': [
     { name: 'Belt Squat', defaultWeight: '80kg', equipmentType: 'machine' },
@@ -534,21 +536,26 @@ export const exerciseVariants: Record<string, ExerciseVariant[]> = {
   ],
 };
 
-// Get all variants for an exercise (returns original if no variants exist)
+// Get all variants for an exercise (returns original if no variants exist).
+// Checks the canonicalized name too, so a naming variant not spelled out
+// verbatim as a key here (e.g. "Bench Press" for "Barbell Bench Press")
+// still finds the real variant list instead of getting the single-item
+// fallback.
 export function getExerciseVariants(exerciseName: string): ExerciseVariant[] {
-  return exerciseVariants[exerciseName] || [
+  return exerciseVariants[exerciseName] || exerciseVariants[getCanonicalName(exerciseName)] || [
     { name: exerciseName, defaultWeight: '', equipmentType: 'dumbbell' }
   ];
 }
 
 // Check if exercise has variants
 export function hasVariants(exerciseName: string): boolean {
-  return exerciseName in exerciseVariants && exerciseVariants[exerciseName].length > 1;
+  const variants = exerciseVariants[exerciseName] || exerciseVariants[getCanonicalName(exerciseName)];
+  return !!variants && variants.length > 1;
 }
 
 // Get equipment type for an exercise
 export function getEquipmentType(exerciseName: string): ExerciseVariant['equipmentType'] {
-  const variants = exerciseVariants[exerciseName];
+  const variants = exerciseVariants[exerciseName] || exerciseVariants[getCanonicalName(exerciseName)];
   if (variants && variants.length > 0) {
     return variants[0].equipmentType;
   }
