@@ -654,7 +654,12 @@ export function CalorieTrackerCompact() {
                 )}
 
                 {isAnalyzing && (
-                  <AnalysisProgress currentStep={analysisStep} />
+                  <div className="space-y-2">
+                    <AnalysisProgress currentStep={analysisStep} />
+                    {analysisProgressText && (
+                      <p className="text-xs text-muted-foreground text-center tabular-nums">{analysisProgressText}</p>
+                    )}
+                  </div>
                 )}
 
                 {analysisError && !isAnalyzing && (
