@@ -671,8 +671,8 @@ export function CalorieTrackerCompact() {
                         ENTER MANUALLY
                       </button>
                       <button
-                        onClick={() => { if (lastFile) runAnalysis(lastFile, contextHint || undefined); }}
-                        disabled={!lastFile}
+                        onClick={() => { if (lastFiles.length) runAnalysis(lastFiles, contextHint || undefined); }}
+                        disabled={lastFiles.length === 0}
                         className="btn-brutalist flex items-center justify-center gap-2 text-sm"
                       >
                         <Camera className="h-4 w-4" />
