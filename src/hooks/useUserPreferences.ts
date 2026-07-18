@@ -127,13 +127,13 @@ export function useUserPreferences() {
               .select('*')
               .eq('user_id', user.id)
               .maybeSingle();
-            return (existing ?? null) as UserPreferences | null;
+            return (existing ?? null) as unknown as UserPreferences | null;
           }
-          return newPrefs as UserPreferences;
+          return newPrefs as unknown as UserPreferences;
         }
       }
       
-      return data as UserPreferences | null;
+      return data as unknown as UserPreferences | null;
     },
     enabled: !!user,
   });
