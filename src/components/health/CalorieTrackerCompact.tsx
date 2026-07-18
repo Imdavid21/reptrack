@@ -806,7 +806,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrl(null); }}
+                    onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrls([]); }}
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm"
                   >
                     <X className="h-4 w-4" />
