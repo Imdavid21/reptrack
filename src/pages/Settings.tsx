@@ -637,7 +637,12 @@ export default function Settings() {
                           onClick={() => {
                             updatePreferences.mutate({ training_focus: opt.value }, {
                               onError: (err) => {
-                                toast.error('Failed to save training focus');
+                                // Surface the real DB/Postgrest message (e.g. a missing
+                                // column from an unapplied migration) instead of a
+                                // generic toast — that's the difference between this
+                                // being self-diagnosing and a silent "nothing happened".
+                                const detail = err instanceof Error ? err.message : String(err);
+                                toast.error(`Failed to save training focus: ${detail}`);
                                 console.error('Training focus update error:', err);
                               },
                               onSuccess: () => {
