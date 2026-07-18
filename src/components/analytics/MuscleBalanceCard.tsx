@@ -1,7 +1,7 @@
 import { Skeleton } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Plus, AlertTriangle } from 'lucide-react';
-import { MuscleIntelligence, VolumeStatus, MuscleBalance } from '@/lib/muscleInsights';
+import { MuscleIntelligence, VolumeStatus, MuscleBalance, LANDMARKS } from '@/lib/muscleInsights';
 
 const STATUS_META: Record<VolumeStatus, { label: string; bar: string; text: string; dot: string }> = {
   untrained:    { label: 'Not trained', bar: 'bg-muted-foreground/30', text: 'text-muted-foreground', dot: 'bg-muted-foreground/40' },
@@ -9,12 +9,6 @@ const STATUS_META: Record<VolumeStatus, { label: string; bar: string; text: stri
   optimal:      { label: 'Optimal',      bar: 'bg-energy',   text: 'text-energy-ink',  dot: 'bg-energy' },
   high:         { label: 'High',         bar: 'bg-water',    text: 'text-water-ink',   dot: 'bg-water' },
   overreaching: { label: 'Overreaching', bar: 'bg-destructive', text: 'text-destructive', dot: 'bg-destructive' },
-};
-
-// Approximate MRV per muscle for the bar's full-scale; keeps bars comparable.
-const SCALE: Record<string, number> = {
-  Chest: 22, Back: 25, Shoulders: 26, Biceps: 24, Triceps: 20,
-  Quads: 20, Hamstrings: 20, Glutes: 16, Calves: 20, Core: 25, Forearms: 20,
 };
 
 interface Props {
@@ -62,7 +56,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
       <div className="space-y-2.5">
         {ordered.map((m, i) => {
           const meta = STATUS_META[m.status];
-          const scale = SCALE[m.bodyPart] ?? 24;
+          const scale = LANDMARKS[m.bodyPart]?.mrv ?? 24;
           const pct = Math.min((m.weeklySets / scale) * 100, 100);
           return (
             <div key={m.bodyPart} className="flex items-center gap-3">

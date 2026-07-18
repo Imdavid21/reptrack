@@ -60,7 +60,11 @@ export interface MuscleIntelligence {
 }
 
 // Weekly hard-set landmarks per muscle (sets/week). Conservative, evidence-based.
-const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }> = {
+// Exported so any UI needing the same per-muscle scale (e.g. a volume bar's
+// full-scale value) reads it from here instead of hand-copying the numbers —
+// MuscleBalanceCard.tsx used to keep its own duplicate that would silently
+// drift out of sync with these if one were ever tuned without the other.
+export const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }> = {
   Chest: { mev: 8, mav: 16, mrv: 22 },
   Back: { mev: 10, mav: 18, mrv: 25 },
   Shoulders: { mev: 8, mav: 18, mrv: 26 },

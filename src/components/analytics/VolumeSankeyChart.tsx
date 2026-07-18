@@ -24,8 +24,12 @@ export function VolumeSankeyChart() {
   const { data, isLoading } = useExerciseSets(dateRange);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // High contrast black/white only
-  const MUSCLE_GROUP_LABELS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core'];
+  // High contrast black/white only. Includes 'other' so an exercise with no
+  // muscle-group match (getMuscleGroup's fallback) still shows up somewhere
+  // instead of silently vanishing from the chart while still being counted
+  // in the total volume denominator — which used to pull every visible
+  // slice's percentage below its true share.
+  const MUSCLE_GROUP_LABELS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core', 'other'];
 
   const CATEGORY_FILLS = useMemo(() => {
     const base = isDark ? 255 : 0;

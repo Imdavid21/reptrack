@@ -15,6 +15,10 @@ const MUSCLE_GROUP_LABELS: Record<string, string> = {
   arms: 'Arms',
   legs: 'Legs',
   core: 'Core',
+  // getMuscleGroup falls back to the literal 'other' for anything it can't
+  // classify. Without an entry here, that exercise's progression still
+  // showed under "All" but could never get its own filter chip.
+  other: 'Other',
 };
 
 function GrowthBadge({ startWeight, endWeight }: { startWeight: number; endWeight: number }) {
