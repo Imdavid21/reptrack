@@ -5,6 +5,7 @@ import { haptic } from '@/lib/haptics';
 
 const STEP_META: Record<NextStep['pillar'], { icon: typeof Dumbbell; chip: string; text: string }> = {
   training: { icon: Dumbbell, chip: 'bg-energy-soft', text: 'text-energy-ink' },
+  strength: { icon: Dumbbell, chip: 'bg-energy-soft', text: 'text-energy-ink' },
   fuel: { icon: Flame, chip: 'bg-fuel-soft', text: 'text-fuel-ink' },
   recovery: { icon: Moon, chip: 'bg-recover-soft', text: 'text-recover-ink' },
   hydration: { icon: Droplets, chip: 'bg-water-soft', text: 'text-water-ink' },
