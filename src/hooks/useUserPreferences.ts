@@ -19,6 +19,10 @@ export type TrainingFocus = 'volume' | 'strength' | 'mix';
 export interface UserPreferences {
   id: string;
   user_id: string;
+  name: string | null;
+  age: number | null;
+  height_cm: number | null;
+  gender: string | null;
   onboarding_completed: boolean;
   daily_water_goal: number;
   daily_calorie_goal: number;
@@ -36,6 +40,11 @@ export interface UserPreferences {
   deficit_mode_enabled: boolean;
   daily_deficit_target: number;
   maintenance_calories: number | null;
+  /** Default rest duration (seconds) offered in Settings; only used as the
+   *  final fallback in SetBySetCard's getDefaultRest() — exercise-specific
+   *  and workout-bias-derived rest times take priority. */
+  default_rest_seconds: number;
+  auto_rest_timer: boolean;
   created_at: string;
   updated_at: string;
 }

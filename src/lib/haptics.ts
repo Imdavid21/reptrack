@@ -26,17 +26,3 @@ export function haptic(style: HapticStyle = 'light'): void {
     }
   }
 }
-
-/**
- * Hook to provide haptic feedback on interactions
- */
-export function useHaptic() {
-  return {
-    light: () => haptic('light'),
-    medium: () => haptic('medium'),
-    heavy: () => haptic('heavy'),
-    success: () => haptic('success'),
-    warning: () => haptic('warning'),
-    error: () => haptic('error'),
-  };
-}

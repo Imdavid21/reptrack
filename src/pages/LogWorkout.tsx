@@ -834,6 +834,8 @@ export default function LogWorkout() {
                     personalRecord={getPRForExercise(currentExercise.name)}
                     lastUsed={getLastUsed(currentExercise.name)}
                     workoutBias={dayData?.bias}
+                    defaultRestSeconds={preferences?.default_rest_seconds}
+                    autoRestTimer={preferences?.auto_rest_timer}
                   />
                   {showSwapPicker && (
                     <ExercisePicker

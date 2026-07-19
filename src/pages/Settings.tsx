@@ -74,10 +74,10 @@ export default function Settings() {
   useEffect(() => {
     if (preferences) {
       setProfile({
-        name: (preferences as any).name || '',
-        age: (preferences as any).age?.toString() || '',
-        height_cm: (preferences as any).height_cm?.toString() || '',
-        gender: (preferences as any).gender || '',
+        name: preferences.name || '',
+        age: preferences.age?.toString() || '',
+        height_cm: preferences.height_cm?.toString() || '',
+        gender: preferences.gender || '',
       });
       setProfileDirty(false);
     }
@@ -104,12 +104,13 @@ export default function Settings() {
         age: profile.age ? parseInt(profile.age) : null,
         height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
         gender: profile.gender || null,
-      } as any);
+      });
       toast.success('Profile updated');
       setProfileDirty(false);
       setIsEditingProfile(false);
     } catch (error) {
-      toast.error('Failed to save profile');
+      const detail = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to save profile: ${detail}`);
     } finally {
       setIsSavingProfile(false);
     }
@@ -570,11 +571,11 @@ export default function Settings() {
                       { label: '3m', value: 180 },
                       { label: '5m', value: 300 },
                     ].map(opt => {
-                      const current = (preferences as any)?.default_rest_seconds || 90;
+                      const current = preferences?.default_rest_seconds || 90;
                       return (
                         <button
                           key={opt.value}
-                          onClick={() => updatePreferences.mutate({ default_rest_seconds: opt.value } as any)}
+                          onClick={() => updatePreferences.mutate({ default_rest_seconds: opt.value })}
                           className={cn(
                             'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                             current === opt.value
@@ -595,12 +596,12 @@ export default function Settings() {
                     Weight Unit
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    {['kg', 'lbs'].map(unit => {
-                      const current = (preferences as any)?.weight_unit || 'kg';
+                    {(['kg', 'lbs'] as const).map(unit => {
+                      const current = preferences?.units_system === 'imperial' ? 'lbs' : 'kg';
                       return (
                         <button
                           key={unit}
-                          onClick={() => updatePreferences.mutate({ weight_unit: unit } as any)}
+                          onClick={() => updatePreferences.mutate({ units_system: unit === 'lbs' ? 'imperial' : 'metric' })}
                           className={cn(
                             'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
                             current === unit
@@ -675,10 +676,10 @@ export default function Settings() {
                     </Typography>
                   </Box>
                   <Switch
-                    checked={(preferences as any)?.auto_rest_timer !== false}
+                    checked={preferences?.auto_rest_timer !== false}
                     onChange={() => {
-                      const current = (preferences as any)?.auto_rest_timer !== false;
-                      updatePreferences.mutate({ auto_rest_timer: !current } as any);
+                      const current = preferences?.auto_rest_timer !== false;
+                      updatePreferences.mutate({ auto_rest_timer: !current });
                     }}
                     color="primary"
                   />

@@ -6,7 +6,6 @@ import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } fr
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
 import { RestTimer } from './RestTimer';
-import { estimate1RM, formatPlates } from '@/lib/calculators';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +49,12 @@ interface SetBySetCardProps {
   personalRecord?: PersonalRecord;
   lastUsed?: LastUsedData;
   workoutBias?: 'heavy' | 'volume';
+  /** Settings fallback used only when no exercise-specific or bias-derived
+   *  rest duration applies — see getDefaultRest(). Defaults to 90. */
+  defaultRestSeconds?: number;
+  /** Whether completing a set should automatically pop the rest timer.
+   *  Defaults to true (existing behavior) when not provided. */
+  autoRestTimer?: boolean;
 }
 
 // Format seconds as Mm Ss
@@ -79,6 +84,8 @@ export function SetBySetCard({
   personalRecord,
   lastUsed,
   workoutBias,
+  defaultRestSeconds = 90,
+  autoRestTimer = true,
 }: SetBySetCardProps) {
   const currentSet = exercise.sets[currentSetIndex];
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
@@ -252,7 +259,7 @@ export function SetBySetCard({
     if (workoutBias === 'volume') return 90;
     if (exercise.category === 'primary') return 120;
     if (isTimed) return 60;
-    return 90;
+    return defaultRestSeconds;
   };
 
   const completeSet = () => {
@@ -311,9 +318,13 @@ export function SetBySetCard({
     }
     onChange(updated);
 
-    // Show rest timer between sets
-    setRestDuration(getDefaultRest());
-    setShowRestTimer(true);
+    // Show rest timer between sets, unless the user has turned auto-start off
+    if (autoRestTimer) {
+      setRestDuration(getDefaultRest());
+      setShowRestTimer(true);
+    } else {
+      onSetIndexChange(currentSetIndex + 1);
+    }
   };
 
   const handleRestDismiss = useCallback(() => {

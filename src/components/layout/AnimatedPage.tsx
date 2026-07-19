@@ -65,18 +65,3 @@ export const staggerItem: Variants = {
     },
   },
 };
-
-// Tab content animation
-export const tabContentVariants: Variants = {
-  hidden: { opacity: 0, x: 15 },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    transition: { duration: 0.25, ease: 'easeOut' }
-  },
-  exit: { 
-    opacity: 0, 
-    x: -15,
-    transition: { duration: 0.15, ease: 'easeIn' }
-  },
-};

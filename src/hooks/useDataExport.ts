@@ -3,20 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format } from 'date-fns';
 
-export type DataTable = 
+export type DataTable =
   | 'workouts'
   | 'exercises'
-  | 'exercise_sets'
   | 'daily_metrics'
   | 'water_logs'
   | 'meals'
   | 'calorie_burns'
   | 'habits'
-  | 'recovery_metrics'
   | 'custom_routines'
-  | 'user_preferences'
-  | 'exercise_templates'
-  | 'deload_weeks';
+  | 'user_preferences';
 
 interface ExportOptions {
   tables: DataTable[];
@@ -36,23 +32,16 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
   workouts: [
     'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
     'started_at', 'completed_at', 'workout_duration_minutes',
-    'pre_energy', 'pre_motivation', 'pre_soreness',
-    'post_difficulty', 'post_satisfaction', 'is_skipped', 'created_at'
+    'is_skipped', 'created_at'
   ],
   exercises: [
     'id', 'workout_id', 'name', 'category', 'sort_order',
     'target_weight', 'target_reps', 'actual_weight', 'actual_reps',
     'completed'
   ],
-  exercise_sets: [
-    'id', 'workout_id', 'exercise_name', 'exercise_category', 
-    'movement_pattern', 'primary_muscles', 'set_number',
-    'target_weight', 'target_reps', 'actual_weight', 'actual_reps',
-    'completed', 'created_at'
-  ],
   daily_metrics: [
-    'id', 'user_id', 'date', 'sleep_hours', 'energy_level', 'bodyweight',
-    'pullups', 'is_rest_day', 'supplements', 'notes', 'created_at', 'updated_at'
+    'id', 'user_id', 'date', 'sleep_hours', 'bodyweight',
+    'pullups', 'notes', 'created_at', 'updated_at'
   ],
   water_logs: [
     'id', 'user_id', 'timestamp', 'amount', 'method'
@@ -68,54 +57,34 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
   ],
   habits: [
     'id', 'workout_id', 'pullups', 'water_intake', 'sleep_hours',
-    'energy_level', 'bodyweight', 'supplements', 'notes'
-  ],
-  recovery_metrics: [
-    'id', 'user_id', 'date', 'recovery_score', 'hrv_ms', 'resting_hr',
-    'sleep_quality', 'muscle_soreness', 'fatigue_level', 'stress_level',
-    'workout_readiness', 'deload_recommended', 'notes', 'created_at', 'updated_at'
+    'bodyweight', 'notes'
   ],
   custom_routines: [
     'id', 'user_id', 'routine_name', 'routine_data', 'is_active', 'created_at'
   ],
   user_preferences: [
-    'id', 'user_id', 'age', 'gender', 'height_cm', 'activity_level',
+    'id', 'user_id', 'name', 'age', 'gender', 'height_cm',
     'units_system', 'weight_goal_type', 'weight_goal', 'sleep_goal',
     'weekly_workout_goal', 'daily_calorie_goal', 'daily_water_goal',
     'onboarding_completed', 'routine_setup_completed', 'rest_days',
-    'training_split', 'dietary_preferences', 'fitness_goal',
-    'created_at', 'updated_at'
-  ],
-  exercise_templates: [
-    'id', 'user_id', 'name', 'canonical_name', 'category', 'equipment',
-    'movement_pattern', 'primary_muscles', 'secondary_muscles',
-    'default_reps', 'default_weight', 'version', 'deprecated_at',
-    'created_at', 'updated_at'
-  ],
-  deload_weeks: [
-    'id', 'user_id', 'week_start', 'week_end', 'trigger_reason',
-    'volume_reduction_percent', 'intensity_reduction_percent',
-    'fatigue_indicators', 'completed', 'notes', 'created_at'
+    'training_split', 'training_focus', 'default_rest_seconds',
+    'auto_rest_timer', 'fitness_goal', 'created_at', 'updated_at'
   ],
 };
 
 // Tables that link via workout_id instead of user_id
-const WORKOUT_LINKED_TABLES: DataTable[] = ['exercise_sets', 'exercises', 'habits'];
+const WORKOUT_LINKED_TABLES: DataTable[] = ['exercises', 'habits'];
 
 const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
   workouts: { column: 'date', ascending: true },
   exercises: { column: 'sort_order', ascending: true },
-  exercise_sets: { column: 'created_at', ascending: true },
   daily_metrics: { column: 'date', ascending: true },
   water_logs: { column: 'timestamp', ascending: true },
   meals: { column: 'date', ascending: true },
   calorie_burns: { column: 'date', ascending: true },
   habits: null,
-  recovery_metrics: { column: 'date', ascending: true },
   custom_routines: { column: 'created_at', ascending: true },
   user_preferences: { column: 'created_at', ascending: true },
-  exercise_templates: { column: 'created_at', ascending: true },
-  deload_weeks: { column: 'week_start', ascending: true },
 };
 
 const PAGE_SIZE = 1000;
@@ -224,7 +193,7 @@ export function useDataExport() {
         setProgress({ current: i + 1, total: options.tables.length, table });
         
         let data: Record<string, any>[] | null = null;
-        let error: any = null;
+        const error: any = null;
         
         // Handle tables that don't have direct user_id (they link via workout_id)
         if (WORKOUT_LINKED_TABLES.includes(table)) {
@@ -326,17 +295,13 @@ export function useDataExport() {
     const allTables: DataTable[] = [
       'workouts',
       'exercises',
-      'exercise_sets', 
       'daily_metrics',
       'water_logs',
       'meals',
       'calorie_burns',
       'habits',
-      'recovery_metrics',
       'custom_routines',
       'user_preferences',
-      'exercise_templates',
-      'deload_weeks',
     ];
     
     return await exportToCSV({ tables: allTables });
@@ -358,7 +323,7 @@ export function useDataExport() {
       const sections = text.split(/### TABLE: (\w+) ###\n/).filter(Boolean);
       
       // Handle single table CSV or combined export
-      let tablesToProcess: { table: DataTable; content: string }[] = [];
+      const tablesToProcess: { table: DataTable; content: string }[] = [];
       
       if (sections.length >= 2) {
         // Combined export format
@@ -406,21 +371,15 @@ export function useDataExport() {
               // Parse special types
               if (value === '') {
                 value = null;
-              } else if (header === 'supplements' || header.includes('muscles') || header === 'fatigue_indicators') {
-                try { value = JSON.parse(value); } catch { /* keep as string */ }
-              } else if (['completed', 'is_rest_day', 'is_confirmed', 'is_skipped', 'deload_recommended'].includes(header)) {
+              } else if (['completed', 'is_confirmed', 'is_skipped', 'auto_rest_timer'].includes(header)) {
                 value = value === 'true' || value === '1';
               } else if ([
                 'actual_weight', 'actual_reps', 'target_weight', 'target_reps',
-                'sleep_hours', 'energy_level', 'bodyweight', 'pullups',
+                'sleep_hours', 'bodyweight', 'pullups',
                 'calories', 'protein', 'carbs', 'fat', 'fiber',
                 'amount', 'steps', 'water_intake', 'sort_order',
-                'pre_energy', 'pre_motivation',
-                'pre_soreness', 'post_difficulty', 'post_satisfaction',
                 'workout_duration_minutes', 'week_number', 'set_number', 'ai_confidence',
-                'recovery_score', 'hrv_ms', 'resting_hr', 'sleep_quality',
-                'muscle_soreness', 'fatigue_level', 'stress_level', 'workout_readiness',
-                'volume_reduction_percent', 'intensity_reduction_percent', 'duration_minutes'
+                'default_rest_seconds', 'duration_minutes'
               ].includes(header)) {
                 value = value ? parseFloat(value) : null;
               }

@@ -28,18 +28,14 @@ interface DataManagementSectionProps {
 
 const TABLE_LABELS: Record<DataTable, string> = {
   workouts: 'Workouts',
-  exercises: 'Exercises (Legacy)',
-  exercise_sets: 'Exercise Sets',
+  exercises: 'Exercises',
   daily_metrics: 'Daily Metrics',
   water_logs: 'Water Logs',
   meals: 'Meals',
   calorie_burns: 'Calorie Burns',
   habits: 'Habits',
-  recovery_metrics: 'Recovery Metrics',
   custom_routines: 'Custom Routines',
   user_preferences: 'User Preferences',
-  exercise_templates: 'Exercise Templates',
-  deload_weeks: 'Deload Weeks',
 };
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {
@@ -57,9 +53,8 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
-    'workouts', 'exercises', 'exercise_sets', 'daily_metrics', 'water_logs', 'meals',
-    'calorie_burns', 'habits', 'recovery_metrics',
-    'custom_routines', 'user_preferences', 'exercise_templates', 'deload_weeks',
+    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
+    'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
   ]);
   const [importResult, setImportResult] = useState<{
     success: boolean;

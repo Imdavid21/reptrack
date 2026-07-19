@@ -12,11 +12,6 @@ export function localDateKey(date: Date = new Date()): string {
   return format(date, 'yyyy-MM-dd');
 }
 
-/** Convenience: today's local date key. */
-export function todayKey(): string {
-  return localDateKey(new Date());
-}
-
 /**
  * Parses a stored `YYYY-MM-DD` day key back into a Date at LOCAL midnight.
  *

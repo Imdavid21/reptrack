@@ -48,9 +48,6 @@ export function activityDuration(kind: ActivityKind, value: number, minutesOverr
   return Math.round(value * cfg.paceMinPerKm);
 }
 
-// Backwards compat export
-export const walkingCalories = (km: number, weightKg: number) => activityCalories('walking', km, weightKg);
-
 export function ActivityLogger() {
   const { weightKg, addBurn } = useCalorieBurn();
   const { data: manualBurns = [] } = useManualBurns(180);

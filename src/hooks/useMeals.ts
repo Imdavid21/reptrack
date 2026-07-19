@@ -145,36 +145,3 @@ export function useMeals(date?: Date) {
     isUpdating: updateMeal.isPending,
   };
 }
-
-export function useDailyCalorieTotals(days: number = 30) {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ['dailyCalories', user?.id, days],
-    queryFn: async () => {
-      if (!user) return [];
-
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      const { data, error } = await supabase
-        .from('meals')
-        .select('date, calories')
-        .eq('user_id', user.id)
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-
-      // Group by date and sum calories
-      const dailyTotals = (data as { date: string; calories: number | null }[]).reduce((acc, meal) => {
-        if (!acc[meal.date]) acc[meal.date] = 0;
-        acc[meal.date] += meal.calories || 0;
-        return acc;
-      }, {} as Record<string, number>);
-
-      return Object.entries(dailyTotals).map(([date, calories]) => ({ date, calories }));
-    },
-    enabled: !!user,
-  });
-}

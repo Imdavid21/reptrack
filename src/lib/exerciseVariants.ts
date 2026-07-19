@@ -580,15 +580,3 @@ export function getWeightLabel(equipmentType: ExerciseVariant['equipmentType']):
     default: return 'kg';
   }
 }
-
-// Get equipment icon
-export function getEquipmentEmoji(type: ExerciseVariant['equipmentType']): string {
-  switch (type) {
-    case 'barbell': return '🏋️';
-    case 'dumbbell': return '💪';
-    case 'cable': return '🔗';
-    case 'machine': return '⚙️';
-    case 'bodyweight': return '🧘';
-    default: return '💪';
-  }
-}

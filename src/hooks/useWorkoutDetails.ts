@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { WorkoutExercise, Habits } from './useWorkouts';
+import { WorkoutExercise } from './useWorkouts';
 
 export interface WorkoutWithDetails {
   id: string;
@@ -103,35 +103,6 @@ export function useWorkoutDetails(workoutId: string | null) {
     },
   });
 
-  const updateHabitsMutation = useMutation({
-    mutationFn: async (habits: Partial<Habits> & { workout_id: string }) => {
-      const { workout_id, ...habitData } = habits;
-
-      // Check if habits exist
-      const { data: existing } = await supabase
-        .from('habits')
-        .select('id')
-        .eq('workout_id', workout_id)
-        .single();
-
-      if (existing) {
-        const { error } = await supabase
-          .from('habits')
-          .update(habitData)
-          .eq('workout_id', workout_id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('habits')
-          .insert({ workout_id, ...habitData });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
-    },
-  });
-
   const createExerciseMutation = useMutation({
     mutationFn: async (exercise: {
       workout_id: string;
@@ -205,7 +176,5 @@ export function useWorkoutDetails(workoutId: string | null) {
     deleteExercise: deleteExerciseMutation.mutateAsync,
     isDeletingExercise: deleteExerciseMutation.isPending,
     reorderExercises: reorderExercisesMutation.mutateAsync,
-    updateHabits: updateHabitsMutation.mutateAsync,
-    isUpdatingHabits: updateHabitsMutation.isPending,
   };
 }
