@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Dumbbell, Flame, Moon, Droplets, TrendingUp, TrendingDown, Minus, LineChart } from 'lucide-react';
+import { Dumbbell, Flame, Moon, Droplets, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { BodyOverview, PillarKey, PillarResult } from '@/lib/bodyScore';
 import { Skeleton } from '@mui/material';
 
@@ -12,13 +12,12 @@ const PILLAR_META: Record<PillarKey, {
   chip: string;
 }> = {
   training: { label: 'Training', icon: Dumbbell, text: 'text-energy-ink', bar: 'bg-energy', chip: 'bg-energy-soft' },
-  strength: { label: 'Strength', icon: LineChart, text: 'text-strength-ink', bar: 'bg-strength', chip: 'bg-strength-soft' },
   fuel: { label: 'Fuel', icon: Flame, text: 'text-fuel-ink', bar: 'bg-fuel', chip: 'bg-fuel-soft' },
   recovery: { label: 'Recovery', icon: Moon, text: 'text-recover-ink', bar: 'bg-recover', chip: 'bg-recover-soft' },
   hydration: { label: 'Hydration', icon: Droplets, text: 'text-water-ink', bar: 'bg-water', chip: 'bg-water-soft' },
 };
 
-const PILLAR_ORDER: PillarKey[] = ['training', 'strength', 'fuel', 'recovery', 'hydration'];
+const PILLAR_ORDER: PillarKey[] = ['training', 'fuel', 'recovery', 'hydration'];
 
 function scoreWord(score: number): string {
   if (score >= 85) return 'Excellent';
@@ -65,7 +64,7 @@ interface Props {
 }
 
 /**
- * North-star hero: one composite body score plus the five pillars that feed
+ * North-star hero: one composite body score plus the four pillars that feed
  * it, each with its own consistent color, real value, sample size, and trend.
  */
 export function BodyOverviewCard({ overview, isLoading }: Props) {
@@ -94,7 +93,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
         <div className="min-w-0">
           <div className="text-base font-bold leading-tight">{scoreWord(overview.overall)}</div>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Across training, strength, fuel, recovery and hydration.
+            Across training, fuel, recovery and hydration.
           </p>
         </div>
       </div>

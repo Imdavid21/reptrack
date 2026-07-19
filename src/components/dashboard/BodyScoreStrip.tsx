@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Dumbbell, Flame, Moon, Droplets, LineChart } from 'lucide-react';
+import { ChevronRight, Dumbbell, Flame, Moon, Droplets } from 'lucide-react';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { PillarKey } from '@/lib/bodyScore';
 import { haptic } from '@/lib/haptics';
 
 const PILLARS: Array<{ key: PillarKey; icon: typeof Dumbbell; text: string }> = [
   { key: 'training', icon: Dumbbell, text: 'text-energy-ink' },
-  { key: 'strength', icon: LineChart, text: 'text-strength-ink' },
   { key: 'fuel', icon: Flame, text: 'text-fuel-ink' },
   { key: 'recovery', icon: Moon, text: 'text-recover-ink' },
   { key: 'hydration', icon: Droplets, text: 'text-water-ink' },

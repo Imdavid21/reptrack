@@ -9,12 +9,6 @@ export interface ExerciseSet {
   workout_id: string;
   exercise_name: string;
   exercise_category: 'push' | 'pull' | 'legs';
-  /** Raw training-role category from the exercises table ('warmup' | 'primary'
-   * | 'accessory'), distinct from exercise_category's push/pull/legs movement
-   * pattern above. Consumers that need to weight primary lifts differently or
-   * exclude warmups (e.g. strength-progress scoring) should use this instead
-   * of re-deriving it. */
-  training_category: string;
   set_number: number;
   target_weight: number | null;
   target_reps: number | null;
@@ -162,7 +156,6 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
           workout_id: ex.workout_id,
           exercise_name: exerciseName,
           exercise_category: categorizeExercise(exerciseName, dayName),
-          training_category: ex.category ?? 'accessory',
           set_number: ex.sort_order ?? idx + 1,
           target_weight: parseWeight(ex.target_weight),
           target_reps: parseReps(ex.target_reps),

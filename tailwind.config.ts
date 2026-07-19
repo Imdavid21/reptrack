@@ -84,11 +84,6 @@ export default {
           soft: "hsl(var(--recover-soft))",
           ink: "hsl(var(--recover-ink))",
         },
-        strength: {
-          DEFAULT: "hsl(var(--strength))",
-          soft: "hsl(var(--strength-soft))",
-          ink: "hsl(var(--strength-ink))",
-        },
         heat: {
           0: "hsl(var(--heat-0))",
           1: "hsl(var(--heat-1))",
