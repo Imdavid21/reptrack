@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Flame, Dumbbell } from 'lucide-react';
+import { Flame, Dumbbell, Activity } from 'lucide-react';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
@@ -17,6 +17,8 @@ export function CalorieChart() {
   // Period stats for summary
   const totalIntake = calorieData.reduce((sum, d) => sum + d.intake, 0);
   const totalBurned = calorieData.reduce((sum, d) => sum + d.burned, 0);
+  const totalWorkoutBurned = calorieData.reduce((sum, d) => sum + d.workoutBurned, 0);
+  const totalManualBurned = calorieData.reduce((sum, d) => sum + d.manualBurned, 0);
   const netBalance = totalIntake - totalBurned;
   const isDeficit = netBalance < 0;
   const isSurplus = netBalance > 200;
@@ -45,10 +47,23 @@ export function CalorieChart() {
             <span className="text-xs text-insight-mint">Intake</span>
             <span className="text-sm font-semibold tabular-nums">+{data.intake.toLocaleString()}</span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-insight-coral">Burned</span>
-            <span className="text-sm font-semibold tabular-nums">-{data.burned.toLocaleString()}</span>
-          </div>
+          {data.manualBurned > 0 ? (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-insight-coral">Workout</span>
+                <span className="text-sm font-semibold tabular-nums">-{data.workoutBurned.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-insight-coral">Activity</span>
+                <span className="text-sm font-semibold tabular-nums">-{data.manualBurned.toLocaleString()}</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-xs text-insight-coral">Burned</span>
+              <span className="text-sm font-semibold tabular-nums">-{data.burned.toLocaleString()}</span>
+            </div>
+          )}
           <div className="border-t border-border pt-1.5">
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs text-muted-foreground">Net</span>
@@ -179,6 +194,18 @@ export function CalorieChart() {
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">Net Calorie</div>
       </div>
+
+      {/* Burned breakdown - only worth showing once manual activity exists in the period */}
+      {totalManualBurned > 0 && (
+        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Dumbbell className="h-3 w-3" /> Workout {totalWorkoutBurned.toLocaleString()}
+          </span>
+          <span className="flex items-center gap-1">
+            <Activity className="h-3 w-3" /> Activity {totalManualBurned.toLocaleString()}
+          </span>
+        </div>
+      )}
     </motion.div>
   );
 }

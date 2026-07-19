@@ -11,6 +11,10 @@ interface CalorieDataPoint {
   date: string;
   intake: number;
   burned: number;
+  /** Portion of `burned` from workouts (persisted or computed-fallback). */
+  workoutBurned: number;
+  /** Portion of `burned` from manually-logged activity (walk/run/cycle/box). */
+  manualBurned: number;
   net: number;
 }
 
@@ -93,13 +97,21 @@ export function useCalorieHistory(dateRange: DateRange) {
         intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (meal.calories || 0);
       });
 
-      // Group persisted burns by date; track per-workout rows so fallback calculations do not double-count
+      // Group persisted burns by date; track per-workout rows so fallback calculations do not double-count.
+      // Also split by source so the UI can show workout vs manual-activity attribution, not just a combined total.
       const persistedWorkoutBurnIds = new Set<string>();
       const burnsByDate: Record<string, number> = {};
+      const workoutBurnByDate: Record<string, number> = {};
+      const manualBurnByDate: Record<string, number> = {};
       (burnsRes.data || []).forEach((burn: any) => {
         burnsByDate[burn.date] = (burnsByDate[burn.date] || 0) + (burn.calories || 0);
-        if (burn.source === 'workout' && burn.activity_type?.startsWith('workout:')) {
-          persistedWorkoutBurnIds.add(burn.activity_type.replace('workout:', ''));
+        if (burn.source === 'workout') {
+          workoutBurnByDate[burn.date] = (workoutBurnByDate[burn.date] || 0) + (burn.calories || 0);
+          if (burn.activity_type?.startsWith('workout:')) {
+            persistedWorkoutBurnIds.add(burn.activity_type.replace('workout:', ''));
+          }
+        } else if (burn.source === 'manual') {
+          manualBurnByDate[burn.date] = (manualBurnByDate[burn.date] || 0) + (burn.calories || 0);
         }
       });
 
@@ -132,6 +144,7 @@ export function useCalorieHistory(dateRange: DateRange) {
             durationMinutes
           );
           burnsByDate[date] = (burnsByDate[date] || 0) + calories;
+          workoutBurnByDate[date] = (workoutBurnByDate[date] || 0) + calories;
         }
       });
 
@@ -146,6 +159,8 @@ export function useCalorieHistory(dateRange: DateRange) {
           date: dateStr,
           intake,
           burned,
+          workoutBurned: workoutBurnByDate[dateStr] || 0,
+          manualBurned: manualBurnByDate[dateStr] || 0,
           net: intake - burned,
         };
       });

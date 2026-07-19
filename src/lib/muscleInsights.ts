@@ -1,7 +1,8 @@
 /**
  * Muscle-intelligence engine — the data-driven growth layer.
  *
- * Pure functions over logged sets that answer:
+ * Pure functions over logged sets (plus logged cardio/activity, which loads
+ * muscles too — see ACTIVITY_MUSCLE_LOAD) that answer:
  *  - Which muscles are undertrained / optimal / overreaching / never trained?
  *  - Where am I plateaued, and which variation should I switch to for fresh stimulus?
  *  - Did I just hit a PR? Where is there room to add volume for more growth?
@@ -21,6 +22,12 @@ export interface InsightSet {
   workout_date?: string;
 }
 
+export interface InsightActivity {
+  /** Matches ActivityLogger's ActivityKind ('walking' | 'running' | 'cycling' | 'boxing'), kept as string here to avoid a UI-layer import. */
+  activity_type: string;
+  duration_minutes: number;
+}
+
 export type VolumeStatus = 'untrained' | 'under' | 'optimal' | 'high' | 'overreaching';
 
 export interface MuscleBalance {
@@ -29,6 +36,10 @@ export interface MuscleBalance {
   status: VolumeStatus;
   /** Suggested movement to add when a muscle is untrained/undertrained. */
   suggestion?: string;
+  /** Weekly-equivalent-sets portion of weeklySets contributed by logged
+   *  activity (walk/run/cycle/box) rather than direct lifting. Undefined/0
+   *  when the muscle's volume is entirely from tracked sets. */
+  fromActivity?: number;
 }
 
 export interface PlateauInsight {
@@ -78,6 +89,20 @@ export const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }
   Forearms: { mev: 4, mav: 12, mrv: 20 },
 };
 
+// Equivalent "hard sets" of hypertrophy stimulus per 30 continuous minutes of
+// an activity. Cardio's per-minute stimulus is far below a taxing resistance
+// set, so these are deliberately small relative to LANDMARKS — enough that
+// e.g. a regular runner's Calves/Quads don't read as "not trained at all",
+// not enough to make cardio alone read as sufficient volume. Heuristic, like
+// LANDMARKS above; only muscles with a real, primary role in the movement are
+// listed, so e.g. boxing's footwork isn't credited with real leg volume.
+const ACTIVITY_MUSCLE_LOAD: Record<string, Partial<Record<string, number>>> = {
+  walking: { Quads: 0.5, Hamstrings: 0.5, Glutes: 0.5, Calves: 1 },
+  running: { Quads: 1, Hamstrings: 1, Glutes: 1, Calves: 1.5, Core: 0.5 },
+  cycling: { Quads: 1.5, Hamstrings: 0.5, Glutes: 1, Calves: 0.5 },
+  boxing: { Shoulders: 1.5, Core: 1.5, Triceps: 1, Biceps: 0.5, Back: 0.5 },
+};
+
 // Movement ideas to surface for a muscle that's missing or low.
 const MOVEMENT_IDEAS: Record<string, string> = {
   Chest: 'Incline Dumbbell Press',
@@ -110,25 +135,39 @@ function classifyStatus(weeklySets: number, l: { mev: number; mav: number; mrv: 
   return 'overreaching';
 }
 
-export function analyzeMuscles(sets: InsightSet[], rangeDays: number): MuscleIntelligence {
+export function analyzeMuscles(sets: InsightSet[], rangeDays: number, activities: InsightActivity[] = []): MuscleIntelligence {
   const weeks = Math.max(rangeDays / 7, 0.5);
 
-  // --- Weekly set volume per muscle ---
-  const setCount: Record<string, number> = {};
-  for (const muscle of TRACKED_MUSCLES) setCount[muscle] = 0;
+  // --- Weekly set volume per muscle, from direct lifting ---
+  const liftSetCount: Record<string, number> = {};
+  for (const muscle of TRACKED_MUSCLES) liftSetCount[muscle] = 0;
   for (const s of sets) {
     const bp = getBodyPart(s.exercise_name);
-    if (bp in setCount) setCount[bp] += 1;
+    if (bp in liftSetCount) liftSetCount[bp] += 1;
+  }
+
+  // --- Equivalent-set contribution from logged activity (see ACTIVITY_MUSCLE_LOAD) ---
+  const activitySetCount: Record<string, number> = {};
+  for (const muscle of TRACKED_MUSCLES) activitySetCount[muscle] = 0;
+  for (const a of activities) {
+    const load = ACTIVITY_MUSCLE_LOAD[a.activity_type];
+    if (!load || a.duration_minutes <= 0) continue;
+    const factor = a.duration_minutes / 30;
+    for (const [muscle, perThirtyMin] of Object.entries(load)) {
+      if (muscle in activitySetCount) activitySetCount[muscle] += (perThirtyMin ?? 0) * factor;
+    }
   }
 
   const balance: MuscleBalance[] = TRACKED_MUSCLES.map((bodyPart) => {
-    const weeklySets = Math.round((setCount[bodyPart] / weeks) * 10) / 10;
+    const weeklySets = Math.round(((liftSetCount[bodyPart] + activitySetCount[bodyPart]) / weeks) * 10) / 10;
+    const weeklyFromActivity = Math.round((activitySetCount[bodyPart] / weeks) * 10) / 10;
     const status = classifyStatus(weeklySets, LANDMARKS[bodyPart]);
     return {
       bodyPart,
       weeklySets,
       status,
       suggestion: status === 'untrained' || status === 'under' ? MOVEMENT_IDEAS[bodyPart] : undefined,
+      fromActivity: weeklyFromActivity > 0 ? weeklyFromActivity : undefined,
     };
   });
 

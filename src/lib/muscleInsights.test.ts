@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeMuscles, estimateOneRepMax, pickVariation, InsightSet } from './muscleInsights';
+import { analyzeMuscles, estimateOneRepMax, pickVariation, InsightSet, InsightActivity } from './muscleInsights';
 
 function benchSet(date: string, weight: number, reps: number): InsightSet {
   return { exercise_name: 'Barbell Bench Press', actual_weight: weight, actual_reps: reps, workout_date: date };
+}
+
+function activity(kind: string, minutes: number): InsightActivity {
+  return { activity_type: kind, duration_minutes: minutes };
 }
 
 describe('estimateOneRepMax', () => {
@@ -51,6 +55,62 @@ describe('analyzeMuscles — balance', () => {
     const res = analyzeMuscles(sets, 7);
     const chest = res.balance.find(b => b.bodyPart === 'Chest');
     expect(chest?.status).toBe('overreaching');
+  });
+});
+
+describe('analyzeMuscles — activity contribution', () => {
+  function squatSet(date: string, weight: number, reps: number): InsightSet {
+    return { exercise_name: 'Barbell Squat', actual_weight: weight, actual_reps: reps, workout_date: date };
+  }
+
+  it('credits a logged activity toward the muscles it actually loads', () => {
+    // One 30-min run in a 7-day (1-week) window = running's per-30-min Quads load (1) at face value.
+    const res = analyzeMuscles([], 7, [activity('running', 30)]);
+    const quads = res.balance.find(b => b.bodyPart === 'Quads');
+    expect(quads?.weeklySets).toBe(1);
+    expect(quads?.fromActivity).toBe(1);
+    expect(quads?.status).toBe('under'); // 1 < Quads MEV (8), so no longer "untrained"
+    expect(res.untrained).not.toContain('Quads');
+  });
+
+  it('ignores an unrecognized activity type without throwing', () => {
+    const res = analyzeMuscles([], 7, [activity('swimming', 45)]);
+    expect(res.balance.every(b => b.fromActivity === undefined)).toBe(true);
+  });
+
+  it('ignores a zero-duration activity entry', () => {
+    const res = analyzeMuscles([], 7, [activity('running', 0)]);
+    const quads = res.balance.find(b => b.bodyPart === 'Quads');
+    expect(quads?.fromActivity).toBeUndefined();
+    expect(quads?.status).toBe('untrained');
+  });
+
+  it('combines lifting sets and activity load additively, and isolates the activity portion', () => {
+    // 4 squat sets (lifting) + one 60-min run (running.Quads = 1/30min => +2 equivalent sets) in a 1-week window.
+    const sets = [
+      squatSet('2026-06-01', 100, 5),
+      squatSet('2026-06-01', 100, 5),
+      squatSet('2026-06-01', 100, 5),
+      squatSet('2026-06-01', 100, 5),
+    ];
+    const res = analyzeMuscles(sets, 7, [activity('running', 60)]);
+    const quads = res.balance.find(b => b.bodyPart === 'Quads');
+    expect(quads?.weeklySets).toBe(6); // 4 lifted + 2 from activity
+    expect(quads?.fromActivity).toBe(2);
+  });
+
+  it('only credits muscles an activity actually trains (boxing does not load legs)', () => {
+    const res = analyzeMuscles([], 7, [activity('boxing', 60)]);
+    const shoulders = res.balance.find(b => b.bodyPart === 'Shoulders');
+    const quads = res.balance.find(b => b.bodyPart === 'Quads');
+    expect(shoulders?.fromActivity).toBeGreaterThan(0);
+    expect(quads?.fromActivity).toBeUndefined();
+    expect(quads?.status).toBe('untrained');
+  });
+
+  it('defaults to no activity contribution when the param is omitted (back-compat)', () => {
+    const res = analyzeMuscles([benchSet('2026-06-01', 60, 5)], 7);
+    expect(res.balance.every(b => b.fromActivity === undefined)).toBe(true);
   });
 });
 

@@ -277,4 +277,49 @@ export function useManualBurns(days: number = 30) {
   return { ...query, deleteBurn };
 }
 
+export interface ManualActivityEntry {
+  date: string;
+  activity_type: string;
+  duration_minutes: number;
+}
+
+/**
+ * Manual activities within an explicit [from, to] range. Unlike useManualBurns
+ * (always "last N days through today"), this respects an arbitrary selected
+ * range — needed so muscle-balance analysis matches whatever range the user
+ * has picked on Insights, not just the last N days from right now.
+ */
+export function useManualActivitiesInRange(from: Date, to: Date) {
+  const { user } = useAuth();
+  const fromStr = format(from, 'yyyy-MM-dd');
+  const toStr = format(to, 'yyyy-MM-dd');
+
+  return useQuery({
+    queryKey: ['manual-activities-range', user?.id, fromStr, toStr],
+    queryFn: async (): Promise<ManualActivityEntry[]> => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('calorie_burns')
+        .select('date, activity_type, duration_minutes')
+        .eq('user_id', user.id)
+        .eq('source', 'manual')
+        .gte('date', fromStr)
+        .lte('date', toStr);
+
+      if (error) throw error;
+      const rows = data as { date: string; activity_type: string | null; duration_minutes: number | null }[];
+      return rows
+        .filter((d): d is { date: string; activity_type: string; duration_minutes: number } =>
+          !!d.activity_type && !!d.duration_minutes)
+        .map((d) => ({
+          date: d.date,
+          activity_type: d.activity_type,
+          duration_minutes: d.duration_minutes,
+        }));
+    },
+    enabled: !!user,
+  });
+}
+
 

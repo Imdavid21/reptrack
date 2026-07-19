@@ -1,6 +1,6 @@
 import { Skeleton } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle, Activity } from 'lucide-react';
 import { MuscleIntelligence, VolumeStatus, MuscleBalance, LANDMARKS } from '@/lib/muscleInsights';
 
 const STATUS_META: Record<VolumeStatus, { label: string; bar: string; text: string; dot: string }> = {
@@ -49,9 +49,17 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
         <div className="text-sm font-bold">Muscle balance</div>
         <div className="text-[11px] text-muted-foreground">sets / week</div>
       </div>
-      <p className="text-[11px] text-muted-foreground mb-4">
-        Weekly volume vs hypertrophy landmarks over the selected range.
-      </p>
+      <div className="mb-4">
+        <p className="text-[11px] text-muted-foreground">
+          Weekly volume vs hypertrophy landmarks over the selected range.
+        </p>
+        {ordered.some(b => (b.fromActivity ?? 0) > 0) && (
+          <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1">
+            <Activity className="h-3 w-3 shrink-0" />
+            Includes stimulus from logged activity (walk/run/cycle/boxing), not lifting alone.
+          </p>
+        )}
+      </div>
 
       <div className="space-y-2.5">
         {ordered.map((m, i) => {
