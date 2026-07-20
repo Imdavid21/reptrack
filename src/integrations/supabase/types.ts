@@ -79,10 +79,13 @@ export type Database = {
           bodyweight: number | null
           created_at: string | null
           date: string
+          energy_level: number | null
           id: string
+          is_rest_day: boolean | null
           notes: string | null
           pullups: number | null
           sleep_hours: number | null
+          supplements: Json | null
           updated_at: string | null
           user_id: string
         }
@@ -90,10 +93,13 @@ export type Database = {
           bodyweight?: number | null
           created_at?: string | null
           date: string
+          energy_level?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
+          supplements?: Json | null
           updated_at?: string | null
           user_id: string
         }
@@ -101,12 +107,180 @@ export type Database = {
           bodyweight?: number | null
           created_at?: string | null
           date?: string
+          energy_level?: number | null
           id?: string
+          is_rest_day?: boolean | null
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
+          supplements?: Json | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      deload_weeks: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          fatigue_indicators: Json | null
+          id: string
+          intensity_reduction_percent: number | null
+          notes: string | null
+          trigger_reason: string
+          user_id: string
+          volume_reduction_percent: number | null
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          fatigue_indicators?: Json | null
+          id?: string
+          intensity_reduction_percent?: number | null
+          notes?: string | null
+          trigger_reason: string
+          user_id: string
+          volume_reduction_percent?: number | null
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          fatigue_indicators?: Json | null
+          id?: string
+          intensity_reduction_percent?: number | null
+          notes?: string | null
+          trigger_reason?: string
+          user_id?: string
+          volume_reduction_percent?: number | null
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      exercise_sets: {
+        Row: {
+          actual_reps: number | null
+          actual_weight: number | null
+          completed: boolean | null
+          created_at: string | null
+          exercise_category: string
+          exercise_name: string
+          id: string
+          movement_pattern: string | null
+          primary_muscles: string[] | null
+          set_number: number
+          target_reps: number | null
+          target_weight: number | null
+          template_id: string | null
+          template_snapshot: Json | null
+          workout_id: string
+        }
+        Insert: {
+          actual_reps?: number | null
+          actual_weight?: number | null
+          completed?: boolean | null
+          created_at?: string | null
+          exercise_category: string
+          exercise_name: string
+          id?: string
+          movement_pattern?: string | null
+          primary_muscles?: string[] | null
+          set_number: number
+          target_reps?: number | null
+          target_weight?: number | null
+          template_id?: string | null
+          template_snapshot?: Json | null
+          workout_id: string
+        }
+        Update: {
+          actual_reps?: number | null
+          actual_weight?: number | null
+          completed?: boolean | null
+          created_at?: string | null
+          exercise_category?: string
+          exercise_name?: string
+          id?: string
+          movement_pattern?: string | null
+          primary_muscles?: string[] | null
+          set_number?: number
+          target_reps?: number | null
+          target_weight?: number | null
+          template_id?: string | null
+          template_snapshot?: Json | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sets_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_sets_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_templates: {
+        Row: {
+          canonical_name: string
+          category: string
+          created_at: string | null
+          default_reps: string | null
+          default_weight: string | null
+          deprecated_at: string | null
+          equipment: string
+          id: string
+          movement_pattern: string
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[] | null
+          updated_at: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          canonical_name: string
+          category: string
+          created_at?: string | null
+          default_reps?: string | null
+          default_weight?: string | null
+          deprecated_at?: string | null
+          equipment?: string
+          id?: string
+          movement_pattern?: string
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          version?: number
+        }
+        Update: {
+          canonical_name?: string
+          category?: string
+          created_at?: string | null
+          default_reps?: string | null
+          default_weight?: string | null
+          deprecated_at?: string | null
+          equipment?: string
+          id?: string
+          movement_pattern?: string
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
@@ -187,28 +361,34 @@ export type Database = {
       habits: {
         Row: {
           bodyweight: number | null
+          energy_level: number | null
           id: string
           notes: string | null
           pullups: number | null
           sleep_hours: number | null
+          supplements: Json | null
           water_intake: number | null
           workout_id: string
         }
         Insert: {
           bodyweight?: number | null
+          energy_level?: number | null
           id?: string
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
+          supplements?: Json | null
           water_intake?: number | null
           workout_id: string
         }
         Update: {
           bodyweight?: number | null
+          energy_level?: number | null
           id?: string
           notes?: string | null
           pullups?: number | null
           sleep_hours?: number | null
+          supplements?: Json | null
           water_intake?: number | null
           workout_id?: string
         }
@@ -306,10 +486,64 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_metrics: {
+        Row: {
+          created_at: string | null
+          date: string
+          deload_recommended: boolean | null
+          fatigue_level: number | null
+          hrv_ms: number | null
+          id: string
+          muscle_soreness: number | null
+          notes: string | null
+          recovery_score: number | null
+          resting_hr: number | null
+          sleep_quality: number | null
+          stress_level: number | null
+          updated_at: string | null
+          user_id: string
+          workout_readiness: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          deload_recommended?: boolean | null
+          fatigue_level?: number | null
+          hrv_ms?: number | null
+          id?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id: string
+          workout_readiness?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          deload_recommended?: boolean | null
+          fatigue_level?: number | null
+          hrv_ms?: number | null
+          id?: string
+          muscle_soreness?: number | null
+          notes?: string | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id?: string
+          workout_readiness?: number | null
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
+          activity_level: string | null
           age: number | null
-          auto_rest_timer: boolean | null
           created_at: string | null
           daily_calorie_goal: number | null
           daily_carbs_goal: number | null
@@ -320,14 +554,13 @@ export type Database = {
           daily_sodium_goal: number | null
           daily_sugar_goal: number | null
           daily_water_goal: number | null
-          default_rest_seconds: number | null
           deficit_mode_enabled: boolean
+          dietary_preferences: string[] | null
           fitness_goal: string | null
           gender: string | null
           height_cm: number | null
           id: string
           maintenance_calories: number | null
-          name: string | null
           onboarding_completed: boolean | null
           rest_days: Json | null
           routine_setup_completed: boolean | null
@@ -342,8 +575,8 @@ export type Database = {
           weight_goal_type: string | null
         }
         Insert: {
+          activity_level?: string | null
           age?: number | null
-          auto_rest_timer?: boolean | null
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
@@ -354,14 +587,13 @@ export type Database = {
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
           daily_water_goal?: number | null
-          default_rest_seconds?: number | null
           deficit_mode_enabled?: boolean
+          dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
           maintenance_calories?: number | null
-          name?: string | null
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
@@ -376,8 +608,8 @@ export type Database = {
           weight_goal_type?: string | null
         }
         Update: {
+          activity_level?: string | null
           age?: number | null
-          auto_rest_timer?: boolean | null
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
@@ -388,14 +620,13 @@ export type Database = {
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
           daily_water_goal?: number | null
-          default_rest_seconds?: number | null
           deficit_mode_enabled?: boolean
+          dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
           maintenance_calories?: number | null
-          name?: string | null
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
@@ -444,6 +675,11 @@ export type Database = {
           day_name: string
           id: string
           is_skipped: boolean | null
+          post_difficulty: number | null
+          post_satisfaction: number | null
+          pre_energy: number | null
+          pre_motivation: number | null
+          pre_soreness: number | null
           started_at: string | null
           user_id: string
           week_number: number
@@ -457,6 +693,11 @@ export type Database = {
           day_name: string
           id?: string
           is_skipped?: boolean | null
+          post_difficulty?: number | null
+          post_satisfaction?: number | null
+          pre_energy?: number | null
+          pre_motivation?: number | null
+          pre_soreness?: number | null
           started_at?: string | null
           user_id: string
           week_number?: number
@@ -470,6 +711,11 @@ export type Database = {
           day_name?: string
           id?: string
           is_skipped?: boolean | null
+          post_difficulty?: number | null
+          post_satisfaction?: number | null
+          pre_energy?: number | null
+          pre_motivation?: number | null
+          pre_soreness?: number | null
           started_at?: string | null
           user_id?: string
           week_number?: number

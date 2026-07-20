@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Meal photos are publicly accessible" ON storage.objects;

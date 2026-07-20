@@ -515,7 +515,7 @@ export default function LogWorkout() {
     if (dayInfo) {
       setExercises(buildExercisesFromTemplate(dayInfo, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null));
     }
-    setPreSuggestionExercises(null);
+    
   };
 
   // Change training split (persists to preferences)
