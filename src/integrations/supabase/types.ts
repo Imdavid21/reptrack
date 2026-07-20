@@ -213,6 +213,8 @@ export type Database = {
           notes: string | null
           photo_url: string | null
           protein: number | null
+          sodium: number | null
+          sugar: number | null
           user_id: string
         }
         Insert: {
@@ -232,6 +234,8 @@ export type Database = {
           notes?: string | null
           photo_url?: string | null
           protein?: number | null
+          sodium?: number | null
+          sugar?: number | null
           user_id: string
         }
         Update: {
@@ -251,6 +255,8 @@ export type Database = {
           notes?: string | null
           photo_url?: string | null
           protein?: number | null
+          sodium?: number | null
+          sugar?: number | null
           user_id?: string
         }
         Relationships: []
@@ -284,6 +290,8 @@ export type Database = {
           daily_fat_goal: number | null
           daily_fiber_goal: number | null
           daily_protein_goal: number
+          daily_sodium_goal: number | null
+          daily_sugar_goal: number | null
           daily_water_goal: number | null
           default_rest_seconds: number | null
           deficit_mode_enabled: boolean
@@ -316,6 +324,8 @@ export type Database = {
           daily_fat_goal?: number | null
           daily_fiber_goal?: number | null
           daily_protein_goal?: number
+          daily_sodium_goal?: number | null
+          daily_sugar_goal?: number | null
           daily_water_goal?: number | null
           default_rest_seconds?: number | null
           deficit_mode_enabled?: boolean
@@ -348,6 +358,8 @@ export type Database = {
           daily_fat_goal?: number | null
           daily_fiber_goal?: number | null
           daily_protein_goal?: number
+          daily_sodium_goal?: number | null
+          daily_sugar_goal?: number | null
           daily_water_goal?: number | null
           default_rest_seconds?: number | null
           deficit_mode_enabled?: boolean

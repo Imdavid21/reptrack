@@ -89,7 +89,9 @@ Examples:
 - "chicken salad with dressing" → grilled chicken breast + mixed greens + dressing (~400 cal)
 - "large pepperoni pizza slice" → 1 large slice pepperoni pizza (~300 cal)
 
-Be accurate with portions. When quantities aren't specified, assume reasonable single servings.`
+Be accurate with portions. When quantities aren't specified, assume reasonable single servings.
+
+Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat — sauces, dressings, and processed or cured items usually dominate the sodium total.`
           },
           {
             role: "user",
@@ -115,7 +117,9 @@ Be accurate with portions. When quantities aren't specified, assume reasonable s
                         calories: { type: "number", description: "Estimated calories" },
                         protein: { type: "number", description: "Protein in grams" },
                         carbs: { type: "number", description: "Carbs in grams" },
-                        fat: { type: "number", description: "Fat in grams" }
+                        fat: { type: "number", description: "Fat in grams" },
+                        sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
+                        sodium: { type: "number", description: "Sodium in milligrams" }
                       },
                       required: ["name", "portion", "calories"]
                     }
@@ -124,6 +128,8 @@ Be accurate with portions. When quantities aren't specified, assume reasonable s
                   total_protein: { type: "number" },
                   total_carbs: { type: "number" },
                   total_fat: { type: "number" },
+                  total_sugar: { type: "number" },
+                  total_sodium: { type: "number" },
                   description: { type: "string", description: "Brief description of the meal" },
                   food_quality: { 
                     type: "string", 

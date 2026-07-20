@@ -52,6 +52,8 @@ type EditableFood = {
   carbs?: number;
   fat?: number;
   fiber?: number;
+  sugar?: number;
+  sodium?: number;
 };
 
 export function CalorieTrackerCompact() {
@@ -281,6 +283,8 @@ export function CalorieTrackerCompact() {
     const totalCarbs = validFoods.reduce((s, f) => s + (f.carbs || 0), 0);
     const totalFat = validFoods.reduce((s, f) => s + (f.fat || 0), 0);
     const totalFiber = validFoods.reduce((s, f) => s + (f.fiber || 0), 0);
+    const totalSugar = validFoods.reduce((s, f) => s + (f.sugar || 0), 0);
+    const totalSodium = validFoods.reduce((s, f) => s + (f.sodium || 0), 0);
 
     try {
       await addMeal({
@@ -295,6 +299,8 @@ export function CalorieTrackerCompact() {
         carbs: totalCarbs || undefined,
         fat: totalFat || undefined,
         fiber: totalFiber || undefined,
+        sugar: totalSugar || undefined,
+        sodium: totalSodium || undefined,
         food_quality: analysis?.food_quality,
       });
       toast.success(`Meal logged${mealDateSuffix}`);

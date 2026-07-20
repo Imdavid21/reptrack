@@ -14,6 +14,8 @@ export interface Meal {
   carbs: number | null;
   fat: number | null;
   fiber: number | null;
+  sugar: number | null;
+  sodium: number | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;
@@ -55,6 +57,8 @@ export function useMeals(date?: Date) {
       carbs?: number;
       fat?: number;
       fiber?: number;
+      sugar?: number;
+      sodium?: number;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;

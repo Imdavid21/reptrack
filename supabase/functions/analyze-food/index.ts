@@ -109,8 +109,9 @@ UNCERTAINTY — be honest:
 - Confidence score: 0.9+ = very clear image with confident specific identification, 0.7-0.9 = clear but some variety/cut guesswork, below 0.7 = poor image quality or highly ambiguous items.
 
 MACRO CALCULATION:
-- Always provide protein, carbs, fat, and fiber for each item and totals.
-- Base macros on USDA values for the SPECIFIC variety/cut identified — basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.`
+- Always provide protein, carbs, fat, fiber, sugar, and sodium for each item and totals.
+- Base macros on USDA values for the SPECIFIC variety/cut identified — basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.
+- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams — account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total.`
         },
         {
           role: "user",
@@ -146,7 +147,9 @@ MACRO CALCULATION:
                       protein: { type: "number", description: "Protein in grams" },
                       carbs: { type: "number", description: "Carbohydrates in grams" },
                       fat: { type: "number", description: "Fat in grams" },
-                      fiber: { type: "number", description: "Dietary fiber in grams" }
+                      fiber: { type: "number", description: "Dietary fiber in grams" },
+                      sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
+                      sodium: { type: "number", description: "Sodium in milligrams" }
                     },
                     required: ["name", "portion", "calories"]
                   }
@@ -156,6 +159,8 @@ MACRO CALCULATION:
                 total_carbs: { type: "number" },
                 total_fat: { type: "number" },
                 total_fiber: { type: "number" },
+                total_sugar: { type: "number" },
+                total_sodium: { type: "number" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
                 description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
                 food_quality: {

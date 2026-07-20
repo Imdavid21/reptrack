@@ -54,7 +54,7 @@ export function useDataChat() {
       const [mealsRes, waterRes] = await Promise.all([
         supabase
           .from('meals')
-          .select('date, calories, protein, carbs, fat')
+          .select('date, calories, protein, carbs, fat, fiber, sugar, sodium')
           .eq('user_id', user!.id)
           .gte('date', fromKey)
           .lte('date', toKey),
@@ -66,13 +66,16 @@ export function useDataChat() {
           .lte('timestamp', range.to.toISOString()),
       ]);
 
-      const mealsByDay = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>();
+      const mealsByDay = new Map<string, { calories: number; protein: number; carbs: number; fat: number; fiber: number; sugar: number; sodium: number }>();
       for (const m of mealsRes.data ?? []) {
-        const cur = mealsByDay.get(m.date) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        const cur = mealsByDay.get(m.date) ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 };
         cur.calories += m.calories || 0;
         cur.protein += m.protein || 0;
         cur.carbs += m.carbs || 0;
         cur.fat += m.fat || 0;
+        cur.fiber += m.fiber || 0;
+        cur.sugar += m.sugar || 0;
+        cur.sodium += m.sodium || 0;
         mealsByDay.set(m.date, cur);
       }
 

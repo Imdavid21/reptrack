@@ -48,7 +48,7 @@ const TABLE_COLUMNS: Record<DataTable, string[]> = {
   ],
   meals: [
     'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
-    'protein', 'carbs', 'fat', 'fiber', 'food_quality',
+    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'food_quality',
     'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed', 'notes', 'created_at'
   ],
   calorie_burns: [
@@ -376,7 +376,7 @@ export function useDataExport() {
               } else if ([
                 'actual_weight', 'actual_reps', 'target_weight', 'target_reps',
                 'sleep_hours', 'bodyweight', 'pullups',
-                'calories', 'protein', 'carbs', 'fat', 'fiber',
+                'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium',
                 'amount', 'steps', 'water_intake', 'sort_order',
                 'workout_duration_minutes', 'week_number', 'set_number', 'ai_confidence',
                 'default_rest_seconds', 'duration_minutes'

@@ -3,23 +3,30 @@ import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Beef, Wheat, Droplet, Leaf, Pencil, Check, X, LucideIcon } from 'lucide-react';
+import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Pencil, Check, X, LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { cn } from '@/lib/utils';
 
-export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber';
+export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium';
 
 interface MacroConfig {
   label: string;
   unit: string;
-  column: 'protein' | 'carbs' | 'fat' | 'fiber';
-  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal';
+  column: MacroKey;
+  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal' | 'daily_sugar_goal' | 'daily_sodium_goal';
   defaultGoal: number;
   colorVar: string;
   icon: LucideIcon;
+  /** 'atLeast' (default) — meeting/exceeding the target is the goal, e.g.
+   *  protein. 'atMost' — staying at/under the target is the goal, e.g. sugar
+   *  and sodium, where "hit target" would otherwise mean "ate more of it". */
+  direction?: 'atLeast' | 'atMost';
+  /** Upper bound for the editable target input. Defaults to 1000 (fits every
+   *  gram-scale macro); sodium needs its own since it's measured in mg. */
+  maxTarget?: number;
 }
 
 const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
@@ -27,6 +34,8 @@ const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
   carbs: { label: 'Carbs', unit: 'g', column: 'carbs', goalKey: 'daily_carbs_goal', defaultGoal: 250, colorVar: '--insight-coral', icon: Wheat },
   fat: { label: 'Fat', unit: 'g', column: 'fat', goalKey: 'daily_fat_goal', defaultGoal: 70, colorVar: '--insight-amber', icon: Droplet },
   fiber: { label: 'Fiber', unit: 'g', column: 'fiber', goalKey: 'daily_fiber_goal', defaultGoal: 30, colorVar: '--insight-violet', icon: Leaf },
+  sugar: { label: 'Sugar', unit: 'g', column: 'sugar', goalKey: 'daily_sugar_goal', defaultGoal: 50, colorVar: '--insight-rose', icon: Candy, direction: 'atMost' },
+  sodium: { label: 'Sodium', unit: 'mg', column: 'sodium', goalKey: 'daily_sodium_goal', defaultGoal: 2300, colorVar: '--insight-sky', icon: Waves, direction: 'atMost', maxTarget: 10000 },
 };
 
 interface DataPoint {
@@ -72,11 +81,17 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   const { preferences, updatePreferences } = useUserPreferences();
 
   const dailyTarget = (preferences as any)?.[cfg.goalKey] ?? cfg.defaultGoal;
+  const isAtMost = cfg.direction === 'atMost';
+  // v > 0 guards against an unlogged (zero) day reading as "good" for atMost
+  // macros — 0 is trivially <= any target, which would otherwise paint a day
+  // with no data logged the same as a deliberately low-sugar/low-sodium day.
+  // No-op for atLeast macros: a zero value was never >= a positive target anyway.
+  const isGood = (v: number) => v > 0 && (isAtMost ? v <= dailyTarget : v >= dailyTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>(String(dailyTarget));
 
   const saveTarget = async () => {
-    const v = Math.max(1, Math.min(1000, Math.round(Number(draft) || 0)));
+    const v = Math.max(1, Math.min(cfg.maxTarget ?? 1000, Math.round(Number(draft) || 0)));
     if (v !== dailyTarget) {
       await updatePreferences.mutateAsync({ [cfg.goalKey]: v } as any);
     }
@@ -121,7 +136,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
           <span className="text-xs" style={{ color }}>{cfg.label}</span>
           <span className="text-sm font-semibold tabular-nums">{d.value}{cfg.unit}</span>
         </div>
-        <div className="text-[10px] text-muted-foreground mt-1">{pct}% of {dailyTarget}{cfg.unit} target</div>
+        <div className="text-[10px] text-muted-foreground mt-1">{pct}% of {dailyTarget}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
       </div>
     );
   };
@@ -140,7 +155,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
           <h3 className="text-sm font-semibold">Daily {cfg.label}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Target</div>
+          <div className="text-xs text-muted-foreground">{isAtMost ? 'Limit' : 'Target'}</div>
           {editing ? (
             <div className="flex items-center gap-1 mt-0.5">
               <input
@@ -200,7 +215,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
             <ReferenceLine y={dailyTarget} stroke={color} strokeDasharray="3 3" strokeOpacity={0.6} />
             <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={20}>
               {chartData.map((entry, index) => (
-                <Cell key={`m-${index}`} fill={color} fillOpacity={entry.value >= dailyTarget ? 0.85 : 0.55} />
+                <Cell key={`m-${index}`} fill={color} fillOpacity={isGood(entry.value) ? 0.85 : 0.55} />
               ))}
             </Bar>
           </BarChart>
@@ -210,8 +225,8 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
       <div className="grid grid-cols-2 gap-2 mt-4">
         <div className="p-3 rounded-xl text-center bg-muted/30">
           <div
-            className={cn("text-2xl font-bold tabular-nums", avg >= dailyTarget ? "" : "text-foreground")}
-            style={avg >= dailyTarget ? { color } : undefined}
+            className={cn("text-2xl font-bold tabular-nums", isGood(avg) ? "" : "text-foreground")}
+            style={isGood(avg) ? { color } : undefined}
           >
             {avg}{cfg.unit}
           </div>
@@ -219,10 +234,10 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
         </div>
         <div className="p-3 rounded-xl text-center bg-muted/30">
           <div className="text-2xl font-bold tabular-nums text-foreground">
-            {loggedDays.filter(d => d.value >= dailyTarget).length}
+            {loggedDays.filter(d => isGood(d.value)).length}
             <span className="text-sm text-muted-foreground">/{data.length}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">Days Hit Target</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{isAtMost ? 'Days Within Limit' : 'Days Hit Target'}</div>
         </div>
       </div>
     </motion.div>
