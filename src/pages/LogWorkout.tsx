@@ -168,8 +168,6 @@ export default function LogWorkout() {
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [preSuggestionExercises, setPreSuggestionExercises] = useState<WorkoutExercise[] | null>(null);
   const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
@@ -342,59 +340,6 @@ export default function LogWorkout() {
   const handleEditExercises = () => {
     setShowActiveOverview(false);
     setStep('review');
-  };
-
-  // AI suggestions
-  const handleSuggestExercises = async () => {
-    if (!dayData) return;
-    const backup = [...exercises];
-    setIsSuggesting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-workout', {
-        body: {
-          goals: `${dayData.name} workout focusing on ${dayData.focus}. Suggest exercises for this single day only.`,
-          trainingSplit: preferences?.training_split || 'ppl6',
-          experienceLevel: 'intermediate',
-        },
-      });
-
-      if (error) throw error;
-
-      const routine = data?.routine;
-      if (routine?.days) {
-        const firstDay = Object.values(routine.days)[0] as any;
-        if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null);
-          // Only swap if we got valid exercises
-          setPreSuggestionExercises(backup);
-          setExercises(suggested);
-          toast.success(`${suggested.length} AI exercises loaded — confirm or undo`);
-          return;
-        }
-      }
-      // If we get here, AI returned no usable exercises
-      toast.error('AI returned no exercises. Keeping current list.');
-    } catch (err) {
-      console.error('AI suggestion failed:', err);
-      toast.error('Failed to get AI suggestions');
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-
-  const handleConfirmSuggestions = () => {
-    haptic('light');
-    setPreSuggestionExercises(null);
-    toast.success('Exercises confirmed');
-  };
-
-  const handleDenySuggestions = () => {
-    haptic('light');
-    if (preSuggestionExercises) {
-      setExercises(preSuggestionExercises);
-    }
-    setPreSuggestionExercises(null);
-    toast.info('Reverted to previous exercises');
   };
 
   const handleQuickLog = async () => {
@@ -748,11 +693,6 @@ export default function LogWorkout() {
                 }
               }}
               onStart={handleStartSession}
-              onSuggest={selectedDay !== 'custom' ? handleSuggestExercises : undefined}
-              isSuggesting={isSuggesting}
-              hasPendingSuggestions={preSuggestionExercises !== null}
-              onConfirmSuggestions={handleConfirmSuggestions}
-              onDenySuggestions={handleDenySuggestions}
               availableDays={selectedDay !== 'custom' ? availableDays : undefined}
               selectedDayKey={selectedDay}
               onSwitchDay={selectedDay !== 'custom' ? handleSwitchDay : undefined}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
-import { X, ChevronUp, ChevronDown, Sparkles, Play, Plus, Check, Undo2, Minus, History, ArrowLeftRight } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Play, Plus, Check, Minus, History, ArrowLeftRight } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
@@ -26,11 +26,6 @@ interface ExerciseReviewProps {
   dayType?: 'Push' | 'Pull' | 'Legs';
   onChange: (exercises: WorkoutExercise[]) => void;
   onStart: () => void;
-  onSuggest?: () => void;
-  isSuggesting?: boolean;
-  hasPendingSuggestions?: boolean;
-  onConfirmSuggestions?: () => void;
-  onDenySuggestions?: () => void;
   availableDays?: DayOption[];
   selectedDayKey?: string;
   onSwitchDay?: (dayKey: string) => void;
@@ -390,11 +385,6 @@ export function ExerciseReview({
   dayType,
   onChange,
   onStart,
-  onSuggest,
-  isSuggesting,
-  hasPendingSuggestions,
-  onConfirmSuggestions,
-  onDenySuggestions,
   availableDays,
   selectedDayKey,
   onSwitchDay,
@@ -513,80 +503,33 @@ export function ExerciseReview({
 
       {/* Exercise list */}
       <div className="space-y-4">
-        {isSuggesting ? (
-          <div className="space-y-4">
-            <div>
-              <div className="h-3 w-24 bg-muted rounded animate-pulse mb-2" />
-              <div className="space-y-1.5">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-muted/70 rounded animate-pulse" />
-                    </div>
-                    <div className="h-4 w-8 bg-muted/50 rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
+        {primaryExercises.length > 0 && (
+          <div>
+            <h4 className="section-header mb-2">COMPOUNDS</h4>
+            <div className="space-y-1.5">
+              <AnimatePresence mode="popLayout">
+                {primaryExercises.map((ex) => renderExerciseItem(ex))}
+              </AnimatePresence>
             </div>
-            <div>
-              <div className="h-3 w-28 bg-muted rounded animate-pulse mb-2" />
-              <div className="space-y-1.5">
-                {[1, 2].map(i => (
-                  <div key={i} className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-3 bg-muted rounded animate-pulse" />
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-4 w-28 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-20 bg-muted/70 rounded animate-pulse" />
-                    </div>
-                    <div className="h-4 w-8 bg-muted/50 rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground text-center animate-pulse">
-              <Sparkles className="h-3 w-3 inline mr-1" />
-              Generating exercises…
-            </p>
           </div>
-        ) : (
-          <>
-            {primaryExercises.length > 0 && (
-              <div>
-                <h4 className="section-header mb-2">COMPOUNDS</h4>
-                <div className="space-y-1.5">
-                  <AnimatePresence mode="popLayout">
-                    {primaryExercises.map((ex) => renderExerciseItem(ex))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )}
+        )}
 
-            {accessoryExercises.length > 0 && (
-              <div>
-                <h4 className="section-header mb-2">ACCESSORIES</h4>
-                <div className="space-y-1.5">
-                  <AnimatePresence mode="popLayout">
-                    {accessoryExercises.map((ex) => renderExerciseItem(ex))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )}
+        {accessoryExercises.length > 0 && (
+          <div>
+            <h4 className="section-header mb-2">ACCESSORIES</h4>
+            <div className="space-y-1.5">
+              <AnimatePresence mode="popLayout">
+                {accessoryExercises.map((ex) => renderExerciseItem(ex))}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
 
-            {exercises.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No exercises yet</p>
-                <p className="text-xs mt-1">Add exercises or try AI suggestions</p>
-              </div>
-            )}
-          </>
+        {exercises.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">No exercises yet</p>
+            <p className="text-xs mt-1">Add an exercise to get started</p>
+          </div>
         )}
       </div>
 
@@ -633,38 +576,7 @@ export function ExerciseReview({
           })()
         ) : (
           <>
-            {/* AI suggestion confirmation banner */}
-            <AnimatePresence>
-              {hasPendingSuggestions && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted">
-                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs text-muted-foreground flex-1">AI updated exercises</span>
-                    <button
-                      onClick={onConfirmSuggestions}
-                      className="h-7 px-2.5 rounded-lg bg-foreground text-background text-[11px] font-semibold flex items-center gap-1 hover:opacity-90 transition-opacity"
-                    >
-                      <Check className="h-3 w-3" />
-                      Keep
-                    </button>
-                    <button
-                      onClick={onDenySuggestions}
-                      className="h-7 px-2.5 rounded-lg border border-border text-[11px] font-semibold flex items-center gap-1 hover:bg-muted transition-colors"
-                    >
-                      <Undo2 className="h-3 w-3" />
-                      Undo
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Add exercise + AI suggest row */}
+            {/* Add exercise */}
             <div className="flex gap-2 justify-center">
               {showPicker && (
                 <ExercisePicker
@@ -676,29 +588,13 @@ export function ExerciseReview({
                 />
               )}
               {!showPicker && (
-                <>
-                  <button
-                    onClick={() => setShowPicker(true)}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Exercise
-                  </button>
-
-                  {onSuggest && !hasPendingSuggestions && (
-                    <button
-                      onClick={onSuggest}
-                      disabled={isSuggesting}
-                      title="Suggest exercises with AI"
-                      className={cn(
-                        'h-10 w-10 shrink-0 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40',
-                        isSuggesting && 'animate-pulse'
-                      )}
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </button>
-                  )}
-                </>
+                <button
+                  onClick={() => setShowPicker(true)}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Exercise
+                </button>
               )}
             </div>
 
