@@ -1,5 +1,6 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useLogDate } from '@/contexts/LogDateContext';
 import { Plus, ChevronDown, Pencil, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -30,7 +31,8 @@ export function WaterTracker() {
   // Show (and add to) the shared dashboard date — today by default, or a
   // back-dated day so its existing entries are visible and can be added to.
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs(viewingToday ? undefined : logDate);
-  const { preferences, updatePreferences } = useUserPreferences();
+  const { preferences } = useUserPreferences();
+  const { setGoal, isSaving } = useGoalHistory();
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedSize, setSelectedSize] = useState(WATER_SIZES[0]);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -80,7 +82,7 @@ export function WaterTracker() {
 
   const handleSaveGoal = async () => {
     try {
-      await updatePreferences.mutateAsync({ daily_water_goal: editGoal });
+      await setGoal('daily_water_goal', editGoal, dailyGoal);
       setIsEditingGoal(false);
       toast.success('Water goal updated');
     } catch {
@@ -130,11 +132,11 @@ export function WaterTracker() {
           />
           <button
             onClick={handleSaveGoal}
-            disabled={updatePreferences.isPending}
+            disabled={isSaving}
             className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="h-3 w-3" />
-            {updatePreferences.isPending ? 'SAVING…' : 'SAVE'}
+            {isSaving ? 'SAVING…' : 'SAVE'}
           </button>
         </div>
       )}

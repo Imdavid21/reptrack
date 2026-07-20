@@ -16,7 +16,6 @@ export interface HydrationAnalytics {
     totalLiters: number;
     avgDaily: number;
     daysTracked: number;
-    daysMetGoal: number;
   };
 }
 
@@ -25,7 +24,14 @@ export interface DateRangeFilter {
   to: Date;
 }
 
-export function useHydrationData(dateRange?: DateRangeFilter, dailyGoal: number = 3) {
+/**
+ * Pure per-day hydration totals — no goal comparison here. "Met goal" is a
+ * point-in-time judgment (what was the target on that specific day), which
+ * needs goal_history to resolve correctly, so callers compute it themselves
+ * (see HydrationChart) rather than this hook baking in a single flat goal
+ * applied to every day.
+ */
+export function useHydrationData(dateRange?: DateRangeFilter) {
   const { user } = useAuth();
 
   return useQuery({
@@ -34,7 +40,7 @@ export function useHydrationData(dateRange?: DateRangeFilter, dailyGoal: number 
       if (!user) {
         return {
           dailyData: [],
-          totals: { totalLiters: 0, avgDaily: 0, daysTracked: 0, daysMetGoal: 0 },
+          totals: { totalLiters: 0, avgDaily: 0, daysTracked: 0 },
         };
       }
 
@@ -84,7 +90,6 @@ export function useHydrationData(dateRange?: DateRangeFilter, dailyGoal: number 
         totalLiters,
         avgDaily: daysWithData.length > 0 ? totalLiters / daysWithData.length : 0,
         daysTracked: daysWithData.length,
-        daysMetGoal: dailyData.filter(d => d.total >= dailyGoal).length,
       };
 
       return { dailyData, totals };

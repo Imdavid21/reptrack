@@ -35,6 +35,7 @@ import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { toast } from '@/lib/toast';
 
 // Section label with the pillar's signature color dot, used to group charts.
@@ -59,6 +60,7 @@ const FITNESS_GOALS = [
 function ProgressCard() {
   const theme = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+  const { recordGoalHistory } = useGoalHistory();
   const { dateRange } = useDateRange();
 
   // Use the global date range for data
@@ -96,15 +98,35 @@ function ProgressCard() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const calorieGoal = goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null;
+      const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) : null;
+      const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
+      const sleepGoalValue = goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8;
+
       await updatePreferences.mutateAsync({
-        daily_calorie_goal: goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null,
-        daily_water_goal: goals.daily_water_goal ? parseInt(goals.daily_water_goal) : null,
-        weekly_workout_goal: goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4,
-        sleep_goal: goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8,
+        daily_calorie_goal: calorieGoal,
+        daily_water_goal: waterGoal,
+        weekly_workout_goal: workoutGoalValue,
+        sleep_goal: sleepGoalValue,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
         weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
         fitness_goal: goals.fitness_goal || null,
       });
+
+      // Layer point-in-time tracking on top for the goals judged against
+      // historical data (see useGoalHistory) — weight_goal/fitness_goal
+      // aren't per-day targets, so they don't get a history entry.
+      const historyWrites: Promise<void>[] = [];
+      if (calorieGoal != null) {
+        historyWrites.push(recordGoalHistory('daily_calorie_goal', calorieGoal, preferences?.daily_calorie_goal));
+      }
+      if (waterGoal != null) {
+        historyWrites.push(recordGoalHistory('daily_water_goal', waterGoal, preferences?.daily_water_goal));
+      }
+      historyWrites.push(recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal));
+      historyWrites.push(recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal));
+      await Promise.all(historyWrites);
+
       toast.success('Goals updated');
       setIsEditing(false);
     } catch (error) {

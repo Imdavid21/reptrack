@@ -166,7 +166,7 @@ describe('computeBodyOverview', () => {
         { date: '2026-06-10', fromKey: '2026-06-04', toKey: '2026-06-10' },
       ],
       data,
-      goals,
+      () => goals,
       7,
     );
     // Each 7-day window has zero workouts → training scores 0 (a week of no
@@ -181,7 +181,7 @@ describe('computeBodyOverview', () => {
     const series = computeScoreSeries(
       [{ date: '2026-06-03', fromKey: '2026-05-29', toKey: '2026-06-03' }],
       { workoutDates: [], meals: [], waterByDay: { '2026-06-01': 2 }, metrics: [] },
-      { ...baseGoals },
+      () => ({ ...baseGoals }),
       6,
     );
     expect(series[0].score).toBeNull();

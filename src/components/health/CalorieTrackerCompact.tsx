@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
@@ -65,7 +66,8 @@ export function CalorieTrackerCompact() {
   // or a back-dated day (so its meals/burns show and new meals save there).
   const mealsDate = viewingToday ? undefined : logDate;
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals(mealsDate);
-  const { preferences, updatePreferences } = useUserPreferences();
+  const { preferences } = useUserPreferences();
+  const { setGoal } = useGoalHistory();
   const { totalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -349,7 +351,7 @@ export function CalorieTrackerCompact() {
 
   const handleSaveCalorieGoal = async () => {
     try {
-      await updatePreferences.mutateAsync({ daily_calorie_goal: editGoal });
+      await setGoal('daily_calorie_goal', editGoal, dailyGoal);
       setIsEditingGoal(false);
       toast.success('Calorie goal updated');
     } catch {

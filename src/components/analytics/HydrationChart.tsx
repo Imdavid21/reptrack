@@ -4,6 +4,7 @@ import { Droplets, Target } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useHydrationData } from '@/hooks/useHydrationData';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   BarChart,
@@ -20,21 +21,30 @@ export function HydrationChart() {
   const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { preferences } = useUserPreferences();
+  const { resolveGoal } = useGoalHistory();
   const dailyGoal = preferences?.daily_water_goal ?? 3;
-  const { data, isLoading } = useHydrationData(dateRange, dailyGoal);
+  const { data, isLoading } = useHydrationData(dateRange);
 
   // High contrast black/white
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
-  
 
+
+  // Each day is judged against the goal that was actually active on it (via
+  // goal_history), not today's live value — see MacroChart for the same
+  // pattern. The header chip and reference line still show the current goal.
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
-    return data.dailyData.map(d => ({
-      ...d,
-      metGoal: d.total >= dailyGoal,
-    }));
-  }, [data?.dailyData, dailyGoal]);
+    return data.dailyData.map(d => {
+      const target = resolveGoal('daily_water_goal', d.date, dailyGoal);
+      return { ...d, target, metGoal: d.total >= target };
+    });
+  }, [data?.dailyData, dailyGoal, resolveGoal]);
+
+  const daysMetGoal = useMemo(
+    () => chartData.filter(d => d.total > 0 && d.metGoal).length,
+    [chartData],
+  );
 
   // Adaptive Y ceiling so high-volume days (athletes drinking >5L) aren't
   // silently clipped off the top of a hard-coded [0,5] axis.
@@ -182,7 +192,7 @@ export function HydrationChart() {
             borderColor: 'divider',
           }}>
             <Typography variant="body1" sx={{ fontWeight: 700 }}>
-              {data.totals.daysMetGoal}/{data.totals.daysTracked}
+              {daysMetGoal}/{data.totals.daysTracked}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>Goals Met</Typography>
           </Box>

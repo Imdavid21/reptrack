@@ -5,6 +5,8 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
+import { localDateKey } from '@/lib/dateKey';
 import { format, parseISO } from 'date-fns';
 import {
   AreaChart,
@@ -24,10 +26,14 @@ export function DailyVitalsChart() {
   const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
   const { preferences } = useUserPreferences();
-  
+  const { resolveGoal } = useGoalHistory();
+
   const [activeMetric, setActiveMetric] = useState<MetricType>('weight');
 
-  const sleepGoal = preferences?.sleep_goal || 7;
+  // Resolved as of the selected range's end date, not always "today" — so
+  // viewing an old custom date range compares against the goal that was
+  // actually active then, not whatever it's since been changed to.
+  const sleepGoal = resolveGoal('sleep_goal', localDateKey(dateRange.to), preferences?.sleep_goal || 7);
 
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';

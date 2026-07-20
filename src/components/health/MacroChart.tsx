@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { cn } from '@/lib/utils';
 
 export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium';
@@ -78,7 +79,8 @@ function useMacroHistory(macro: MacroKey) {
 export function MacroChart({ macro }: { macro: MacroKey }) {
   const cfg = MACRO_CONFIGS[macro];
   const { data = [], isLoading } = useMacroHistory(macro);
-  const { preferences, updatePreferences } = useUserPreferences();
+  const { preferences } = useUserPreferences();
+  const { resolveGoal, setGoal } = useGoalHistory();
 
   const dailyTarget = (preferences as any)?.[cfg.goalKey] ?? cfg.defaultGoal;
   const isAtMost = cfg.direction === 'atMost';
@@ -86,30 +88,39 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   // macros — 0 is trivially <= any target, which would otherwise paint a day
   // with no data logged the same as a deliberately low-sugar/low-sodium day.
   // No-op for atLeast macros: a zero value was never >= a positive target anyway.
-  const isGood = (v: number) => v > 0 && (isAtMost ? v <= dailyTarget : v >= dailyTarget);
+  const isGood = (v: number, target: number) => v > 0 && (isAtMost ? v <= target : v >= target);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>(String(dailyTarget));
 
   const saveTarget = async () => {
     const v = Math.max(1, Math.min(cfg.maxTarget ?? 1000, Math.round(Number(draft) || 0)));
     if (v !== dailyTarget) {
-      await updatePreferences.mutateAsync({ [cfg.goalKey]: v } as any);
+      await setGoal(cfg.goalKey, v, dailyTarget);
     }
     setEditing(false);
   };
 
-  const loggedDays = data.filter(d => d.value > 0);
+  // Each day gets the target that was actually active on it (via goal_history),
+  // not today's live value — so changing a target doesn't retroactively rewrite
+  // whether past days "hit" it. The reference line and editor above still show
+  // the current target, since that's what you're aiming for right now.
+  const dataWithTargets = useMemo(
+    () => data.map(d => ({ ...d, target: resolveGoal(cfg.goalKey, d.date, dailyTarget) })),
+    [data, resolveGoal, cfg.goalKey, dailyTarget],
+  );
+
+  const loggedDays = dataWithTargets.filter(d => d.value > 0);
   const avg = loggedDays.length
     ? Math.round(loggedDays.reduce((s, d) => s + d.value, 0) / loggedDays.length)
     : 0;
 
-  const chartData = data.map(d => ({
+  const chartData = dataWithTargets.map(d => ({
     ...d,
     displayDate: format(parseISO(d.date), 'MMM d'),
     shortDate: format(parseISO(d.date), 'd'),
   }));
 
-  const maxValue = Math.max(...chartData.map(d => d.value), dailyTarget, 50);
+  const maxValue = Math.max(...chartData.map(d => d.value), ...chartData.map(d => d.target), dailyTarget, 50);
   const Icon = cfg.icon;
   const color = `hsl(var(${cfg.colorVar}))`;
 
@@ -128,7 +139,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
     if (!active || !payload?.length) return null;
     const d = payload[0]?.payload;
     if (!d) return null;
-    const pct = Math.round((d.value / dailyTarget) * 100);
+    const pct = Math.round((d.value / d.target) * 100);
     return (
       <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-lg">
         <p className="text-xs text-muted-foreground mb-1.5">{d.displayDate}</p>
@@ -136,7 +147,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
           <span className="text-xs" style={{ color }}>{cfg.label}</span>
           <span className="text-sm font-semibold tabular-nums">{d.value}{cfg.unit}</span>
         </div>
-        <div className="text-[10px] text-muted-foreground mt-1">{pct}% of {dailyTarget}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
+        <div className="text-[10px] text-muted-foreground mt-1">{pct}% of {d.target}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
       </div>
     );
   };
@@ -215,7 +226,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
             <ReferenceLine y={dailyTarget} stroke={color} strokeDasharray="3 3" strokeOpacity={0.6} />
             <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={20}>
               {chartData.map((entry, index) => (
-                <Cell key={`m-${index}`} fill={color} fillOpacity={isGood(entry.value) ? 0.85 : 0.55} />
+                <Cell key={`m-${index}`} fill={color} fillOpacity={isGood(entry.value, entry.target) ? 0.85 : 0.55} />
               ))}
             </Bar>
           </BarChart>
@@ -225,8 +236,8 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
       <div className="grid grid-cols-2 gap-2 mt-4">
         <div className="p-3 rounded-xl text-center bg-muted/30">
           <div
-            className={cn("text-2xl font-bold tabular-nums", isGood(avg) ? "" : "text-foreground")}
-            style={isGood(avg) ? { color } : undefined}
+            className={cn("text-2xl font-bold tabular-nums", isGood(avg, dailyTarget) ? "" : "text-foreground")}
+            style={isGood(avg, dailyTarget) ? { color } : undefined}
           >
             {avg}{cfg.unit}
           </div>
@@ -234,7 +245,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
         </div>
         <div className="p-3 rounded-xl text-center bg-muted/30">
           <div className="text-2xl font-bold tabular-nums text-foreground">
-            {loggedDays.filter(d => isGood(d.value)).length}
+            {loggedDays.filter(d => isGood(d.value, d.target)).length}
             <span className="text-sm text-muted-foreground">/{data.length}</span>
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">{isAtMost ? 'Days Within Limit' : 'Days Hit Target'}</div>

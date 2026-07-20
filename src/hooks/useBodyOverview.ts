@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { subDays, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
+import { useGoalHistory } from './useGoalHistory';
 import { useNextWorkout } from './useNextWorkout';
 import { localDateKey } from '@/lib/dateKey';
 import {
@@ -33,6 +34,7 @@ const TRAILING_DAYS = 7;
 export function useBodyOverview(range?: BodyOverviewRange) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
+  const { resolveGoal } = useGoalHistory();
   const nextWorkout = useNextWorkout();
 
   const from = range?.from ?? startOfDay(subDays(new Date(), 13));
@@ -88,14 +90,24 @@ export function useBodyOverview(range?: BodyOverviewRange) {
     },
   });
 
-  const goals: BodyOverviewInput['goals'] = useMemo(() => ({
-    weeklyWorkouts: preferences?.weekly_workout_goal || 4,
-    dailyCalories: preferences?.daily_calorie_goal ?? null,
-    dailyProtein: preferences?.daily_protein_goal ?? null,
-    dailyWaterLiters: normalizeWaterGoalLiters(preferences?.daily_water_goal),
-    sleepHours: preferences?.sleep_goal || 8,
+  // Resolves what each goal was on a given day via goal_history, falling back
+  // to the live preference (or a hardcoded default) when there's no history —
+  // e.g. a goal never edited since point-in-time tracking shipped. Point-in-
+  // time only for the numeric daily/weekly targets; weightGoalType is a
+  // direction flag judged by trend, not a per-day number, so it always uses
+  // the live preference.
+  const resolveGoals = useCallback((dateKey: string): BodyOverviewInput['goals'] => ({
+    weeklyWorkouts: resolveGoal('weekly_workout_goal', dateKey, preferences?.weekly_workout_goal || 4),
+    dailyCalories: preferences?.daily_calorie_goal != null
+      ? resolveGoal('daily_calorie_goal', dateKey, preferences.daily_calorie_goal)
+      : null,
+    dailyProtein: preferences?.daily_protein_goal != null
+      ? resolveGoal('daily_protein_goal', dateKey, preferences.daily_protein_goal)
+      : null,
+    dailyWaterLiters: resolveGoal('daily_water_goal', dateKey, normalizeWaterGoalLiters(preferences?.daily_water_goal)),
+    sleepHours: resolveGoal('sleep_goal', dateKey, preferences?.sleep_goal || 8),
     weightGoalType: preferences?.weight_goal_type ?? null,
-  }), [preferences]);
+  }), [preferences, resolveGoal]);
 
   const data = query.data;
 
@@ -104,7 +116,7 @@ export function useBodyOverview(range?: BodyOverviewRange) {
     const inMain = (d?: string) => !!d && d >= fromKey && d <= toKey;
     return computeBodyOverview({
       rangeDays,
-      goals,
+      goals: resolveGoals(toKey),
       // The fetch is widened for the trend; the headline overview uses only the range.
       workoutDates: data.workoutDates.filter(inMain),
       meals: data.meals.filter(m => inMain(m.date)),
@@ -113,7 +125,7 @@ export function useBodyOverview(range?: BodyOverviewRange) {
       nextDayName: nextWorkout?.dayName,
       nextDayKey: nextWorkout?.dayKey,
     });
-  }, [data, goals, rangeDays, fromKey, toKey, nextWorkout?.dayName, nextWorkout?.dayKey]);
+  }, [data, resolveGoals, rangeDays, fromKey, toKey, nextWorkout?.dayName, nextWorkout?.dayKey]);
 
   const trend: ScorePoint[] = useMemo(() => {
     if (!data) return [];
@@ -121,9 +133,9 @@ export function useBodyOverview(range?: BodyOverviewRange) {
       const dateKey = localDateKey(d);
       return { date: dateKey, fromKey: localDateKey(subDays(d, TRAILING_DAYS - 1)), toKey: dateKey };
     });
-    return computeScoreSeries(windows, data, goals, TRAILING_DAYS);
+    return computeScoreSeries(windows, data, resolveGoals, TRAILING_DAYS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, goals, fromKey, toKey]);
+  }, [data, resolveGoals, fromKey, toKey]);
 
   return {
     overview,

@@ -77,6 +77,11 @@ export interface ScorePoint {
  * range, each carrying its own trailing-window bounds) we slice the full data
  * and run the same scoring engine, so the trend line is exactly the headline
  * score computed day by day. Pure: date math happens in the caller.
+ *
+ * `resolveGoals` is called once per window with that window's end date, so a
+ * goal change only affects windows from the date it was actually made —
+ * without it, changing e.g. your protein target today would retroactively
+ * repaint the whole trend line, including weeks before the change existed.
  */
 export function computeScoreSeries(
   windows: Array<{ date: string; fromKey: string; toKey: string }>,
@@ -86,14 +91,14 @@ export function computeScoreSeries(
     waterByDay: Record<string, number>;
     metrics: BodyOverviewInput['metrics'];
   },
-  goals: BodyOverviewInput['goals'],
+  resolveGoals: (dateKey: string) => BodyOverviewInput['goals'],
   windowDays: number,
 ): ScorePoint[] {
   return windows.map((w) => {
     const inRange = (d?: string) => !!d && d >= w.fromKey && d <= w.toKey;
     const input: BodyOverviewInput = {
       rangeDays: windowDays,
-      goals,
+      goals: resolveGoals(w.toKey),
       workoutDates: data.workoutDates.filter(inRange),
       meals: data.meals.filter((m) => inRange(m.date)),
       waterByDay: Object.fromEntries(Object.entries(data.waterByDay).filter(([d]) => inRange(d))),
