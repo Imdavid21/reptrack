@@ -24,6 +24,7 @@ import Insights from "./pages/Insights";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import WorkoutDetail from "./pages/WorkoutDetail";
+import Chat from "./pages/Chat";
 
 // Legacy redirect component that properly passes the workoutId param
 function HistoryRedirect() {
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="/app/insights" element={<Insights />} />
         <Route path="/app/history" element={<History />} />
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
+        <Route path="/app/chat" element={<Chat />} />
         <Route path="/app/settings" element={<Settings />} />
 
         {/* Legacy redirects */}
