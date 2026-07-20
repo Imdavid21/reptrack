@@ -12,8 +12,7 @@ import { SetBySetCard } from '@/components/workout/SetBySetCard';
 import { ExercisePicker } from '@/components/workout/ExercisePicker';
 
 import { SplitSelector } from '@/components/workout/SplitSelector';
-import { AIGoalPrompt } from '@/components/workout/AIGoalPrompt';
-import { getSplitDays, resolveSplitDays, TrainingSplit } from '@/lib/splitTemplates';
+import { resolveSplitDays, TrainingSplit } from '@/lib/splitTemplates';
 import { derivePersonalizedProgramming, TrainingFocus } from '@/lib/programmingEngine';
 import { useCustomRoutine } from '@/hooks/useCustomRoutine';
 import { useWorkouts, WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
@@ -28,10 +27,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Plus, Pencil, Sparkles } from 'lucide-react';
+import { ChevronLeft, Plus, Pencil } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
-import { WorkoutCoachCard } from '@/components/workout/WorkoutCoachCard';
-import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -168,8 +165,6 @@ export default function LogWorkout() {
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
-  const [showAIGoalPrompt, setShowAIGoalPrompt] = useState(false);
-  const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
 
@@ -542,48 +537,6 @@ export default function LogWorkout() {
     }
   };
 
-  // AI goal-based routine generation
-  const handleAIGenerate = async (goals: string, split: TrainingSplit, experience: string) => {
-    setIsAIGenerating(true);
-    try {
-
-      const { data, error } = await supabase.functions.invoke('generate-workout', {
-        body: {
-          goals,
-          trainingSplit: split,
-          experienceLevel: experience,
-        },
-      });
-
-      if (error) throw error;
-
-      const routine = data?.routine;
-      if (routine?.days && Object.keys(routine.days).length > 0) {
-        // Apply the generated routine to the first day and navigate to review
-        const firstDayKey = Object.keys(routine.days)[0];
-        const firstDay = routine.days[firstDayKey] as any;
-        if (firstDay?.exercises && firstDay.exercises.length > 0) {
-          const suggested = buildExercisesFromTemplate(firstDay, lastUsedMap, preferences?.fitness_goal, preferredVariants, preferences?.training_focus as TrainingFocus | null);
-          const newSplitDays = getSplitDays(split);
-          const dayKey = Object.keys(newSplitDays)[0] || 'Day 1';
-          setSelectedDay(dayKey);
-          setSelectedDate(new Date());
-          setExercises(suggested);
-          setShowAIGoalPrompt(false);
-          setStep('review');
-          toast.success(`AI routine generated — review your exercises`);
-          return;
-        }
-      }
-      toast.error('AI returned no exercises. Try different goals.');
-    } catch (err) {
-      console.error('AI generation failed:', err);
-      toast.error('Failed to generate routine');
-    } finally {
-      setIsAIGenerating(false);
-    }
-  };
-
   return (
     <MainLayout>
       <AnimatedPage>
@@ -649,33 +602,7 @@ export default function LogWorkout() {
                   <Plus size={13} />
                   Freestyle
                 </button>
-
-                <button
-                  onClick={() => {
-                    haptic('light');
-                    setShowAIGoalPrompt(true);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Sparkles size={13} />
-                  AI Routine
-                </button>
               </div>
-
-              {/* Divider */}
-              <Separator className="my-1" />
-
-              {/* Workout Coach */}
-              <WorkoutCoachCard />
-
-              {/* AI Goal Prompt Sheet */}
-              <AIGoalPrompt
-                isOpen={showAIGoalPrompt}
-                onClose={() => setShowAIGoalPrompt(false)}
-                onGenerate={handleAIGenerate}
-                isGenerating={isAIGenerating}
-                currentSplit={(preferences?.training_split as TrainingSplit) || 'ppl6'}
-              />
             </div>
           )}
 
