@@ -26,9 +26,41 @@ export const ACTIVITY_CONFIG: Record<ActivityKind, {
   boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
+// Clamp range for the pace-based MET adjustment below. Keeps a mistyped
+// distance or time (an extra zero, a unit mix-up) from producing an absurd
+// calorie estimate, while still letting a genuinely fast or slow pace move
+// the number meaningfully.
+const MIN_MET_SCALE = 0.5;
+const MAX_MET_SCALE = 2.0;
+
+/**
+ * MET tables assume a specific pace per activity (see paceLabel). When both
+ * a real distance AND a real time are known, the pace they imply is more
+ * informative than that assumption — running a 5k in 40 minutes is a
+ * different effort than running it in 20, and the calorie estimate should
+ * reflect that instead of applying the flat "~10 km/h" running MET to
+ * whatever time was typed in. Scales MET by how much faster/slower the
+ * actual pace was than the config's assumed pace.
+ *
+ * Falls back to the plain configured MET — reproducing today's behavior
+ * exactly — whenever only one of distance/time is known, or for
+ * duration-only activities like boxing: with no override, activityDuration
+ * derives minutes FROM distance at the assumed pace, so actual and assumed
+ * pace trivially match and the scale is always 1.
+ */
+function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: number): number {
+  const cfg = ACTIVITY_CONFIG[kind];
+  if (cfg.unit !== 'km' || distanceKm <= 0 || minutes <= 0) return cfg.met;
+  const actualPaceMinPerKm = minutes / distanceKm;
+  const scale = cfg.paceMinPerKm / actualPaceMinPerKm; // faster than assumed → > 1
+  return cfg.met * Math.min(MAX_MET_SCALE, Math.max(MIN_MET_SCALE, scale));
+}
+
 /**
  * kcal = MET * weight(kg) * hours
- * For km-based activities, `minutesOverride` (if > 0) replaces the default pace-derived duration.
+ * For km-based activities, `minutesOverride` (if > 0) replaces the default
+ * pace-derived duration — see effectiveMet for how the MET itself adjusts
+ * to stay consistent with that override instead of ignoring the distance.
  */
 export function activityCalories(
   kind: ActivityKind,
@@ -36,9 +68,9 @@ export function activityCalories(
   weightKg: number,
   minutesOverride?: number,
 ) {
-  const cfg = ACTIVITY_CONFIG[kind];
   const minutes = activityDuration(kind, value, minutesOverride);
-  return Math.round(cfg.met * weightKg * (minutes / 60));
+  const met = effectiveMet(kind, value, minutes);
+  return Math.round(met * weightKg * (minutes / 60));
 }
 
 export function activityDuration(kind: ActivityKind, value: number, minutesOverride?: number) {
@@ -83,8 +115,15 @@ export function ActivityLogger() {
       if (cfg.unit === 'min') {
         setValue(String(existing.duration_minutes));
         setMinutes('');
+      } else if (existing.distance_km != null) {
+        // Real stored distance — show it alongside the time it took.
+        setValue(String(existing.distance_km));
+        setMinutes(String(existing.duration_minutes));
       } else {
-        // Best-effort: derive km from default pace, expose minutes as override.
+        // Pre-fix entry: the original distance was never stored, only the
+        // resulting duration. Approximate it from the default pace — this
+        // can't recover what was actually logged, just estimate a plausible
+        // value so the field isn't blank.
         const km = existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm;
         setValue(km.toFixed(1));
         setMinutes(String(existing.duration_minutes));
@@ -104,6 +143,7 @@ export function ActivityLogger() {
         source: 'manual',
         activity_type: kind,
         duration_minutes: duration,
+        distance_km: cfg.unit === 'km' ? numericValue : null,
         calories: kcal,
         ...(isBackDated ? { date: logDateStr } : {}),
       });

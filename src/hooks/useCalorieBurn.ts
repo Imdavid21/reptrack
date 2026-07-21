@@ -13,6 +13,7 @@ interface CalorieBurn {
   source: 'workout' | 'steps' | 'manual';
   calories: number;
   duration_minutes?: number;
+  distance_km?: number | null;
   activity_type?: string;
 }
 
@@ -234,6 +235,7 @@ export interface BurnEntry {
   activity_type: string | null;
   calories: number;
   duration_minutes: number | null;
+  distance_km: number | null;
 }
 
 export function useManualBurns(days: number = 30) {
@@ -249,7 +251,7 @@ export function useManualBurns(days: number = 30) {
 
       const { data, error } = await supabase
         .from('calorie_burns')
-        .select('id, date, source, activity_type, calories, duration_minutes')
+        .select('id, date, source, activity_type, calories, duration_minutes, distance_km')
         .eq('user_id', user.id)
         .eq('source', 'manual')
         .gte('date', format(startDate, 'yyyy-MM-dd'))

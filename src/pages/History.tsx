@@ -364,9 +364,11 @@ export default function History() {
                               const Icon = config?.icon || Footprints;
                               const label = config?.label || (type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity');
                               const unit = config?.unit === 'min' ? 'min' : 'km';
+                              // Prefer the real logged distance; only entries saved before
+                              // distance_km was tracked fall back to a pace-based estimate.
                               const unitValue = config?.unit === 'min'
                                 ? (b.duration_minutes ?? 0)
-                                : ((b.duration_minutes ?? 0) / (config?.paceMinPerKm || 1));
+                                : (b.distance_km ?? ((b.duration_minutes ?? 0) / (config?.paceMinPerKm || 1)));
                               return (
                                 <div
                                   key={b.id}
