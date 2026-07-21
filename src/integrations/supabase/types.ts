@@ -331,6 +331,33 @@ export type Database = {
           },
         ]
       }
+      goal_history: {
+        Row: {
+          created_at: string
+          effective_from: string
+          goal_key: string
+          id: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          effective_from: string
+          goal_key: string
+          id?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          goal_key?: string
+          id?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       habits: {
         Row: {
           bodyweight: number | null
