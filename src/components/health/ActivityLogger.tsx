@@ -13,54 +13,108 @@ export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 
 export const ACTIVITY_CONFIG: Record<ActivityKind, {
   label: string;
-  met: number;
-  paceMinPerKm: number; // minutes per unit (km or minute)
+  // Default/assumed pace: seeds a duration before a real time is entered,
+  // and shown as paceLabel. Doesn't drive the calorie math on its own — see
+  // effectiveMet, which calculates MET from real pace when it's known.
+  paceMinPerKm: number;
   icon: typeof Footprints;
   quickKm: number[];
   paceLabel: string;
   unit: 'km' | 'min';
 }> = {
-  walking: { label: 'Walk',    met: 3.5, paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h', unit: 'km' },
-  running: { label: 'Run',     met: 9.8, paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h', unit: 'km' },
-  cycling: { label: 'Cycling', met: 7.5, paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h', unit: 'km' },
-  boxing:  { label: 'Boxing',  met: 9.0, paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
+  walking: { label: 'Walk',    paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h', unit: 'km' },
+  running: { label: 'Run',     paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h', unit: 'km' },
+  cycling: { label: 'Cycling', paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h', unit: 'km' },
+  boxing:  { label: 'Boxing',  paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
-// Clamp range for the pace-based MET adjustment below. Keeps a mistyped
-// distance or time (an extra zero, a unit mix-up) from producing an absurd
-// calorie estimate, while still letting a genuinely fast or slow pace move
-// the number meaningfully.
-const MIN_MET_SCALE = 0.5;
-const MAX_MET_SCALE = 2.0;
+// Boxing has no distance, so there's no pace to calculate a MET from — it
+// keeps a fixed intensity estimate. The other three compute MET from actual
+// speed instead (see effectiveMet).
+const BOXING_MET = 9.0;
+
+// Bounds a computed speed to what's physiologically plausible for each
+// activity, so a mistyped distance or time (an extra zero, a unit mix-up)
+// can't imply an impossible pace and produce an absurd calorie estimate —
+// while still letting a genuinely fast or slow real pace move the number.
+const SPEED_CLAMP_KMH: Record<'walking' | 'running' | 'cycling', [min: number, max: number]> = {
+  walking: [1, 9],
+  running: [3, 28],
+  cycling: [4, 55],
+};
+
+// ACSM metabolic equations for flat-ground walking/running:
+// VO2 (ml/kg/min) = coefficient * speed(m/min) + 3.5, MET = VO2 / 3.5.
+// Walking and running use different coefficients because gait mechanics
+// differ, not just speed. This is the standard exercise-science way to get
+// energy cost from pace, rather than one flat MET regardless of how fast
+// the activity actually was.
+function walkingMet(speedKmh: number): number {
+  const speedMPerMin = (speedKmh * 1000) / 60;
+  return (0.1 * speedMPerMin + 3.5) / 3.5;
+}
+
+function runningMet(speedKmh: number): number {
+  const speedMPerMin = (speedKmh * 1000) / 60;
+  return (0.2 * speedMPerMin + 3.5) / 3.5;
+}
+
+// Cycling's energy cost doesn't follow a clean linear formula the way
+// walking/running do (aerodynamic drag dominates at speed), so there's no
+// equivalent ACSM equation. Instead, linearly interpolate between the
+// Compendium of Physical Activities' speed brackets for cycling — a smooth
+// curve instead of one flat number or a step at each bracket boundary.
+const CYCLING_MET_CURVE: [speedKmh: number, met: number][] = [
+  [16.1, 4.0],  // <10 mph, leisure
+  [19.3, 6.8],  // 10-11.9 mph, light effort
+  [22.5, 8.0],  // 12-13.9 mph, moderate effort
+  [25.7, 10.0], // 14-15.9 mph, vigorous effort
+  [30.6, 12.0], // 16-19 mph, fast/vigorous
+  [32.2, 15.8], // 20+ mph, racing
+];
+
+function cyclingMet(speedKmh: number): number {
+  if (speedKmh <= CYCLING_MET_CURVE[0][0]) return CYCLING_MET_CURVE[0][1];
+  for (let i = 1; i < CYCLING_MET_CURVE.length; i++) {
+    const [x1, y1] = CYCLING_MET_CURVE[i - 1];
+    const [x2, y2] = CYCLING_MET_CURVE[i];
+    if (speedKmh <= x2) {
+      const t = (speedKmh - x1) / (x2 - x1);
+      return y1 + t * (y2 - y1);
+    }
+  }
+  return CYCLING_MET_CURVE[CYCLING_MET_CURVE.length - 1][1];
+}
 
 /**
- * MET tables assume a specific pace per activity (see paceLabel). When both
- * a real distance AND a real time are known, the pace they imply is more
- * informative than that assumption — running a 5k in 40 minutes is a
- * different effort than running it in 20, and the calorie estimate should
- * reflect that instead of applying the flat "~10 km/h" running MET to
- * whatever time was typed in. Scales MET by how much faster/slower the
- * actual pace was than the config's assumed pace.
- *
- * Falls back to the plain configured MET — reproducing today's behavior
- * exactly — whenever only one of distance/time is known, or for
- * duration-only activities like boxing: with no override, activityDuration
- * derives minutes FROM distance at the assumed pace, so actual and assumed
- * pace trivially match and the scale is always 1.
+ * MET calculated from actual pace (distance ÷ time), not looked up from a
+ * fixed per-activity number — running a 5k in 40 minutes is a different
+ * effort than running it in 20, and the estimate should reflect that. When
+ * a real time hasn't been entered yet, seeds from the activity's typical
+ * pace (paceMinPerKm) so there's still a reasonable number to show — that
+ * seed runs through the same formula, it's just the starting point rather
+ * than a separate fixed value.
  */
-function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: number): number {
+export function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: number): number {
   const cfg = ACTIVITY_CONFIG[kind];
-  if (cfg.unit !== 'km' || distanceKm <= 0 || minutes <= 0) return cfg.met;
-  const actualPaceMinPerKm = minutes / distanceKm;
-  const scale = cfg.paceMinPerKm / actualPaceMinPerKm; // faster than assumed → > 1
-  return cfg.met * Math.min(MAX_MET_SCALE, Math.max(MIN_MET_SCALE, scale));
+  if (cfg.unit !== 'km') return BOXING_MET;
+
+  const rawSpeedKmh = distanceKm > 0 && minutes > 0
+    ? distanceKm / (minutes / 60)
+    : 60 / cfg.paceMinPerKm;
+  const [minSpeed, maxSpeed] = SPEED_CLAMP_KMH[kind as 'walking' | 'running' | 'cycling'];
+  const speedKmh = Math.min(maxSpeed, Math.max(minSpeed, rawSpeedKmh));
+
+  if (kind === 'walking') return walkingMet(speedKmh);
+  if (kind === 'running') return runningMet(speedKmh);
+  return cyclingMet(speedKmh);
 }
 
 /**
  * kcal = MET * weight(kg) * hours
  * For km-based activities, `minutesOverride` (if > 0) replaces the default
- * pace-derived duration — see effectiveMet for how the MET itself adjusts
- * to stay consistent with that override instead of ignoring the distance.
+ * pace-derived duration — see effectiveMet, which calculates MET from
+ * whatever pace that implies rather than a fixed per-activity number.
  */
 export function activityCalories(
   kind: ActivityKind,
@@ -98,6 +152,10 @@ export function ActivityLogger() {
     [kind, numericValue, numericMinutes, weightKg],
   );
   const duration = activityDuration(kind, numericValue, numericMinutes);
+  const met = useMemo(
+    () => effectiveMet(kind, numericValue, duration),
+    [kind, numericValue, duration],
+  );
   const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
 
   // Existing activity of this type already logged on the selected date.
@@ -274,7 +332,7 @@ export function ActivityLogger() {
 
 
             <p className="text-[11px] text-muted-foreground">
-              Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
+              Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {met.toFixed(1)}
             </p>
 
             <div className="flex gap-2">

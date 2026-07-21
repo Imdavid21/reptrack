@@ -118,6 +118,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         protein: { type: "number", description: "Protein in grams" },
                         carbs: { type: "number", description: "Carbs in grams" },
                         fat: { type: "number", description: "Fat in grams" },
+                        fiber: { type: "number", description: "Dietary fiber in grams" },
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                         sodium: { type: "number", description: "Sodium in milligrams" }
                       },
@@ -128,6 +129,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   total_protein: { type: "number" },
                   total_carbs: { type: "number" },
                   total_fat: { type: "number" },
+                  total_fiber: { type: "number" },
                   total_sugar: { type: "number" },
                   total_sodium: { type: "number" },
                   description: { type: "string", description: "Brief description of the meal" },

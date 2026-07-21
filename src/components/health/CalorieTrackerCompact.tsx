@@ -281,12 +281,18 @@ export function CalorieTrackerCompact() {
       return;
     }
 
-    const totalProtein = validFoods.reduce((s, f) => s + (f.protein || 0), 0);
-    const totalCarbs = validFoods.reduce((s, f) => s + (f.carbs || 0), 0);
-    const totalFat = validFoods.reduce((s, f) => s + (f.fat || 0), 0);
-    const totalFiber = validFoods.reduce((s, f) => s + (f.fiber || 0), 0);
-    const totalSugar = validFoods.reduce((s, f) => s + (f.sugar || 0), 0);
-    const totalSodium = validFoods.reduce((s, f) => s + (f.sodium || 0), 0);
+    // Per-food values when the AI provided them; otherwise fall back to the
+    // analysis-level totals — some responses fill total_protein/total_sugar/etc
+    // without per-item breakdowns, and summing only per-food values silently
+    // saved those macros as nothing.
+    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') =>
+      validFoods.reduce((s, f) => s + (f[key] || 0), 0);
+    const totalProtein = sumFood('protein') || analysis?.total_protein || 0;
+    const totalCarbs = sumFood('carbs') || analysis?.total_carbs || 0;
+    const totalFat = sumFood('fat') || analysis?.total_fat || 0;
+    const totalFiber = sumFood('fiber') || analysis?.total_fiber || 0;
+    const totalSugar = sumFood('sugar') || analysis?.total_sugar || 0;
+    const totalSodium = sumFood('sodium') || analysis?.total_sodium || 0;
 
     try {
       await addMeal({

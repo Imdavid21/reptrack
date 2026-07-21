@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { parseDateKey } from '@/lib/dateKey';
 import { Trash2 } from 'lucide-react';
-import { ACTIVITY_CONFIG, activityCalories, activityDuration, type ActivityKind } from './ActivityLogger';
+import { ACTIVITY_CONFIG, activityCalories, activityDuration, effectiveMet, type ActivityKind } from './ActivityLogger';
 
 interface Props {
   burn: BurnEntry | null;
@@ -65,6 +65,10 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
     [kind, numericValue, numericMinutes, weightKg],
   );
   const duration = activityDuration(kind, numericValue, numericMinutes);
+  const met = useMemo(
+    () => effectiveMet(kind, numericValue, duration),
+    [kind, numericValue, duration],
+  );
   const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
 
   const handleSave = async () => {
@@ -199,7 +203,7 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {cfg.met}
+                Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {met.toFixed(1)}
               </p>
 
               <div className="flex gap-2">

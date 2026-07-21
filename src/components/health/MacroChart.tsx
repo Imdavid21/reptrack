@@ -55,12 +55,15 @@ function useMacroHistory(macro: MacroKey) {
     queryKey: ['macro-history', macro, user?.id, startDateStr, endDateStr],
     queryFn: async (): Promise<DataPoint[]> => {
       if (!user) return [];
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('meals')
         .select(`date, ${cfg.column}`)
         .eq('user_id', user.id)
         .gte('date', startDateStr)
         .lte('date', endDateStr);
+      // Surface failures instead of rendering them as an all-zero chart — a
+      // missing column (unapplied migration) looked identical to "no data".
+      if (error) throw error;
 
       const byDate: Record<string, number> = {};
       (data || []).forEach((m: any) => {
