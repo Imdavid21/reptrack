@@ -50,10 +50,11 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
           <div className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">Body score trend</div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-bold tabular-nums leading-none">{current}</span>
-            <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${trendClass}`}>
-              <TrendIcon className="h-3.5 w-3.5" />
-              {delta > 0 ? '+' : ''}{Math.round(delta)} over range
-            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">last 7 days</span>
+          </div>
+          <div className={`inline-flex items-center gap-0.5 text-xs font-semibold mt-1 ${trendClass}`}>
+            <TrendIcon className="h-3.5 w-3.5" />
+            {delta > 0 ? '+' : ''}{Math.round(delta)} over range
           </div>
         </div>
       </div>
