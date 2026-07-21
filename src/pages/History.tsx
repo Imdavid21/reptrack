@@ -7,7 +7,7 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
-import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Trash2 } from 'lucide-react';
+import { Moon, Scale, Dumbbell, Flame, Check, X, MoreHorizontal, ChevronRight, EyeOff, Footprints, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { WorkoutEditSheet } from '@/components/workout/WorkoutEditSheet';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import { buildDayCalorieEntry, formatCalorieDisplay, type CalorieDisplayMode } f
 import { parseDateKey } from '@/lib/dateKey';
 import { useManualBurns, type BurnEntry } from '@/hooks/useCalorieBurn';
 import { ACTIVITY_CONFIG, type ActivityKind } from '@/components/health/ActivityLogger';
+import { EditActivityDialog } from '@/components/health/EditActivityDialog';
 
 export default function History() {
   const { workouts } = useWorkouts();
@@ -33,7 +34,8 @@ export default function History() {
     to: new Date(),
   });
 
-  const { data: manualBurns = [], deleteBurn } = useManualBurns(daysToShow);
+  const { data: manualBurns = [], deleteBurn, updateBurn } = useManualBurns(daysToShow);
+  const [editingBurn, setEditingBurn] = useState<BurnEntry | null>(null);
 
   const burnsByDateList = manualBurns.reduce((acc, b) => {
     if (!acc[b.date]) acc[b.date] = [];
@@ -380,6 +382,13 @@ export default function History() {
                                     {label} · {b.calories} kcal
                                   </span>
                                   <button
+                                    onClick={() => setEditingBurn(b)}
+                                    className="ml-0.5 p-0.5 text-energy-ink/50 hover:text-foreground transition-colors"
+                                    aria-label={`Edit ${label.toLowerCase()} activity`}
+                                  >
+                                    <Edit size={11} />
+                                  </button>
+                                  <button
                                     onClick={async () => {
                                       try {
                                         await deleteBurn.mutateAsync(b.id);
@@ -388,7 +397,7 @@ export default function History() {
                                         toast.error('Failed to remove');
                                       }
                                     }}
-                                    className="ml-0.5 p-0.5 text-energy-ink/50 hover:text-destructive transition-colors"
+                                    className="p-0.5 text-energy-ink/50 hover:text-destructive transition-colors"
                                     aria-label={`Delete ${label.toLowerCase()} activity`}
                                   >
                                     <Trash2 size={11} />
@@ -437,6 +446,13 @@ export default function History() {
               }
             }}
             dateStr={selectedEditDate || undefined}
+          />
+
+          <EditActivityDialog
+            burn={editingBurn}
+            onClose={() => setEditingBurn(null)}
+            onSave={(input) => updateBurn.mutateAsync(input)}
+            onDelete={(id) => deleteBurn.mutateAsync(id)}
           />
         </div>
       </AnimatedPage>

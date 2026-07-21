@@ -276,7 +276,31 @@ export function useManualBurns(days: number = 30) {
     },
   });
 
-  return { ...query, deleteBurn };
+  // Updates a specific row by id rather than upserting on (user_id, date,
+  // source, activity_type) — the edit dialog lets the activity_type itself
+  // change, and re-targeting the natural key mid-edit would leave the old
+  // row behind instead of replacing it.
+  const updateBurn = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      activity_type: string;
+      duration_minutes: number;
+      distance_km: number | null;
+      calories: number;
+    }) => {
+      const { id, ...fields } = input;
+      const { error } = await supabase.from('calorie_burns').update(fields).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manual-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+    },
+  });
+
+  return { ...query, deleteBurn, updateBurn };
 }
 
 export interface ManualActivityEntry {

@@ -175,7 +175,10 @@ MACRO CALCULATION:
         }
       ],
       tool_choice: { type: "function", function: { name: "analyze_food" } },
-      max_tokens: 4096,
+      // Reasoning-effort models take `max_completion_tokens`, not the legacy
+      // `max_tokens` — that budget also covers hidden reasoning tokens, not
+      // just the tool-call output.
+      max_completion_tokens: 4096,
     }),
   });
 

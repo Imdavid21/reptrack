@@ -140,12 +140,17 @@ ${JSON.stringify(safeContext)}`;
       },
       body: JSON.stringify({
         model: "gpt-5.6-terra",
+        // This reasoning-effort model family (same one analyze-food uses)
+        // rejects a custom `temperature` outright and takes
+        // `max_completion_tokens` instead of the legacy `max_tokens` — that
+        // budget also covers hidden reasoning tokens spent before any visible
+        // reply, so it's sized well above the reply length itself.
+        reasoning_effort: "low",
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
         ],
-        temperature: 0.5,
-        max_tokens: 700,
+        max_completion_tokens: 1200,
       }),
     });
 
