@@ -22,11 +22,11 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
 
   const points = useMemo(() => trend.filter(p => p.score != null), [trend]);
 
-  const { current, delta } = useMemo(() => {
-    if (points.length === 0) return { current: null as number | null, delta: 0 };
-    const cur = points[points.length - 1].score as number;
+  const delta = useMemo(() => {
+    if (points.length === 0) return 0;
+    const current = points[points.length - 1].score as number;
     const first = points[0].score as number;
-    return { current: cur, delta: cur - first };
+    return current - first;
   }, [points]);
 
   if (isLoading) return <Skeleton variant="rounded" height={170} sx={{ borderRadius: 3 }} />;
@@ -48,13 +48,18 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">Body score trend</div>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-bold tabular-nums leading-none">{current}</span>
-            <span className="text-[11px] font-medium text-muted-foreground">last 7 days</span>
-          </div>
-          <div className={`inline-flex items-center gap-0.5 text-xs font-semibold mt-1 ${trendClass}`}>
-            <TrendIcon className="h-3.5 w-3.5" />
-            {delta > 0 ? '+' : ''}{Math.round(delta)} over range
+          {/* No standalone "current" score here on purpose — it's a trailing-7-day
+              figure that can genuinely diverge a lot from the headline card's
+              longer-range average, and showing two different score-shaped numbers
+              side by side reads as a bug even when both are correct. The line
+              below already shows the trajectory; this is just the direction/size
+              of the move. */}
+          <div className={`flex items-baseline gap-1.5 mt-1 ${trendClass}`}>
+            <TrendIcon className="h-4 w-4" />
+            <span className="text-xl font-bold tabular-nums leading-none">
+              {delta > 0 ? '+' : ''}{Math.round(delta)}
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">over range</span>
           </div>
         </div>
       </div>
