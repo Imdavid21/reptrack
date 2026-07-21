@@ -1,0 +1,1 @@
+ALTER TABLE public.calorie_burns ADD COLUMN IF NOT EXISTS distance_km numeric;
