@@ -20,6 +20,7 @@ export type Database = {
           calories: number
           created_at: string | null
           date: string
+          distance_km: number | null
           duration_minutes: number | null
           id: string
           source: string
@@ -30,6 +31,7 @@ export type Database = {
           calories: number
           created_at?: string | null
           date?: string
+          distance_km?: number | null
           duration_minutes?: number | null
           id?: string
           source: string
@@ -40,6 +42,7 @@ export type Database = {
           calories?: number
           created_at?: string | null
           date?: string
+          distance_km?: number | null
           duration_minutes?: number | null
           id?: string
           source?: string
