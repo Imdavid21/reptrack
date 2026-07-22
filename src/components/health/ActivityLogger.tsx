@@ -64,7 +64,18 @@ function runningMet(speedKmh: number): number {
 // equivalent ACSM equation. Instead, linearly interpolate between the
 // Compendium of Physical Activities' speed brackets for cycling — a smooth
 // curve instead of one flat number or a step at each bracket boundary.
+//
+// The Compendium's own lowest bracket is a single flat value covering
+// everything under 10mph/16.1km/h — used verbatim as-is, that makes
+// cyclingMet() return the exact same MET for a near-stationary 4km/h crawl
+// and a genuine 15km/h cruise, silently flattening most of the realistic
+// speed range right where this feature most needs to be pace-sensitive. The
+// 8.0km/h point below isn't a sourced Compendium bracket (there isn't one
+// this granular) — it's a deliberately conservative estimate that breaks up
+// that flat zone so distance actually moves the number below 16.1km/h too,
+// without a hard published bracket boundary to source it from.
 const CYCLING_MET_CURVE: [speedKmh: number, met: number][] = [
+  [8.0, 3.0],   // very slow / barely pedaling — estimated, not a Compendium bracket
   [16.1, 4.0],  // <10 mph, leisure
   [19.3, 6.8],  // 10-11.9 mph, light effort
   [22.5, 8.0],  // 12-13.9 mph, moderate effort
