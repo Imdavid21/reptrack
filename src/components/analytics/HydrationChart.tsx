@@ -5,6 +5,7 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { useHydrationData } from '@/hooks/useHydrationData';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
+import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   BarChart,
@@ -22,7 +23,9 @@ export function HydrationChart() {
   const { dateRange } = useDateRange();
   const { preferences } = useUserPreferences();
   const { resolveGoal } = useGoalHistory();
-  const dailyGoal = preferences?.daily_water_goal ?? 3;
+  // Defends against pre-existing rows saved in ml by an inconsistent editor
+  // elsewhere (see Insights.tsx) — daily_water_goal is meant to be liters.
+  const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
   const { data, isLoading } = useHydrationData(dateRange);
 
   // High contrast black/white
@@ -36,7 +39,10 @@ export function HydrationChart() {
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
     return data.dailyData.map(d => {
-      const target = resolveGoal('daily_water_goal', d.date, dailyGoal);
+      // resolveGoal can return a raw historical goal_history value, which
+      // predates the ml/liters fix and may still be ml-scale — normalize it
+      // too, not just the live-preference fallback.
+      const target = normalizeWaterGoalLiters(resolveGoal('daily_water_goal', d.date, dailyGoal));
       return { ...d, target, metGoal: d.total >= target };
     });
   }, [data?.dailyData, dailyGoal, resolveGoal]);

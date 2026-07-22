@@ -36,6 +36,7 @@ import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
+import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { toast } from '@/lib/toast';
 
 // Section label with the pillar's signature color dot, used to group charts.
@@ -82,7 +83,14 @@ function ProgressCard() {
     if (preferences) {
       setGoals({
         daily_calorie_goal: preferences.daily_calorie_goal?.toString() || '',
-        daily_water_goal: preferences.daily_water_goal?.toString() || '',
+        // This field collects/displays ml (see the "ml" adornment below), but
+        // daily_water_goal is stored in LITERS everywhere else in the app
+        // (WaterTracker's slider, HydrationChart, the body-score hydration
+        // pillar) — convert on the way in and out so this is the only place
+        // that ever deals with the ml scale.
+        daily_water_goal: preferences.daily_water_goal
+          ? String(Math.round(normalizeWaterGoalLiters(preferences.daily_water_goal) * 1000))
+          : '',
         weekly_workout_goal: preferences.weekly_workout_goal?.toString() || '4',
         sleep_goal: preferences.sleep_goal?.toString() || '8',
         weight_goal: preferences.weight_goal?.toString() || '',
@@ -99,7 +107,8 @@ function ProgressCard() {
     setIsSaving(true);
     try {
       const calorieGoal = goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null;
-      const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) : null;
+      // Field collects ml; daily_water_goal is stored in liters (see note above).
+      const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) / 1000 : null;
       const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
       const sleepGoalValue = goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8;
 

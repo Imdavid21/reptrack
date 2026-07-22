@@ -1,6 +1,7 @@
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
+import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { useLogDate } from '@/contexts/LogDateContext';
 import { Plus, ChevronDown, Pencil, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -39,7 +40,9 @@ export function WaterTracker() {
   const [editGoal, setEditGoal] = useState(3);
   const prevTotalRef = useRef(totalToday);
 
-  const dailyGoal = preferences?.daily_water_goal ?? 3;
+  // Defends against pre-existing rows saved in ml by an inconsistent editor
+  // elsewhere (see Insights.tsx) — daily_water_goal is meant to be liters.
+  const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
 
   // Sync edit slider when opening
   useEffect(() => {

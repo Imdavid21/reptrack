@@ -13,6 +13,7 @@ import { useManualActivitiesInRange } from './useCalorieBurn';
 import { useCalorieHistory } from './useCalorieHistory';
 import { analyzeMuscles, InsightActivity, InsightSet } from '@/lib/muscleInsights';
 import { localDateKey } from '@/lib/dateKey';
+import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -161,7 +162,7 @@ export function useDataChat() {
         weeklyWorkoutGoal: preferences.weekly_workout_goal,
         dailyCalorieGoal: preferences.daily_calorie_goal,
         dailyProteinGoal: preferences.daily_protein_goal,
-        dailyWaterGoalLiters: preferences.daily_water_goal,
+        dailyWaterGoalLiters: normalizeWaterGoalLiters(preferences.daily_water_goal),
         sleepGoalHours: preferences.sleep_goal,
         weightGoal: preferences.weight_goal,
         weightGoalType: preferences.weight_goal_type,

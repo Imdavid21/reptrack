@@ -104,7 +104,12 @@ export function useBodyOverview(range?: BodyOverviewRange) {
     dailyProtein: preferences?.daily_protein_goal != null
       ? resolveGoal('daily_protein_goal', dateKey, preferences.daily_protein_goal)
       : null,
-    dailyWaterLiters: resolveGoal('daily_water_goal', dateKey, normalizeWaterGoalLiters(preferences?.daily_water_goal)),
+    // Normalize both the fallback AND the resolved result — resolveGoal can
+    // return a raw historical goal_history value that predates the ml/liters
+    // fix elsewhere (see Insights.tsx) and may still be ml-scale.
+    dailyWaterLiters: normalizeWaterGoalLiters(
+      resolveGoal('daily_water_goal', dateKey, normalizeWaterGoalLiters(preferences?.daily_water_goal)),
+    ),
     sleepHours: resolveGoal('sleep_goal', dateKey, preferences?.sleep_goal || 8),
     weightGoalType: preferences?.weight_goal_type ?? null,
   }), [preferences, resolveGoal]);
