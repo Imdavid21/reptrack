@@ -166,7 +166,7 @@ export function computeBodyOverview(input: BodyOverviewInput): BodyOverview {
   const sessionsPerWeek = input.workoutDates.length / weeks;
   const trainingScore = input.workoutDates.length === 0
     ? (rangeDays >= 7 ? 0 : null)
-    : clamp((sessionsPerWeek / Math.max(goals.weeklyWorkouts, 1)) * 100);
+    : Math.round(clamp((sessionsPerWeek / Math.max(goals.weeklyWorkouts, 1)) * 100));
   const training: PillarResult = {
     key: 'training',
     score: trainingScore,
