@@ -509,3 +509,74 @@ export function getMuscleGroup(name: string): string {
 export function stripSetSuffix(name: string): string {
   return name.replace(/\s*\(set\s*\d+\)\s*$/i, '').trim();
 }
+
+// ── Sub-region split ─────────────────────────────────────────────────────────
+// Chest/Back/Shoulders are broad enough that a single "sets/week" number
+// hides real imbalances (e.g. all bench, no incline work). This splits those
+// three bodyParts into anatomical sub-regions, with each exercise's volume
+// distributed across the region(s) it actually trains. Quads/Hamstrings/
+// Glutes/Calves/Biceps/Triceps/Forearms/Core are already specific enough at
+// the bodyPart level, so they pass through as a single region at fraction 1.
+
+export interface SubRegionSplit {
+  region: string;
+  fraction: number;
+}
+
+// Order matters: first matching pattern wins, so more specific patterns
+// (e.g. incline/decline push-ups, which invert vs. incline/decline presses)
+// must precede the generic ones.
+const CHEST_OVERRIDES: [RegExp, SubRegionSplit[]][] = [
+  [/incline push[\s-]?up/, [{ region: 'Lower Chest', fraction: 1 }]],
+  [/decline push[\s-]?up/, [{ region: 'Upper Chest', fraction: 1 }]],
+  [/incline/, [{ region: 'Upper Chest', fraction: 1 }]],
+  [/decline/, [{ region: 'Lower Chest', fraction: 1 }]],
+  [/dip/, [{ region: 'Lower Chest', fraction: 0.6 }, { region: 'Mid Chest', fraction: 0.4 }]],
+  [/(crossover|pec deck|cable fly|cable flyes)/, [{ region: 'Mid Chest', fraction: 0.6 }, { region: 'Upper Chest', fraction: 0.4 }]],
+];
+
+const BACK_OVERRIDES: [RegExp, SubRegionSplit[]][] = [
+  [/straight arm pulldown/, [{ region: 'Lats', fraction: 1 }]],
+  [/(pull[\s-]?up|chin[\s-]?up|pulldown)/, [{ region: 'Lats', fraction: 0.8 }, { region: 'Traps', fraction: 0.2 }]],
+  [/(back extension|hyperextension|good morning)/, [{ region: 'Lower Back', fraction: 1 }]],
+  [/(deadlift|rack pull)/, [{ region: 'Lower Back', fraction: 0.5 }, { region: 'Lats', fraction: 0.2 }, { region: 'Traps', fraction: 0.3 }]],
+  [/row/, [{ region: 'Lats', fraction: 0.4 }, { region: 'Traps', fraction: 0.4 }, { region: 'Lower Back', fraction: 0.2 }]],
+];
+
+const SHOULDER_OVERRIDES: [RegExp, SubRegionSplit[]][] = [
+  [/(shrug|upright row)/, [{ region: 'Traps', fraction: 1 }]],
+  [/lateral raise/, [{ region: 'Side Delts', fraction: 1 }]],
+  [/front raise/, [{ region: 'Front Delts', fraction: 1 }]],
+  [/(rear delt|reverse fly|reverse flyes|reverse pec deck|face pull)/, [{ region: 'Rear Delts', fraction: 1 }]],
+  [/(overhead press|\bohp\b|military|arnold|landmine press|z press|behind[\s-]the[\s-]neck|shoulder press)/,
+    [{ region: 'Front Delts', fraction: 0.6 }, { region: 'Side Delts', fraction: 0.4 }]],
+];
+
+function splitFor(bodyPart: string, lowerName: string): SubRegionSplit[] {
+  if (bodyPart === 'Chest') {
+    for (const [re, split] of CHEST_OVERRIDES) if (re.test(lowerName)) return split;
+    return [{ region: 'Mid Chest', fraction: 1 }];
+  }
+  if (bodyPart === 'Back') {
+    for (const [re, split] of BACK_OVERRIDES) if (re.test(lowerName)) return split;
+    return [{ region: 'Lats', fraction: 0.6 }, { region: 'Traps', fraction: 0.4 }];
+  }
+  if (bodyPart === 'Shoulders') {
+    for (const [re, split] of SHOULDER_OVERRIDES) if (re.test(lowerName)) return split;
+    return [{ region: 'Front Delts', fraction: 0.34 }, { region: 'Side Delts', fraction: 0.33 }, { region: 'Rear Delts', fraction: 0.33 }];
+  }
+  return [{ region: bodyPart, fraction: 1 }];
+}
+
+/**
+ * Anatomical sub-region breakdown for a single exercise, e.g. an incline
+ * press returns [{ region: 'Upper Chest', fraction: 1 }] while a barbell row
+ * (which loads several back regions at once) returns a fractional split that
+ * sums to 1. Used by the muscle-balance engine so "sets/week" reflects which
+ * part of a broad group (chest/back/shoulders) is actually getting trained.
+ */
+export function getMuscleSubRegions(name: string, fallbackCategory?: string): SubRegionSplit[] {
+  const bodyPart = getBodyPart(name, fallbackCategory);
+  const lowerName = stripSetSuffix(name).toLowerCase().trim();
+  return splitFor(bodyPart, lowerName);
+}

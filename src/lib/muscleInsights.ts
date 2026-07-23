@@ -12,7 +12,7 @@
  * medical advice, and every insight states the number it came from.
  */
 
-import { getBodyPart } from './exerciseClassification';
+import { getMuscleSubRegions } from './exerciseClassification';
 import { exerciseVariants } from './exerciseVariants';
 
 export interface InsightSet {
@@ -76,9 +76,19 @@ export interface MuscleIntelligence {
 // MuscleBalanceCard.tsx used to keep its own duplicate that would silently
 // drift out of sync with these if one were ever tuned without the other.
 export const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }> = {
-  Chest: { mev: 8, mav: 16, mrv: 22 },
-  Back: { mev: 10, mav: 18, mrv: 25 },
-  Shoulders: { mev: 8, mav: 18, mrv: 26 },
+  // Chest, Back and Shoulders split into sub-regions (see getMuscleSubRegions)
+  // so volume that used to average out across a whole group now shows which
+  // part of it is actually under/overtrained. Sub-region landmarks are
+  // apportioned from the prior whole-group numbers, not independently sourced.
+  'Upper Chest': { mev: 4, mav: 8, mrv: 12 },
+  'Mid Chest': { mev: 4, mav: 9, mrv: 13 },
+  'Lower Chest': { mev: 3, mav: 6, mrv: 9 },
+  Lats: { mev: 6, mav: 11, mrv: 15 },
+  Traps: { mev: 3, mav: 7, mrv: 10 },
+  'Lower Back': { mev: 3, mav: 6, mrv: 9 },
+  'Front Delts': { mev: 3, mav: 7, mrv: 10 },
+  'Side Delts': { mev: 4, mav: 9, mrv: 13 },
+  'Rear Delts': { mev: 3, mav: 8, mrv: 11 },
   Biceps: { mev: 6, mav: 16, mrv: 24 },
   Triceps: { mev: 6, mav: 14, mrv: 20 },
   Quads: { mev: 8, mav: 16, mrv: 20 },
@@ -100,14 +110,20 @@ const ACTIVITY_MUSCLE_LOAD: Record<string, Partial<Record<string, number>>> = {
   walking: { Quads: 0.5, Hamstrings: 0.5, Glutes: 0.5, Calves: 1 },
   running: { Quads: 1, Hamstrings: 1, Glutes: 1, Calves: 1.5, Core: 0.5 },
   cycling: { Quads: 1.5, Hamstrings: 0.5, Glutes: 1, Calves: 0.5 },
-  boxing: { Shoulders: 1.5, Core: 1.5, Triceps: 1, Biceps: 0.5, Back: 0.5 },
+  boxing: { 'Front Delts': 0.5, 'Side Delts': 0.5, 'Rear Delts': 0.5, Core: 1.5, Triceps: 1, Biceps: 0.5, Lats: 0.3, Traps: 0.2 },
 };
 
 // Movement ideas to surface for a muscle that's missing or low.
 const MOVEMENT_IDEAS: Record<string, string> = {
-  Chest: 'Incline Dumbbell Press',
-  Back: 'Lat Pulldown',
-  Shoulders: 'Lateral Raises',
+  'Upper Chest': 'Incline Dumbbell Press',
+  'Mid Chest': 'Flat Barbell Bench Press',
+  'Lower Chest': 'Dips',
+  Lats: 'Lat Pulldown',
+  Traps: 'Barbell Shrugs',
+  'Lower Back': 'Back Extension',
+  'Front Delts': 'Dumbbell Shoulder Press',
+  'Side Delts': 'Lateral Raises',
+  'Rear Delts': 'Face Pulls',
   Biceps: 'Incline Dumbbell Curl',
   Triceps: 'Tricep Pushdown',
   Quads: 'Leg Press',
@@ -142,8 +158,9 @@ export function analyzeMuscles(sets: InsightSet[], rangeDays: number, activities
   const liftSetCount: Record<string, number> = {};
   for (const muscle of TRACKED_MUSCLES) liftSetCount[muscle] = 0;
   for (const s of sets) {
-    const bp = getBodyPart(s.exercise_name);
-    if (bp in liftSetCount) liftSetCount[bp] += 1;
+    for (const { region, fraction } of getMuscleSubRegions(s.exercise_name)) {
+      if (region in liftSetCount) liftSetCount[region] += fraction;
+    }
   }
 
   // --- Equivalent-set contribution from logged activity (see ACTIVITY_MUSCLE_LOAD) ---

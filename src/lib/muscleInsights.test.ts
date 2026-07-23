@@ -41,20 +41,21 @@ describe('analyzeMuscles — balance', () => {
   });
 
   it('computes weekly sets over the range, not raw counts', () => {
-    // 16 chest sets across a 14-day (2-week) window = 8 sets/week.
+    // Flat barbell bench press is all "Mid Chest": 16 sets across a 14-day
+    // (2-week) window = 8 sets/week.
     const sets = Array.from({ length: 16 }, (_, i) => benchSet(`2026-06-${String((i % 14) + 1).padStart(2, '0')}`, 60, 8));
     const res = analyzeMuscles(sets, 14);
-    const chest = res.balance.find(b => b.bodyPart === 'Chest');
-    expect(chest?.weeklySets).toBe(8);
-    expect(chest?.status).toBe('optimal'); // mev 8
+    const midChest = res.balance.find(b => b.bodyPart === 'Mid Chest');
+    expect(midChest?.weeklySets).toBe(8);
+    expect(midChest?.status).toBe('optimal'); // mev 4
   });
 
   it('flags overreaching above MRV', () => {
-    // 30 chest sets in one week = 30/wk, above chest MRV (22).
+    // 30 flat bench sets in one week = 30/wk Mid Chest, above its MRV (13).
     const sets = Array.from({ length: 30 }, (_, i) => benchSet(`2026-06-0${(i % 7) + 1}`, 60, 8));
     const res = analyzeMuscles(sets, 7);
-    const chest = res.balance.find(b => b.bodyPart === 'Chest');
-    expect(chest?.status).toBe('overreaching');
+    const midChest = res.balance.find(b => b.bodyPart === 'Mid Chest');
+    expect(midChest?.status).toBe('overreaching');
   });
 });
 
@@ -101,9 +102,9 @@ describe('analyzeMuscles — activity contribution', () => {
 
   it('only credits muscles an activity actually trains (boxing does not load legs)', () => {
     const res = analyzeMuscles([], 7, [activity('boxing', 60)]);
-    const shoulders = res.balance.find(b => b.bodyPart === 'Shoulders');
+    const sideDelts = res.balance.find(b => b.bodyPart === 'Side Delts');
     const quads = res.balance.find(b => b.bodyPart === 'Quads');
-    expect(shoulders?.fromActivity).toBeGreaterThan(0);
+    expect(sideDelts?.fromActivity).toBeGreaterThan(0);
     expect(quads?.fromActivity).toBeUndefined();
     expect(quads?.status).toBe('untrained');
   });

@@ -68,7 +68,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
           const pct = Math.min((m.weeklySets / scale) * 100, 100);
           return (
             <div key={m.bodyPart} className="flex items-center gap-3">
-              <div className="w-20 shrink-0 text-xs font-semibold truncate">{m.bodyPart}</div>
+              <div className="w-24 shrink-0 text-xs font-semibold truncate">{m.bodyPart}</div>
               <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                 {m.status !== 'untrained' && (
                   <motion.div
