@@ -45,6 +45,8 @@ export interface UserPreferences {
    *  and workout-bias-derived rest times take priority. */
   default_rest_seconds: number;
   auto_rest_timer: boolean;
+  /** Adaptive Mode (Infinite Progression method) — see src/lib/adaptiveEngine.ts. */
+  adaptive_mode_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

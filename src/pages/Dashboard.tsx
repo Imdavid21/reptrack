@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
+import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -65,6 +66,12 @@ export default function Dashboard() {
             {!(draft && hasProgress) && (
               <motion.div variants={staggerItem}>
                 <NextWorkoutCard />
+              </motion.div>
+            )}
+
+            {preferences?.adaptive_mode_enabled && (
+              <motion.div variants={staggerItem}>
+                <AdaptiveSuggestionsCard />
               </motion.div>
             )}
 

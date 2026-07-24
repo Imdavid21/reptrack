@@ -23,6 +23,7 @@ import LogWorkout from "./pages/LogWorkout";
 import Insights from "./pages/Insights";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import LifecycleTracker from "./pages/LifecycleTracker";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Chat from "./pages/Chat";
 
@@ -72,6 +73,7 @@ function AppRoutes() {
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
         <Route path="/app/chat" element={<Chat />} />
         <Route path="/app/settings" element={<Settings />} />
+        <Route path="/app/lifecycle" element={<LifecycleTracker />} />
 
         {/* Legacy redirects */}
         <Route path="/log" element={<Navigate to="/app/log" replace />} />

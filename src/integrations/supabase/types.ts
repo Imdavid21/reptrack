@@ -14,6 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
+      adaptive_lifecycles: {
+        Row: {
+          carryover_in: number
+          carryover_out: number | null
+          created_at: string
+          end_date: string | null
+          end_trigger: string | null
+          ending_load: number | null
+          id: string
+          movement_pattern: string
+          phase_modifier: string | null
+          rep_range_high: number
+          rep_range_low: number
+          start_date: string
+          starting_load: number | null
+          status: string
+          updated_at: string
+          user_id: string
+          variation_name: string
+          weak_points_targeted: string[]
+        }
+        Insert: {
+          carryover_in?: number
+          carryover_out?: number | null
+          created_at?: string
+          end_date?: string | null
+          end_trigger?: string | null
+          ending_load?: number | null
+          id?: string
+          movement_pattern: string
+          phase_modifier?: string | null
+          rep_range_high: number
+          rep_range_low: number
+          start_date?: string
+          starting_load?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          variation_name: string
+          weak_points_targeted?: string[]
+        }
+        Update: {
+          carryover_in?: number
+          carryover_out?: number | null
+          created_at?: string
+          end_date?: string | null
+          end_trigger?: string | null
+          ending_load?: number | null
+          id?: string
+          movement_pattern?: string
+          phase_modifier?: string | null
+          rep_range_high?: number
+          rep_range_low?: number
+          start_date?: string
+          starting_load?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variation_name?: string
+          weak_points_targeted?: string[]
+        }
+        Relationships: []
+      }
+      adaptive_session_logs: {
+        Row: {
+          backoff_load: number | null
+          backoff_reps: number | null
+          created_at: string
+          form_note: string | null
+          id: string
+          leading_load: number
+          leading_reps: number
+          lifecycle_id: string
+          session_date: string
+          user_id: string
+          weak_point_zone: string | null
+        }
+        Insert: {
+          backoff_load?: number | null
+          backoff_reps?: number | null
+          created_at?: string
+          form_note?: string | null
+          id?: string
+          leading_load: number
+          leading_reps: number
+          lifecycle_id: string
+          session_date?: string
+          user_id: string
+          weak_point_zone?: string | null
+        }
+        Update: {
+          backoff_load?: number | null
+          backoff_reps?: number | null
+          created_at?: string
+          form_note?: string | null
+          id?: string
+          leading_load?: number
+          leading_reps?: number
+          lifecycle_id?: string
+          session_date?: string
+          user_id?: string
+          weak_point_zone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adaptive_session_logs_lifecycle_id_fkey"
+            columns: ["lifecycle_id"]
+            isOneToOne: false
+            referencedRelation: "adaptive_lifecycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calorie_burns: {
         Row: {
           activity_type: string | null
@@ -546,6 +659,7 @@ export type Database = {
       user_preferences: {
         Row: {
           activity_level: string | null
+          adaptive_mode_enabled: boolean | null
           age: number | null
           created_at: string | null
           daily_calorie_goal: number | null
@@ -579,6 +693,7 @@ export type Database = {
         }
         Insert: {
           activity_level?: string | null
+          adaptive_mode_enabled?: boolean | null
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null
@@ -612,6 +727,7 @@ export type Database = {
         }
         Update: {
           activity_level?: string | null
+          adaptive_mode_enabled?: boolean | null
           age?: number | null
           created_at?: string | null
           daily_calorie_goal?: number | null

@@ -25,6 +25,7 @@ import {
   Dumbbell,
   Link2,
   TrendingDown,
+  Repeat2,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -793,6 +794,69 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
+          <MuiCard>
+            <Box
+              onClick={() => toggleSection('adaptive')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Repeat2 size={18} className="text-energy-ink" />
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>Adaptive Mode</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {preferences?.adaptive_mode_enabled
+                      ? 'Active · Infinite Progression rotation'
+                      : 'Weak-point-driven exercise rotation'}
+                  </Typography>
+                </Box>
+              </Box>
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: expandedSections.adaptive ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            </Box>
+
+            <Collapse in={expandedSections.adaptive}>
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ pr: 2 }}>
+                    <Typography variant="body2" fontWeight={600}>Enable Adaptive Mode</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Your workout split shows an adaptive suggestion — rotated variation, leading/back-off
+                      targets, and why — next to your regular programming, so you can compare and pick per session.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={preferences?.adaptive_mode_enabled ?? false}
+                    onChange={(e) => updatePreferences.mutate({ adaptive_mode_enabled: e.target.checked } as any)}
+                    color="primary"
+                  />
+                </Box>
+
+                {preferences?.adaptive_mode_enabled && (
+                  <button
+                    onClick={() => navigate('/app/lifecycle')}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-colors text-left"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold">Lifecycle Tracker</div>
+                      <div className="text-[11px] text-muted-foreground">Rotation history, carryover, and duration trends per pattern</div>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                  </button>
+                )}
+              </Box>
+            </Collapse>
+          </MuiCard>
 
 
           {/* Install as App - only show when NOT running as installed PWA */}
