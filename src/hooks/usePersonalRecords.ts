@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { getExerciseType, type ExerciseType } from '@/lib/exerciseLibrary';
-import { getCanonicalName, EXERCISE_ALIASES } from '@/lib/exerciseMatching';
+import { getCanonicalName, resolveCanonicalName, EXERCISE_ALIASES } from '@/lib/exerciseMatching';
 
 export interface PersonalRecord {
   exerciseName: string;
@@ -44,10 +44,21 @@ export function usePersonalRecords() {
 
       if (error) throw error;
 
-      // Find PRs per exercise — NO whitelist, track ALL exercises
+      // Find PRs per exercise — NO whitelist, track ALL exercises.
+      //
+      // Bucketed by resolveCanonicalName (lowercased), NOT getCanonicalName
+      // (case-preserved): getCanonicalName only rewrites *known* aliases and
+      // otherwise returns the input exactly as typed, so two loggings of the
+      // same lift that differ only in casing/whitespace (e.g. logged once via
+      // a split template as "Conventional Deadlift" and once via a swap/AI
+      // parse as "conventional deadlift") would silently form two separate
+      // object keys — splitting a lifter's real max across two buckets and
+      // showing a lower PR than they've actually hit. The display name still
+      // uses the nicely-cased getCanonicalName of whichever entry is winning.
       const prMap: Record<string, PersonalRecord> = {};
 
       for (const ex of exercises || []) {
+        const groupKey = resolveCanonicalName(ex.name);
         const canonicalName = getCanonicalName(ex.name);
         const exType = getExerciseType(canonicalName);
         const workout = ex.workouts as unknown as { date: string };
@@ -57,8 +68,8 @@ export function usePersonalRecords() {
           const duration = parseFloat(ex.actual_reps || '0');
           if (isNaN(duration) || duration === 0) continue;
 
-          if (!prMap[canonicalName] || duration > prMap[canonicalName].maxWeight) {
-            prMap[canonicalName] = {
+          if (!prMap[groupKey] || duration > prMap[groupKey].maxWeight) {
+            prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: duration,
               reps: `${duration}s`,
@@ -71,8 +82,8 @@ export function usePersonalRecords() {
           const reps = parseFloat(ex.actual_reps || '0');
           if (isNaN(reps) || reps === 0) continue;
 
-          if (!prMap[canonicalName] || reps > prMap[canonicalName].maxWeight) {
-            prMap[canonicalName] = {
+          if (!prMap[groupKey] || reps > prMap[groupKey].maxWeight) {
+            prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: reps,
               reps: `${reps} reps`,
@@ -86,7 +97,7 @@ export function usePersonalRecords() {
           const reps = parseInt(ex.actual_reps || '0');
           if (isNaN(weight) || weight === 0) continue;
 
-          const existing = prMap[canonicalName];
+          const existing = prMap[groupKey];
           const existingReps = existing ? parseInt(existing.reps) || 0 : 0;
           const isNew =
             !existing ||
@@ -94,7 +105,7 @@ export function usePersonalRecords() {
             (weight === existing.maxWeight && reps > existingReps);
 
           if (isNew) {
-            prMap[canonicalName] = {
+            prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: weight,
               reps: ex.actual_reps || '',
@@ -110,10 +121,12 @@ export function usePersonalRecords() {
     enabled: !!user,
   });
 
-  // Helper to get PR for a specific exercise
+  // Helper to get PR for a specific exercise — same case-insensitive
+  // resolution as the aggregation above, so a differently-cased lookup name
+  // still finds the bucket its sets were actually grouped into.
   const getPRForExercise = (exerciseName: string): PersonalRecord | undefined => {
-    const canonicalName = getCanonicalName(exerciseName);
-    return query.data?.find(pr => pr.exerciseName === canonicalName);
+    const target = resolveCanonicalName(exerciseName);
+    return query.data?.find(pr => resolveCanonicalName(pr.exerciseName) === target);
   };
 
   return {

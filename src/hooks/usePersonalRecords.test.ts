@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getCanonicalName, EXERCISE_ALIASES } from './usePersonalRecords';
+import { resolveCanonicalName } from '@/lib/exerciseMatching';
 import { SPLIT_TEMPLATES } from '@/lib/splitTemplates';
 
 describe('getCanonicalName', () => {
@@ -80,5 +81,29 @@ describe('getCanonicalName', () => {
     }
 
     expect(suspicious).toEqual([]);
+  });
+});
+
+// Regression coverage: usePersonalRecords used to bucket/look up PRs by the
+// case-preserved getCanonicalName (which only rewrites *known* aliases and
+// otherwise echoes the input verbatim). Two loggings of the same lift that
+// differed only in casing or incidental whitespace — e.g. "Conventional
+// Deadlift" from a split template vs "conventional deadlift " from a swap
+// or AI-parsed workout — formed two separate object keys, silently splitting
+// a lifter's max across buckets so the PR badge could show a lower number
+// than a real, already-saved set. The fix buckets/looks up by
+// resolveCanonicalName (lowercased) instead, while still displaying the
+// nicely-cased canonical name.
+describe('resolveCanonicalName (PR bucketing key)', () => {
+  it('collapses case variants of the same exercise to the same key', () => {
+    expect(resolveCanonicalName('Conventional Deadlift')).toBe(resolveCanonicalName('conventional deadlift'));
+  });
+
+  it('collapses alias and canonical spellings to the same key regardless of case', () => {
+    expect(resolveCanonicalName('Deadlift')).toBe(resolveCanonicalName('CONVENTIONAL DEADLIFT'));
+  });
+
+  it('still keeps genuinely different exercises in different buckets', () => {
+    expect(resolveCanonicalName('Conventional Deadlift')).not.toBe(resolveCanonicalName('Romanian Deadlift'));
   });
 });
