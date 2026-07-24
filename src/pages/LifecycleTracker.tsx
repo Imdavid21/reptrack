@@ -25,7 +25,7 @@ export default function LifecycleTracker() {
   return (
     <MainLayout showBack backTo="/app/settings">
       <AnimatedPage>
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="px-4 pt-4 pb-24 space-y-4 max-w-lg mx-auto">
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="px-4 pt-4 pb-24 space-y-4 max-w-lg mx-auto">
           <motion.div variants={staggerItem}>
             <h1 className="text-xl font-bold">Lifecycle Tracker</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
