@@ -29,6 +29,7 @@ import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
+import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -587,6 +588,12 @@ export default function LogWorkout() {
                 selectedDate={selectedDate}
                 onSelect={handleDaySelect}
               />
+
+              {preferences?.adaptive_mode_enabled && (
+                <motion.div variants={staggerItem}>
+                  <AdaptiveSuggestionsCard />
+                </motion.div>
+              )}
 
               <div className="flex gap-2 justify-center">
                 <button

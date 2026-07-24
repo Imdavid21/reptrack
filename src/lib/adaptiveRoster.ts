@@ -197,6 +197,8 @@ export interface HistorySeed {
   variationName: string;
   startingLoad: number;
   startingReps: number;
+  /** The workout date the seed was detected from, for showing "why" to the user before they confirm. */
+  sourceDate: string;
 }
 
 /**
@@ -218,5 +220,10 @@ export function detectPatternSeed(patternKey: MovementPatternKey, sets: Historic
   const sameDay = matched.filter(m => m.set.workout_date === mostRecentDate);
   const heaviest = [...sameDay].sort((a, b) => b.set.actual_weight - a.set.actual_weight)[0];
 
-  return { variationName: heaviest.match.variationName, startingLoad: heaviest.set.actual_weight, startingReps: heaviest.set.actual_reps };
+  return {
+    variationName: heaviest.match.variationName,
+    startingLoad: heaviest.set.actual_weight,
+    startingReps: heaviest.set.actual_reps,
+    sourceDate: heaviest.set.workout_date,
+  };
 }

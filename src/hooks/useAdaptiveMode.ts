@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -9,6 +9,7 @@ import {
   MOVEMENT_PATTERN_LIST,
   MovementPatternKey,
   MovementPatternDef,
+  HistorySeed,
   getVariation,
   detectPatternSeed,
 } from '@/lib/adaptiveRoster';
@@ -40,6 +41,8 @@ export interface AdaptivePatternState {
   sessionTargets: SessionTargets | null;
   /** Human-readable "why this variation" explanation, shown on the workout split. */
   whyText: string;
+  /** Detected from workout history when this pattern has never been started — surfaced as a suggestion to confirm, never auto-applied. */
+  historySeed: HistorySeed | null;
 }
 
 /**
@@ -113,34 +116,12 @@ export function useAdaptiveMode() {
     onSuccess: invalidate,
   });
 
-  // Seed each pattern's first lifecycle from already-logged workout history
-  // instead of requiring a blank manual entry: the first time a pattern has
-  // no lifecycle at all (never started, not just "no active one"), look for
-  // a matching exercise in the user's own set history and auto-start from
-  // their most recent heaviest set on it. Patterns with no matching history
-  // fall back to the manual "Start lifecycle" form in AdaptiveSuggestionsCard.
+  // For a pattern that's never been started, detect what its first lifecycle
+  // *could* seed from — the heaviest set on the most recently trained date
+  // for a matching exercise — but never insert it automatically. This is
+  // surfaced to the user as an explained suggestion (AdaptiveSuggestionsCard)
+  // that they explicitly confirm or edit before anything is written.
   const { data: exerciseSetsData, isLoading: loadingExerciseSets } = useExerciseSets();
-  const attemptedBackfill = useRef<Set<MovementPatternKey>>(new Set());
-
-  useEffect(() => {
-    if (loadingLifecycles || loadingExerciseSets || !exerciseSetsData) return;
-    for (const pattern of MOVEMENT_PATTERN_LIST) {
-      const everStarted = lifecycles.some(l => l.movement_pattern === pattern.key);
-      if (everStarted || attemptedBackfill.current.has(pattern.key)) continue;
-      attemptedBackfill.current.add(pattern.key);
-
-      const seed = detectPatternSeed(pattern.key, exerciseSetsData.sets);
-      if (!seed) continue;
-      startPattern.mutate({
-        patternKey: pattern.key,
-        variationName: seed.variationName,
-        startingLoad: seed.startingLoad,
-        repRangeLow: 6,
-        repRangeHigh: 12,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingLifecycles, loadingExerciseSets, exerciseSetsData, lifecycles]);
 
   /** Logs one session's leading + back-off performance (and optional weak-point tag) against the active lifecycle. */
   const logSession = useMutation({
@@ -265,6 +246,11 @@ export function useAdaptiveMode() {
         ? computeSessionTargets(lastSession, active.rep_range_low, active.rep_range_high, active.starting_load ?? 0)
         : null;
 
+      const everStarted = lifecycles.some(l => l.movement_pattern === pattern.key);
+      const historySeed = !active && !everStarted && exerciseSetsData
+        ? detectPatternSeed(pattern.key, exerciseSetsData.sets)
+        : null;
+
       let whyText = 'Not started yet — pick a variation to begin this pattern\'s first lifecycle.';
       if (active) {
         if (active.carryover_in > 0) {
@@ -275,14 +261,17 @@ export function useAdaptiveMode() {
         if (active.weak_points_targeted?.length) {
           whyText += ` Targeting the ${active.weak_points_targeted[0]} weak point flagged last lifecycle.`;
         }
+      } else if (historySeed) {
+        whyText = `Detected ${historySeed.variationName} from your workout log — ${historySeed.startingLoad}kg × ${historySeed.startingReps} on ${historySeed.sourceDate}. Confirm to start from there, or pick something else.`;
       }
 
-      return { pattern, activeLifecycle: active, sessions, carryoverTotal, endTrigger, openWeakPoint, sessionTargets, whyText };
+      return { pattern, activeLifecycle: active, sessions, carryoverTotal, endTrigger, openWeakPoint, sessionTargets, whyText, historySeed };
     });
-  }, [lifecycles, sessionLogs]);
+  }, [lifecycles, sessionLogs, exerciseSetsData]);
 
   return {
     isLoading: loadingLifecycles || loadingSessions,
+    isLoadingHistorySeed: loadingExerciseSets,
     lifecycles,
     sessionLogs,
     patternStates,

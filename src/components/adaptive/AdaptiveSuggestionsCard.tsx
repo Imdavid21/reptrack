@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, RefreshCw, AlertTriangle, Sparkles } from 'lucide-react';
+import { ChevronRight, RefreshCw, AlertTriangle, Sparkles, History } from 'lucide-react';
 import { useAdaptiveMode, AdaptivePatternState } from '@/hooks/useAdaptiveMode';
 import { FormBreakdownLogger } from './FormBreakdownLogger';
 import { defaultBackoffLoad } from '@/lib/adaptiveEngine';
@@ -30,30 +30,48 @@ function useDayChoice(patternKey: string) {
 }
 
 function PatternRow({ state }: { state: AdaptivePatternState }) {
-  const { pattern, activeLifecycle, endTrigger, openWeakPoint, sessionTargets, whyText } = state;
+  const { pattern, activeLifecycle, endTrigger, openWeakPoint, sessionTargets, whyText, historySeed } = state;
   const [expanded, setExpanded] = useState(false);
   const [choice, setChoice] = useDayChoice(pattern.key);
   const { startPattern, logSession, rotateVariation } = useAdaptiveMode();
   const [startingLoad, setStartingLoad] = useState('20');
   const [selectedVariation, setSelectedVariation] = useState(pattern.variations[0].name);
+  const touchedRef = useRef(false);
+
+  // Prefill (never auto-submit) from detected history the moment it arrives,
+  // as long as the user hasn't already started editing the form themselves.
+  useEffect(() => {
+    if (historySeed && !touchedRef.current) {
+      setSelectedVariation(historySeed.variationName);
+      setStartingLoad(String(historySeed.startingLoad));
+    }
+  }, [historySeed]);
 
   if (!activeLifecycle) {
     return (
       <div className="rounded-xl border border-border p-3">
-        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between text-left">
-          <div>
+        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between text-left gap-2">
+          <div className="min-w-0">
             <div className="text-sm font-semibold">{pattern.name}</div>
-            <div className="text-[11px] text-muted-foreground">Not started — key movement: {pattern.keyMovement}</div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {historySeed ? `Suggestion available from your history` : `Not started — key movement: ${pattern.keyMovement}`}
+            </div>
           </div>
           <ChevronRight className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform', expanded && 'rotate-90')} />
         </button>
         <AnimatePresence>
           {expanded && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="pt-3 space-y-2">
+              <div className="pt-3 space-y-2.5">
+                {historySeed && (
+                  <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-energy/10">
+                    <History className="h-3 w-3 text-energy-ink shrink-0 mt-0.5" />
+                    {whyText}
+                  </p>
+                )}
                 <select
                   value={selectedVariation}
-                  onChange={(e) => setSelectedVariation(e.target.value)}
+                  onChange={(e) => { touchedRef.current = true; setSelectedVariation(e.target.value); }}
                   className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm"
                 >
                   {pattern.variations.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
@@ -62,7 +80,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
                   type="number"
                   inputMode="decimal"
                   value={startingLoad}
-                  onChange={(e) => setStartingLoad(e.target.value)}
+                  onChange={(e) => { touchedRef.current = true; setStartingLoad(e.target.value); }}
                   placeholder="Starting load (kg)"
                   className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm tabular-nums"
                 />
@@ -77,7 +95,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
                   disabled={startPattern.isPending}
                   className="w-full py-2 rounded-xl bg-foreground text-background text-sm font-bold disabled:opacity-50"
                 >
-                  Start lifecycle
+                  {historySeed ? 'Confirm and start' : 'Start lifecycle'}
                 </button>
               </div>
             </motion.div>

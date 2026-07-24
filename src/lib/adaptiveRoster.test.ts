@@ -32,7 +32,7 @@ describe('detectPatternSeed', () => {
       set('Back Squat', 110, 5, '2026-06-15'),
       set('Romanian Deadlift', 80, 8, '2026-06-20'), // different pattern (hinge)
     ];
-    expect(detectPatternSeed('squat', sets)).toEqual({ variationName: 'Back Squat', startingLoad: 120, startingReps: 3 });
+    expect(detectPatternSeed('squat', sets)).toEqual({ variationName: 'Back Squat', startingLoad: 120, startingReps: 3, sourceDate: '2026-06-15' });
   });
 
   it('returns null when nothing in the pattern has ever been logged', () => {
@@ -46,6 +46,6 @@ describe('detectPatternSeed', () => {
       { exercise_name: 'Back Squat', actual_weight: 0, actual_reps: 5, workout_date: '2026-06-02', completed: true },
       { exercise_name: 'Back Squat', actual_weight: 90, actual_reps: 6, workout_date: '2026-06-03', completed: true },
     ];
-    expect(detectPatternSeed('squat', sets)).toEqual({ variationName: 'Back Squat', startingLoad: 90, startingReps: 6 });
+    expect(detectPatternSeed('squat', sets)).toEqual({ variationName: 'Back Squat', startingLoad: 90, startingReps: 6, sourceDate: '2026-06-03' });
   });
 });

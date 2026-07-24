@@ -5,20 +5,17 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
-import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
 import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
-import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { Dumbbell, ChevronRight } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { draft, hasProgress } = useDraftWorkout();
-  const { preferences } = useUserPreferences();
 
   return (
     <MainLayout>
@@ -66,12 +63,6 @@ export default function Dashboard() {
             {!(draft && hasProgress) && (
               <motion.div variants={staggerItem}>
                 <NextWorkoutCard />
-              </motion.div>
-            )}
-
-            {preferences?.adaptive_mode_enabled && (
-              <motion.div variants={staggerItem}>
-                <AdaptiveSuggestionsCard />
               </motion.div>
             )}
 
