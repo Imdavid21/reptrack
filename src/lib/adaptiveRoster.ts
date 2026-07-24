@@ -13,6 +13,8 @@
  * weak point.
  */
 
+import { stripSetSuffix } from './exerciseClassification';
+
 export type MovementPatternKey = 'vertical_pull' | 'horizontal_pull' | 'vertical_press' | 'horizontal_press' | 'squat' | 'hinge';
 
 export type StrengthZone = 'lock-out' | 'mid-range' | 'bottom-range' | 'stability';
@@ -148,4 +150,73 @@ export const MOVEMENT_PATTERN_LIST: MovementPatternDef[] = Object.values(MOVEMEN
 
 export function getVariation(patternKey: MovementPatternKey, variationName: string): RosterVariation | undefined {
   return MOVEMENT_PATTERNS[patternKey]?.variations.find(v => v.name === variationName);
+}
+
+export interface RosterMatch {
+  patternKey: MovementPatternKey;
+  variationName: string;
+}
+
+/**
+ * Matches an already-logged exercise name to a roster variation, so Adaptive
+ * Mode can seed a pattern's first lifecycle from real training history
+ * instead of a blank manual-entry form. Exact hint matches win; a substring
+ * fallback catches close variants (e.g. a user's own "DB OHP" shorthand
+ * against the "overhead press" hint).
+ */
+export function matchExerciseToPattern(exerciseName: string): RosterMatch | null {
+  const stripped = stripSetSuffix(exerciseName).toLowerCase().trim();
+  if (!stripped) return null;
+
+  for (const pattern of MOVEMENT_PATTERN_LIST) {
+    for (const variation of pattern.variations) {
+      if (variation.exerciseNameHints.some(h => h.toLowerCase() === stripped)) {
+        return { patternKey: pattern.key, variationName: variation.name };
+      }
+    }
+  }
+  for (const pattern of MOVEMENT_PATTERN_LIST) {
+    for (const variation of pattern.variations) {
+      if (variation.exerciseNameHints.some(h => stripped.includes(h.toLowerCase()))) {
+        return { patternKey: pattern.key, variationName: variation.name };
+      }
+    }
+  }
+  return null;
+}
+
+export interface HistoricalSet {
+  exercise_name: string;
+  actual_weight: number | null;
+  actual_reps: number | null;
+  workout_date?: string;
+  completed?: boolean;
+}
+
+export interface HistorySeed {
+  variationName: string;
+  startingLoad: number;
+  startingReps: number;
+}
+
+/**
+ * Seeds a pattern's first lifecycle from already-logged sets: the heaviest
+ * completed set, on the most recent date the user trained a variation of
+ * this pattern. Returns null when nothing in the pattern has ever been
+ * logged, so the caller falls back to manual entry.
+ */
+export function detectPatternSeed(patternKey: MovementPatternKey, sets: HistoricalSet[]): HistorySeed | null {
+  const matched = sets
+    .filter((s): s is HistoricalSet & { workout_date: string; actual_weight: number; actual_reps: number } =>
+      s.completed !== false && !!s.actual_weight && !!s.actual_reps && !!s.workout_date)
+    .map(s => ({ set: s, match: matchExerciseToPattern(s.exercise_name) }))
+    .filter((x): x is { set: HistoricalSet & { workout_date: string; actual_weight: number; actual_reps: number }; match: RosterMatch } =>
+      x.match?.patternKey === patternKey);
+  if (matched.length === 0) return null;
+
+  const mostRecentDate = [...matched].sort((a, b) => b.set.workout_date.localeCompare(a.set.workout_date))[0].set.workout_date;
+  const sameDay = matched.filter(m => m.set.workout_date === mostRecentDate);
+  const heaviest = [...sameDay].sort((a, b) => b.set.actual_weight - a.set.actual_weight)[0];
+
+  return { variationName: heaviest.match.variationName, startingLoad: heaviest.set.actual_weight, startingReps: heaviest.set.actual_reps };
 }

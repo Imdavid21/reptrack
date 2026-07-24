@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useExerciseSets } from './useExerciseSets';
 import { localDateKey } from '@/lib/dateKey';
 import {
   MOVEMENT_PATTERNS,
@@ -9,6 +10,7 @@ import {
   MovementPatternKey,
   MovementPatternDef,
   getVariation,
+  detectPatternSeed,
 } from '@/lib/adaptiveRoster';
 import {
   LifecycleRecord,
@@ -110,6 +112,35 @@ export function useAdaptiveMode() {
     },
     onSuccess: invalidate,
   });
+
+  // Seed each pattern's first lifecycle from already-logged workout history
+  // instead of requiring a blank manual entry: the first time a pattern has
+  // no lifecycle at all (never started, not just "no active one"), look for
+  // a matching exercise in the user's own set history and auto-start from
+  // their most recent heaviest set on it. Patterns with no matching history
+  // fall back to the manual "Start lifecycle" form in AdaptiveSuggestionsCard.
+  const { data: exerciseSetsData, isLoading: loadingExerciseSets } = useExerciseSets();
+  const attemptedBackfill = useRef<Set<MovementPatternKey>>(new Set());
+
+  useEffect(() => {
+    if (loadingLifecycles || loadingExerciseSets || !exerciseSetsData) return;
+    for (const pattern of MOVEMENT_PATTERN_LIST) {
+      const everStarted = lifecycles.some(l => l.movement_pattern === pattern.key);
+      if (everStarted || attemptedBackfill.current.has(pattern.key)) continue;
+      attemptedBackfill.current.add(pattern.key);
+
+      const seed = detectPatternSeed(pattern.key, exerciseSetsData.sets);
+      if (!seed) continue;
+      startPattern.mutate({
+        patternKey: pattern.key,
+        variationName: seed.variationName,
+        startingLoad: seed.startingLoad,
+        repRangeLow: 6,
+        repRangeHigh: 12,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingLifecycles, loadingExerciseSets, exerciseSetsData, lifecycles]);
 
   /** Logs one session's leading + back-off performance (and optional weak-point tag) against the active lifecycle. */
   const logSession = useMutation({
