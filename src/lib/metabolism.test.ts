@@ -36,7 +36,7 @@ describe('averageDailyActivityBurn', () => {
 });
 
 describe('computeAutoMaintenance', () => {
-  it('is BMR plus the trailing activity-burn average', () => {
+  it('maintenance is BMR alone — avgActivityBurn is informational, not added in', () => {
     const result = computeAutoMaintenance({
       weightKg: 80,
       heightCm: 180,
@@ -46,7 +46,7 @@ describe('computeAutoMaintenance', () => {
       windowDays: 7,
     });
     expect(result.avgActivityBurn).toBe(500);
-    expect(result.maintenance).toBe(result.bmr + 500);
+    expect(result.maintenance).toBe(result.bmr);
   });
 
   it('falls back to pure BMR when no activity has been logged', () => {
@@ -55,6 +55,23 @@ describe('computeAutoMaintenance', () => {
       activityBurnEntries: [], windowDays: 14,
     });
     expect(result.avgActivityBurn).toBe(0);
+    expect(result.maintenance).toBe(result.bmr);
+  });
+
+  // Regression: maintenance previously included the trailing activity
+  // average, which double-counted activity against the app's net-deficit
+  // formula (maintenance − eaten + burned) — that formula already adds
+  // TODAY's real logged burn back on top, so a typical-activity day got
+  // credited twice, and a rest day still got credit for activity that
+  // never happened. maintenance must stay BMR-only no matter how large the
+  // historical average is.
+  it('never folds a large activity average into maintenance', () => {
+    const result = computeAutoMaintenance({
+      weightKg: 90, heightCm: 185, age: 28, gender: 'male',
+      activityBurnEntries: [{ date: '2026-07-01', calories: 20000 }],
+      windowDays: 14,
+    });
+    expect(result.avgActivityBurn).toBeGreaterThan(0);
     expect(result.maintenance).toBe(result.bmr);
   });
 });

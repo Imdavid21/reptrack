@@ -44,26 +44,37 @@ export interface AutoMaintenanceInput {
 }
 
 export interface AutoMaintenanceResult {
-  /** Resting energy expenditure. */
+  /** Resting energy expenditure — also the deficit-mode maintenance baseline (see below). */
   bmr: number;
-  /** Trailing average daily burn from actual logged workouts/activity. */
+  /** Trailing average daily burn from logged workouts/activity — informational only, NOT folded into maintenance. */
   avgActivityBurn: number;
-  /** BMR + avgActivityBurn — the body-based, auto-updating maintenance estimate. */
+  /**
+   * The deficit-mode maintenance baseline. Deliberately equal to BMR, not
+   * BMR + avgActivityBurn: the app's net-deficit formula
+   * (maintenance − eaten + burned) already adds back TODAY's real logged
+   * burn as a separate term — the standard "eat back your exercise
+   * calories" model. Folding a rolling average into maintenance on top of
+   * that would double-count activity on a typical day (average once here,
+   * then again for real via today's logged burn) and credit activity you
+   * didn't do on a day you logged nothing. avgActivityBurn is exposed
+   * purely as reference context for what a "typical" day looks like.
+   */
   maintenance: number;
 }
 
 /**
  * Full auto-maintenance calculation: BMR from the user's own body (latest
- * weigh-in, profile height/age/gender) plus a trailing average of their own
- * logged activity burn, instead of a fixed "activity level" multiplier or a
- * static manually-entered number. Recomputing this on every render means it
- * updates automatically as new weigh-ins and workouts are logged — nothing
- * to remember to re-enter.
+ * weigh-in, profile height/age/gender), instead of a fixed "activity level"
+ * multiplier or a static manually-entered number. Recomputing this on every
+ * render means it updates automatically as new weigh-ins are logged —
+ * nothing to remember to re-enter. Today's actual activity is credited
+ * separately and in real time by the caller (netDeficit's `+ totalBurned`),
+ * not assumed here from history.
  */
 export function computeAutoMaintenance(input: AutoMaintenanceInput): AutoMaintenanceResult {
   const bmr = calculateBMR(input.weightKg, input.heightCm, input.age, input.gender);
   const avgActivityBurn = averageDailyActivityBurn(input.activityBurnEntries, input.windowDays);
-  return { bmr, avgActivityBurn, maintenance: bmr + avgActivityBurn };
+  return { bmr, avgActivityBurn, maintenance: bmr };
 }
 
 /**

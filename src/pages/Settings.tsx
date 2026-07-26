@@ -723,21 +723,18 @@ export default function Settings() {
                       {autoMaintenance.isAvailable ? (
                         <>
                           <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                            Auto-calculated from your latest weigh-in and last 14 days of logged activity —
-                            updates on its own as those change.
+                            Auto-calculated from your latest weigh-in — updates on its own as it changes.
+                            Today's logged workouts/activity are credited on top in real time, not assumed here,
+                            so a rest day isn't charged for activity that didn't happen.
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
                             <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR (at rest)</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR = Maintenance</Typography>
                               <Typography variant="body1" fontWeight={700}>{autoMaintenance.bmr.toLocaleString()}</Typography>
                             </Box>
                             <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>+ Activity avg</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Typical activity/day</Typography>
                               <Typography variant="body1" fontWeight={700}>{autoMaintenance.avgActivityBurn.toLocaleString()}</Typography>
-                            </Box>
-                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>= Maintenance</Typography>
-                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.maintenance.toLocaleString()}</Typography>
                             </Box>
                           </Box>
                         </>

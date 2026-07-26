@@ -100,8 +100,9 @@ export function CalorieTrackerCompact() {
   const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
   // Maintenance baseline: explicit override, otherwise the body-based
-  // auto-calculation (BMR + trailing activity burn), otherwise the old
-  // circular fallback for users with no profile data yet to compute BMR from.
+  // auto-calculation (BMR alone — today's real activity is credited
+  // separately in real time via `+ totalBurned` below, not assumed here),
+  // otherwise the old circular fallback for users with no profile data yet.
   const maintenanceOverride = resolveMaintenanceOverride(preferences?.maintenance_calories);
   const maintenance = maintenanceOverride
     ?? (autoMaintenance.isAvailable ? autoMaintenance.maintenance : (dailyGoal + deficitTarget));
@@ -462,17 +463,17 @@ export function CalorieTrackerCompact() {
                   <div className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20">
                     <div className="flex items-baseline justify-between gap-2">
                       <div>
-                        <div className="text-[10px] text-muted-foreground tracking-wider">BMR</div>
+                        <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
                         <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
-                          {autoMaintenance.bmr.toLocaleString()}
+                          {maintenance.toLocaleString()}
+                          {maintenanceOverride != null && <span className="text-[10px] font-normal text-muted-foreground"> (override)</span>}
                         </div>
                         <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
                       </div>
                       <div className="text-right text-[10px] text-muted-foreground leading-relaxed">
-                        + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()}
+                        Typical activity {autoMaintenance.avgActivityBurn.toLocaleString()}/day
                         <br />
-                        = {maintenance.toLocaleString()} maintenance
-                        {maintenanceOverride != null && ' (override)'}
+                        credited when logged, not assumed
                       </div>
                     </div>
                   </div>
