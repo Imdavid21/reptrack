@@ -35,6 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
+import { resolveMaintenanceOverride } from '@/lib/metabolism';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { APP_VERSION } from '@/lib/version';
@@ -776,11 +777,14 @@ export default function Settings() {
                         size="small"
                         fullWidth
                         label="Manual override (optional)"
-                        value={preferences?.maintenance_calories ?? ''}
+                        value={resolveMaintenanceOverride(preferences?.maintenance_calories) ?? ''}
                         placeholder={autoMaintenance.isAvailable ? String(autoMaintenance.maintenance) : 'e.g. 2400'}
                         onChange={(e) => {
-                          const v = e.target.value === '' ? null : parseInt(e.target.value, 10);
-                          updatePreferences.mutate({ maintenance_calories: v } as any);
+                          // Treat 0 the same as clearing the field — 0 kcal maintenance
+                          // isn't a real override, and would otherwise silently zero out
+                          // NET on the dashboard instead of falling back to auto-calc.
+                          const parsed = e.target.value === '' ? null : parseInt(e.target.value, 10);
+                          updatePreferences.mutate({ maintenance_calories: resolveMaintenanceOverride(parsed) } as any);
                         }}
                         inputProps={{ min: 1000, max: 5000, step: 50 }}
                       />

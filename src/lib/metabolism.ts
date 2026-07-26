@@ -65,3 +65,14 @@ export function computeAutoMaintenance(input: AutoMaintenanceInput): AutoMainten
   const avgActivityBurn = averageDailyActivityBurn(input.activityBurnEntries, input.windowDays);
   return { bmr, avgActivityBurn, maintenance: bmr + avgActivityBurn };
 }
+
+/**
+ * A stored `maintenance_calories` of 0 must NOT be treated as a real
+ * override — 0 kcal maintenance is nonsensical and previously zeroed out
+ * the whole deficit calculation, since `??` only falls back to auto-calc on
+ * null/undefined, not 0. Anywhere the manual override is read, it should go
+ * through this instead of a raw `??`.
+ */
+export function resolveMaintenanceOverride(value: number | null | undefined): number | null {
+  return value && value > 0 ? value : null;
+}

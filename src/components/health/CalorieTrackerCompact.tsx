@@ -4,6 +4,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
+import { resolveMaintenanceOverride } from '@/lib/metabolism';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
@@ -101,7 +102,8 @@ export function CalorieTrackerCompact() {
   // Maintenance baseline: explicit override, otherwise the body-based
   // auto-calculation (BMR + trailing activity burn), otherwise the old
   // circular fallback for users with no profile data yet to compute BMR from.
-  const maintenance = preferences?.maintenance_calories
+  const maintenanceOverride = resolveMaintenanceOverride(preferences?.maintenance_calories);
+  const maintenance = maintenanceOverride
     ?? (autoMaintenance.isAvailable ? autoMaintenance.maintenance : (dailyGoal + deficitTarget));
   // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
   const cap = deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal;
@@ -458,7 +460,7 @@ export function CalorieTrackerCompact() {
                         + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()}
                         <br />
                         = {maintenance.toLocaleString()} maintenance
-                        {preferences?.maintenance_calories != null && ' (override)'}
+                        {maintenanceOverride != null && ' (override)'}
                       </div>
                     </div>
                   </div>

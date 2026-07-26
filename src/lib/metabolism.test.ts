@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBMR, averageDailyActivityBurn, computeAutoMaintenance } from './metabolism';
+import { calculateBMR, averageDailyActivityBurn, computeAutoMaintenance, resolveMaintenanceOverride } from './metabolism';
 
 describe('calculateBMR (Mifflin-St Jeor)', () => {
   it('matches the male formula: 10w + 6.25h - 5a + 5', () => {
@@ -56,5 +56,28 @@ describe('computeAutoMaintenance', () => {
     });
     expect(result.avgActivityBurn).toBe(0);
     expect(result.maintenance).toBe(result.bmr);
+  });
+});
+
+// Regression: a stored maintenance_calories of 0 (vs. null) was being read
+// with `??`, which only falls back on null/undefined — so 0 was treated as
+// a deliberate "maintenance is 0 kcal" override, zeroing out NET on the
+// dashboard entirely instead of falling back to the auto-calculation.
+describe('resolveMaintenanceOverride', () => {
+  it('treats a stored 0 as no override, not a real zero-calorie maintenance', () => {
+    expect(resolveMaintenanceOverride(0)).toBeNull();
+  });
+
+  it('treats null and undefined as no override', () => {
+    expect(resolveMaintenanceOverride(null)).toBeNull();
+    expect(resolveMaintenanceOverride(undefined)).toBeNull();
+  });
+
+  it('rejects a negative value', () => {
+    expect(resolveMaintenanceOverride(-100)).toBeNull();
+  });
+
+  it('passes through a real positive override unchanged', () => {
+    expect(resolveMaintenanceOverride(2400)).toBe(2400);
   });
 });
