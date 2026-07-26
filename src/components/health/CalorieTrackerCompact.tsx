@@ -461,21 +461,12 @@ export function CalorieTrackerCompact() {
                 </div>
                 {autoMaintenance.isAvailable && (
                   <div className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <div>
-                        <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
-                        <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
-                          {maintenance.toLocaleString()}
-                          {maintenanceOverride != null && <span className="text-[10px] font-normal text-muted-foreground"> (override)</span>}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
-                      </div>
-                      <div className="text-right text-[10px] text-muted-foreground leading-relaxed">
-                        Typical activity {autoMaintenance.avgActivityBurn.toLocaleString()}/day
-                        <br />
-                        credited when logged, not assumed
-                      </div>
+                    <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
+                    <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
+                      {maintenance.toLocaleString()}
+                      {maintenanceOverride != null && <span className="text-[10px] font-normal text-muted-foreground"> (override)</span>}
                     </div>
+                    <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
                   </div>
                 )}
               </div>

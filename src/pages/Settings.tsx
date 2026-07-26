@@ -727,15 +727,9 @@ export default function Settings() {
                             Today's logged workouts/activity are credited on top in real time, not assumed here,
                             so a rest day isn't charged for activity that didn't happen.
                           </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
-                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR = Maintenance</Typography>
-                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.bmr.toLocaleString()}</Typography>
-                            </Box>
-                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Typical activity/day</Typography>
-                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.avgActivityBurn.toLocaleString()}</Typography>
-                            </Box>
+                          <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center', mb: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR = Maintenance</Typography>
+                            <Typography variant="body1" fontWeight={700}>{autoMaintenance.bmr.toLocaleString()}</Typography>
                           </Box>
                         </>
                       ) : (

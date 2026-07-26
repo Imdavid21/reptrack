@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBMR, averageDailyActivityBurn, computeAutoMaintenance, resolveMaintenanceOverride } from './metabolism';
+import { calculateBMR, resolveMaintenanceOverride } from './metabolism';
 
 describe('calculateBMR (Mifflin-St Jeor)', () => {
   it('matches the male formula: 10w + 6.25h - 5a + 5', () => {
@@ -16,63 +16,6 @@ describe('calculateBMR (Mifflin-St Jeor)', () => {
 
   it('decreases with age, all else equal', () => {
     expect(calculateBMR(80, 180, 40, 'male')).toBeLessThan(calculateBMR(80, 180, 25, 'male'));
-  });
-});
-
-describe('averageDailyActivityBurn', () => {
-  it('divides by the full window, not just days with a logged entry — rest days pull the average down', () => {
-    // 2 active days totaling 1000 kcal, over a 10-day window (8 implicit rest days).
-    const entries = [{ date: '2026-07-01', calories: 600 }, { date: '2026-07-05', calories: 400 }];
-    expect(averageDailyActivityBurn(entries, 10)).toBe(100);
-  });
-
-  it('returns 0 for an empty window', () => {
-    expect(averageDailyActivityBurn([], 0)).toBe(0);
-  });
-
-  it('returns 0 when nothing was logged', () => {
-    expect(averageDailyActivityBurn([], 14)).toBe(0);
-  });
-});
-
-describe('computeAutoMaintenance', () => {
-  it('maintenance is BMR alone — avgActivityBurn is informational, not added in', () => {
-    const result = computeAutoMaintenance({
-      weightKg: 80,
-      heightCm: 180,
-      age: 30,
-      gender: 'male',
-      activityBurnEntries: [{ date: '2026-07-01', calories: 3500 }],
-      windowDays: 7,
-    });
-    expect(result.avgActivityBurn).toBe(500);
-    expect(result.maintenance).toBe(result.bmr);
-  });
-
-  it('falls back to pure BMR when no activity has been logged', () => {
-    const result = computeAutoMaintenance({
-      weightKg: 70, heightCm: 170, age: 25, gender: 'female',
-      activityBurnEntries: [], windowDays: 14,
-    });
-    expect(result.avgActivityBurn).toBe(0);
-    expect(result.maintenance).toBe(result.bmr);
-  });
-
-  // Regression: maintenance previously included the trailing activity
-  // average, which double-counted activity against the app's net-deficit
-  // formula (maintenance − eaten + burned) — that formula already adds
-  // TODAY's real logged burn back on top, so a typical-activity day got
-  // credited twice, and a rest day still got credit for activity that
-  // never happened. maintenance must stay BMR-only no matter how large the
-  // historical average is.
-  it('never folds a large activity average into maintenance', () => {
-    const result = computeAutoMaintenance({
-      weightKg: 90, heightCm: 185, age: 28, gender: 'male',
-      activityBurnEntries: [{ date: '2026-07-01', calories: 20000 }],
-      windowDays: 14,
-    });
-    expect(result.avgActivityBurn).toBeGreaterThan(0);
-    expect(result.maintenance).toBe(result.bmr);
   });
 });
 

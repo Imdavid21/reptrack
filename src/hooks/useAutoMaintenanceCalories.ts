@@ -1,12 +1,12 @@
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
-import { useDailyBurnTotals } from './useCalorieBurn';
 import { resolveBodyweightKg } from '@/lib/workoutCalories';
-import { computeAutoMaintenance, AutoMaintenanceResult } from '@/lib/metabolism';
+import { calculateBMR } from '@/lib/metabolism';
 
-const ACTIVITY_WINDOW_DAYS = 14;
-
-export interface AutoMaintenance extends AutoMaintenanceResult {
+export interface AutoMaintenance {
+  bmr: number;
+  /** Deliberately equal to bmr — see metabolism.ts for why activity isn't folded in here. */
+  maintenance: number;
   isLoading: boolean;
   /** False when profile is missing age/height/gender — nothing to compute from yet. */
   isAvailable: boolean;
@@ -14,11 +14,12 @@ export interface AutoMaintenance extends AutoMaintenanceResult {
 
 /**
  * The body-based, auto-updating replacement for Deficit Mode's manually-typed
- * "maintenance calories": BMR (Mifflin-St Jeor) from the user's own latest
- * logged bodyweight + profile age/height/gender, plus a trailing 14-day
- * average of their actual logged workout/activity burn — not a fixed
- * "activity level" guess. Recomputes on every render, so a new weigh-in or a
- * more/less active couple of weeks shifts the number automatically.
+ * "maintenance calories": BMR (Mifflin-St Jeor) from the user's own bodyweight
+ * (a trailing 30-day average, smoothing day-to-day water-weight noise) +
+ * profile age/height/gender. Recomputes on every render, so a new weigh-in
+ * shifts the number automatically — nothing to remember to re-enter. Today's
+ * actual activity is credited separately and in real time by the caller
+ * (netDeficit's `+ totalBurned`), not assumed here from history.
  */
 export function useAutoMaintenanceCalories(): AutoMaintenance {
   const { preferences, isLoading: prefsLoading } = useUserPreferences();
@@ -26,7 +27,6 @@ export function useAutoMaintenanceCalories(): AutoMaintenance {
     from: new Date(Date.now() - 30 * 86400000),
     to: new Date(),
   });
-  const { data: burnTotals = [], isLoading: burnsLoading } = useDailyBurnTotals(ACTIVITY_WINDOW_DAYS);
 
   const age = preferences?.age;
   const heightCm = preferences?.height_cm;
@@ -34,18 +34,11 @@ export function useAutoMaintenanceCalories(): AutoMaintenance {
   const isAvailable = !!age && !!heightCm && !!gender;
 
   if (!isAvailable) {
-    return { bmr: 0, avgActivityBurn: 0, maintenance: 0, isAvailable: false, isLoading: prefsLoading };
+    return { bmr: 0, maintenance: 0, isAvailable: false, isLoading: prefsLoading };
   }
 
   const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
-  const result = computeAutoMaintenance({
-    weightKg,
-    heightCm: heightCm as number,
-    age: age as number,
-    gender,
-    activityBurnEntries: burnTotals,
-    windowDays: ACTIVITY_WINDOW_DAYS,
-  });
+  const bmr = calculateBMR(weightKg, heightCm as number, age as number, gender);
 
-  return { ...result, isAvailable: true, isLoading: prefsLoading || metricsLoading || burnsLoading };
+  return { bmr, maintenance: bmr, isAvailable: true, isLoading: prefsLoading || metricsLoading };
 }
