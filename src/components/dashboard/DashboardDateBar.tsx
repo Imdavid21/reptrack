@@ -24,7 +24,7 @@ export function DashboardDateBar() {
           className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-energy-soft text-energy-ink text-[11px] font-semibold py-1.5"
         >
           <RotateCcw className="h-3 w-3" />
-          Back-dating — water, food, activity, sleep & weight save to this day. Tap to return to today.
+          Back-dating — tap to return to today
         </button>
       )}
     </div>
