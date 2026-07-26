@@ -49,6 +49,7 @@ export interface LifecycleRecord {
   carryover_in: number;
   carryover_out: number | null;
   status: 'active' | 'closed';
+  weak_points_targeted?: string[] | null;
 }
 
 // ── End-of-lifecycle trigger detection ───────────────────────────────────────

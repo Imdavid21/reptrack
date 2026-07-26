@@ -444,16 +444,27 @@ export function CalorieTrackerCompact() {
                   </div>
                   <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
+                {autoMaintenance.isAvailable && (
+                  <div className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground tracking-wider">BMR</div>
+                        <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
+                          {autoMaintenance.bmr.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
+                      </div>
+                      <div className="text-right text-[10px] text-muted-foreground leading-relaxed">
+                        + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()}
+                        <br />
+                        = {maintenance.toLocaleString()} maintenance
+                        {preferences?.maintenance_calories != null && ' (override)'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              {autoMaintenance.isAvailable && (
-                <div className="text-[10px] text-muted-foreground text-center mt-1.5">
-                  <span className="font-semibold text-foreground">BMR {autoMaintenance.bmr.toLocaleString()} kcal</span>
-                  {' '}(at rest) + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()} = {autoMaintenance.maintenance.toLocaleString()} auto maintenance
-                  {preferences?.maintenance_calories != null && (
-                    <> · using your {preferences.maintenance_calories.toLocaleString()} override for the deficit target</>
-                  )}
-                </div>
-              )}
+
               <div className="flex justify-center mt-1.5">
                 {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </div>
