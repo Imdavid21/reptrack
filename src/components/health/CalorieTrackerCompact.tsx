@@ -365,7 +365,11 @@ export function CalorieTrackerCompact() {
 
   const progressPercent = Math.min((totalCalories / cap) * 100, 100);
   const overCap = totalCalories > cap + totalBurned;
-  const hitDeficit = netDeficit >= deficitTarget;
+  // netDeficit = maintenance - eaten + burned, so with nothing logged yet
+  // today it equals the FULL maintenance figure — mathematically a "deficit,"
+  // but showing that as an already-hit green goal before a single meal is
+  // logged rewards not tracking rather than actually hitting the target.
+  const hitDeficit = netDeficit >= deficitTarget && meals.length > 0;
   // Workout calories are calculated from duration when no burn entry was persisted yet.
   const hasPersistedWorkoutBurn = burns.some(b => b.source === 'workout');
   const showCalculatedWorkout = !hasPersistedWorkoutBurn && !!todayWorkout && todayWorkout.calculatedCalories > 0;
