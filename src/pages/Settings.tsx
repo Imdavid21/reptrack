@@ -594,32 +594,6 @@ export default function Settings() {
                   </Box>
                 </Box>
 
-                {/* Weight Unit */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                    Weight Unit
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    {(['kg', 'lbs'] as const).map(unit => {
-                      const current = preferences?.units_system === 'imperial' ? 'lbs' : 'kg';
-                      return (
-                        <button
-                          key={unit}
-                          onClick={() => updatePreferences.mutate({ units_system: unit === 'lbs' ? 'imperial' : 'metric' })}
-                          className={cn(
-                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
-                            current === unit
-                              ? 'bg-foreground text-background'
-                              : 'bg-muted text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {unit.toUpperCase()}
-                        </button>
-                      );
-                    })}
-                  </Box>
-                </Box>
-
                 {/* Training Focus */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                   <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
