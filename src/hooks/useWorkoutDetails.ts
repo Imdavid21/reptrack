@@ -3,6 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { WorkoutExercise } from './useWorkouts';
 
+// Editing a set from here (History → "tap any set to edit weight & reps") is
+// the same underlying `exercises` row every PR/volume/progression view reads
+// — but this hook previously only invalidated its own workout-details/
+// workouts caches, so correcting an already-logged set (e.g. fixing a typo'd
+// weight, or adding the real heaviest set after the fact) left PR badges,
+// muscle-balance volume, and progression charts silently showing stale data
+// until something unrelated (like starting a brand-new workout) happened to
+// refetch them.
+function invalidateSetDerivedQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+  // 'exerciseSets' is the one real query key behind volume charts, exercise
+  // progression, and muscle balance — NOT 'volumeData'/'exerciseProgression',
+  // which read like plausible names but match no actual useQuery anywhere in
+  // the app (see the same dead keys in useWorkouts.ts/useOfflineSync.ts).
+  queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+  // 'lastUsedWeights' has a 5-minute staleTime and was never invalidated by
+  // anything — editing a set here could leave "last used" prefills and next-
+  // session progression suggestions showing pre-edit numbers for up to 5min.
+  queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
+}
+
 export interface WorkoutWithDetails {
   id: string;
   user_id: string;
@@ -100,6 +121,7 @@ export function useWorkoutDetails(workoutId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      invalidateSetDerivedQueries(queryClient);
     },
   });
 
@@ -129,6 +151,7 @@ export function useWorkoutDetails(workoutId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      invalidateSetDerivedQueries(queryClient);
     },
   });
 
@@ -144,6 +167,7 @@ export function useWorkoutDetails(workoutId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      invalidateSetDerivedQueries(queryClient);
     },
   });
 

@@ -256,8 +256,17 @@ export function useWorkouts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
-      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
-      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      // 'exerciseSets' is the one real query key behind volume charts,
+      // exercise progression, and muscle balance — the 'volumeData'/
+      // 'exerciseProgression' names this used to invalidate read like
+      // plausible query keys but match no actual useQuery anywhere in the
+      // app, so those charts weren't reactively refreshing on a new/deleted
+      // workout at all.
+      queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // used" prefills and next-session progression suggestions could show
+      // pre-this-workout numbers for up to 5 minutes after logging.
+      queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
@@ -313,8 +322,17 @@ export function useWorkouts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
-      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
-      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      // 'exerciseSets' is the one real query key behind volume charts,
+      // exercise progression, and muscle balance — the 'volumeData'/
+      // 'exerciseProgression' names this used to invalidate read like
+      // plausible query keys but match no actual useQuery anywhere in the
+      // app, so those charts weren't reactively refreshing on a new/deleted
+      // workout at all.
+      queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // used" prefills and next-session progression suggestions could show
+      // pre-this-workout numbers for up to 5 minutes after logging.
+      queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });

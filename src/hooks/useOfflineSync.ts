@@ -139,13 +139,15 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
-      queryClient.invalidateQueries({ queryKey: ['volumeData'] });
-      queryClient.invalidateQueries({ queryKey: ['exerciseProgression'] });
+      // 'exerciseSets' is the real key behind volume/progression/muscle-
+      // balance views — 'volumeData'/'exerciseProgression' match no actual
+      // query anywhere in the app (see the same dead keys in useWorkouts.ts).
+      queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+      queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
       queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['dailyCalories'] });
     } catch (err) {
       console.error('[OfflineSync] Queue processing error:', err);
     } finally {

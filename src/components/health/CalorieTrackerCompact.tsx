@@ -292,14 +292,22 @@ export function CalorieTrackerCompact() {
     // analysis-level totals — some responses fill total_protein/total_sugar/etc
     // without per-item breakdowns, and summing only per-food values silently
     // saved those macros as nothing.
-    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') =>
-      validFoods.reduce((s, f) => s + (f[key] || 0), 0);
-    const totalProtein = sumFood('protein') || analysis?.total_protein || 0;
-    const totalCarbs = sumFood('carbs') || analysis?.total_carbs || 0;
-    const totalFat = sumFood('fat') || analysis?.total_fat || 0;
-    const totalFiber = sumFood('fiber') || analysis?.total_fiber || 0;
-    const totalSugar = sumFood('sugar') || analysis?.total_sugar || 0;
-    const totalSodium = sumFood('sodium') || analysis?.total_sodium || 0;
+    //
+    // Falls back on "no item specified this field" (every value undefined),
+    // NOT on "the sum came out to 0" — a black-coffee-only entry can have a
+    // real, correct 0g protein total, and treating that 0 as missing would
+    // silently overwrite it with an unrelated analysis-level total instead.
+    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') => {
+      const anySpecified = validFoods.some(f => f[key] != null);
+      const summed = validFoods.reduce((s, f) => s + (f[key] || 0), 0);
+      return anySpecified ? summed : undefined;
+    };
+    const totalProtein = sumFood('protein') ?? analysis?.total_protein ?? 0;
+    const totalCarbs = sumFood('carbs') ?? analysis?.total_carbs ?? 0;
+    const totalFat = sumFood('fat') ?? analysis?.total_fat ?? 0;
+    const totalFiber = sumFood('fiber') ?? analysis?.total_fiber ?? 0;
+    const totalSugar = sumFood('sugar') ?? analysis?.total_sugar ?? 0;
+    const totalSodium = sumFood('sodium') ?? analysis?.total_sodium ?? 0;
 
     try {
       await addMeal({

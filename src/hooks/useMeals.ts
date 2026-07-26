@@ -85,7 +85,6 @@ export function useMeals(date?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['dailyCalories'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
     },
   });
@@ -106,7 +105,6 @@ export function useMeals(date?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['dailyCalories'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
     },
   });
@@ -124,7 +122,6 @@ export function useMeals(date?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['dailyCalories'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
     },
   });
