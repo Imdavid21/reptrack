@@ -12,6 +12,7 @@ import { Droplets, Dumbbell, Moon, Target, ArrowRight, Check } from 'lucide-reac
 import { haptic } from '@/lib/haptics';
 import { localDateKey } from '@/lib/dateKey';
 import { TrainingSplit } from '@/lib/splitTemplates';
+import { calculateBMR } from '@/lib/metabolism';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -56,14 +57,10 @@ function suggestCalories(
 ): number {
   if (!weight || !height || !age) return 2000;
 
-  // Mifflin-St Jeor
-  let bmr: number;
-  if (gender === 'female') {
-    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-  } else {
-    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-  }
-
+  // One-time estimate before any activity history exists, so this still uses
+  // a fixed "moderate activity" multiplier rather than the real trailing
+  // average useAutoMaintenanceCalories computes once there's data to average.
+  const bmr = calculateBMR(weight, height, age, gender);
   const tdee = bmr * 1.55; // moderate activity
 
   if (goal === 'lose') return Math.round((tdee - 500) / 50) * 50;

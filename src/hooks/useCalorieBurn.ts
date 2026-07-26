@@ -5,6 +5,7 @@ import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { getWorkoutMetCategory, WORKOUT_MET_VALUES, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { calculateBMR as sharedCalculateBMR } from '@/lib/metabolism';
 
 interface CalorieBurn {
   id: string;
@@ -149,14 +150,10 @@ export function useCalorieBurn(date?: Date) {
     return Math.round(steps * caloriesPerStep);
   };
 
-  // BMR calculation (Mifflin-St Jeor)
-  const calculateBMR = (age: number, heightCm: number, gender: 'male' | 'female') => {
-    if (gender === 'male') {
-      return Math.round(10 * weightKg + 6.25 * heightCm - 5 * age + 5);
-    } else {
-      return Math.round(10 * weightKg + 6.25 * heightCm - 5 * age - 161);
-    }
-  };
+  // BMR calculation (Mifflin-St Jeor) — see src/lib/metabolism.ts, the shared
+  // source of truth (also used by useAutoMaintenanceCalories and onboarding).
+  const calculateBMR = (age: number, heightCm: number, gender: 'male' | 'female') =>
+    sharedCalculateBMR(weightKg, heightCm, age, gender);
 
   // Calculate today's workout calories across all workouts on the day
   const workoutSummaries = todayWorkouts.map((workout) => {

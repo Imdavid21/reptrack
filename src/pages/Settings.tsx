@@ -34,6 +34,7 @@ import { AnimatedPage } from '@/components/layout/AnimatedPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
 import { toast } from '@/lib/toast';
 import { Logo } from '@/components/layout/Logo';
 import { APP_VERSION } from '@/lib/version';
@@ -49,6 +50,7 @@ export default function Settings() {
   const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+  const autoMaintenance = useAutoMaintenanceCalories();
 
   // All sections collapsed by default
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -743,15 +745,39 @@ export default function Settings() {
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
                         Maintenance Calories
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                        Your daily kcal at current weight (optional). Used to compute net deficit.
-                      </Typography>
+                      {autoMaintenance.isAvailable ? (
+                        <>
+                          <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                            Auto-calculated from your latest weigh-in and last 14 days of logged activity —
+                            updates on its own as those change.
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR (at rest)</Typography>
+                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.bmr.toLocaleString()}</Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>+ Activity avg</Typography>
+                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.avgActivityBurn.toLocaleString()}</Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>= Maintenance</Typography>
+                              <Typography variant="body1" fontWeight={700}>{autoMaintenance.maintenance.toLocaleString()}</Typography>
+                            </Box>
+                          </Box>
+                        </>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                          Add your age, height, and gender in Account above to auto-calculate this from your body.
+                        </Typography>
+                      )}
                       <TextField
                         type="number"
                         size="small"
                         fullWidth
+                        label="Manual override (optional)"
                         value={preferences?.maintenance_calories ?? ''}
-                        placeholder="e.g. 2400"
+                        placeholder={autoMaintenance.isAvailable ? String(autoMaintenance.maintenance) : 'e.g. 2400'}
                         onChange={(e) => {
                           const v = e.target.value === '' ? null : parseInt(e.target.value, 10);
                           updatePreferences.mutate({ maintenance_calories: v } as any);

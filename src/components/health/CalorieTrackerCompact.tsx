@@ -3,6 +3,7 @@ import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
+import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
@@ -69,6 +70,7 @@ export function CalorieTrackerCompact() {
   const { preferences } = useUserPreferences();
   const { setGoal } = useGoalHistory();
   const { totalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
+  const autoMaintenance = useAutoMaintenanceCalories();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -96,8 +98,11 @@ export function CalorieTrackerCompact() {
   const deficitMode = preferences?.deficit_mode_enabled ?? false;
   const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
-  // Maintenance baseline: explicit override, otherwise infer (cap + target)
-  const maintenance = preferences?.maintenance_calories ?? (dailyGoal + deficitTarget);
+  // Maintenance baseline: explicit override, otherwise the body-based
+  // auto-calculation (BMR + trailing activity burn), otherwise the old
+  // circular fallback for users with no profile data yet to compute BMR from.
+  const maintenance = preferences?.maintenance_calories
+    ?? (autoMaintenance.isAvailable ? autoMaintenance.maintenance : (dailyGoal + deficitTarget));
   // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
   const cap = deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal;
   const proteinGoal = preferences?.daily_protein_goal ?? 180;
@@ -440,6 +445,11 @@ export function CalorieTrackerCompact() {
                   <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
               </div>
+              {!preferences?.maintenance_calories && autoMaintenance.isAvailable && (
+                <div className="text-[10px] text-muted-foreground text-center mt-1.5">
+                  BMR {autoMaintenance.bmr.toLocaleString()} + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()} = {maintenance.toLocaleString()} maintenance
+                </div>
+              )}
               <div className="flex justify-center mt-1.5">
                 {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </div>
