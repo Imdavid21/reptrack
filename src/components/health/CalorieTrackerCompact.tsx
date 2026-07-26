@@ -445,9 +445,13 @@ export function CalorieTrackerCompact() {
                   <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
               </div>
-              {!preferences?.maintenance_calories && autoMaintenance.isAvailable && (
+              {autoMaintenance.isAvailable && (
                 <div className="text-[10px] text-muted-foreground text-center mt-1.5">
-                  BMR {autoMaintenance.bmr.toLocaleString()} + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()} = {maintenance.toLocaleString()} maintenance
+                  <span className="font-semibold text-foreground">BMR {autoMaintenance.bmr.toLocaleString()} kcal</span>
+                  {' '}(at rest) + activity avg {autoMaintenance.avgActivityBurn.toLocaleString()} = {autoMaintenance.maintenance.toLocaleString()} auto maintenance
+                  {preferences?.maintenance_calories != null && (
+                    <> · using your {preferences.maintenance_calories.toLocaleString()} override for the deficit target</>
+                  )}
                 </div>
               )}
               <div className="flex justify-center mt-1.5">
