@@ -47,6 +47,8 @@ export interface UserPreferences {
   auto_rest_timer: boolean;
   /** Adaptive Mode (Infinite Progression method) — see src/lib/adaptiveEngine.ts. */
   adaptive_mode_enabled: boolean;
+  /** Whether the BMR/maintenance breakdown tile shows on the dashboard's deficit card. */
+  show_bmr_on_dashboard: boolean;
   created_at: string;
   updated_at: string;
 }

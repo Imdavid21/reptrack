@@ -87,9 +87,6 @@ export default function Settings() {
     }
   }, [preferences]);
 
-  // Advanced section visibility
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -755,6 +752,20 @@ export default function Settings() {
                       />
                     </Box>
 
+                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ pr: 2 }}>
+                        <Typography variant="body2" fontWeight={600}>Show BMR on dashboard</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Display the BMR/maintenance breakdown tile on today's deficit card
+                        </Typography>
+                      </Box>
+                      <Switch
+                        checked={preferences?.show_bmr_on_dashboard ?? true}
+                        onChange={(e) => updatePreferences.mutate({ show_bmr_on_dashboard: e.target.checked } as any)}
+                        color="primary"
+                      />
+                    </Box>
+
                     <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
                         Daily Deficit Target
@@ -993,50 +1004,11 @@ export default function Settings() {
           </MuiCard>
 
 
-          {/* ============ ADVANCED SECTION ============ */}
-          <Box
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              py: 2,
-              cursor: 'pointer',
-              color: 'text.secondary',
-              '&:hover': { color: 'text.primary' },
-              transition: 'color 0.2s',
-            }}
-          >
-            <Typography variant="body2" sx={{ fontSize: '0.75rem', letterSpacing: 1 }}>
-              {showAdvanced ? 'HIDE ADVANCED OPTIONS' : 'SHOW ADVANCED OPTIONS'}
-            </Typography>
-            <ChevronDown
-              size={14}
-              style={{
-                transform: showAdvanced ? 'rotate(180deg)' : 'none',
-                transition: 'transform 0.2s',
-              }}
-            />
-          </Box>
-
-          <Collapse in={showAdvanced}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography
-                variant="overline"
-                sx={{ color: 'text.secondary', letterSpacing: 1, mb: -0.5 }}
-              >
-                DEVELOPER & INTEGRATIONS
-              </Typography>
-
-              {/* Data Management Section */}
-              <DataManagementSection
-                isExpanded={expandedSections.data || false}
-                onToggle={() => toggleSection('data')}
-              />
-
-            </Box>
-          </Collapse>
+          {/* Data Management Section */}
+          <DataManagementSection
+            isExpanded={expandedSections.data || false}
+            onToggle={() => toggleSection('data')}
+          />
 
           {/* Sign Out */}
           <MuiCard>

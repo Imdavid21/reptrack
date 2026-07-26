@@ -459,7 +459,7 @@ export function CalorieTrackerCompact() {
                   </div>
                   <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
-                {autoMaintenance.isAvailable && (
+                {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <div className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20">
                     <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
                     <div className="text-xl font-bold tabular-nums leading-tight text-foreground">

@@ -36,6 +36,9 @@ const TABLE_LABELS: Record<DataTable, string> = {
   habits: 'Habits',
   custom_routines: 'Custom Routines',
   user_preferences: 'User Preferences',
+  goal_history: 'Goal History',
+  adaptive_lifecycles: 'Adaptive Mode Lifecycles',
+  adaptive_session_logs: 'Adaptive Mode Sessions',
 };
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {
@@ -55,6 +58,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
     'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
     'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
+    'goal_history', 'adaptive_lifecycles', 'adaptive_session_logs',
   ]);
   const [importResult, setImportResult] = useState<{
     success: boolean;
