@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { bmrBurnedSoFarToday } from '@/lib/metabolism';
+import { bmrBurnedSoFarTodayPrecise } from '@/lib/metabolism';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -26,11 +26,15 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
 
   useEffect(() => {
     if (!expanded || !isToday) return;
-    const id = setInterval(() => setNow(new Date()), 1000);
+    // A ~1700 kcal/day BMR only moves ~0.02 kcal/sec — ticking the clock
+    // every second but displaying whole numbers would show the same value
+    // for 50+ seconds at a time and look frozen. 100ms + 2-decimal display
+    // (bmrBurnedSoFarTodayPrecise) actually looks live.
+    const id = setInterval(() => setNow(new Date()), 100);
     return () => clearInterval(id);
   }, [expanded, isToday]);
 
-  const restBurnedSoFar = isToday ? bmrBurnedSoFarToday(bmr, now) : bmr;
+  const restBurnedSoFar = isToday ? bmrBurnedSoFarTodayPrecise(bmr, now) : bmr;
   const totalBurnedSoFar = restBurnedSoFar + totalBurnedToday;
 
   // A plain div, not a <button>: this tile lives inside CalorieTrackerCompact's
@@ -70,7 +74,7 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
           {isToday ? (
             <div className="flex items-baseline justify-between">
               <span className="text-[11px] text-muted-foreground">Burned at rest so far today</span>
-              <span className="text-sm font-bold tabular-nums text-foreground">{restBurnedSoFar.toLocaleString()} kcal</span>
+              <span className="text-sm font-bold tabular-nums text-foreground">{restBurnedSoFar.toFixed(2)} kcal</span>
             </div>
           ) : (
             <div className="text-[11px] text-muted-foreground">
@@ -86,7 +90,7 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
           {isToday && totalBurnedToday > 0 && (
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <span className="text-[11px] font-semibold text-foreground">Total burned so far</span>
-              <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedSoFar.toLocaleString()} kcal</span>
+              <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedSoFar.toFixed(2)} kcal</span>
             </div>
           )}
         </div>

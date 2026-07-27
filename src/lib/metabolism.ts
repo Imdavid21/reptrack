@@ -23,19 +23,32 @@ export function calculateBMR(weightKg: number, heightCm: number, age: number, ge
   return Math.round(gender === 'female' ? base - 161 : base + 5);
 }
 
+/** How much of today (0–1) has elapsed as of `now`. */
+export function fractionOfDayElapsed(now: Date = new Date()): number {
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const msElapsed = now.getTime() - startOfDay;
+  return Math.min(1, Math.max(0, msElapsed / (24 * 60 * 60 * 1000)));
+}
+
 /**
  * Resting calories burned so far today, at the given moment — BMR prorated
  * by how much of the day has elapsed. BMR is a per-day rate; a lifter
  * checking in at 9am has only "spent" roughly 9/24 of it so far, not the
  * full daily figure. Purely a display number (today's totals elsewhere
- * still use the full daily BMR as the maintenance baseline) — this is what
- * powers a live "burned right now" counter on the dashboard.
+ * still use the full daily BMR as the maintenance baseline).
  */
 export function bmrBurnedSoFarToday(bmr: number, now: Date = new Date()): number {
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const msElapsed = now.getTime() - startOfDay;
-  const fractionOfDay = Math.min(1, Math.max(0, msElapsed / (24 * 60 * 60 * 1000)));
-  return Math.round(bmr * fractionOfDay);
+  return Math.round(bmr * fractionOfDayElapsed(now));
+}
+
+/**
+ * Same as bmrBurnedSoFarToday but unrounded, to two decimal places — a
+ * ~1700 kcal/day BMR only moves ~0.02 kcal per second, so a whole-number
+ * "live" counter barely changes for a minute at a time and looks frozen.
+ * This is what actually powers a visibly ticking counter.
+ */
+export function bmrBurnedSoFarTodayPrecise(bmr: number, now: Date = new Date()): number {
+  return Math.round(bmr * fractionOfDayElapsed(now) * 100) / 100;
 }
 
 /**

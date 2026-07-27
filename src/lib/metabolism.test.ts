@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBMR, resolveMaintenanceOverride, bmrBurnedSoFarToday } from './metabolism';
+import { calculateBMR, resolveMaintenanceOverride, bmrBurnedSoFarToday, bmrBurnedSoFarTodayPrecise } from './metabolism';
 
 describe('calculateBMR (Mifflin-St Jeor)', () => {
   it('matches the male formula: 10w + 6.25h - 5a + 5', () => {
@@ -36,6 +36,22 @@ describe('bmrBurnedSoFarToday', () => {
     const morning = bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 8, 0, 0));
     const evening = bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 20, 0, 0));
     expect(evening).toBeGreaterThan(morning);
+  });
+});
+
+describe('bmrBurnedSoFarTodayPrecise', () => {
+  // The whole point of the "precise" variant: a whole-kcal counter would
+  // show the exact same number for ~50+ seconds at a time on a ~1700 kcal/
+  // day BMR and look frozen even though it's re-rendering every second.
+  it('changes value one second later, unlike the rounded whole-kcal version', () => {
+    const t1 = new Date(2026, 5, 1, 12, 0, 0);
+    const t2 = new Date(2026, 5, 1, 12, 0, 1);
+    expect(bmrBurnedSoFarTodayPrecise(1700, t2)).toBeGreaterThan(bmrBurnedSoFarTodayPrecise(1700, t1));
+  });
+
+  it('rounds to 2 decimal places', () => {
+    const value = bmrBurnedSoFarTodayPrecise(1700, new Date(2026, 5, 1, 13, 17, 42));
+    expect(Number.isInteger(value * 100)).toBe(true);
   });
 });
 
