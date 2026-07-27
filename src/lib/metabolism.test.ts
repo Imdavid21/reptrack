@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBMR, resolveMaintenanceOverride } from './metabolism';
+import { calculateBMR, resolveMaintenanceOverride, bmrBurnedSoFarToday } from './metabolism';
 
 describe('calculateBMR (Mifflin-St Jeor)', () => {
   it('matches the male formula: 10w + 6.25h - 5a + 5', () => {
@@ -16,6 +16,26 @@ describe('calculateBMR (Mifflin-St Jeor)', () => {
 
   it('decreases with age, all else equal', () => {
     expect(calculateBMR(80, 180, 40, 'male')).toBeLessThan(calculateBMR(80, 180, 25, 'male'));
+  });
+});
+
+describe('bmrBurnedSoFarToday', () => {
+  it('is 0 right at midnight', () => {
+    expect(bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 0, 0, 0))).toBe(0);
+  });
+
+  it('is roughly half the daily BMR at noon', () => {
+    expect(bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 12, 0, 0))).toBe(1200);
+  });
+
+  it('is the full daily BMR right at the end of the day', () => {
+    expect(bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 23, 59, 59, 999))).toBeCloseTo(2400, -1);
+  });
+
+  it('increases monotonically through the day', () => {
+    const morning = bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 8, 0, 0));
+    const evening = bmrBurnedSoFarToday(2400, new Date(2026, 5, 1, 20, 0, 0));
+    expect(evening).toBeGreaterThan(morning);
   });
 });
 

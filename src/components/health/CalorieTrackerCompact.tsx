@@ -8,6 +8,7 @@ import { resolveMaintenanceOverride } from '@/lib/metabolism';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
+import { BmrBreakdownTile } from './BmrBreakdownTile';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Utensils, Camera, Plus, Loader2, Check, X, 
@@ -460,14 +461,14 @@ export function CalorieTrackerCompact() {
                   <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
-                  <div className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20">
-                    <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
-                    <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
-                      {maintenance.toLocaleString()}
-                      {maintenanceOverride != null && <span className="text-[10px] font-normal text-muted-foreground"> (override)</span>}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
-                  </div>
+                  <BmrBreakdownTile
+                    bmr={autoMaintenance.bmr}
+                    maintenance={maintenance}
+                    isOverride={maintenanceOverride != null}
+                    inputs={autoMaintenance.inputs}
+                    totalBurnedToday={viewingToday ? totalBurned : 0}
+                    isToday={viewingToday}
+                  />
                 )}
               </div>
 
