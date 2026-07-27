@@ -7,7 +7,6 @@ interface Props {
   bmr: number;
   maintenance: number;
   isOverride: boolean;
-  inputs: { weightKg: number; heightCm: number; age: number; gender: string } | null;
   /** Today's real logged activity/workout burn — only meaningful when viewing today. */
   totalBurnedToday: number;
   /** False when viewing a back-dated day — the live "so far" ticker only makes sense for today. */
@@ -17,11 +16,11 @@ interface Props {
 /**
  * Tappable BMR tile: collapsed it's the same "BMR = MAINTENANCE" summary as
  * before, expanded it shows a live "burned so far today" counter (BMR
- * prorated by how much of the day has elapsed, ticking every second) plus
- * the exact body inputs the number came from — so "why is my maintenance
- * this number" has a real, current answer instead of just a static total.
+ * prorated by how much of the day has elapsed, ticking every second) — so
+ * "how much have I actually burned" has a real, current answer instead of
+ * just a static daily total.
  */
-export function BmrBreakdownTile({ bmr, maintenance, isOverride, inputs, totalBurnedToday, isToday }: Props) {
+export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToday, isToday }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -88,17 +87,6 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, inputs, totalBu
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <span className="text-[11px] font-semibold text-foreground">Total burned so far</span>
               <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedSoFar.toLocaleString()} kcal</span>
-            </div>
-          )}
-          {inputs && (
-            <div className="pt-2 border-t border-border">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">From your body</div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                <div>Weight: <span className="text-foreground font-medium">{inputs.weightKg.toFixed(1)} kg</span></div>
-                <div>Height: <span className="text-foreground font-medium">{inputs.heightCm} cm</span></div>
-                <div>Age: <span className="text-foreground font-medium">{inputs.age}</span></div>
-                <div>Gender: <span className="text-foreground font-medium capitalize">{inputs.gender}</span></div>
-              </div>
             </div>
           )}
         </div>

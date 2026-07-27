@@ -465,7 +465,6 @@ export function CalorieTrackerCompact() {
                     bmr={autoMaintenance.bmr}
                     maintenance={maintenance}
                     isOverride={maintenanceOverride != null}
-                    inputs={autoMaintenance.inputs}
                     totalBurnedToday={viewingToday ? totalBurned : 0}
                     isToday={viewingToday}
                   />

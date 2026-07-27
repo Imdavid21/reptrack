@@ -10,13 +10,6 @@ export interface AutoMaintenance {
   isLoading: boolean;
   /** False when profile is missing age/height/gender — nothing to compute from yet. */
   isAvailable: boolean;
-  /** The exact inputs the BMR figure was calculated from, for a "why this number" breakdown. */
-  inputs: {
-    weightKg: number;
-    heightCm: number;
-    age: number;
-    gender: string;
-  } | null;
 }
 
 /**
@@ -41,17 +34,11 @@ export function useAutoMaintenanceCalories(): AutoMaintenance {
   const isAvailable = !!age && !!heightCm && !!gender;
 
   if (!isAvailable) {
-    return { bmr: 0, maintenance: 0, isAvailable: false, isLoading: prefsLoading, inputs: null };
+    return { bmr: 0, maintenance: 0, isAvailable: false, isLoading: prefsLoading };
   }
 
   const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
   const bmr = calculateBMR(weightKg, heightCm as number, age as number, gender);
 
-  return {
-    bmr,
-    maintenance: bmr,
-    isAvailable: true,
-    isLoading: prefsLoading || metricsLoading,
-    inputs: { weightKg, heightCm: heightCm as number, age: age as number, gender: gender as string },
-  };
+  return { bmr, maintenance: bmr, isAvailable: true, isLoading: prefsLoading || metricsLoading };
 }
