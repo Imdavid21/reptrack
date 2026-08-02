@@ -132,6 +132,26 @@ export function CalorieTrackerCompact() {
     [editableFoods]
   );
 
+  /** Macro totals for what's about to be logged — shown in the confirm step and
+   *  saved verbatim, so the preview and the stored row can't disagree. */
+  const pendingMacros = useMemo(() => {
+    const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
+    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') => {
+      const anySpecified = valid.some(f => f[key] != null);
+      return anySpecified ? valid.reduce((s, f) => s + (Number(f[key]) || 0), 0) : undefined;
+    };
+    return {
+      protein: sumFood('protein') ?? analysis?.total_protein ?? 0,
+      carbs: sumFood('carbs') ?? analysis?.total_carbs ?? 0,
+      fat: sumFood('fat') ?? analysis?.total_fat ?? 0,
+      fiber: sumFood('fiber') ?? analysis?.total_fiber ?? 0,
+      sugar: sumFood('sugar') ?? analysis?.total_sugar ?? 0,
+      sodium: sumFood('sodium') ?? analysis?.total_sodium ?? 0,
+    };
+  }, [editableFoods, analysis]);
+
+
+
   const resetDialogState = () => {
     setAnalysis(null);
     setEditableFoods([]);
