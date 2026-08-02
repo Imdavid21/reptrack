@@ -116,6 +116,22 @@ export function CalorieTrackerCompact() {
   );
   const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
+  /** Day totals for every tracked macro, used by the protein breakdown sheet. */
+  const dayMacros = useMemo(() => {
+    const sum = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') =>
+      meals.reduce((s, m) => s + Number((m as any)[key] || 0), 0);
+    return {
+      protein: sum('protein'),
+      carbs: sum('carbs'),
+      fat: sum('fat'),
+      fiber: sum('fiber'),
+      sugar: sum('sugar'),
+      sodium: sum('sodium'),
+    };
+  }, [meals]);
+  const [showProteinBreakdown, setShowProteinBreakdown] = useState(false);
+
+
   useEffect(() => {
     if (isEditingGoal) setEditGoal(dailyGoal);
   }, [isEditingGoal, dailyGoal]);
