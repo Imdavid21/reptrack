@@ -201,6 +201,15 @@ export function CalorieTrackerCompact() {
       const merged: FoodAnalysis = {
         foods: mergedFoods,
         total_calories: mergedFoods.reduce((s, f) => s + (f.calories || 0), 0),
+        // Analysis-level totals are summed across images too — dropping them
+        // meant sugar/sodium (often only returned at the total level) silently
+        // saved as nothing.
+        total_protein: sumTotals('total_protein'),
+        total_carbs: sumTotals('total_carbs'),
+        total_fat: sumTotals('total_fat'),
+        total_fiber: sumTotals('total_fiber'),
+        total_sugar: sumTotals('total_sugar'),
+        total_sodium: sumTotals('total_sodium'),
         confidence: confSum / files.length,
         description: descriptions.join(' + '),
         food_quality: qualitySeen,
