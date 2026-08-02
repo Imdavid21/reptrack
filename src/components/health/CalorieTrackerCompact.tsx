@@ -180,6 +180,7 @@ export function CalorieTrackerCompact() {
 
     try {
       const mergedFoods: FoodAnalysis['foods'] = [];
+      const perImage: FoodAnalysis[] = [];
       let firstUrl: string | null = null;
       let confSum = 0;
       const descriptions: string[] = [];
@@ -191,11 +192,19 @@ export function CalorieTrackerCompact() {
         }
         const result = await analyzeFoodImage(files[i], user.id, setAnalysisStep, hint);
         if (!firstUrl) firstUrl = result.publicUrl;
+        perImage.push(result.analysis);
         mergedFoods.push(...result.analysis.foods);
         confSum += result.analysis.confidence || 0;
         if (result.analysis.description) descriptions.push(result.analysis.description);
         if (!qualitySeen && result.analysis.food_quality) qualitySeen = result.analysis.food_quality;
       }
+
+      const sumTotals = (key: 'total_protein' | 'total_carbs' | 'total_fat' | 'total_fiber' | 'total_sugar' | 'total_sodium') => {
+        const anySpecified = perImage.some(a => a[key] != null);
+        return anySpecified ? perImage.reduce((s, a) => s + (a[key] || 0), 0) : undefined;
+      };
+
+
 
       setUploadedPhotoUrl(firstUrl);
       const merged: FoodAnalysis = {
