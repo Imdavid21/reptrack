@@ -122,7 +122,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                         sodium: { type: "number", description: "Sodium in milligrams" }
                       },
-                      required: ["name", "portion", "calories"]
+                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
                     }
                   },
                   total_calories: { type: "number" },
@@ -140,7 +140,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   },
                   confidence: { type: "number", description: "Confidence score 0-1" }
                 },
-                required: ["foods", "total_calories", "description", "confidence"]
+                required: ["foods", "total_calories", "total_protein", "total_carbs", "total_fat", "total_fiber", "total_sugar", "total_sodium", "description", "confidence"]
               }
             }
           }
