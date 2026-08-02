@@ -116,22 +116,6 @@ export function CalorieTrackerCompact() {
   );
   const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
-  /** Day totals for every tracked macro, used by the protein breakdown sheet. */
-  const dayMacros = useMemo(() => {
-    const sum = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') =>
-      meals.reduce((s, m) => s + Number((m as any)[key] || 0), 0);
-    return {
-      protein: sum('protein'),
-      carbs: sum('carbs'),
-      fat: sum('fat'),
-      fiber: sum('fiber'),
-      sugar: sum('sugar'),
-      sodium: sum('sodium'),
-    };
-  }, [meals]);
-  const [showProteinBreakdown, setShowProteinBreakdown] = useState(false);
-
-
   useEffect(() => {
     if (isEditingGoal) setEditGoal(dailyGoal);
   }, [isEditingGoal, dailyGoal]);
@@ -147,26 +131,6 @@ export function CalorieTrackerCompact() {
     () => editableFoods.reduce((sum, f) => sum + (Number(f.calories) || 0), 0),
     [editableFoods]
   );
-
-  /** Macro totals for what's about to be logged — shown in the confirm step and
-   *  saved verbatim, so the preview and the stored row can't disagree. */
-  const pendingMacros = useMemo(() => {
-    const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
-    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') => {
-      const anySpecified = valid.some(f => f[key] != null);
-      return anySpecified ? valid.reduce((s, f) => s + (Number(f[key]) || 0), 0) : undefined;
-    };
-    return {
-      protein: sumFood('protein') ?? analysis?.total_protein ?? 0,
-      carbs: sumFood('carbs') ?? analysis?.total_carbs ?? 0,
-      fat: sumFood('fat') ?? analysis?.total_fat ?? 0,
-      fiber: sumFood('fiber') ?? analysis?.total_fiber ?? 0,
-      sugar: sumFood('sugar') ?? analysis?.total_sugar ?? 0,
-      sodium: sumFood('sodium') ?? analysis?.total_sodium ?? 0,
-    };
-  }, [editableFoods, analysis]);
-
-
 
   const resetDialogState = () => {
     setAnalysis(null);
@@ -216,7 +180,6 @@ export function CalorieTrackerCompact() {
 
     try {
       const mergedFoods: FoodAnalysis['foods'] = [];
-      const perImage: FoodAnalysis[] = [];
       let firstUrl: string | null = null;
       let confSum = 0;
       const descriptions: string[] = [];
@@ -228,33 +191,16 @@ export function CalorieTrackerCompact() {
         }
         const result = await analyzeFoodImage(files[i], user.id, setAnalysisStep, hint);
         if (!firstUrl) firstUrl = result.publicUrl;
-        perImage.push(result.analysis);
         mergedFoods.push(...result.analysis.foods);
         confSum += result.analysis.confidence || 0;
         if (result.analysis.description) descriptions.push(result.analysis.description);
         if (!qualitySeen && result.analysis.food_quality) qualitySeen = result.analysis.food_quality;
       }
 
-      const sumTotals = (key: 'total_protein' | 'total_carbs' | 'total_fat' | 'total_fiber' | 'total_sugar' | 'total_sodium') => {
-        const anySpecified = perImage.some(a => a[key] != null);
-        return anySpecified ? perImage.reduce((s, a) => s + (a[key] || 0), 0) : undefined;
-      };
-
-
-
       setUploadedPhotoUrl(firstUrl);
       const merged: FoodAnalysis = {
         foods: mergedFoods,
         total_calories: mergedFoods.reduce((s, f) => s + (f.calories || 0), 0),
-        // Analysis-level totals are summed across images too — dropping them
-        // meant sugar/sodium (often only returned at the total level) silently
-        // saved as nothing.
-        total_protein: sumTotals('total_protein'),
-        total_carbs: sumTotals('total_carbs'),
-        total_fat: sumTotals('total_fat'),
-        total_fiber: sumTotals('total_fiber'),
-        total_sugar: sumTotals('total_sugar'),
-        total_sodium: sumTotals('total_sodium'),
         confidence: confSum / files.length,
         description: descriptions.join(' + '),
         food_quality: qualitySeen,
@@ -344,10 +290,26 @@ export function CalorieTrackerCompact() {
       return;
     }
 
-    // Exactly the numbers previewed in the confirm step (per-food values when
-    // the AI gave them, otherwise the analysis-level totals).
-    const { protein: totalProtein, carbs: totalCarbs, fat: totalFat, fiber: totalFiber, sugar: totalSugar, sodium: totalSodium } = pendingMacros;
-
+    // Per-food values when the AI provided them; otherwise fall back to the
+    // analysis-level totals — some responses fill total_protein/total_sugar/etc
+    // without per-item breakdowns, and summing only per-food values silently
+    // saved those macros as nothing.
+    //
+    // Falls back on "no item specified this field" (every value undefined),
+    // NOT on "the sum came out to 0" — a black-coffee-only entry can have a
+    // real, correct 0g protein total, and treating that 0 as missing would
+    // silently overwrite it with an unrelated analysis-level total instead.
+    const sumFood = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') => {
+      const anySpecified = validFoods.some(f => f[key] != null);
+      const summed = validFoods.reduce((s, f) => s + (f[key] || 0), 0);
+      return anySpecified ? summed : undefined;
+    };
+    const totalProtein = sumFood('protein') ?? analysis?.total_protein ?? 0;
+    const totalCarbs = sumFood('carbs') ?? analysis?.total_carbs ?? 0;
+    const totalFat = sumFood('fat') ?? analysis?.total_fat ?? 0;
+    const totalFiber = sumFood('fiber') ?? analysis?.total_fiber ?? 0;
+    const totalSugar = sumFood('sugar') ?? analysis?.total_sugar ?? 0;
+    const totalSodium = sumFood('sodium') ?? analysis?.total_sodium ?? 0;
 
     try {
       await addMeal({
@@ -488,21 +450,7 @@ export function CalorieTrackerCompact() {
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories burned</div>
                 </div>
-                {/* Tappable: opens the full macro + per-meal protein breakdown.
-                    A div (not a button) because this sits inside CollapsibleTrigger. */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); setShowProteinBreakdown(true); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowProteinBreakdown(true);
-                    }
-                  }}
-                  className="p-2.5 rounded-xl border border-border bg-muted/20 text-left cursor-pointer transition-colors hover:bg-muted/30"
-                >
+                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
                   <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
@@ -510,9 +458,8 @@ export function CalorieTrackerCompact() {
                   )}>
                     {Math.round(proteinTotal)}g
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g · tap for breakdown</div>
+                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
                 </div>
-
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
                     bmr={autoMaintenance.bmr}
@@ -907,29 +854,6 @@ export function CalorieTrackerCompact() {
                   </div>
                 </div>
 
-                {/* Macro breakdown preview — what will actually be saved */}
-                <div>
-                  <Label className="text-xs text-muted-foreground">MACRO BREAKDOWN</Label>
-                  <div className="mt-1 grid grid-cols-3 gap-2">
-                    {([
-                      ['Protein', pendingMacros.protein, 'g'],
-                      ['Carbs', pendingMacros.carbs, 'g'],
-                      ['Fat', pendingMacros.fat, 'g'],
-                      ['Fiber', pendingMacros.fiber, 'g'],
-                      ['Sugar', pendingMacros.sugar, 'g'],
-                      ['Sodium', pendingMacros.sodium, 'mg'],
-                    ] as const).map(([label, value, unit]) => (
-                      <div key={label} className="p-2 rounded-xl border border-border bg-muted/20">
-                        <div className="text-[10px] text-muted-foreground tracking-wider uppercase">{label}</div>
-                        <div className="text-sm font-bold tabular-nums">
-                          {Math.round(Number(value) || 0)}{unit}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrls([]); }}
@@ -994,61 +918,6 @@ export function CalorieTrackerCompact() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Protein / macro breakdown for the viewed day */}
-      <Dialog open={showProteinBreakdown} onOpenChange={setShowProteinBreakdown}>
-        <DialogContent className="border-border bg-background max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              MACRO BREAKDOWN{mealDateSuffix.toUpperCase()}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="grid grid-cols-3 gap-2">
-            {([
-              ['Protein', dayMacros.protein, 'g', proteinGoal],
-              ['Carbs', dayMacros.carbs, 'g', (preferences as any)?.daily_carbs_goal],
-              ['Fat', dayMacros.fat, 'g', (preferences as any)?.daily_fat_goal],
-              ['Fiber', dayMacros.fiber, 'g', (preferences as any)?.daily_fiber_goal],
-              ['Sugar', dayMacros.sugar, 'g', (preferences as any)?.daily_sugar_goal],
-              ['Sodium', dayMacros.sodium, 'mg', (preferences as any)?.daily_sodium_goal],
-            ] as const).map(([label, value, unit, goal]) => (
-              <div key={label} className="p-2.5 rounded-xl border border-border bg-muted/20">
-                <div className="text-[10px] text-muted-foreground tracking-wider uppercase">{label}</div>
-                <div className="text-lg font-bold tabular-nums leading-tight">
-                  {Math.round(Number(value) || 0)}{unit}
-                </div>
-                {goal ? <div className="text-[10px] text-muted-foreground">of {goal}{unit}</div> : null}
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">PER MEAL</Label>
-            {meals.length === 0 && (
-              <p className="text-sm text-muted-foreground py-2">No meals logged yet.</p>
-            )}
-            {meals.map(meal => (
-              <div key={meal.id} className="p-2.5 rounded-xl border border-border">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm leading-snug break-words min-w-0 flex-1">
-                    {meal.food_name || 'Unnamed'}
-                  </span>
-                  <span className="text-sm font-bold tabular-nums shrink-0">
-                    {Math.round(Number(meal.protein) || 0)}g protein
-                  </span>
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-                  {meal.calories || 0} cal · {Math.round(Number(meal.carbs) || 0)}g carbs ·{' '}
-                  {Math.round(Number(meal.fat) || 0)}g fat · {Math.round(Number(meal.fiber) || 0)}g fiber ·{' '}
-                  {Math.round(Number(meal.sugar) || 0)}g sugar · {Math.round(Number(meal.sodium) || 0)}mg sodium
-                </div>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
-
   );
 }

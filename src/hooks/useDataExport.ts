@@ -276,12 +276,12 @@ export function useDataExport() {
         if (linked) {
           // Get all parent-table IDs for this user first
           const parents = await fetchAllPaged<{ id: string }>(async (from, to) => {
-            const result = await (supabase as any)
-              .from(linked.parentTable as string)
+            const result = await supabase
+              .from(linked.parentTable)
               .select('id')
               .eq('user_id', user.id)
               .range(from, to);
-            return { data: (result.data ?? null) as { id: string }[] | null, error: result.error };
+            return { data: result.data ?? null, error: result.error };
           });
 
           if (parents.length > 0) {

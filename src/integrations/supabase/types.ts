@@ -681,6 +681,7 @@ export type Database = {
           onboarding_completed: boolean | null
           rest_days: Json | null
           routine_setup_completed: boolean | null
+          show_bmr_on_dashboard: boolean | null
           sleep_goal: number | null
           training_focus: string | null
           training_split: string | null
@@ -715,6 +716,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
+          show_bmr_on_dashboard?: boolean | null
           sleep_goal?: number | null
           training_focus?: string | null
           training_split?: string | null
@@ -749,6 +751,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
+          show_bmr_on_dashboard?: boolean | null
           sleep_goal?: number | null
           training_focus?: string | null
           training_split?: string | null
