@@ -488,7 +488,21 @@ export function CalorieTrackerCompact() {
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories burned</div>
                 </div>
-                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                {/* Tappable: opens the full macro + per-meal protein breakdown.
+                    A div (not a button) because this sits inside CollapsibleTrigger. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); setShowProteinBreakdown(true); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowProteinBreakdown(true);
+                    }
+                  }}
+                  className="p-2.5 rounded-xl border border-border bg-muted/20 text-left cursor-pointer transition-colors hover:bg-muted/30"
+                >
                   <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
@@ -496,8 +510,9 @@ export function CalorieTrackerCompact() {
                   )}>
                     {Math.round(proteinTotal)}g
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
+                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g · tap for breakdown</div>
                 </div>
+
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
                     bmr={autoMaintenance.bmr}
