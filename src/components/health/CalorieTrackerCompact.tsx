@@ -994,6 +994,61 @@ export function CalorieTrackerCompact() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Protein / macro breakdown for the viewed day */}
+      <Dialog open={showProteinBreakdown} onOpenChange={setShowProteinBreakdown}>
+        <DialogContent className="border-border bg-background max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-medium">
+              MACRO BREAKDOWN{mealDateSuffix.toUpperCase()}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              ['Protein', dayMacros.protein, 'g', proteinGoal],
+              ['Carbs', dayMacros.carbs, 'g', preferences?.daily_carbs_goal],
+              ['Fat', dayMacros.fat, 'g', preferences?.daily_fat_goal],
+              ['Fiber', dayMacros.fiber, 'g', preferences?.daily_fiber_goal],
+              ['Sugar', dayMacros.sugar, 'g', preferences?.daily_sugar_goal],
+              ['Sodium', dayMacros.sodium, 'mg', preferences?.daily_sodium_goal],
+            ] as const).map(([label, value, unit, goal]) => (
+              <div key={label} className="p-2.5 rounded-xl border border-border bg-muted/20">
+                <div className="text-[10px] text-muted-foreground tracking-wider uppercase">{label}</div>
+                <div className="text-lg font-bold tabular-nums leading-tight">
+                  {Math.round(Number(value) || 0)}{unit}
+                </div>
+                {goal ? <div className="text-[10px] text-muted-foreground">of {goal}{unit}</div> : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">PER MEAL</Label>
+            {meals.length === 0 && (
+              <p className="text-sm text-muted-foreground py-2">No meals logged yet.</p>
+            )}
+            {meals.map(meal => (
+              <div key={meal.id} className="p-2.5 rounded-xl border border-border">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-sm leading-snug break-words min-w-0 flex-1">
+                    {meal.food_name || 'Unnamed'}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums shrink-0">
+                    {Math.round(Number(meal.protein) || 0)}g protein
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1 tabular-nums">
+                  {meal.calories || 0} cal · {Math.round(Number(meal.carbs) || 0)}g carbs ·{' '}
+                  {Math.round(Number(meal.fat) || 0)}g fat · {Math.round(Number(meal.fiber) || 0)}g fiber ·{' '}
+                  {Math.round(Number(meal.sugar) || 0)}g sugar · {Math.round(Number(meal.sodium) || 0)}mg sodium
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 }
