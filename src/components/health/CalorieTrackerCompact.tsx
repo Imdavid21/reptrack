@@ -1007,11 +1007,11 @@ export function CalorieTrackerCompact() {
           <div className="grid grid-cols-3 gap-2">
             {([
               ['Protein', dayMacros.protein, 'g', proteinGoal],
-              ['Carbs', dayMacros.carbs, 'g', preferences?.daily_carbs_goal],
-              ['Fat', dayMacros.fat, 'g', preferences?.daily_fat_goal],
-              ['Fiber', dayMacros.fiber, 'g', preferences?.daily_fiber_goal],
-              ['Sugar', dayMacros.sugar, 'g', preferences?.daily_sugar_goal],
-              ['Sodium', dayMacros.sodium, 'mg', preferences?.daily_sodium_goal],
+              ['Carbs', dayMacros.carbs, 'g', (preferences as any)?.daily_carbs_goal],
+              ['Fat', dayMacros.fat, 'g', (preferences as any)?.daily_fat_goal],
+              ['Fiber', dayMacros.fiber, 'g', (preferences as any)?.daily_fiber_goal],
+              ['Sugar', dayMacros.sugar, 'g', (preferences as any)?.daily_sugar_goal],
+              ['Sodium', dayMacros.sodium, 'mg', (preferences as any)?.daily_sodium_goal],
             ] as const).map(([label, value, unit, goal]) => (
               <div key={label} className="p-2.5 rounded-xl border border-border bg-muted/20">
                 <div className="text-[10px] text-muted-foreground tracking-wider uppercase">{label}</div>
