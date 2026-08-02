@@ -151,7 +151,7 @@ MACRO CALCULATION:
                       sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                       sodium: { type: "number", description: "Sodium in milligrams" }
                     },
-                    required: ["name", "portion", "calories"]
+                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
                   }
                 },
                 total_calories: { type: "number" },
@@ -169,7 +169,7 @@ MACRO CALCULATION:
                   description: "Overall nutritional quality rating"
                 }
               },
-              required: ["foods", "total_calories", "confidence", "description"]
+              required: ["foods", "total_calories", "total_protein", "total_carbs", "total_fat", "total_fiber", "total_sugar", "total_sodium", "confidence", "description"]
             }
           }
         }
