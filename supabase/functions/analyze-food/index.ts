@@ -153,7 +153,10 @@ MACRO CALCULATION:
                       sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                       sodium: { type: "number", description: "Sodium in milligrams" }
                     },
-                    required: ["name", "portion", "calories"]
+                    // Every macro is required: left optional, the model routinely
+                    // omitted sugar and sodium entirely, so those columns never
+                    // got recorded. Estimate them, never skip them.
+                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
                   }
                 },
                 total_calories: { type: "number" },
