@@ -869,6 +869,29 @@ export function CalorieTrackerCompact() {
                   </div>
                 </div>
 
+                {/* Macro breakdown, shown before confirming so nothing is saved blind */}
+                <div>
+                  <Label className="text-xs text-muted-foreground">MACRO BREAKDOWN</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-1.5">
+                    {([
+                      { key: 'protein', label: 'Protein', unit: 'g' },
+                      { key: 'carbs', label: 'Carbs', unit: 'g' },
+                      { key: 'fat', label: 'Fat', unit: 'g' },
+                      { key: 'fiber', label: 'Fiber', unit: 'g' },
+                      { key: 'sugar', label: 'Sugar', unit: 'g' },
+                      { key: 'sodium', label: 'Sodium', unit: 'mg' },
+                    ] as const).map(m => (
+                      <div key={m.key} className="p-2 rounded-xl border border-border bg-muted/20 text-center">
+                        <div className="text-sm font-bold tabular-nums">
+                          {Math.round(pendingMacros[m.key])}{m.unit}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground tracking-wide">{m.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setAnalysis(null); setEditableFoods([]); setPreviewUrls([]); }}
