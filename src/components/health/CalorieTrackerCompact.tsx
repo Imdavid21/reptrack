@@ -115,6 +115,24 @@ export function CalorieTrackerCompact() {
     () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
     [meals]
   );
+  /** Per-meal protein rows + day macro totals for the protein breakdown sheet. */
+  const proteinRows = useMemo(
+    () => meals
+      .map(m => ({
+        id: m.id,
+        name: m.food_name || m.ai_detected_food || 'Meal',
+        type: m.meal_type,
+        protein: Number(m.protein || 0),
+        calories: Number(m.calories || 0),
+      }))
+      .sort((a, b) => b.protein - a.protein),
+    [meals]
+  );
+  const dayMacros = useMemo(() => {
+    const sum = (key: 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') =>
+      meals.reduce((s, m) => s + Number((m as any)[key] || 0), 0);
+    return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium') };
+  }, [meals]);
   const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
