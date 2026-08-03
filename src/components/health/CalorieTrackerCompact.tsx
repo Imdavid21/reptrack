@@ -91,6 +91,7 @@ export function CalorieTrackerCompact() {
   const [lastFiles, setLastFiles] = useState<File[]>([]);
   const [analysisProgressText, setAnalysisProgressText] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isProteinOpen, setIsProteinOpen] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [editGoal, setEditGoal] = useState(2000);
