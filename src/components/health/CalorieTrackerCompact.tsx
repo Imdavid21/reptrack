@@ -465,7 +465,17 @@ export function CalorieTrackerCompact() {
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories burned</div>
                 </div>
-                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); setIsProteinOpen(true); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation(); e.preventDefault(); setIsProteinOpen(true);
+                    }
+                  }}
+                  className="p-2.5 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                >
                   <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
@@ -473,7 +483,7 @@ export function CalorieTrackerCompact() {
                   )}>
                     {Math.round(proteinTotal)}g
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g</div>
+                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g · tap for breakdown</div>
                 </div>
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
