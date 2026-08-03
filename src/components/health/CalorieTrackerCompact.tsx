@@ -198,9 +198,21 @@ export function CalorieTrackerCompact() {
       }
 
       setUploadedPhotoUrl(firstUrl);
+      // Sum the per-item macros into analysis-level totals so nothing is lost
+      // when several photos are merged into one entry.
+      const sumKey = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium') => {
+        if (!mergedFoods.some(f => f[key] != null)) return undefined;
+        return mergedFoods.reduce((s, f) => s + (f[key] || 0), 0);
+      };
       const merged: FoodAnalysis = {
         foods: mergedFoods,
         total_calories: mergedFoods.reduce((s, f) => s + (f.calories || 0), 0),
+        total_protein: sumKey('protein'),
+        total_carbs: sumKey('carbs'),
+        total_fat: sumKey('fat'),
+        total_fiber: sumKey('fiber'),
+        total_sugar: sumKey('sugar'),
+        total_sodium: sumKey('sodium'),
         confidence: confSum / files.length,
         description: descriptions.join(' + '),
         food_quality: qualitySeen,
