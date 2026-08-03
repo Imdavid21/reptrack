@@ -985,6 +985,70 @@ export function CalorieTrackerCompact() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Protein breakdown */}
+      <Dialog open={isProteinOpen} onOpenChange={setIsProteinOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-medium">
+              PROTEIN BREAKDOWN{mealDateSuffix.toUpperCase()}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-3 rounded-xl border border-border bg-muted/20 flex items-end justify-between">
+              <div>
+                <div className="text-3xl font-bold tabular-nums">{Math.round(proteinTotal)}g</div>
+                <div className="text-xs text-muted-foreground">of {proteinGoal}g goal</div>
+              </div>
+              <div className="text-sm text-muted-foreground tabular-nums">
+                {proteinTotal >= proteinGoal
+                  ? `+${Math.round(proteinTotal - proteinGoal)}g over`
+                  : `${Math.round(proteinGoal - proteinTotal)}g left`}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">BY MEAL</Label>
+              {proteinRows.length === 0 ? (
+                <p className="text-xs text-muted-foreground mt-2">No meals logged yet.</p>
+              ) : (
+                <div className="border border-border rounded-xl divide-y divide-border overflow-hidden mt-1.5">
+                  {proteinRows.map(row => (
+                    <div key={row.id} className="p-2.5 flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs truncate">{row.name}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                          {row.type} · {Math.round(row.calories)} cal
+                        </div>
+                      </div>
+                      <div className="text-sm font-bold tabular-nums shrink-0">{Math.round(row.protein)}g</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">OTHER MACROS TODAY</Label>
+              <div className="grid grid-cols-3 gap-2 mt-1.5">
+                {([
+                  { key: 'carbs', label: 'Carbs', unit: 'g' },
+                  { key: 'fat', label: 'Fat', unit: 'g' },
+                  { key: 'fiber', label: 'Fiber', unit: 'g' },
+                  { key: 'sugar', label: 'Sugar', unit: 'g' },
+                  { key: 'sodium', label: 'Sodium', unit: 'mg' },
+                ] as const).map(m => (
+                  <div key={m.key} className="p-2 rounded-xl border border-border bg-muted/20 text-center">
+                    <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
+                    <div className="text-[10px] text-muted-foreground tracking-wide">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
