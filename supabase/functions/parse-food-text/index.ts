@@ -122,7 +122,9 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                         sodium: { type: "number", description: "Sodium in milligrams" }
                       },
-                      required: ["name", "portion", "calories"]
+                      // Macros are required: left optional, the model routinely
+                      // omitted sugar and sodium, so those never got recorded.
+                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
                     }
                   },
                   total_calories: { type: "number" },
