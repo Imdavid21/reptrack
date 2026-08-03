@@ -132,6 +132,26 @@ export function CalorieTrackerCompact() {
     [editableFoods]
   );
 
+  /** Macro totals for the pending entry, shown before it's confirmed and reused
+   *  as the values actually saved — per-item values when the AI supplied them,
+   *  otherwise the analysis-level totals. */
+  const pendingMacros = useMemo(() => {
+    const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
+    const pick = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium', total?: number) => {
+      const anySpecified = valid.some(f => f[key] != null);
+      if (anySpecified) return valid.reduce((s, f) => s + (f[key] || 0), 0);
+      return total ?? 0;
+    };
+    return {
+      protein: pick('protein', analysis?.total_protein),
+      carbs: pick('carbs', analysis?.total_carbs),
+      fat: pick('fat', analysis?.total_fat),
+      fiber: pick('fiber', analysis?.total_fiber),
+      sugar: pick('sugar', analysis?.total_sugar),
+      sodium: pick('sodium', analysis?.total_sodium),
+    };
+  }, [editableFoods, analysis]);
+
   const resetDialogState = () => {
     setAnalysis(null);
     setEditableFoods([]);
