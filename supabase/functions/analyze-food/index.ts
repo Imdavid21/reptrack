@@ -60,7 +60,9 @@ async function callOpenAI(imageUrl: string, apiKey: string, context: string | un
       // avoiding Sol's $30/M output rate and its much larger reasoning-token
       // burn at "medium". See cost comparison in commit history if revisiting.
       model: "gpt-5.6-terra",
-      reasoning_effort: "low",
+      // Chat Completions rejects function tools combined with any non-"none"
+      // reasoning_effort on this model, so tool-calling requires "none".
+      reasoning_effort: "none",
       messages: [
         {
           role: "system",
