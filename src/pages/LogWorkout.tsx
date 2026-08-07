@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { findBestMatch } from '@/lib/exerciseMatching';
+import { localDateKey } from '@/lib/dateKey';
 
 type Step = 'select-day' | 'review' | 'exercises';
 
