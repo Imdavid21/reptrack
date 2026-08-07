@@ -477,12 +477,13 @@ export default function LogWorkout() {
       : undefined;
 
     try {
-      console.log('[FinishWorkout] Saving…', { completedSets, totalSets, exerciseCount: exercises.length });
+      const saveDate = resolveSaveDate(workoutStartTime);
+      console.log('[FinishWorkout] Saving…', { completedSets, totalSets, exerciseCount: exercises.length, date: localDateKey(saveDate) });
       await createWorkout({
         day: selectedDay,
         day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
-        date: selectedDate,
+        date: saveDate,
         exercises,
         durationMinutes,
         startedAt: workoutStartTime || undefined,
@@ -493,11 +494,17 @@ export default function LogWorkout() {
         exercises.filter(ex => ex.sets.some(s => s.completed)).map(ex => ex.name)
       );
       clearDraft();
+      const isToday = localDateKey(saveDate) === localDateKey(new Date());
       if (!navigator.onLine) {
         toast.success('Workout saved offline — will sync when back online 📴');
+      } else if (!isToday) {
+        // Make back-dated saves explicit so a session never silently lands on
+        // the wrong day again.
+        toast.success(`Workout logged for ${saveDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} 💪`);
       } else {
         toast.success('Workout logged! 💪');
       }
+
       navigate('/app');
     } catch (error: any) {
       console.error('[FinishWorkout] Error:', error);
