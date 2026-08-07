@@ -204,9 +204,19 @@ export default function LogWorkout() {
       setSelectedDay(draft.day);
       // Restore the date the workout was actually logged for. draft.date is an
       // ISO timestamp of the (possibly back-dated) session, so honoring it keeps
-      // a back-dated in-progress workout attributed to its intended day instead
-      // of silently jumping to today on resume.
-      setSelectedDate(draft.date ? new Date(draft.date) : new Date());
+      // a back-dated in-progress workout attributed to its intended day.
+      // BUT: a draft carried over from a previous calendar day that is being
+      // trained *today* (start time or last save is today) must snap to today —
+      // otherwise the finished session silently saves onto yesterday's date and
+      // looks to the user like the save "glitched" and never happened.
+      const draftDate = draft.date ? new Date(draft.date) : new Date();
+      const activityStamp = draft.workoutStartTime || draft.lastSavedAt;
+      const trainedToday = activityStamp
+        ? localDateKey(new Date(activityStamp)) === localDateKey(new Date())
+        : false;
+      const isBackdated = localDateKey(draftDate) !== localDateKey(new Date());
+      setSelectedDate(isBackdated && trainedToday ? new Date() : draftDate);
+
       setWeekNumber(draft.weekNumber);
       setExercises(draft.exercises);
       const validStep: Step = draft.step === 'exercises' ? 'exercises' :
