@@ -349,17 +349,28 @@ export default function LogWorkout() {
     setStep('review');
   };
 
+  // Final safety net against mis-dated saves: a session that was actually
+  // trained today must never land on the draft's stale calendar date. If the
+  // selected date isn't today but the session clock started today, snap it.
+  const resolveSaveDate = (startedAt?: Date | null) => {
+    const todayKey = localDateKey(new Date());
+    if (localDateKey(selectedDate) === todayKey) return selectedDate;
+    if (startedAt && localDateKey(startedAt) === todayKey) return new Date();
+    return selectedDate;
+  };
+
   const handleQuickLog = async () => {
     if (!selectedDay) {
       toast.error('Please select a workout day first');
       return;
     }
     try {
+      const saveDate = resolveSaveDate(new Date());
       await createWorkout({
         day: selectedDay,
         day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
-        date: selectedDate,
+        date: saveDate,
         exercises: [],
         startedAt: new Date(),
         completedAt: new Date(),
@@ -371,6 +382,7 @@ export default function LogWorkout() {
       toast.error('Failed to save workout');
     }
   };
+
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
     setExercises(prev =>
