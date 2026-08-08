@@ -106,19 +106,31 @@ export default function Auth() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    const isNew = accountStatus === 'new';
+    if (password.length < (isNew ? 8 : 6)) {
+      toast.error(isNew ? 'Password must be at least 8 characters' : 'Password must be at least 6 characters');
       return;
     }
     setLoading(true);
     try {
-      if (accountStatus === 'new') {
+      if (isNew) {
         const { error } = await signUp(email, password);
-        if (error) throw error;
-        toast.success('Account created! Welcome to Reptrack.');
-        localStorage.setItem('just_signed_up', 'true');
-        saveLastMethod('email');
-        navigate('/app', { replace: true });
+        if (error) {
+          const msg = error.message?.toLowerCase() ?? '';
+          if (msg.includes('weak') || msg.includes('pwned')) {
+            toast.error('That password has appeared in a data breach. Pick a different one.');
+          } else if (msg.includes('already registered') || msg.includes('already been registered')) {
+            toast.error('An account already exists for this email. Try signing in.');
+            setAccountStatus('existing');
+          } else {
+            throw error;
+          }
+        } else {
+          toast.success('Account created! Welcome to Reptrack.');
+          localStorage.setItem('just_signed_up', 'true');
+          saveLastMethod('email');
+          navigate('/app', { replace: true });
+        }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
@@ -139,6 +151,7 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
