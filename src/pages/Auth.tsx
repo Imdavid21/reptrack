@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
@@ -35,6 +35,7 @@ function LastUsedBadge() {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { isDark, toggleTheme } = useTheme();
   const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
@@ -88,20 +89,32 @@ export default function Auth() {
 
   const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
+    setEmail(normalizedEmail);
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('check_email_exists', {
-        email_input: email.trim(),
+        email_input: normalizedEmail,
       });
       if (error) throw error;
       setAccountStatus(data ? 'existing' : 'new');
-    } catch {
-      setAccountStatus('unknown');
+      setStep('password');
+    } catch (error) {
+      // Never silently turn a failed account lookup into a sign-in attempt.
+      // Respect the route the user deliberately chose and keep the error visible.
+      const intendedStatus = location.pathname === '/signup' ? 'new' : 'existing';
+      setAccountStatus(intendedStatus);
+      setStep('password');
+      console.error('Unable to check account status:', error);
+      toast.error(
+        intendedStatus === 'new'
+          ? 'Account check was interrupted. You can still create your account.'
+          : 'Account check was interrupted. You can still try signing in.'
+      );
     } finally {
       setLoading(false);
     }
-    setStep('password');
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -114,7 +127,7 @@ export default function Auth() {
     setLoading(true);
     try {
       if (isNew) {
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           const msg = error.message?.toLowerCase() ?? '';
           if (msg.includes('weak') || msg.includes('pwned')) {
@@ -125,11 +138,17 @@ export default function Auth() {
           } else {
             throw error;
           }
-        } else {
+        } else if (data.session?.user) {
           toast.success('Account created! Welcome to Reptrack.');
           localStorage.setItem('just_signed_up', 'true');
           saveLastMethod('email');
           navigate('/app', { replace: true });
+        } else {
+          // Email confirmation may be enabled in another environment. Do not
+          // claim the user is signed in or send them into a protected route.
+          toast.success('Account created. Check your email to confirm it, then sign in.');
+          saveLastMethod('email');
+          setAccountStatus('existing');
         }
       } else {
         const { error } = await signIn(email, password);
@@ -400,7 +419,7 @@ export default function Auth() {
                     placeholder="••••••••"
                     required
                     autoFocus
-                    minLength={6}
+                    minLength={accountStatus === 'new' ? 8 : 6}
                     className="mt-1.5 h-14 rounded-2xl border-2 border-border bg-background px-4 pr-12 text-sm focus:border-foreground transition-colors"
                   />
                   <button
@@ -423,7 +442,7 @@ export default function Auth() {
                   </div>
                 )}
                 {accountStatus === 'new' && password.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-1.5">Minimum 6 characters</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">Minimum 8 characters</p>
                 )}
               </div>
 
