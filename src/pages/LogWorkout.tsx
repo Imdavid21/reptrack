@@ -27,11 +27,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronLeft, Plus, Pencil } from 'lucide-react';
+import { ChevronLeft, Plus, Pencil } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
-import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -47,8 +45,6 @@ import { findBestMatch } from '@/lib/exerciseMatching';
 import { localDateKey } from '@/lib/dateKey';
 
 type Step = 'select-day' | 'review' | 'exercises';
-
-const NEXT_WORKOUT_VISIBILITY_KEY = 'fittrack_show_next_workout';
 
 
 
@@ -168,13 +164,6 @@ export default function LogWorkout() {
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [showActiveOverview, setShowActiveOverview] = useState(false);
-  const [showNextWorkout, setShowNextWorkout] = useState(() => {
-    try {
-      return localStorage.getItem(NEXT_WORKOUT_VISIBILITY_KEY) !== 'false';
-    } catch {
-      return true;
-    }
-  });
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
@@ -200,15 +189,6 @@ export default function LogWorkout() {
   const dayData = selectedDay !== 'custom' && selectedDay ? splitDays[selectedDay] : null;
   const dayType = dayData ? getDayType(dayData.name) : undefined;
   const currentExercise = exercises[currentExerciseIndex];
-
-  const handleNextWorkoutVisibilityChange = (open: boolean) => {
-    setShowNextWorkout(open);
-    try {
-      localStorage.setItem(NEXT_WORKOUT_VISIBILITY_KEY, String(open));
-    } catch {
-      // Keep the toggle functional even when browser storage is unavailable.
-    }
-  };
 
   // Build available days list for the day switcher
   const availableDays = useMemo(() => {
@@ -629,35 +609,6 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
-              <Collapsible
-                open={showNextWorkout}
-                onOpenChange={handleNextWorkoutVisibilityChange}
-                className="space-y-2"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Next workout
-                  </span>
-                  <CollapsibleTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      aria-label={`${showNextWorkout ? 'Hide' : 'Show'} next workout preview`}
-                    >
-                      {showNextWorkout ? 'Hide' : 'Show'}
-                      <ChevronDown
-                        size={14}
-                        aria-hidden="true"
-                        className={cn('transition-transform', showNextWorkout && 'rotate-180')}
-                      />
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <NextWorkoutCard />
-                </CollapsibleContent>
-              </Collapsible>
-
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Logging for</span>
                 <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />

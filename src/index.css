@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Modern Fitness Analytics Design System
    Clean, minimal black & white with subtle grays */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -304,28 +304,6 @@
 }
 
 @layer utilities {
-  /* Keep supporting copy readable across dense dashboard and workout views. */
-  .text-\[9px\],
-  .text-\[10px\],
-  .text-\[11px\] {
-    font-size: 0.75rem;
-    line-height: 1rem;
-  }
-
-  /* Icon actions need a reliable touch target even when the glyph is small. */
-  button[aria-label]:has(svg),
-  button[title]:has(svg),
-  button:has(> svg:only-child) {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-  }
-
-  @media (pointer: coarse) {
-    button {
-      min-height: 2.75rem;
-    }
-  }
-
   /* Fade in animation */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;

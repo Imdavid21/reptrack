@@ -63,9 +63,9 @@ const baseTheme: ThemeOptions = {
       fontSize: '0.75rem',
     },
     caption: {
-      fontSize: '0.75rem',
-      lineHeight: 1.45,
-      letterSpacing: '0.02em',
+      fontSize: '0.625rem',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.08em',
       fontWeight: 500,
     },
   },
