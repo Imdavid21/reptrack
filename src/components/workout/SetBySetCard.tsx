@@ -440,9 +440,10 @@ export function SetBySetCard({
 
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="relative space-y-5 overflow-hidden rounded-[30px] border border-border/80 bg-card p-4 shadow-[0_20px_55px_hsl(var(--foreground)/0.08)] animate-fade-in">
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-energy/10 blur-3xl" />
       {/* Exercise progress — tappable segments */}
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums">
           {exerciseIndex + 1}/{totalExercises}
         </span>
@@ -452,7 +453,7 @@ export function SetBySetCard({
               key={i}
               onClick={() => onJumpToExercise?.(i)}
               className={cn(
-                'h-2 flex-1 rounded-full transition-all duration-300',
+                'h-2.5 flex-1 rounded-full transition-all duration-300',
                 i < exerciseIndex ? 'bg-primary' :
                 i === exerciseIndex ? 'bg-primary/50' : 'bg-muted',
                 onJumpToExercise && 'cursor-pointer hover:opacity-80 active:scale-95'
@@ -464,10 +465,10 @@ export function SetBySetCard({
       </div>
 
       {/* Exercise name with PR / type badge */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="relative flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <h2 className="text-base font-bold">{exercise.name}</h2>
+            <h2 className="display-type text-2xl font-bold">{exercise.name}</h2>
             {isTimed && (
               <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
             )}
@@ -538,7 +539,7 @@ export function SetBySetCard({
             key={idx}
             onClick={() => onSetIndexChange(idx)}
             className={cn(
-              'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200',
+              'h-9 w-9 rounded-2xl flex items-center justify-center text-xs font-bold transition-all duration-200',
               idx === currentSetIndex
                 ? 'bg-primary text-primary-foreground scale-110 shadow-sm'
                 : set.completed
@@ -551,7 +552,7 @@ export function SetBySetCard({
         ))}
         <button
           onClick={addSet}
-          className="h-7 w-7 rounded-full border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="h-9 w-9 rounded-2xl border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -559,11 +560,14 @@ export function SetBySetCard({
 
       {/* Current set card */}
       <div className={cn(
-        'p-4 rounded-xl border transition-all duration-300',
-        currentSet.completed ? 'bg-primary/5 border-primary/30' : 'border-border'
+        'relative overflow-hidden p-5 rounded-[24px] border transition-all duration-300 shadow-inner',
+        currentSet.completed
+          ? 'bg-energy-soft/50 border-energy/30'
+          : 'border-foreground/10 bg-gradient-to-br from-muted/60 via-card to-card'
       )}>
-        <div className="text-center text-xs text-muted-foreground mb-4">
-          SET {currentSetIndex + 1}
+        <div className="mb-5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Set {currentSetIndex + 1}</span>
+          <span>{completedSets}/{exercise.sets.length} complete</span>
         </div>
 
         {/* ===== TIMED EXERCISE UI ===== */}
@@ -793,7 +797,7 @@ export function SetBySetCard({
                   if (isLastExercise) onComplete();
                   else onNextExercise();
                 }}
-                className="flex-1 h-10 rounded-full text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-1.5"
+                className="pressable flex-1 min-h-14 rounded-[18px] text-sm font-bold bg-foreground text-background shadow-lg shadow-foreground/10 transition-all flex items-center justify-center gap-2"
               >
                 <Check className="h-3.5 w-3.5" />
                 {isLastExercise ? 'Review & Finish' : 'Next Exercise'}
@@ -803,7 +807,7 @@ export function SetBySetCard({
             <button
               onClick={completeSet}
               className={cn(
-                "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
+                "pressable flex-1 min-h-14 rounded-[18px] text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-foreground/10",
                 currentSet.completed
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
