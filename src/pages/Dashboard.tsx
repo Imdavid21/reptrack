@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
+import { WorkoutConsistencyCard } from '@/components/dashboard/WorkoutConsistencyCard';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -27,6 +28,11 @@ export default function Dashboard() {
           style={{ minHeight: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+
+            {/* Year-at-a-glance workout consistency */}
+            <motion.div variants={staggerItem}>
+              <WorkoutConsistencyCard />
+            </motion.div>
 
             {/* Single shared date control for all dashboard logging */}
             <motion.div variants={staggerItem}>
