@@ -12,7 +12,7 @@ const WEEKS_TO_SHOW = 53;
 type WorkoutWithSkipState = Workout & { is_skipped?: boolean };
 
 export function WorkoutConsistencyCard() {
-  const { workouts, isLoading } = useWorkouts();
+  const { workouts } = useWorkouts();
   const [isOpen, setIsOpen] = useState(() => {
     try {
       return localStorage.getItem(CONSISTENCY_VISIBILITY_KEY) !== 'false';
@@ -21,7 +21,7 @@ export function WorkoutConsistencyCard() {
     }
   });
 
-  const { weeks, activeDays, activeThisWeek, maxCount } = useMemo(() => {
+  const { weeks, maxCount } = useMemo(() => {
     const counts = new Map<string, number>();
     workouts.forEach((workout) => {
       if ((workout as WorkoutWithSkipState).is_skipped) return;
@@ -49,8 +49,6 @@ export function WorkoutConsistencyCard() {
 
     return {
       weeks: calendarWeeks,
-      activeDays: visibleCounts.filter(([, count]) => count > 0).length,
-      activeThisWeek: calendarWeeks.at(-1)?.filter((day) => day.count > 0).length ?? 0,
       maxCount: Math.max(1, ...visibleCounts.map(([, count]) => count)),
     };
   }, [workouts]);
@@ -71,13 +69,7 @@ export function WorkoutConsistencyCard() {
 
   return (
     <Collapsible open={isOpen} onOpenChange={handleOpenChange} className="rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-3 p-4">
-        <div className="min-w-0">
-          <h2 className="text-sm font-bold">Workout consistency</h2>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {isLoading ? 'Loading activity…' : `${activeDays} active days · ${activeThisWeek} this week`}
-          </p>
-        </div>
+      <div className="flex items-center justify-end p-2">
         <CollapsibleTrigger asChild>
           <button
             type="button"
