@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ImageDown, Upload, Sparkles, Check, AlertCircle } from 'lucide-react';
 import { AnalysisStep, STEP_LABELS } from '@/lib/analyzeFoodImage';
@@ -21,14 +21,14 @@ interface AnalysisProgressProps {
 export function AnalysisProgress({ currentStep }: AnalysisProgressProps) {
   const reduceMotion = useReducedMotion();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const startedAt = useRef(Date.now());
   const currentIdx = STEP_ORDER.indexOf(currentStep);
   const isTerminal = currentStep === 'done' || currentStep === 'error';
 
   useEffect(() => {
     if (isTerminal) return;
-    const startedAt = Date.now() - elapsedSeconds * 1000;
     const timer = window.setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+      setElapsedSeconds(Math.floor((Date.now() - startedAt.current) / 1000));
     }, 1000);
     return () => window.clearInterval(timer);
   }, [isTerminal]);
