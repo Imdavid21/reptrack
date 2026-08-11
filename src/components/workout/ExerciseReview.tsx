@@ -4,7 +4,7 @@ import { ExercisePicker } from './ExercisePicker';
 import { cn } from '@/lib/utils';
 import { X, ChevronUp, ChevronDown, Play, Plus, Check, Minus, History, ArrowLeftRight } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getExerciseVariants, hasVariants } from '@/lib/exerciseVariants';
 import {
   DropdownMenu,
@@ -75,7 +75,6 @@ function ExerciseItemCard({
   const isBodyweight = exType === 'bodyweight';
   const isWeightedBW = exType === 'weighted_bw';
   const showWeightField = exType === 'weighted' || exType === 'weighted_bw';
-  const reduceMotion = useReducedMotion();
 
   // Extract max from rep ranges like "10-12" → "12"
   const displayReps = (reps: string | undefined) => {
@@ -138,11 +137,8 @@ function ExerciseItemCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40, height: 0 }}
-      transition={reduceMotion ? { duration: 0.12 } : { type: 'spring', stiffness: 420, damping: 38 }}
-      className={cn(
-        'rounded-xl border bg-card overflow-hidden',
-        activeSession && allComplete ? 'border-energy/30' : 'border-border'
-      )}
+      transition={{ duration: 0.2 }}
+      className="rounded-xl border border-border bg-card overflow-hidden"
     >
       <div className="flex items-center gap-2 p-3">
         {/* Reorder controls — hidden during active session */}
@@ -191,8 +187,7 @@ function ExerciseItemCard({
               onToggleEdit();
             }
           }}
-          aria-label={activeSession ? `${exercise.name}, ${completedSetsCount} of ${exercise.sets.length} sets logged` : `Edit ${exercise.name}`}
-          className="pressable flex-1 min-w-0 text-left"
+          className="flex-1 min-w-0 text-left"
         >
           <div className="font-semibold text-sm flex items-center gap-1.5 min-w-0">
             <span className="truncate">{exercise.name}</span>
@@ -272,17 +267,6 @@ function ExerciseItemCard({
         )}
       </div>
 
-      {activeSession && (
-        <div className="h-1 bg-muted/60" aria-hidden="true">
-          <motion.div
-            className="h-full origin-left rounded-r-full bg-energy"
-            initial={false}
-            animate={{ scaleX: totalSets > 0 ? completedSetsCount / totalSets : 0 }}
-            transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 38 }}
-          />
-        </div>
-      )}
-
       {/* Inline editor */}
       <AnimatePresence>
         {isEditing && (
@@ -290,7 +274,7 @@ function ExerciseItemCard({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={reduceMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 420, damping: 40 }}
+            transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-1 border-t border-border/50 space-y-2">

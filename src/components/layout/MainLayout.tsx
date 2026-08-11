@@ -14,64 +14,37 @@ export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    if (backTo) navigate(backTo);
-    else navigate(-1);
+    if (backTo) {
+      navigate(backTo);
+    } else {
+      navigate(-1);
+    }
   };
 
   return (
-    <Box
-      className="app-shell"
-      sx={{
-        minHeight: '100dvh',
-        position: 'relative',
-        overflow: 'hidden',
-        pb: 'calc(92px + env(safe-area-inset-bottom))',
-      }}
-    >
-      <Box aria-hidden className="app-shell-glow app-shell-glow-energy" />
-      <Box aria-hidden className="app-shell-glow app-shell-glow-water" />
-
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: 'calc(80px + env(safe-area-inset-bottom))' }}>
       {showBack && (
         <Box
           component="header"
-          className="app-page-header"
           sx={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 30,
-            px: { xs: 2, sm: 3 },
-            pt: 'max(env(safe-area-inset-top), 10px)',
-            pb: 1,
+            px: 2,
+            py: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
           }}
         >
-          <Box sx={{ width: '100%', maxWidth: 1120, mx: 'auto' }}>
-            <button
-              onClick={handleBack}
-              aria-label="Go back"
-              className="pressable grid h-10 w-10 place-items-center rounded-2xl border border-foreground/10 bg-card/75 text-muted-foreground shadow-sm backdrop-blur-xl hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          </Box>
+          <button
+            onClick={handleBack}
+            className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
         </Box>
       )}
-
-      <Box
-        component="main"
-        className="app-page"
-        sx={{
-          position: 'relative',
-          zIndex: 1,
-          width: '100%',
-          maxWidth: 1120,
-          mx: 'auto',
-          px: { xs: 2, sm: 3, lg: 4 },
-          py: { xs: 2, sm: 3 },
-        }}
-      >
+      <Box component="main" sx={{ px: 2, py: 2 }}>
         {children}
       </Box>
-
       <BottomNav />
     </Box>
   );
