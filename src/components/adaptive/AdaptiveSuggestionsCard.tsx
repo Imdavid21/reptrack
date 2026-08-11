@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, RefreshCw, AlertTriangle, Sparkles, History } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { ChevronRight, RefreshCw, AlertTriangle, Sparkles, History, ShieldCheck } from 'lucide-react';
 import { useAdaptiveMode, AdaptivePatternState } from '@/hooks/useAdaptiveMode';
 import { FormBreakdownLogger } from './FormBreakdownLogger';
 import { defaultBackoffLoad } from '@/lib/adaptiveEngine';
@@ -32,6 +32,7 @@ function useDayChoice(patternKey: string) {
 function PatternRow({ state }: { state: AdaptivePatternState }) {
   const { pattern, activeLifecycle, endTrigger, openWeakPoint, sessionTargets, whyText, historySeed } = state;
   const [expanded, setExpanded] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [choice, setChoice] = useDayChoice(pattern.key);
   const { startPattern, logSession, rotateVariation } = useAdaptiveMode();
   const [startingLoad, setStartingLoad] = useState('20');
@@ -50,7 +51,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
   if (!activeLifecycle) {
     return (
       <div className="rounded-xl border border-border p-3">
-        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between text-left gap-2">
+        <button onClick={() => setExpanded(!expanded)} aria-expanded={expanded} className="pressable w-full flex items-center justify-between text-left gap-2">
           <div className="min-w-0">
             <div className="text-sm font-semibold">{pattern.name}</div>
             <div className="text-[11px] text-muted-foreground truncate">
@@ -61,7 +62,13 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
         </button>
         <AnimatePresence>
           {expanded && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={reduceMotion ? { duration: 0.12 } : { type: 'spring', stiffness: 420, damping: 38 }}
+              className="overflow-hidden"
+            >
               <div className="pt-3 space-y-2.5">
                 {historySeed && (
                   <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-energy/10">
@@ -107,7 +114,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
 
   return (
     <div className="rounded-xl border border-border p-3">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between text-left gap-2">
+      <button onClick={() => setExpanded(!expanded)} aria-expanded={expanded} className="pressable w-full flex items-center justify-between text-left gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <div className="text-sm font-semibold truncate">{pattern.name}</div>
@@ -128,12 +135,21 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
 
       <AnimatePresence>
         {expanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+          <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={reduceMotion ? { duration: 0.12 } : { type: 'spring', stiffness: 420, damping: 38 }}
+              className="overflow-hidden"
+            >
             <div className="pt-3 space-y-3">
-              <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                <Sparkles className="h-3 w-3 text-energy-ink shrink-0 mt-0.5" />
-                {whyText}
-              </p>
+              <div className="rounded-xl border border-energy/20 bg-energy/10 p-2.5">
+                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-energy-ink">
+                  <ShieldCheck className="h-3 w-3" />
+                  Why this recommendation
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">{whyText}</p>
+              </div>
 
               {openWeakPoint && (
                 <div className="text-[11px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive font-medium">
@@ -220,12 +236,18 @@ export function AdaptiveSuggestionsCard() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-1.5 mb-1">
-        <Sparkles className="h-4 w-4 text-energy-ink" />
-        <div className="text-sm font-bold">Adaptive suggestions</div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="h-4 w-4 text-energy-ink" />
+          <div className="text-sm font-bold">Adaptive suggestions</div>
+        </div>
+        <div className="flex items-center gap-1 rounded-full bg-energy-soft px-2 py-1 text-[10px] font-semibold text-energy-ink">
+          <ShieldCheck className="h-3 w-3" />
+          Your data
+        </div>
       </div>
-      <p className="text-[11px] text-muted-foreground mb-3">
-        Infinite Progression rotation, alongside your regular programming — pick which to follow per pattern.
+      <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
+        Compare your regular plan with personalized targets. Expand a movement to see the evidence before choosing.
       </p>
       <div className="space-y-2">
         {patternStates.map(state => (
