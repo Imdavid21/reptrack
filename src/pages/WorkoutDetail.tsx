@@ -282,12 +282,14 @@ export default function WorkoutDetail() {
                           <div className="flex gap-0.5">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleSaveInlineEdit(); }}
+                              aria-label="Save set changes"
                               className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
                             >
                               <Check className="h-3 w-3" />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleCancelInlineEdit(); }}
+                              aria-label="Cancel set changes"
                               className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground"
                             >
                               <X className="h-3 w-3" />
@@ -296,6 +298,7 @@ export default function WorkoutDetail() {
                         ) : isEditMode ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); setExerciseToDelete(set.id); }}
+                            aria-label="Delete set"
                             className="h-6 w-6 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10 transition-colors"
                           >
                             <Trash2 className="h-3 w-3" />

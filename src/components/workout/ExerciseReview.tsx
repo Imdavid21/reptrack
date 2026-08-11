@@ -255,6 +255,7 @@ function ExerciseItemCard({
         {!activeSession && (
           <button
             onClick={onRemove}
+            aria-label={`Remove ${exercise.name}`}
             className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
           >
             <X className="h-3.5 w-3.5" />
@@ -285,6 +286,7 @@ function ExerciseItemCard({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleSetsChange(-1)}
+                      aria-label={`Decrease sets for ${exercise.name}`}
                       className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Minus className="h-3 w-3" />
@@ -292,6 +294,7 @@ function ExerciseItemCard({
                     <span className="text-sm font-bold w-5 text-center tabular-nums">{totalSets}</span>
                     <button
                       onClick={() => handleSetsChange(1)}
+                      aria-label={`Increase sets for ${exercise.name}`}
                       className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Plus className="h-3 w-3" />
@@ -351,7 +354,7 @@ function ExerciseItemCard({
                 {hasVariants(exercise.name) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                      <button aria-label={`Swap ${exercise.name} variation`} className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0">
                         <ArrowLeftRight className="h-3 w-3" />
                       </button>
                     </DropdownMenuTrigger>

@@ -123,12 +123,21 @@ export default function Settings() {
   return (
     <MainLayout>
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, pb: 4, minHeight: 'calc(100vh - 140px)', width: '100%', maxWidth: 720, mx: 'auto' }}>
+        <Box sx={{
+          display: 'flex', flexDirection: 'column', gap: 1.25, pb: 4,
+          minHeight: 'calc(100vh - 140px)', width: '100%', maxWidth: 720, mx: 'auto',
+          '& .MuiCard-root > button': {
+            width: '100%', border: 0, bgcolor: 'transparent', color: 'inherit', textAlign: 'left',
+          },
+        }}>
 
           {/* Profile & Account - Merged */}
           <MuiCard>
             <Box
+              component="button"
+              type="button"
               onClick={() => toggleSection('profile')}
+              aria-expanded={expandedSections.profile || false}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -527,7 +536,10 @@ export default function Settings() {
           {/* Workout Preferences */}
           <MuiCard>
             <Box
+              component="button"
+              type="button"
               onClick={() => toggleSection('workout')}
+              aria-expanded={expandedSections.workout || false}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -667,7 +679,10 @@ export default function Settings() {
           {/* Deficit Mode */}
           <MuiCard>
             <Box
+              component="button"
+              type="button"
               onClick={() => toggleSection('deficit')}
+              aria-expanded={expandedSections.deficit || false}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -803,7 +818,10 @@ export default function Settings() {
 
           <MuiCard>
             <Box
+              component="button"
+              type="button"
               onClick={() => toggleSection('adaptive')}
+              aria-expanded={expandedSections.adaptive || false}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -909,7 +927,10 @@ export default function Settings() {
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
           <MuiCard>
             <Box
+              component="button"
+              type="button"
               onClick={() => toggleSection('pwa')}
+              aria-expanded={expandedSections.pwa || false}
               sx={{
                 display: 'flex',
                 alignItems: 'center',

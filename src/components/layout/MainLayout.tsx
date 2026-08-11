@@ -36,7 +36,8 @@ export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
         >
           <button
             onClick={handleBack}
-            className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+            className="h-11 w-11 -ml-2 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
