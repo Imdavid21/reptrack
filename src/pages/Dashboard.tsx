@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
 import { ProgressHeader } from '@/components/dashboard/ProgressHeader';
-import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
 import { WaterTracker } from '@/components/dashboard/WaterTracker';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -58,16 +57,6 @@ export default function Dashboard() {
                 </button>
               </motion.div>
             )}
-
-            {/* Adaptive next-workout hero (hidden while a draft is in progress) */}
-            {!(draft && hasProgress) && (
-              <motion.div variants={staggerItem}>
-                <NextWorkoutCard />
-              </motion.div>
-            )}
-
-
-
 
             {/* Progress Overview */}
             <motion.div variants={staggerItem}>
