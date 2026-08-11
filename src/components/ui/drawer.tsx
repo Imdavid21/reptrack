@@ -39,7 +39,7 @@ const DrawerContent = React.forwardRef<
       className={cn(
         "app-sheet fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[88dvh] flex-col",
         "overflow-y-auto rounded-t-[28px] border border-b-0 border-white/10",
-        "bg-background/92 pb-[max(env(safe-area-inset-bottom),12px)] shadow-[0_-18px_60px_rgba(0,0,0,0.24)]",
+        "bg-background/[0.92] pb-[max(env(safe-area-inset-bottom),12px)] shadow-[0_-18px_60px_rgba(0,0,0,0.24)]",
         "backdrop-blur-2xl focus:outline-none",
         className,
       )}
