@@ -232,7 +232,7 @@ export function ProgressHeader() {
 
       {/* Sleep Dialog */}
       <Dialog open={showSleepDialog} onOpenChange={setShowSleepDialog}>
-        <DialogContent className="border-border bg-background max-w-xs">
+        <DialogContent className="border-border bg-background max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
               ADD SLEEP{dateSuffix.toUpperCase()}
@@ -241,15 +241,15 @@ export function ProgressHeader() {
 
           <div className="space-y-4">
             {/* Hours and Minutes side by side */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid min-w-0 grid-cols-2 gap-3">
               {/* Hours */}
               <div className="space-y-2">
                 <span className="text-xs text-muted-foreground block text-center">HOURS</span>
-                <div className="flex items-center gap-1">
+                <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1">
                   <button
                     onClick={() => adjustSleepHours(-1)}
                     aria-label="Decrease hours"
-                    className="p-2 border border-border hover:bg-muted transition-colors"
+                    className="h-12 border border-border hover:bg-muted transition-colors"
                   >
                     <Minus className="h-3 w-3" />
                   </button>
@@ -259,12 +259,12 @@ export function ProgressHeader() {
                     max="23"
                     value={sleepHours}
                     onChange={(e) => setSleepHours(e.target.value)}
-                    className="text-center text-xl font-bold h-12 input-terminal"
+                    className="h-12 min-w-0 px-1 text-center text-xl font-bold input-terminal"
                   />
                   <button
                     onClick={() => adjustSleepHours(1)}
                     aria-label="Increase hours"
-                    className="p-2 border border-border hover:bg-muted transition-colors"
+                    className="h-12 border border-border hover:bg-muted transition-colors"
                   >
                     <Plus className="h-3 w-3" />
                   </button>
@@ -274,11 +274,11 @@ export function ProgressHeader() {
               {/* Minutes */}
               <div className="space-y-2">
                 <span className="text-xs text-muted-foreground block text-center">MINUTES</span>
-                <div className="flex items-center gap-1">
+                <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1">
                   <button
                     onClick={() => adjustSleepMinutes(-15)}
                     aria-label="Decrease minutes"
-                    className="p-2 border border-border hover:bg-muted transition-colors"
+                    className="h-12 border border-border hover:bg-muted transition-colors"
                   >
                     <Minus className="h-3 w-3" />
                   </button>
@@ -288,12 +288,12 @@ export function ProgressHeader() {
                     max="59"
                     value={sleepMinutes}
                     onChange={(e) => setSleepMinutes(e.target.value)}
-                    className="text-center text-xl font-bold h-12 input-terminal"
+                    className="h-12 min-w-0 px-1 text-center text-xl font-bold input-terminal"
                   />
                   <button
                     onClick={() => adjustSleepMinutes(15)}
                     aria-label="Increase minutes"
-                    className="p-2 border border-border hover:bg-muted transition-colors"
+                    className="h-12 border border-border hover:bg-muted transition-colors"
                   >
                     <Plus className="h-3 w-3" />
                   </button>

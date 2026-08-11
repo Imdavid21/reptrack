@@ -995,13 +995,13 @@ export function CalorieTrackerCompact() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="p-3 rounded-xl border border-border bg-muted/20 flex items-end justify-between">
-              <div>
+          <div className="min-w-0 space-y-4">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 rounded-xl border border-border bg-muted/20 p-3">
+              <div className="min-w-0">
                 <div className="text-3xl font-bold tabular-nums">{Math.round(proteinTotal)}g</div>
                 <div className="text-xs text-muted-foreground">of {proteinGoal}g goal</div>
               </div>
-              <div className="text-sm text-muted-foreground tabular-nums">
+              <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
                 {proteinTotal >= proteinGoal
                   ? `+${Math.round(proteinTotal - proteinGoal)}g over`
                   : `${Math.round(proteinGoal - proteinTotal)}g left`}
@@ -1013,11 +1013,11 @@ export function CalorieTrackerCompact() {
               {proteinRows.length === 0 ? (
                 <p className="text-xs text-muted-foreground mt-2">No meals logged yet.</p>
               ) : (
-                <div className="border border-border rounded-xl divide-y divide-border overflow-hidden mt-1.5">
+                <div className="min-w-0 border border-border rounded-xl divide-y divide-border overflow-hidden mt-1.5">
                   {proteinRows.map(row => (
-                    <div key={row.id} className="p-2.5 flex items-center gap-3">
+                    <div key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-2.5">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs truncate">{row.name}</div>
+                        <div className="break-words text-xs leading-snug">{row.name}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
                           {row.type} · {Math.round(row.calories)} cal
                         </div>
@@ -1031,7 +1031,7 @@ export function CalorieTrackerCompact() {
 
             <div>
               <Label className="text-xs text-muted-foreground">OTHER MACROS TODAY</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1.5">
+              <div className="grid min-w-0 grid-cols-2 gap-2 mt-1.5 sm:grid-cols-3">
                 {([
                   { key: 'carbs', label: 'Carbs', unit: 'g' },
                   { key: 'fat', label: 'Fat', unit: 'g' },
@@ -1039,7 +1039,7 @@ export function CalorieTrackerCompact() {
                   { key: 'sugar', label: 'Sugar', unit: 'g' },
                   { key: 'sodium', label: 'Sodium', unit: 'mg' },
                 ] as const).map(m => (
-                  <div key={m.key} className="p-2 rounded-xl border border-border bg-muted/20 text-center">
+                  <div key={m.key} className="min-w-0 p-2 rounded-xl border border-border bg-muted/20 text-center">
                     <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
                     <div className="text-[10px] text-muted-foreground tracking-wide">{m.label}</div>
                   </div>
