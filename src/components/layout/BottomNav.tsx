@@ -1,10 +1,14 @@
 import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, History, Settings, Sparkles } from 'lucide-react';
+
+const MotionBox = motion.create(Box);
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const reduceMotion = useReducedMotion();
 
   const navItems = [
     { path: '/app', icon: Home, label: 'Today' },
@@ -19,48 +23,65 @@ export function BottomNav() {
     item.path === currentPath ||
     (item.path !== '/app' && currentPath.startsWith(item.path))
   );
+  const selectedValue = currentValue >= 0 ? currentValue : 0;
 
   return (
-    <Paper 
-      sx={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
+    <Paper
+      component="nav"
+      aria-label="Primary navigation"
+      className="app-tab-bar"
+      sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
         right: 0,
         zIndex: 50,
-        borderTop: 1,
-        borderColor: 'divider',
-        pb: 'env(safe-area-inset-bottom)',
-        bgcolor: 'background.paper',
-      }} 
+        px: { xs: 1, sm: 2 },
+        pb: 'max(env(safe-area-inset-bottom), 6px)',
+        bgcolor: 'transparent',
+      }}
       elevation={0}
     >
       <BottomNavigation
         showLabels
-        value={currentValue >= 0 ? currentValue : 0}
-        onChange={(_, newValue) => {
-          navigate(navItems[newValue].path);
-        }}
+        value={selectedValue}
+        onChange={(_, newValue) => navigate(navItems[newValue].path)}
         sx={{
-          bgcolor: 'background.paper',
-          height: 60,
+          position: 'relative',
+          isolation: 'isolate',
+          maxWidth: 560,
+          mx: 'auto',
+          height: 62,
+          px: 0.5,
+          borderRadius: '20px',
+          bgcolor: 'transparent',
           '& .MuiBottomNavigationAction-root': {
+            position: 'relative',
+            zIndex: 1,
             minWidth: 48,
-            py: 1,
+            minHeight: 56,
+            py: 0.75,
+            borderRadius: '16px',
             color: 'text.secondary',
+            WebkitTapHighlightColor: 'transparent',
+            transition: reduceMotion ? 'none' : 'color 160ms ease',
+            '&:active': {
+              transform: reduceMotion ? 'none' : 'scale(0.96)',
+            },
+            '&:focus-visible': {
+              outline: '2px solid hsl(var(--ring))',
+              outlineOffset: -3,
+            },
             '&.Mui-selected': {
               color: 'hsl(var(--foreground))',
             },
-            // Accent dot above the active tab's icon
-            '&.Mui-selected .nav-dot': {
-              opacity: 1,
-            },
           },
           '& .MuiBottomNavigationAction-label': {
-            fontSize: '0.625rem',
+            mt: 0.35,
             fontFamily: 'inherit',
-            letterSpacing: '0.02em',
-            mt: 0.5,
+            fontSize: '0.625rem',
+            lineHeight: 1.2,
+            letterSpacing: '0.01em',
             '&.Mui-selected': {
               fontSize: '0.625rem',
               fontWeight: 700,
@@ -69,7 +90,7 @@ export function BottomNav() {
         }}
       >
         {navItems.map((item, idx) => {
-          const selected = (currentValue >= 0 ? currentValue : 0) === idx;
+          const selected = selectedValue === idx;
           return (
             <BottomNavigationAction
               key={item.path}
@@ -77,21 +98,35 @@ export function BottomNav() {
               aria-label={item.label}
               aria-current={selected ? 'page' : undefined}
               icon={
-                <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Box
-                    className="nav-dot"
-                    sx={{
-                      position: 'absolute',
-                      top: -7,
-                      width: 4,
-                      height: 4,
-                      borderRadius: '50%',
-                      bgcolor: 'hsl(var(--energy))',
-                      opacity: 0,
-                      transition: 'opacity 0.15s ease',
-                    }}
-                  />
-                  <item.icon size={20} />
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: 42,
+                    height: 28,
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  {selected && (
+                    <MotionBox
+                      layoutId="active-tab-material"
+                      aria-hidden
+                      transition={
+                        reduceMotion
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 500, damping: 38, mass: 0.7 }
+                      }
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: -1,
+                        borderRadius: '14px',
+                        bgcolor: 'hsl(var(--energy-soft))',
+                        boxShadow: 'inset 0 1px 0 hsl(var(--foreground) / 0.08)',
+                      }}
+                    />
+                  )}
+                  <item.icon size={20} strokeWidth={selected ? 2.35 : 1.9} />
                 </Box>
               }
             />
