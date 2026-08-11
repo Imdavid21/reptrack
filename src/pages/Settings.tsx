@@ -26,6 +26,7 @@ import {
   Link2,
   TrendingDown,
   Repeat2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -122,7 +123,7 @@ export default function Settings() {
   return (
     <MainLayout>
       <AnimatedPage>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4, minHeight: 'calc(100vh - 140px)' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, pb: 4, minHeight: 'calc(100vh - 140px)', width: '100%', maxWidth: 720, mx: 'auto' }}>
 
           {/* Profile & Account - Merged */}
           <MuiCard>
@@ -864,7 +865,46 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
+          {/* Less-used app and data controls stay out of the primary settings path. */}
+          <MuiCard>
+            <Box
+              component="button"
+              type="button"
+              onClick={() => toggleSection('advanced')}
+              aria-expanded={expandedSections.advanced || false}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                py: 1,
+                width: '100%',
+                border: 0,
+                bgcolor: 'transparent',
+                color: 'inherit',
+                textAlign: 'left',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <SlidersHorizontal size={18} />
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>App &amp; Data</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Install, update, backup, or restore
+                  </Typography>
+                </Box>
+              </Box>
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: expandedSections.advanced ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            </Box>
 
+            <Collapse in={expandedSections.advanced} unmountOnExit>
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
           {/* Install as App - only show when NOT running as installed PWA */}
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
           <MuiCard>
@@ -1009,6 +1049,9 @@ export default function Settings() {
             isExpanded={expandedSections.data || false}
             onToggle={() => toggleSection('data')}
           />
+              </Box>
+            </Collapse>
+          </MuiCard>
 
           {/* Sign Out */}
           <MuiCard>
