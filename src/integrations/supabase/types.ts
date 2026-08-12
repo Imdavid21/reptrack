@@ -127,6 +127,30 @@ export type Database = {
           },
         ]
       }
+      api_rate_limits: {
+        Row: {
+          bucket: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          bucket?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       calorie_burns: {
         Row: {
           activity_type: string | null
@@ -518,6 +542,36 @@ export type Database = {
           },
         ]
       }
+      mcp_audit_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          error_category: string | null
+          id: string
+          success: boolean
+          tool_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          error_category?: string | null
+          id?: string
+          success?: boolean
+          tool_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          error_category?: string | null
+          id?: string
+          success?: boolean
+          tool_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           ai_confidence: number | null
@@ -848,6 +902,10 @@ export type Database = {
     }
     Functions: {
       check_email_exists: { Args: { email_input: string }; Returns: boolean }
+      check_rate_limit: {
+        Args: { p_bucket: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
