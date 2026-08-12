@@ -26,6 +26,7 @@ import {
   Link2,
   TrendingDown,
   Repeat2,
+  Server,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -1009,6 +1010,22 @@ export default function Settings() {
             isExpanded={expandedSections.data || false}
             onToggle={() => toggleSection('data')}
           />
+
+          <MuiCard>
+            <Box
+              onClick={() => navigate('/app/settings/mcp')}
+              sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', py:1 }}
+            >
+              <Box sx={{ display:'flex', alignItems:'center', gap:1.5 }}>
+                <Server size={18} />
+                <Box>
+                  <Typography variant="body1" fontWeight={600}>ChatGPT data connection</Typography>
+                  <Typography variant="caption" color="text.secondary">Read-only MCP status and setup</Typography>
+                </Box>
+              </Box>
+              <ChevronRight size={18} />
+            </Box>
+          </MuiCard>
 
           {/* Sign Out */}
           <MuiCard>

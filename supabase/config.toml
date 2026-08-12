@@ -18,3 +18,8 @@ verify_jwt = false
 
 [functions.send-auth-email]
 verify_jwt = false
+
+[functions.mcp]
+# MCP performs standards-compliant OAuth bearer validation itself so it can
+# return RFC 9728 discovery metadata on authentication failures.
+verify_jwt = false

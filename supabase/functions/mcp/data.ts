@@ -1,0 +1,90 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { average, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, round, setMetrics } from "./core.ts";
+
+type Client = any;
+type Args = Record<string, any>;
+
+async function prefs(db: Client) {
+  const { data, error } = await db.from("user_preferences").select("*").maybeSingle();
+  if (error) throw new Error("DATABASE_READ_FAILED");
+  return data || { timezone: "Asia/Kolkata", units_system: "metric" };
+}
+const envelope = (start: string, end: string, timezone: string, data: unknown, summary: unknown, metadata: unknown = {}) =>
+  ({ start_date: start, end_date: end, timezone, data, summary, metadata });
+
+async function workoutRows(db: Client, start: string, end: string, limit = 50, filters: Args = {}) {
+  let q = db.from("workouts").select("id,date,day,day_name,completed_at,started_at,workout_duration_minutes,is_skipped,exercises(id,name,category,actual_reps,actual_weight,target_reps,target_weight,completed,sort_order)")
+    .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(limit + 1);
+  if (filters.workout_type) q = q.ilike("day_name", `%${filters.workout_type}%`);
+  const { data, error } = await q;
+  if (error) throw new Error("DATABASE_READ_FAILED");
+  let rows = data || [];
+  if (filters.exercise) rows = rows.filter((w: any) => w.exercises?.some((e: any) => e.name.toLowerCase().includes(filters.exercise.toLowerCase())));
+  return { rows: rows.slice(0, limit), hasMore: rows.length > limit };
+}
+
+export async function executeTool(name: string, args: Args, db: Client) {
+  const p = await prefs(db), timezone = p.timezone || "Asia/Kolkata";
+  if (name === "get_fitness_profile") {
+    const { data: latest } = await db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).order("date", { ascending: false }).limit(1).maybeSingle();
+    const profile = { height_cm: p.height_cm, current_bodyweight: latest?.bodyweight ?? null, bodyweight_date: latest?.date ?? null, age: p.age, sex: p.gender, fitness_goal: p.fitness_goal, goal_weight: p.weight_goal, activity_level: p.activity_level, training_frequency_per_week: p.weekly_workout_goal, calorie_target: p.daily_calorie_goal, protein_target_g: p.daily_protein_goal, carbohydrate_target_g: p.daily_carbs_goal, fat_target_g: p.daily_fat_goal, fiber_target_g: p.daily_fiber_goal, water_target_l: p.daily_water_goal, current_split: p.training_split, training_focus: p.training_focus, units_system: p.units_system, timezone };
+    return envelope(latest?.date ?? null, latest?.date ?? null, timezone, profile, {}, { source: "user_preferences,daily_metrics" });
+  }
+
+  const start = args.start_date, end = args.end_date;
+  assertDateRange(start, end, name === "get_workouts" || name === "get_exercise_history" ? 366 : 730);
+
+  if (name === "get_bodyweight_history") {
+    const limit = Math.min(args.limit ?? 365, 365);
+    const { data, error } = await db.from("daily_metrics").select("date,bodyweight").gte("date", start).lte("date", end).not("bodyweight", "is", null).order("date").limit(limit + 1);
+    if (error) throw new Error("DATABASE_READ_FAILED");
+    const rows = (data || []).slice(0, limit).map((r: any) => ({ date: r.date, bodyweight: r.bodyweight, unit: p.units_system === "imperial" ? "lb" : "kg" }));
+    const weights = rows.map((r: any) => r.bodyweight), first = weights[0] ?? null, latest = weights.at(-1) ?? null;
+    return envelope(start, end, timezone, movingAverage7(rows), { first_weight: first, latest_weight: latest, absolute_change: first != null && latest != null ? round(latest-first) : null, percentage_change: first ? round((latest-first)/first*100) : null, average_weight: average(weights) }, { has_more: (data || []).length > limit, limit });
+  }
+
+  if (name === "get_workouts") {
+    const limit = Math.min(args.limit ?? 50, 50), result = await workoutRows(db, start, end, limit, args);
+    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, reps: e.actual_reps, load: e.actual_weight, completed: e.completed })) }));
+    return envelope(start, end, timezone, data, { workouts_returned: data.length }, { has_more: result.hasMore, limit });
+  }
+
+  if (name === "get_exercise_history") {
+    const limit = Math.min(args.limit ?? 100, 100), result = await workoutRows(db, start, end, 366);
+    const needle = String(args.exercise).toLowerCase();
+    const entries = result.rows.flatMap((w:any) => (w.exercises || []).filter((e:any) => e.name.toLowerCase().includes(needle)).map((e:any) => { const m=setMetrics(e.actual_reps,e.actual_weight); return { workout_date:w.date, exercise:e.name, reps:e.actual_reps, load:e.actual_weight, sets:m.setCount, total_reps:m.totalReps, volume:m.volume, estimated_1rm:m.bestEstimated1rm || null, estimate_formula:"Epley; parsed from logged set strings" }; })).slice(0, limit);
+    return envelope(start, end, timezone, entries, { entries: entries.length, total_volume: round(entries.reduce((s:any,e:any)=>s+e.volume,0)) }, { has_more: entries.length === limit, limit });
+  }
+
+  if (name === "get_nutrition") {
+    const limit = Math.min(args.limit ?? 365, 365);
+    const [{data: meals,error}, {data: waters}] = await Promise.all([
+      db.from("meals").select("date,meal_type,food_name,calories,protein,carbs,fat,fiber,sugar,sodium").gte("date",start).lte("date",end).order("date").limit(2000),
+      db.from("water_logs").select("amount,timestamp").gte("timestamp",localDayBounds(start,timezone).start).lt("timestamp",localDayBounds(end,timezone).end).limit(2000),
+    ]); if(error) throw new Error("DATABASE_READ_FAILED");
+    const days:Record<string,any>={}; for(const m of meals||[]){ const d=days[m.date] ||= {date:m.date,calories:0,protein:0,carbs:0,fat:0,fiber:0,water_l:0,meals:[]}; for(const k of ["calories","protein","carbs","fat","fiber"])d[k]+=m[k]||0; d.meals.push({meal_type:m.meal_type,food_name:m.food_name,calories:m.calories}); }
+    for(const w of waters||[]){ const date=new Intl.DateTimeFormat("en-CA",{timeZone:timezone}).format(new Date(w.timestamp)); const d=days[date] ||= {date,calories:0,protein:0,carbs:0,fat:0,fiber:0,water_l:0,meals:[]}; d.water_l+=w.amount||0; }
+    const data=Object.values(days).sort((a:any,b:any)=>a.date.localeCompare(b.date)).slice(0,limit) as any[];
+    return envelope(start,end,timezone,data,{average_calories_per_logged_day:average(data.map(d=>d.calories)),average_protein_g_per_logged_day:average(data.map(d=>d.protein)),average_carbs_g_per_logged_day:average(data.map(d=>d.carbs)),average_fat_g_per_logged_day:average(data.map(d=>d.fat)),logged_days:data.length,targets:{calories:p.daily_calorie_goal,protein_g:p.daily_protein_goal,carbs_g:p.daily_carbs_goal,fat_g:p.daily_fat_goal}},{has_more:Object.keys(days).length>limit,limit});
+  }
+
+  if (name === "get_sleep") {
+    const {data,error}=await db.from("daily_metrics").select("date,sleep_hours").gte("date",start).lte("date",end).not("sleep_hours","is",null).order("date"); if(error)throw new Error("DATABASE_READ_FAILED"); const vals=(data||[]).map((r:any)=>r.sleep_hours);
+    return envelope(start,end,timezone,data||[],{average_sleep_hours:average(vals),minimum_sleep_hours:vals.length?Math.min(...vals):null,maximum_sleep_hours:vals.length?Math.max(...vals):null,logged_nights:vals.length},{unavailable_fields:["bedtime","wake_time","sleep_score","sleep_stages","interruptions"]});
+  }
+
+  if (name === "get_activity") {
+    const {data,error}=await db.from("calorie_burns").select("date,source,activity_type,calories,duration_minutes,distance_km").gte("date",start).lte("date",end).order("date"); if(error)throw new Error("DATABASE_READ_FAILED");
+    return envelope(start,end,timezone,data||[],{active_calories:round((data||[]).reduce((s:number,r:any)=>s+(r.calories||0),0)),activity_minutes:round((data||[]).reduce((s:number,r:any)=>s+(r.duration_minutes||0),0)),distance_km:round((data||[]).reduce((s:number,r:any)=>s+(r.distance_km||0),0))},{unavailable_fields:["steps","heart_rate","BMR","total_expenditure"]});
+  }
+
+  if (["get_training_summary","get_progress_summary","get_recent_fitness_data"].includes(name)) {
+    const wr=await workoutRows(db,start,end,366); const workouts=wr.rows.filter((w:any)=>!w.is_skipped); const ex=workouts.flatMap((w:any)=>(w.exercises||[]).filter((e:any)=>e.completed!==false).map((e:any)=>({...e,date:w.date,metrics:setMetrics(e.actual_reps,e.actual_weight)}))); const muscle:Record<string,number>={}; ex.forEach((e:any)=>muscle[classifyMuscle(e.name)]=(muscle[classifyMuscle(e.name)]||0)+e.metrics.setCount);
+    const training={training_days:new Set(workouts.map((w:any)=>w.date)).size,workouts_completed:workouts.length,total_sets:ex.reduce((s:number,e:any)=>s+e.metrics.setCount,0),total_reps:ex.reduce((s:number,e:any)=>s+e.metrics.totalReps,0),total_volume:round(ex.reduce((s:number,e:any)=>s+e.metrics.volume,0)),average_workout_duration_minutes:average(workouts.map((w:any)=>w.workout_duration_minutes)),total_workout_duration_minutes:round(workouts.reduce((s:number,w:any)=>s+(w.workout_duration_minutes||0),0)),exercises_performed:[...new Set(ex.map((e:any)=>e.name))],sets_per_muscle_group:muscle,training_frequency_per_week:round(workouts.length/Math.max(1,(Date.parse(end)-Date.parse(start))/604800000))};
+    if(name==="get_training_summary")return envelope(start,end,timezone,[],training,{muscle_mapping:"maintained deterministic exercise-name mapping; unmapped is reported explicitly"});
+    const [weights,nutrition,sleep,activity]=await Promise.all([executeTool("get_bodyweight_history",{start_date:start,end_date:end,limit:365},db),executeTool("get_nutrition",{start_date:start,end_date:end,limit:365},db),executeTool("get_sleep",{start_date:start,end_date:end},db),executeTool("get_activity",{start_date:start,end_date:end},db)]);
+    const summary={starting_weight:weights.summary.first_weight,ending_weight:weights.summary.latest_weight,weight_change:weights.summary.absolute_change,average_calorie_intake:nutrition.summary.average_calories_per_logged_day,average_protein_g:nutrition.summary.average_protein_g_per_logged_day,average_sleep_hours:sleep.summary.average_sleep_hours,workouts:training.workouts_completed,workouts_per_week:training.training_frequency_per_week,total_sets:training.total_sets,average_workout_duration_minutes:training.average_workout_duration_minutes,active_calories:activity.summary.active_calories,sets_per_muscle_group:muscle};
+    return envelope(start,end,timezone,name==="get_recent_fitness_data"?{bodyweight:weights.data,nutrition:nutrition.data,sleep:sleep.data,activity:activity.data,workouts:workouts.map((w:any)=>({date:w.date,name:w.day_name,duration_minutes:w.workout_duration_minutes}))}:[],summary,{compact:true});
+  }
+  throw new Error("UNKNOWN_TOOL");
+}

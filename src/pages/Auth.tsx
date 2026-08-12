@@ -37,6 +37,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const redirectAfterAuth = searchParams.get('redirect');
   const { isDark, toggleTheme } = useTheme();
   const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
 
@@ -58,9 +59,9 @@ export default function Auth() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/app', { replace: true });
+      navigate(redirectAfterAuth || '/app', { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, redirectAfterAuth]);
 
   useEffect(() => {
     if (searchParams.get('type') === 'recovery') {
@@ -142,7 +143,7 @@ export default function Auth() {
           toast.success('Account created! Welcome to Reptrack.');
           localStorage.setItem('just_signed_up', 'true');
           saveLastMethod('email');
-          navigate('/app', { replace: true });
+          navigate(redirectAfterAuth || '/app', { replace: true });
         } else {
           // Email confirmation may be enabled in another environment. Do not
           // claim the user is signed in or send them into a protected route.
@@ -161,7 +162,7 @@ export default function Auth() {
         } else {
           toast.success('Welcome back!');
           saveLastMethod('email');
-          navigate('/app', { replace: true });
+          navigate(redirectAfterAuth || '/app', { replace: true });
         }
       }
     } catch (error: any) {

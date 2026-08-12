@@ -26,6 +26,8 @@ import Settings from "./pages/Settings";
 import LifecycleTracker from "./pages/LifecycleTracker";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Chat from "./pages/Chat";
+import OAuthConsent from "./pages/OAuthConsent";
+import McpStatus from "./pages/McpStatus";
 
 // Legacy redirect component that properly passes the workoutId param
 function HistoryRedirect() {
@@ -64,6 +66,7 @@ function AppRoutes() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/changelog" element={<Changelog />} />
+        <Route path="/oauth/consent" element={<OAuthConsent />} />
 
         {/* App routes (authenticated, eagerly loaded for instant navigation) */}
         <Route path="/app" element={<AppIndex />} />
@@ -73,6 +76,7 @@ function AppRoutes() {
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
         <Route path="/app/chat" element={<Chat />} />
         <Route path="/app/settings" element={<Settings />} />
+        <Route path="/app/settings/mcp" element={<McpStatus />} />
         <Route path="/app/lifecycle" element={<LifecycleTracker />} />
 
         {/* Legacy redirects */}
