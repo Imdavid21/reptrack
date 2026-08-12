@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "npm:@supabase/supabase-js@2.90.0";
-import { McpServer } from "npm:@modelcontextprotocol/sdk@1.24.3/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.24.3/server/webStandardStreamableHttp.js";
+import { McpServer } from "npm:@modelcontextprotocol/sdk@1.30.0/server/mcp.js";
+import { WebStandardStreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.30.0/server/webStandardStreamableHttp.js";
 import { z } from "npm:zod@3.25.76";
 import { APPROVED_TOOLS, MCP_MODE, MCP_VERSION, isApprovedTool } from "./core.ts";
 import { executeTool } from "./data.ts";
