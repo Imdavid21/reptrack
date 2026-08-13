@@ -43,6 +43,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
+const settingsCardSx = {
+  bgcolor: 'transparent',
+  backgroundImage: 'none',
+  borderColor: 'divider',
+  borderRadius: 2,
+  boxShadow: 'none',
+  '& .MuiCardContent-root': { p: 1.5, '&:last-child': { pb: 1.5 } },
+};
+
+const settingsPanelSx = {
+  p: 2,
+  bgcolor: 'transparent',
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 1.5,
+};
+
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut, updateEmail, resetPassword } = useAuth();
@@ -132,7 +149,7 @@ export default function Settings() {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 4, minHeight: 'calc(100vh - 140px)' }}>
 
           {/* Profile & Account - Merged */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box
               onClick={() => toggleSection('profile')}
               sx={{
@@ -146,7 +163,7 @@ export default function Settings() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <User size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>Account</Typography>
+                  <Typography variant="h6">Account</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {profile.name || user?.email}
                   </Typography>
@@ -165,7 +182,7 @@ export default function Settings() {
               <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
                 {/* Profile Info */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <Box sx={settingsPanelSx}>
                   {prefsLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -342,7 +359,7 @@ export default function Settings() {
                 </Box>
 
                 {/* Change Email */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <Box sx={settingsPanelSx}>
                   {!isEditingEmail ? (
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
@@ -413,7 +430,7 @@ export default function Settings() {
                 </Box>
 
                 {/* Reset Password */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <Box sx={settingsPanelSx}>
                   {!isEditingPassword ? (
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -477,7 +494,7 @@ export default function Settings() {
                 </Box>
 
                 {/* Linked Accounts */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <Box sx={settingsPanelSx}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                     <Link2 size={16} />
                     <Typography variant="body2" fontWeight={600}>Sign-in Methods</Typography>
@@ -556,11 +573,11 @@ export default function Settings() {
           </MuiCard>
 
           {/* Appearance - Dark Mode Toggle */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 {isDark ? <Moon size={18} /> : <Sun size={18} />}
-                <Typography variant="body1" fontWeight={600}>
+                <Typography variant="h6">
                   {isDark ? 'Dark Mode' : 'Light Mode'}
                 </Typography>
               </Box>
@@ -574,7 +591,7 @@ export default function Settings() {
 
 
           {/* Workout Preferences */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box
               onClick={() => toggleSection('workout')}
               sx={{
@@ -588,7 +605,7 @@ export default function Settings() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Dumbbell size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>Workout</Typography>
+                  <Typography variant="h6">Workout</Typography>
                   <Typography variant="caption" color="text.secondary">
                     Rest timer and training preferences
                   </Typography>
@@ -607,7 +624,7 @@ export default function Settings() {
               <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
                 {/* Default Rest Timer */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <Box sx={settingsPanelSx}>
                   <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
                     Default Rest Timer
                   </Typography>
@@ -642,7 +659,7 @@ export default function Settings() {
                 </Box>
 
                 {/* Auto-start rest timer toggle */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ ...settingsPanelSx, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="body2" fontWeight={600}>Auto-start Rest Timer</Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -663,7 +680,7 @@ export default function Settings() {
           </MuiCard>
 
           {/* Deficit Mode */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box
               onClick={() => toggleSection('deficit')}
               sx={{
@@ -677,7 +694,7 @@ export default function Settings() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <TrendingDown size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>Deficit Mode</Typography>
+                  <Typography variant="h6">Deficit Mode</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {preferences?.deficit_mode_enabled
                       ? `Active | -${preferences?.daily_deficit_target ?? 500} kcal/day`
@@ -696,7 +713,7 @@ export default function Settings() {
 
             <Collapse in={expandedSections.deficit}>
               <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ ...settingsPanelSx, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="body2" fontWeight={600}>Enable Deficit Mode</Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -712,7 +729,7 @@ export default function Settings() {
 
                 {preferences?.deficit_mode_enabled && (
                   <>
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Box sx={settingsPanelSx}>
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
                         Personal energy model
                       </Typography>
@@ -756,7 +773,7 @@ export default function Settings() {
                       )}
                     </Box>
 
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Box sx={settingsPanelSx}>
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
                         Daily Deficit Target
                       </Typography>
@@ -822,7 +839,7 @@ export default function Settings() {
 
           {/* Install as App - only show when NOT running as installed PWA */}
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box
               onClick={() => toggleSection('pwa')}
               sx={{
@@ -836,7 +853,7 @@ export default function Settings() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Smartphone size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>Install as App</Typography>
+                  <Typography variant="h6">Install as App</Typography>
                   <Typography variant="caption" color="text.secondary">
                     Use like a real app on your phone
                   </Typography>
@@ -861,7 +878,7 @@ export default function Settings() {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: 'action.hover',
+                    bgcolor: 'transparent',
                     borderRadius: 2,
                     border: 1,
                     borderColor: 'divider',
@@ -891,7 +908,7 @@ export default function Settings() {
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: 'action.hover',
+                    bgcolor: 'transparent',
                     borderRadius: 2,
                     border: 1,
                     borderColor: 'divider',
@@ -921,12 +938,12 @@ export default function Settings() {
           )}
 
           {/* Force Update App */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
                 <RefreshCw size={18} />
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body1" fontWeight={600}>Force Update</Typography>
+                  <Typography variant="h6">Force Update</Typography>
                   <Typography variant="caption" color="text.secondary">
                     Clear cache and reload to latest version
                   </Typography>
@@ -965,7 +982,7 @@ export default function Settings() {
             onToggle={() => toggleSection('data')}
           />
 
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <Box
               onClick={() => navigate('/app/settings/mcp')}
               sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', py:1 }}
@@ -973,7 +990,7 @@ export default function Settings() {
               <Box sx={{ display:'flex', alignItems:'center', gap:1.5 }}>
                 <Server size={18} />
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>ChatGPT data connection</Typography>
+                  <Typography variant="h6">ChatGPT data connection</Typography>
                   <Typography variant="caption" color="text.secondary">Read-only MCP status and setup</Typography>
                 </Box>
               </Box>
@@ -985,7 +1002,7 @@ export default function Settings() {
           </Collapse>
 
           {/* Sign Out */}
-          <MuiCard>
+          <MuiCard sx={settingsCardSx}>
             <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-center gap-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"

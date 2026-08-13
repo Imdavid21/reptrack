@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {adaptSession,calculateReadiness,CONDITIONING_OPTIONS,nextSession,PPL_PROGRAM,warmupSets,nextSet,resolveNextSession,sessionKeyFromWorkout} from './adaptivePpl';
+import {adaptSession,calculateReadiness,CONDITIONING_OPTIONS,CONDITIONING_SPLITS,nextSession,PPL_PROGRAM,warmupSets,nextSet,resolveNextSession,sessionKeyFromWorkout} from './adaptivePpl';
 const base={sleep:8,soreness:{},joints:{},fatigue:3,motivation:8};
 describe('adaptive PPL',()=>{
  it('advances by completion sequence, not weekday',()=>{expect(nextSession('push_a')).toBe('pull_a');expect(nextSession('pull_a')).toBe('legs_a');expect(nextSession('legs_a')).toBe('push_b');expect(nextSession('push_b')).toBe('pull_b');expect(nextSession('pull_b')).toBe('legs_b');expect(nextSession('legs_b')).toBe('recovery');expect(nextSession('recovery')).toBe('push_a')});
@@ -7,6 +7,7 @@ describe('adaptive PPL',()=>{
  it('recovers the sequence from existing workout history',()=>{expect(sessionKeyFromWorkout(null,'Pull A')).toBe('pull_a');expect(nextSession(sessionKeyFromWorkout(null,'Pull A')!)).toBe('legs_a');expect(sessionKeyFromWorkout('push_b','anything')).toBe('push_b')});
  it('classifies recovery conservatively',()=>{expect(calculateReadiness(base,'push_a').band).toBe('green');expect(calculateReadiness({...base,sleep:6},'push_a').band).toBe('yellow');expect(calculateReadiness({...base,joints:{knee:6}},'legs_a').band).toBe('red')});
  it('offers optional conditioning and mobility without replacing pain-safe recovery',()=>{expect(Object.keys(CONDITIONING_OPTIONS)).toEqual(['cindy','annie','chelsea','bodyweight_emom','mobility']);expect(CONDITIONING_OPTIONS.mobility.exercises.every(exercise=>!exercise.name.includes('Round'))).toBe(true);expect(PPL_PROGRAM.recovery.name).toBe('Optional conditioning');expect(adaptSession(PPL_PROGRAM.push_a,'red','recovery').name).toBe('Recovery')});
+ it('distinguishes Cindy AMRAP from Chelsea EMOM',()=>{expect(CONDITIONING_OPTIONS.cindy.objective).toContain('As many rounds');expect(CONDITIONING_OPTIONS.chelsea.objective).toContain('every minute');expect(CONDITIONING_SPLITS.cindy[0].prescription).toContain('per round');expect(CONDITIONING_SPLITS.chelsea[0].prescription).toContain('every minute')});
  it('removes intensity techniques and volume when impaired',()=>{const normal=PPL_PROGRAM.push_b;expect(adaptSession(normal,'yellow').exercises.some(e=>e.name.includes('Drop Set'))).toBe(false);expect(adaptSession(normal,'yellow').duration).toBeLessThan(normal.duration)});
  it('generates non-fatiguing ramp sets',()=>{expect(warmupSets(70)).toEqual([{load:20,reps:12},{load:37.5,reps:8},{load:50,reps:5},{load:60,reps:3}])});
  it('decides the next set from reps and RIR',()=>{expect(nextSet(70,8,3,5,8).load).toBe(72.5);expect(nextSet(70,4,0,5,8).load).toBe(67.5);expect(nextSet(70,6,1,5,8).load).toBe(70)});

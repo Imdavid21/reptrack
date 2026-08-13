@@ -26,6 +26,15 @@ interface DataManagementSectionProps {
   onToggle: () => void;
 }
 
+const settingsCardSx = {
+  bgcolor: 'transparent',
+  backgroundImage: 'none',
+  borderColor: 'divider',
+  borderRadius: 2,
+  boxShadow: 'none',
+  '& .MuiCardContent-root': { p: 1.5, '&:last-child': { pb: 1.5 } },
+};
+
 const TABLE_LABELS: Record<DataTable, string> = {
   workouts: 'Workouts',
   exercises: 'Exercises',
@@ -142,7 +151,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const isLoading = isExporting || isImporting;
 
   return (
-    <MuiCard>
+    <MuiCard sx={settingsCardSx}>
       <Box
         onClick={onToggle}
         sx={{ 
@@ -155,7 +164,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Database size={18} />
-          <Typography variant="body1" fontWeight={600}>Data Management</Typography>
+          <Typography variant="h6">Data Management</Typography>
         </Box>
         <ChevronRight 
           size={18} 
@@ -188,7 +197,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
           )}
 
           {/* Export Section */}
-          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+          <Box sx={{ p: 2, bgcolor: 'transparent', border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Download size={16} />
               <Typography variant="body2" fontWeight={600}>Export Data</Typography>
@@ -261,7 +270,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
           </Box>
 
           {/* Import Section */}
-          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+          <Box sx={{ p: 2, bgcolor: 'transparent', border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Upload size={16} />
               <Typography variant="body2" fontWeight={600}>Import Data</Typography>

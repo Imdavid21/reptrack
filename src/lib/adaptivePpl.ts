@@ -17,17 +17,17 @@ const cool=(names:string[])=>names.map(n=>e(n,'cooldown',1,n.includes('breath')?
 const recoveryMobility:SessionTemplate={key:'recovery',name:'Recovery',objective:'Mobility and easy movement',duration:25,exercises:[e('Cat-Cow','mobility',1,'10'),e('Open Book','mobility',1,'10/side'),e('Wall Slide','mobility',2,'10'),e('90/90 Hip Switch','mobility',2,'10/side'),e('Hip CAR','mobility',2,'5/side'),e('Adductor Rock-Back','mobility',2,'10/side'),e('Couch Stretch','mobility',2,'45 sec/side',{timed:true}),e('Active Hamstring Mobilization','mobility',2,'10/side'),e('Knee-to-Wall','mobility',2,'10/side'),e('Deep Squat Hold','mobility',2,'45 sec',{timed:true}),e('Dead Hang','mobility',2,'30 sec',{timed:true}),e('Glute Bridge','activation',2,'15'),e('Bird Dog','core',2,'8/side'),e('Dead Bug','core',2,'8/side'),e('Diaphragmatic Breathing','cooldown',1,'2 min',{timed:true})]};
 
 export const CONDITIONING_OPTIONS:Record<ConditioningOptionKey,SessionTemplate>={
- cindy:{key:'recovery',name:'Cindy',objective:'20-minute AMRAP',duration:20,exercises:[e('Cindy Round','compound',20,'1 round · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
+ cindy:{key:'recovery',name:'Cindy',objective:'As many rounds as possible in 20 minutes',duration:20,exercises:[e('Cindy Round','compound',20,'1 round · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
  annie:{key:'recovery',name:'Annie',objective:'50–40–30–20–10 for time',duration:15,exercises:[50,40,30,20,10].map(reps=>e(`${reps} Double-Unders + Sit-Ups`,'compound',1,`${reps} each`,{rir:'3+',rest:0}))},
- chelsea:{key:'recovery',name:'Chelsea',objective:'30-minute EMOM',duration:30,exercises:[e('Chelsea Minute','compound',30,'1 minute · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
+ chelsea:{key:'recovery',name:'Chelsea',objective:'Complete one round every minute for 30 minutes',duration:30,exercises:[e('Chelsea Minute','compound',30,'1 minute · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
  bodyweight_emom:{key:'recovery',name:'Bodyweight EMOM',objective:'15-minute low-equipment conditioning',duration:15,exercises:[e('EMOM Round','compound',15,'1 minute · 5 push-ups · 10 air squats · 20 mountain climbers',{rir:'3+',rest:0})]},
  mobility:{key:'recovery',name:'Mobility',objective:'20-minute mobility-only reset',duration:20,exercises:[e('Cat-Cow','accessory',1,'10'),e('Open Book','accessory',1,'8/side'),e('90/90 Hip Switch','accessory',2,'8/side'),e('Hip CAR','accessory',1,'5/side'),e('Adductor Rock-Back','accessory',2,'10/side'),e('Knee-to-Wall','accessory',2,'10/side'),e('Deep Squat Hold','accessory',2,'45 sec',{timed:true}),e('Dead Hang','accessory',2,'30 sec',{timed:true})]},
 };
 
 export const CONDITIONING_SPLITS:Record<ConditioningOptionKey,Array<{name:string;prescription:string}>>={
- cindy:[{name:'Pull-Ups',prescription:'5 reps'},{name:'Push-Ups',prescription:'10 reps'},{name:'Air Squats',prescription:'15 reps'}],
+ cindy:[{name:'Pull-Ups',prescription:'5 per round'},{name:'Push-Ups',prescription:'10 per round'},{name:'Air Squats',prescription:'15 per round'}],
  annie:[{name:'Double-Unders',prescription:'50 · 40 · 30 · 20 · 10'},{name:'Sit-Ups',prescription:'50 · 40 · 30 · 20 · 10'}],
- chelsea:[{name:'Pull-Ups',prescription:'5 reps'},{name:'Push-Ups',prescription:'10 reps'},{name:'Air Squats',prescription:'15 reps'}],
+ chelsea:[{name:'Pull-Ups',prescription:'5 every minute'},{name:'Push-Ups',prescription:'10 every minute'},{name:'Air Squats',prescription:'15 every minute'}],
  bodyweight_emom:[{name:'Push-Ups',prescription:'5 reps'},{name:'Air Squats',prescription:'10 reps'},{name:'Mountain Climbers',prescription:'20 reps'}],
  mobility:[{name:'Cat-Cow',prescription:'10 reps'},{name:'Open Book',prescription:'8/side'},{name:'90/90 Hip Switch',prescription:'2 × 8/side'},{name:'Hip CAR',prescription:'5/side'},{name:'Adductor Rock-Back',prescription:'2 × 10/side'},{name:'Knee-to-Wall',prescription:'2 × 10/side'},{name:'Deep Squat Hold',prescription:'2 × 45 sec'},{name:'Dead Hang',prescription:'2 × 30 sec'}],
 };
