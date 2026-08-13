@@ -464,23 +464,23 @@ export function CalorieTrackerCompact() {
           {deficitMode ? (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
-                  <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
+                <div className="col-span-2 p-3 rounded-xl border border-border bg-muted/20">
+                  <div className="text-[10px] text-muted-foreground tracking-wider">DEFICIT TODAY</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
                     hitDeficit ? "text-[#DAF1DC]" : netDeficit > 0 ? "text-foreground" : "text-[#ff9b9b]"
                   )}>
                     {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of -{deficitTarget}</div>
+                  <div className="text-[10px] text-muted-foreground">target -{deficitTarget} kcal</div>
                 </div>
                 <div className="p-2.5 rounded-xl border border-border bg-muted/20">
-                  <div className="text-[10px] text-muted-foreground tracking-wider">IN</div>
+                  <div className="text-[10px] text-muted-foreground tracking-wider">FOOD IN</div>
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalCalories.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories eaten</div>
                 </div>
                 <div className="p-2.5 rounded-xl border border-border bg-muted/20">
-                  <div className="text-[10px] text-muted-foreground tracking-wider">OUT</div>
+                  <div className="text-[10px] text-muted-foreground tracking-wider">ACTIVITY OUT</div>
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories burned</div>
                 </div>
@@ -488,20 +488,20 @@ export function CalorieTrackerCompact() {
                   type="button"
                   onClick={() => setIsProteinOpen(true)}
                   className={cn(
-                    "rounded-xl border p-2.5 text-left transition-colors",
+                    "col-span-2 rounded-xl border p-3 text-left transition-colors",
                     proteinTotal >= proteinGoal
                       ? "border-energy/30 bg-energy-soft/70 hover:bg-energy-soft"
                       : "border-border bg-muted/20 hover:bg-muted/40"
                   )}
                 >
-                  <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
+                  <div className="flex items-center justify-between"><div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div><span className="text-[10px] text-muted-foreground">View breakdown</span></div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
                     proteinTotal >= proteinGoal ? "text-energy-ink" : "text-foreground"
                   )}>
                     {Math.round(proteinTotal)}g
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g | breakdown</div>
+                  <div className="text-[10px] text-muted-foreground">{Math.max(0, Math.round(proteinGoal - proteinTotal))}g remaining of {proteinGoal}g</div>
                 </button>
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
