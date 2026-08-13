@@ -56,6 +56,7 @@ export default function Settings() {
 
   // All sections collapsed by default
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Account management state
   const [newEmail, setNewEmail] = useState('');
@@ -543,7 +544,7 @@ export default function Settings() {
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Workout</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Rest timer, units, preferences
+                    Rest timer and training preferences
                   </Typography>
                 </Box>
               </Box>
@@ -821,7 +822,7 @@ export default function Settings() {
                   <Typography variant="caption" color="text.secondary">
                     {preferences?.adaptive_mode_enabled
                       ? 'Active · Infinite Progression rotation'
-                      : 'Weak-point-driven exercise rotation'}
+                      : 'Exercise suggestions and rotation'}
                   </Typography>
                 </Box>
               </Box>
@@ -867,6 +868,35 @@ export default function Settings() {
             </Collapse>
           </MuiCard>
 
+          <Box
+            component="button"
+            type="button"
+            onClick={() => setShowAdvanced(open => !open)}
+            aria-expanded={showAdvanced}
+            sx={{
+              width: '100%',
+              border: 0,
+              bgcolor: 'transparent',
+              px: 1,
+              py: 1.25,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              color: 'text.primary',
+              textAlign: 'left',
+              '&:hover': { bgcolor: 'action.hover', borderRadius: 2 },
+            }}
+          >
+            <Box>
+              <Typography variant="body2" fontWeight={600}>Advanced & data</Typography>
+              <Typography variant="caption" color="text.secondary">Connection, install, data, and updates</Typography>
+            </Box>
+            <ChevronDown size={18} style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </Box>
+
+          <Collapse in={showAdvanced}>
+            <Box sx={{ display: 'grid', gap: 2 }}>
 
           {/* Install as App - only show when NOT running as installed PWA */}
           {!window.matchMedia('(display-mode: standalone)').matches && !('standalone' in navigator && (navigator as any).standalone) && (
@@ -1028,6 +1058,9 @@ export default function Settings() {
               <ChevronRight size={18} />
             </Box>
           </MuiCard>
+
+            </Box>
+          </Collapse>
 
           {/* Sign Out */}
           <MuiCard>
