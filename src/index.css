@@ -8,6 +8,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @layer base {
+  /* iOS Safari zooms a focused form control whose computed text is below
+     16px. Keep data entry stable on phone-width layouts, including raw
+     inputs created by third-party components. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
   :root {
     /* Core palette - Pure black & white */
     --background: 0 0% 98%; /* near white */

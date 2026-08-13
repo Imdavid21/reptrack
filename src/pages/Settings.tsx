@@ -38,8 +38,6 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
 import { resolveMaintenanceOverride } from '@/lib/metabolism';
 import { toast } from '@/lib/toast';
-import { Logo } from '@/components/layout/Logo';
-import { APP_VERSION } from '@/lib/version';
 
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
 
@@ -1073,19 +1071,6 @@ export default function Settings() {
             </button>
           </MuiCard>
 
-          {/* Version */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 4, pb: 3, mt: 'auto' }}>
-            <Logo size="sm" />
-            <Typography
-              component="a"
-              href="/changelog"
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 1, display: 'block', fontFamily: '"Space Grotesk", sans-serif', textDecoration: 'none', '&:hover': { color: 'text.primary' } }}
-            >
-              v{APP_VERSION}
-            </Typography>
-          </Box>
         </Box>
       </AnimatedPage>
     </MainLayout>
