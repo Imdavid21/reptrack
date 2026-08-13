@@ -23,7 +23,7 @@ export function MainLayout({ children, showBack, backTo, hideNav = false }: Main
   };
 
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : 'calc(68px + env(safe-area-inset-bottom))' }}>
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : '58px' }}>
       {showBack && (
         <Box
           component="header"

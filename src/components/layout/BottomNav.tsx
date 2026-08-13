@@ -32,11 +32,14 @@ export function BottomNav() {
         bottom: 0, 
         left: 0, 
         right: 0,
+        m: 0,
+        p: 0,
         zIndex: 50,
         borderTop: 1,
         borderColor: 'divider',
-        pb: 'env(safe-area-inset-bottom)',
+        borderRadius: '0 !important',
         bgcolor: 'background.paper',
+        overflow: 'hidden',
       }} 
       elevation={0}
     >
@@ -48,7 +51,8 @@ export function BottomNav() {
         }}
         sx={{
           bgcolor: 'background.paper',
-          height: 56,
+          height: 58,
+          minHeight: 58,
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
             py: 0.5,
