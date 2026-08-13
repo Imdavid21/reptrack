@@ -150,10 +150,9 @@ BEGIN
   DELETE FROM public.water_logs WHERE user_id = v_user;
   DELETE FROM public.meals WHERE user_id = v_user;
   DELETE FROM public.daily_metrics WHERE user_id = v_user;
-  DELETE FROM public.morning_checkins WHERE user_id = v_user;
   DELETE FROM public.custom_routines WHERE user_id = v_user;
   DELETE FROM public.user_preferences WHERE user_id = v_user;
-  DELETE FROM public.rate_limits WHERE user_id = v_user;
+  DELETE FROM public.api_rate_limits WHERE user_id = v_user;
   DELETE FROM public.workouts WHERE user_id = v_user;
   DELETE FROM public.profiles WHERE id = v_user;
   DELETE FROM auth.users WHERE id = v_user;
