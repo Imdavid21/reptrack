@@ -989,14 +989,14 @@ export function CalorieTrackerCompact() {
       </Dialog>
 
       {/* Protein details stay in the Today flow instead of opening a second sheet. */}
-      {isProteinOpen && <div className="mt-3 space-y-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between"><div className="text-sm font-semibold">Protein details{mealDateSuffix}</div><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground">Hide</button></div>
+      {isProteinOpen && <section className="mt-3 space-y-4 rounded-[20px] border border-border bg-card p-4">
+          <div className="flex items-center justify-between"><div className="text-sm font-semibold">Protein{mealDateSuffix}</div><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Hide</button></div>
 
           <div className="min-w-0 space-y-4">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 rounded-xl border border-border bg-muted/20 p-3">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 pb-3 border-b border-border">
               <div className="min-w-0">
-                <div className="text-3xl font-bold tabular-nums">{Math.round(proteinTotal)}g</div>
-                <div className="text-xs text-muted-foreground">of {proteinGoal}g goal</div>
+                <div className="text-2xl font-semibold tracking-tight tabular-nums">{Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span></div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-foreground transition-[width] duration-300" style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }} /></div>
               </div>
               <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
                 {proteinTotal >= proteinGoal
@@ -1006,16 +1006,16 @@ export function CalorieTrackerCompact() {
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground">BY MEAL</Label>
+              <Label className="text-xs text-muted-foreground">By meal</Label>
               {proteinRows.length === 0 ? (
                 <p className="text-xs text-muted-foreground mt-2">No meals logged yet.</p>
               ) : (
-                <div className="min-w-0 border border-border rounded-xl divide-y divide-border overflow-hidden mt-1.5">
+                <div className="min-w-0 divide-y divide-border mt-1.5">
                   {proteinRows.map(row => (
-                    <div key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-2.5">
+                    <div key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
                       <div className="min-w-0 flex-1">
-                        <div className="break-words text-xs leading-snug">{row.name}</div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                        <div className="break-words text-sm leading-snug">{row.name}</div>
+                        <div className="text-xs text-muted-foreground">
                           {row.type} · {Math.round(row.calories)} cal
                         </div>
                       </div>
@@ -1027,8 +1027,8 @@ export function CalorieTrackerCompact() {
             </div>
 
             <div>
-              <Label className="text-xs text-muted-foreground">OTHER MACROS TODAY</Label>
-              <div className="grid min-w-0 grid-cols-2 gap-2 mt-1.5 sm:grid-cols-3">
+              <Label className="text-xs text-muted-foreground">Other macros</Label>
+              <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border border border-border rounded-xl overflow-hidden mt-1.5">
                 {([
                   { key: 'carbs', label: 'Carbs', unit: 'g' },
                   { key: 'fat', label: 'Fat', unit: 'g' },
@@ -1036,15 +1036,15 @@ export function CalorieTrackerCompact() {
                   { key: 'sugar', label: 'Sugar', unit: 'g' },
                   { key: 'sodium', label: 'Sodium', unit: 'mg' },
                 ] as const).map(m => (
-                  <div key={m.key} className="min-w-0 p-2 rounded-xl border border-border bg-muted/20 text-center">
+                  <div key={m.key} className="min-w-0 p-3 text-center">
                     <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
-                    <div className="text-[10px] text-muted-foreground tracking-wide">{m.label}</div>
+                    <div className="text-xs text-muted-foreground">{m.label}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-      </div>}
+      </section>}
     </>
   );
 }
