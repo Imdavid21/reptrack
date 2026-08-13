@@ -154,35 +154,62 @@ export type Database = {
       calorie_burns: {
         Row: {
           activity_type: string | null
+          calculation_inputs: Json
           calories: number
+          confidence: string | null
           created_at: string | null
           date: string
           distance_km: number | null
           duration_minutes: number | null
+          effective_weight_kg: number | null
+          ended_at: string | null
+          energy_model_version: number
           id: string
+          intensity_band: string | null
+          intensity_source: string | null
+          met_estimate: number | null
           source: string
+          started_at: string | null
           user_id: string
         }
         Insert: {
           activity_type?: string | null
+          calculation_inputs?: Json
           calories: number
+          confidence?: string | null
           created_at?: string | null
           date?: string
           distance_km?: number | null
           duration_minutes?: number | null
+          effective_weight_kg?: number | null
+          ended_at?: string | null
+          energy_model_version?: number
           id?: string
+          intensity_band?: string | null
+          intensity_source?: string | null
+          met_estimate?: number | null
           source: string
+          started_at?: string | null
           user_id: string
         }
         Update: {
           activity_type?: string | null
+          calculation_inputs?: Json
           calories?: number
+          confidence?: string | null
           created_at?: string | null
           date?: string
           distance_km?: number | null
           duration_minutes?: number | null
+          effective_weight_kg?: number | null
+          ended_at?: string | null
+          energy_model_version?: number
           id?: string
+          intensity_band?: string | null
+          intensity_source?: string | null
+          met_estimate?: number | null
           source?: string
+          started_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -298,6 +325,117 @@ export type Database = {
           volume_reduction_percent?: number | null
           week_end?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      energy_model_states: {
+        Row: {
+          calculated_at: string
+          calibrated_tdee: number | null
+          calibration_adjustment: number
+          calibration_confidence: string | null
+          calibration_eligible: boolean
+          data_quality: string | null
+          effective_date: string
+          effective_weight_kg: number | null
+          energy_model_version: number
+          formula_baseline: number | null
+          formula_ree: number | null
+          id: string
+          inputs: Json
+          likely_high: number | null
+          likely_low: number | null
+          nonexercise_factor: number | null
+          personal_baseline: number | null
+          predicted_tdee: number | null
+          user_id: string
+          weight_source: string | null
+        }
+        Insert: {
+          calculated_at?: string
+          calibrated_tdee?: number | null
+          calibration_adjustment?: number
+          calibration_confidence?: string | null
+          calibration_eligible?: boolean
+          data_quality?: string | null
+          effective_date: string
+          effective_weight_kg?: number | null
+          energy_model_version?: number
+          formula_baseline?: number | null
+          formula_ree?: number | null
+          id?: string
+          inputs?: Json
+          likely_high?: number | null
+          likely_low?: number | null
+          nonexercise_factor?: number | null
+          personal_baseline?: number | null
+          predicted_tdee?: number | null
+          user_id: string
+          weight_source?: string | null
+        }
+        Update: {
+          calculated_at?: string
+          calibrated_tdee?: number | null
+          calibration_adjustment?: number
+          calibration_confidence?: string | null
+          calibration_eligible?: boolean
+          data_quality?: string | null
+          effective_date?: string
+          effective_weight_kg?: number | null
+          energy_model_version?: number
+          formula_baseline?: number | null
+          formula_ree?: number | null
+          id?: string
+          inputs?: Json
+          likely_high?: number | null
+          likely_low?: number | null
+          nonexercise_factor?: number | null
+          personal_baseline?: number | null
+          predicted_tdee?: number | null
+          user_id?: string
+          weight_source?: string | null
+        }
+        Relationships: []
+      }
+      energy_targets: {
+        Row: {
+          basis: string
+          calorie_target: number
+          effective_from: string
+          energy_model_version: number
+          estimated_maintenance: number
+          generated_at: string
+          id: string
+          protein_target: number
+          reason: string
+          target_adjustment: number
+          user_id: string
+        }
+        Insert: {
+          basis: string
+          calorie_target: number
+          effective_from: string
+          energy_model_version?: number
+          estimated_maintenance: number
+          generated_at?: string
+          id?: string
+          protein_target: number
+          reason: string
+          target_adjustment?: number
+          user_id: string
+        }
+        Update: {
+          basis?: string
+          calorie_target?: number
+          effective_from?: string
+          energy_model_version?: number
+          estimated_maintenance?: number
+          generated_at?: string
+          id?: string
+          protein_target?: number
+          reason?: string
+          target_adjustment?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -588,9 +726,11 @@ export type Database = {
           is_confirmed: boolean | null
           meal_type: string
           notes: string | null
+          nutrition_source: string
           photo_url: string | null
           protein: number | null
           sodium: number | null
+          source_metadata: Json
           sugar: number | null
           user_id: string
         }
@@ -609,9 +749,11 @@ export type Database = {
           is_confirmed?: boolean | null
           meal_type: string
           notes?: string | null
+          nutrition_source?: string
           photo_url?: string | null
           protein?: number | null
           sodium?: number | null
+          source_metadata?: Json
           sugar?: number | null
           user_id: string
         }
@@ -630,13 +772,158 @@ export type Database = {
           is_confirmed?: boolean | null
           meal_type?: string
           notes?: string | null
+          nutrition_source?: string
           photo_url?: string | null
           protein?: number | null
           sodium?: number | null
+          source_metadata?: Json
           sugar?: number | null
           user_id?: string
         }
         Relationships: []
+      }
+      mobility_assessments: {
+        Row: {
+          assessment_date: string
+          created_at: string
+          deep_squat_depth: string | null
+          discomfort: string | null
+          heels_down: boolean | null
+          hip_90_90_left: number | null
+          hip_90_90_right: number | null
+          hip_flexion_restriction: number | null
+          id: string
+          knee_to_wall_left_cm: number | null
+          knee_to_wall_right_cm: number | null
+          user_id: string
+        }
+        Insert: {
+          assessment_date?: string
+          created_at?: string
+          deep_squat_depth?: string | null
+          discomfort?: string | null
+          heels_down?: boolean | null
+          hip_90_90_left?: number | null
+          hip_90_90_right?: number | null
+          hip_flexion_restriction?: number | null
+          id?: string
+          knee_to_wall_left_cm?: number | null
+          knee_to_wall_right_cm?: number | null
+          user_id: string
+        }
+        Update: {
+          assessment_date?: string
+          created_at?: string
+          deep_squat_depth?: string | null
+          discomfort?: string | null
+          heels_down?: boolean | null
+          hip_90_90_left?: number | null
+          hip_90_90_right?: number | null
+          hip_flexion_restriction?: number | null
+          id?: string
+          knee_to_wall_left_cm?: number | null
+          knee_to_wall_right_cm?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      physique_checkins: {
+        Row: {
+          bodyweight: number | null
+          calf_left_cm: number | null
+          calf_right_cm: number | null
+          checkin_date: string
+          chest_cm: number | null
+          created_at: string
+          id: string
+          photo_paths: Json
+          upper_arm_left_cm: number | null
+          upper_arm_right_cm: number | null
+          user_id: string
+          waist_cm: number | null
+        }
+        Insert: {
+          bodyweight?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          checkin_date?: string
+          chest_cm?: number | null
+          created_at?: string
+          id?: string
+          photo_paths?: Json
+          upper_arm_left_cm?: number | null
+          upper_arm_right_cm?: number | null
+          user_id: string
+          waist_cm?: number | null
+        }
+        Update: {
+          bodyweight?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          checkin_date?: string
+          chest_cm?: number | null
+          created_at?: string
+          id?: string
+          photo_paths?: Json
+          upper_arm_left_cm?: number | null
+          upper_arm_right_cm?: number | null
+          user_id?: string
+          waist_cm?: number | null
+        }
+        Relationships: []
+      }
+      post_workout_checkins: {
+        Row: {
+          completion_percent: number | null
+          created_at: string
+          energy: number | null
+          exercise_felt_wrong: string | null
+          id: string
+          joint_discomfort: number | null
+          notes: string | null
+          pump: number | null
+          target_stimulus: number | null
+          user_id: string
+          workout_difficulty: number | null
+          workout_id: string | null
+        }
+        Insert: {
+          completion_percent?: number | null
+          created_at?: string
+          energy?: number | null
+          exercise_felt_wrong?: string | null
+          id?: string
+          joint_discomfort?: number | null
+          notes?: string | null
+          pump?: number | null
+          target_stimulus?: number | null
+          user_id: string
+          workout_difficulty?: number | null
+          workout_id?: string | null
+        }
+        Update: {
+          completion_percent?: number | null
+          created_at?: string
+          energy?: number | null
+          exercise_felt_wrong?: string | null
+          id?: string
+          joint_discomfort?: number | null
+          notes?: string | null
+          pump?: number | null
+          target_stimulus?: number | null
+          user_id?: string
+          workout_difficulty?: number | null
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_workout_checkins_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -653,6 +940,60 @@ export type Database = {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      readiness_checkins: {
+        Row: {
+          checkin_date: string
+          created_at: string
+          fatigue: number | null
+          id: string
+          illness: boolean | null
+          joint_discomfort: number | null
+          motivation: number | null
+          readiness: number | null
+          recommendation: string | null
+          resting_hr: number | null
+          session_key: string | null
+          sharp_pain: boolean | null
+          sleep_hours: number | null
+          soreness: number | null
+          user_id: string
+        }
+        Insert: {
+          checkin_date?: string
+          created_at?: string
+          fatigue?: number | null
+          id?: string
+          illness?: boolean | null
+          joint_discomfort?: number | null
+          motivation?: number | null
+          readiness?: number | null
+          recommendation?: string | null
+          resting_hr?: number | null
+          session_key?: string | null
+          sharp_pain?: boolean | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          user_id: string
+        }
+        Update: {
+          checkin_date?: string
+          created_at?: string
+          fatigue?: number | null
+          id?: string
+          illness?: boolean | null
+          joint_discomfort?: number | null
+          motivation?: number | null
+          readiness?: number | null
+          recommendation?: string | null
+          resting_hr?: number | null
+          session_key?: string | null
+          sharp_pain?: boolean | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -710,11 +1051,39 @@ export type Database = {
         }
         Relationships: []
       }
+      training_state: {
+        Row: {
+          block_name: string | null
+          deload_active: boolean
+          deload_started_on: string | null
+          next_session: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_name?: string | null
+          deload_active?: boolean
+          deload_started_on?: string | null
+          next_session?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_name?: string | null
+          deload_active?: boolean
+          deload_started_on?: string | null
+          next_session?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           activity_level: string | null
           adaptive_mode_enabled: boolean | null
           age: number | null
+          calorie_target_locked: boolean
           created_at: string | null
           daily_calorie_goal: number | null
           daily_carbs_goal: number | null
@@ -725,14 +1094,18 @@ export type Database = {
           daily_sodium_goal: number | null
           daily_sugar_goal: number | null
           daily_water_goal: number | null
+          date_of_birth: string | null
           deficit_mode_enabled: boolean
           dietary_preferences: string[] | null
           fitness_goal: string | null
           gender: string | null
           height_cm: number | null
           id: string
+          initial_weight_kg: number | null
           maintenance_calories: number | null
+          nonexercise_lifestyle: string
           onboarding_completed: boolean | null
+          protein_target_locked: boolean
           rest_days: Json | null
           routine_setup_completed: boolean | null
           sleep_goal: number | null
@@ -749,6 +1122,7 @@ export type Database = {
           activity_level?: string | null
           adaptive_mode_enabled?: boolean | null
           age?: number | null
+          calorie_target_locked?: boolean
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
@@ -759,14 +1133,18 @@ export type Database = {
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
           daily_water_goal?: number | null
+          date_of_birth?: string | null
           deficit_mode_enabled?: boolean
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          initial_weight_kg?: number | null
           maintenance_calories?: number | null
+          nonexercise_lifestyle?: string
           onboarding_completed?: boolean | null
+          protein_target_locked?: boolean
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
           sleep_goal?: number | null
@@ -783,6 +1161,7 @@ export type Database = {
           activity_level?: string | null
           adaptive_mode_enabled?: boolean | null
           age?: number | null
+          calorie_target_locked?: boolean
           created_at?: string | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
@@ -793,14 +1172,18 @@ export type Database = {
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
           daily_water_goal?: number | null
+          date_of_birth?: string | null
           deficit_mode_enabled?: boolean
           dietary_preferences?: string[] | null
           fitness_goal?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          initial_weight_kg?: number | null
           maintenance_calories?: number | null
+          nonexercise_lifestyle?: string
           onboarding_completed?: boolean | null
+          protein_target_locked?: boolean
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
           sleep_goal?: number | null
@@ -839,6 +1222,44 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_pauses: {
+        Row: {
+          created_at: string
+          draft_id: string | null
+          id: string
+          paused_at: string
+          resumed_at: string | null
+          user_id: string
+          workout_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          draft_id?: string | null
+          id?: string
+          paused_at: string
+          resumed_at?: string | null
+          user_id: string
+          workout_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          draft_id?: string | null
+          id?: string
+          paused_at?: string
+          resumed_at?: string | null
+          user_id?: string
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_pauses_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workouts: {
         Row: {
           completed_at: string | null
@@ -846,6 +1267,11 @@ export type Database = {
           date: string
           day: string
           day_name: string
+          energy_confidence: string | null
+          energy_inputs: Json
+          energy_model_version: number | null
+          estimated_net_kcal: number | null
+          explicit_pause_seconds: number
           id: string
           is_skipped: boolean | null
           post_difficulty: number | null
@@ -864,6 +1290,11 @@ export type Database = {
           date?: string
           day: string
           day_name: string
+          energy_confidence?: string | null
+          energy_inputs?: Json
+          energy_model_version?: number | null
+          estimated_net_kcal?: number | null
+          explicit_pause_seconds?: number
           id?: string
           is_skipped?: boolean | null
           post_difficulty?: number | null
@@ -882,6 +1313,11 @@ export type Database = {
           date?: string
           day?: string
           day_name?: string
+          energy_confidence?: string | null
+          energy_inputs?: Json
+          energy_model_version?: number | null
+          estimated_net_kcal?: number | null
+          explicit_pause_seconds?: number
           id?: string
           is_skipped?: boolean | null
           post_difficulty?: number | null
@@ -906,6 +1342,7 @@ export type Database = {
         Args: { p_bucket: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      delete_my_account: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
