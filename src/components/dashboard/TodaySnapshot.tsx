@@ -32,7 +32,6 @@ export function TodaySnapshot() {
   const { totalBurned } = useCalorieBurn();
   const autoMaintenance = useAutoMaintenanceCalories();
   const [sheet, setSheet] = useState<'sleep'|'weight'|null>(null);
-  const [foodOpen, setFoodOpen] = useState(false);
   const todayMetric = metrics?.dataPoints.find(point => point.date === today);
   const lastWeight = [...(metrics?.dataPoints || [])].reverse().find(point => point.bodyweight && point.bodyweight > 0)?.bodyweight ?? preferences?.weight_goal ?? 70;
   const [weight, setWeight] = useState(Number(lastWeight));
@@ -51,6 +50,7 @@ export function TodaySnapshot() {
 
   useEffect(() => { if (sheet === 'weight') setWeight(Number(todayMetric?.bodyweight ?? lastWeight)); }, [sheet, todayMetric?.bodyweight, lastWeight]);
   useEffect(() => { if (sheet === 'sleep') { const value = todayMetric?.sleep_hours ?? 7; setHours(Math.floor(value)); setMinutes(Math.round((value % 1) * 60)); } }, [sheet, todayMetric?.sleep_hours]);
+  useEffect(() => { if (!foodOpen) return; document.getElementById('nutrition')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setFoodOpen(false); }, [foodOpen]);
 
   const saveWeight = async () => { if (!Number.isFinite(weight) || weight <= 0) return; await upsertMetrics({ date: today, bodyweight: Math.round(weight * 10) / 10 }); haptic('light'); setSheet(null); };
   const saveSleep = async () => { const value = hours + minutes / 60; if (value <= 0 || value > 24) return; await upsertMetrics({ date: today, sleep_hours: Math.round(value * 100) / 100 }); haptic('light'); setSheet(null); };
@@ -64,6 +64,7 @@ export function TodaySnapshot() {
       <button onClick={() => setFoodOpen(true)} className="w-full px-4 py-3 hover:bg-muted/30 transition-colors text-left"><div className="flex items-center justify-between"><span className="text-sm">Calories</span><span className="text-right"><span className="block text-sm font-semibold tabular-nums">{calories ? `${calories.toLocaleString()} kcal` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></span></div><div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground tabular-nums"><span>In {calories.toLocaleString()} kcal{protein > 0 ? ` | ${Math.round(protein)} g protein` : ''}</span><span>Activity out {Math.round(totalBurned).toLocaleString()} kcal</span></div><GoalBar value={calories} goal={calorieCap}/><div className="mt-1 text-[10px] text-muted-foreground tabular-nums">{deficitMode ? `Deficit ${netDeficit >= 0 ? '-' : '+'}${Math.round(Math.abs(netDeficit))} kcal | target -${deficitTarget}` : `${calories.toLocaleString()} / ${calorieGoal.toLocaleString()} kcal goal`}</div></button>
       <ActivityLogger compact />
     </section>
+    <div id="nutrition"><CalorieTrackerCompact /></div>
 
     <Drawer open={sheet === 'weight'} onOpenChange={open => !open && setSheet(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="text-left px-6"><DrawerTitle>Bodyweight</DrawerTitle></DrawerHeader><div className="px-6 pb-6 space-y-6"><button onClick={() => document.getElementById('weight-entry')?.focus()} className="w-full text-center"><Input id="weight-entry" type="number" inputMode="decimal" step="0.1" value={weight} onChange={event => setWeight(Number(event.target.value))} className="border-0 h-20 text-center text-5xl font-bold shadow-none focus-visible:ring-0"/><span className="text-sm text-muted-foreground">kg</span></button><div className="grid grid-cols-2 gap-3"><button onClick={() => setWeight(value => Math.round((value - .1) * 10) / 10)} className="h-12 rounded-xl bg-muted flex items-center justify-center gap-2 font-semibold"><Minus className="h-4 w-4"/>0.1</button><button onClick={() => setWeight(value => Math.round((value + .1) * 10) / 10)} className="h-12 rounded-xl bg-muted flex items-center justify-center gap-2 font-semibold"><Plus className="h-4 w-4"/>0.1</button></div><p className="text-sm text-muted-foreground text-center">Last entry · {Number(lastWeight).toFixed(1)} kg</p><button onClick={saveWeight} disabled={isUpserting || weight <= 0} className="w-full h-14 rounded-2xl bg-foreground text-background font-bold disabled:opacity-50">{isUpserting ? 'Saving…' : `Log ${weight.toFixed(1)} kg`}</button></div></DrawerContent></Drawer>
 

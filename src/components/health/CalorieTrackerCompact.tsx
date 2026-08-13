@@ -486,7 +486,7 @@ export function CalorieTrackerCompact() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsProteinOpen(true)}
+                  onClick={() => setIsProteinOpen(open => !open)}
                   className={cn(
                     "col-span-2 rounded-xl border p-3 text-left transition-colors",
                     proteinTotal >= proteinGoal
@@ -494,7 +494,7 @@ export function CalorieTrackerCompact() {
                       : "border-border bg-muted/20 hover:bg-muted/40"
                   )}
                 >
-                  <div className="flex items-center justify-between"><div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div><span className="text-[10px] text-muted-foreground">View breakdown</span></div>
+                  <div className="flex items-center justify-between"><div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div><span className="text-[10px] text-muted-foreground">{isProteinOpen ? 'Hide details' : 'View details'}</span></div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
                     proteinTotal >= proteinGoal ? "text-energy-ink" : "text-foreground"
@@ -985,14 +985,9 @@ export function CalorieTrackerCompact() {
         </DialogContent>
       </Dialog>
 
-      {/* Protein breakdown */}
-      <Dialog open={isProteinOpen} onOpenChange={setIsProteinOpen}>
-        <DialogContent className="z-[1400] max-w-md rounded-3xl border-border bg-background p-5 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              PROTEIN BREAKDOWN{mealDateSuffix.toUpperCase()}
-            </DialogTitle>
-          </DialogHeader>
+      {/* Protein details stay in the Today flow instead of opening a second sheet. */}
+      {isProteinOpen && <div className="mt-3 space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between"><div className="text-sm font-semibold">Protein details{mealDateSuffix}</div><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground">Hide</button></div>
 
           <div className="min-w-0 space-y-4">
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 rounded-xl border border-border bg-muted/20 p-3">
@@ -1046,8 +1041,7 @@ export function CalorieTrackerCompact() {
               </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+      </div>}
     </>
   );
 }
