@@ -532,15 +532,6 @@ export function CalorieTrackerCompact() {
                   </div>
                   <div className="text-xs text-muted-foreground">{Math.round(proteinTotal)}g / {proteinGoal}g · {Math.max(0, Math.round(proteinGoal - proteinTotal))}g remaining</div>
                 </button>
-                {isExpanded && energy.model && (preferences?.show_bmr_on_dashboard ?? true) && (
-                  <BmrBreakdownTile
-                    bmr={energy.model.ree}
-                    maintenance={maintenance}
-                    isOverride={false}
-                    totalBurnedToday={viewingToday ? totalBurned : 0}
-                    isToday={viewingToday}
-                  />
-                )}
               </div>
 
               <CollapsibleTrigger className="pt-2 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
@@ -558,6 +549,18 @@ export function CalorieTrackerCompact() {
                 </span>
                 {isExpanded ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
               </CollapsibleTrigger>
+            </div>
+          )}
+
+          {energy.model && (preferences?.show_bmr_on_dashboard ?? true) && (
+            <div className="mt-3">
+              <BmrBreakdownTile
+                bmr={energy.model.ree}
+                maintenance={maintenance}
+                isOverride={false}
+                totalBurnedToday={viewingToday ? totalBurned : 0}
+                isToday={viewingToday}
+              />
             </div>
           )}
 
