@@ -6,8 +6,9 @@ const root = fileURLToPath(new URL('../src/', import.meta.url));
 const forbidden = [
   { pattern: /text-\[(?:[0-9]|1[01])px\]/g, reason: 'visible text must be at least 12px' },
   { pattern: /text-\[0\.[0-7]rem\]/g, reason: 'use the semantic type utilities instead of sub-12px rem values' },
-  { pattern: /font-display/g, reason: 'product UI uses the shared Inter/system font stack' },
-  { pattern: /Space Grotesk/g, reason: 'product UI uses the shared Inter/system font stack' },
+  { pattern: /font-display/g, reason: 'product UI uses the native device font stack' },
+  { pattern: /Space Grotesk/g, reason: 'product UI uses the native device font stack' },
+  { pattern: /fonts\.googleapis\.com/g, reason: 'product UI must not download a web font' },
   { pattern: /font-mono/g, reason: 'monospace is reserved for code, URLs, and technical identifiers', allow: ['pages\\McpStatus.tsx', 'pages\\NotFound.tsx'] },
 ];
 const failures = [];

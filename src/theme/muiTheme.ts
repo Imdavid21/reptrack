@@ -29,7 +29,7 @@ const palette = {
 
 const baseTheme: ThemeOptions = {
   typography: {
-    fontFamily: '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     h1: {
       fontSize: '1.875rem',
       fontWeight: 700,
