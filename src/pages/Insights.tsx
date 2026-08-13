@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, Button } from '@mui/material';
+import { ReactNode, useState, useEffect } from 'react';
+import { Box, Typography, Skeleton, TextField, Collapse, IconButton, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Loader2,
+  ChevronDown,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -36,13 +37,16 @@ import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { toast } from '@/lib/toast';
 
-// Section label with the pillar's signature color dot, used to group charts.
-function SectionHeader({ label, dotClass }: { label: string; dotClass: string }) {
+function InsightSection({ label, count, dotClass, initiallyOpen = false, children }: { label: string; count: number; dotClass: string; initiallyOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(initiallyOpen);
   return (
-    <div className="flex items-center gap-2 mt-2">
-      <span className={`h-2 w-2 rounded-full ${dotClass}`} aria-hidden />
-      <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">{label}</span>
-    </div>
+    <Box sx={{ borderBottom: 1, borderColor: 'divider', pb: open ? 2 : 1 }}>
+      <Box component="button" type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} sx={{ width: '100%', border: 0, bgcolor: 'transparent', px: 1, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', color: 'text.primary', textAlign: 'left', '&:hover': { bgcolor: 'action.hover', borderRadius: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}><span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} aria-hidden /><Box><Typography variant="body2" fontWeight={600}>{label}</Typography><Typography variant="caption" color="text.secondary">{count} {count === 1 ? 'view' : 'views'}</Typography></Box></Box>
+        <ChevronDown size={18} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }} />
+      </Box>
+      <Collapse in={open}><Box sx={{ display: 'grid', gap: 2, mt: 1.5 }}>{children}</Box></Collapse>
+    </Box>
   );
 }
 
@@ -56,7 +60,6 @@ const FITNESS_GOALS = [
 
 // Unified Progress Card using global date range + inline editing
 function ProgressCard() {
-  const theme = useTheme();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
   const { recordGoalHistory } = useGoalHistory();
   const { dateRange } = useDateRange();
@@ -478,22 +481,14 @@ function InsightsContent() {
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, pb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, pb: .5 }}>
           <Box>
-            <Typography variant="overline" color="text.secondary">YOUR RECORD</Typography>
-            <Typography variant="h4" fontWeight={800}>Trends</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: .5, maxWidth: 360 }}>A clear read on what is moving, what needs attention, and the detail behind it.</Typography>
+            <Typography variant="h4" fontWeight={800}>Insights</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: .25 }}>Progress, patterns, and what to do next.</Typography>
           </Box>
           <DateRangeSelector />
         </Box>
 
-        <MuiCard>
-          <Typography variant="overline" color="text.secondary">AT A GLANCE</Typography>
-          <Typography variant="h6" fontWeight={800} sx={{ mt: .5 }}>{overview?.overall != null ? `${overview.overall}/100 overall momentum` : 'Start with the next useful log.'}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{overview ? `${overview.activeDays} active day${overview.activeDays === 1 ? '' : 's'} in the last ${overview.rangeDays} days. Your highest-priority action is shown below.` : 'Trends become useful as you log workouts, recovery, and food.'}</Typography>
-        </MuiCard>
-
-        {/* Main content - single scroll view */}
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
@@ -513,56 +508,56 @@ function InsightsContent() {
               <ProgressCard />
             </motion.div>
 
-            {/* ---- Training ---- */}
-            <SectionHeader label="Training" dotClass="bg-energy" />
-            <motion.div variants={staggerItem}>
+            <InsightSection label="Training" count={5} dotClass="bg-energy" initiallyOpen>
+              <motion.div variants={staggerItem}>
               <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MuscleBalanceCard data={muscleData} isLoading={muscleLoading} />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <EfficiencyChart />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <VolumeSankeyChart />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <ExerciseProgressionChart />
-            </motion.div>
+              </motion.div>
+            </InsightSection>
 
-            {/* ---- Fuel ---- */}
-            <SectionHeader label="Fuel" dotClass="bg-fuel" />
-            <motion.div variants={staggerItem}>
+            <InsightSection label="Fuel" count={7} dotClass="bg-fuel">
+              <motion.div variants={staggerItem}>
               <CalorieChart />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="protein" />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="carbs" />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="fat" />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="fiber" />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="sugar" />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <MacroChart macro="sodium" />
-            </motion.div>
+              </motion.div>
+            </InsightSection>
 
-            {/* ---- Recovery & body ---- */}
-            <SectionHeader label="Recovery & Body" dotClass="bg-recover" />
-            <motion.div variants={staggerItem}>
+            <InsightSection label="Recovery & body" count={2} dotClass="bg-recover">
+              <motion.div variants={staggerItem}>
               <DailyVitalsChart />
-            </motion.div>
-            <motion.div variants={staggerItem}>
+              </motion.div>
+              <motion.div variants={staggerItem}>
               <HydrationChart />
-            </motion.div>
+              </motion.div>
+            </InsightSection>
 
           </Box>
         </motion.div>
