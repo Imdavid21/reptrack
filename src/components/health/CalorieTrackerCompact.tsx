@@ -462,7 +462,7 @@ export function CalorieTrackerCompact() {
           </div>
 
           {deficitMode ? (
-            <CollapsibleTrigger className="block w-full text-left">
+            <>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2.5 rounded-xl border border-border bg-muted/20">
                   <div className="text-[10px] text-muted-foreground tracking-wider">NET</div>
@@ -484,26 +484,25 @@ export function CalorieTrackerCompact() {
                   <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
                   <div className="text-[10px] text-muted-foreground">calories burned</div>
                 </div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); setIsProteinOpen(true); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.stopPropagation(); e.preventDefault(); setIsProteinOpen(true);
-                    }
-                  }}
-                  className="p-2.5 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => setIsProteinOpen(true)}
+                  className={cn(
+                    "rounded-xl border p-2.5 text-left transition-colors",
+                    proteinTotal >= proteinGoal
+                      ? "border-energy/30 bg-energy-soft/70 hover:bg-energy-soft"
+                      : "border-border bg-muted/20 hover:bg-muted/40"
+                  )}
                 >
                   <div className="text-[10px] text-muted-foreground tracking-wider">PROTEIN</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
-                    proteinTotal >= proteinGoal ? "text-[hsl(var(--insight-mint))]" : "text-foreground"
+                    proteinTotal >= proteinGoal ? "text-energy-ink" : "text-foreground"
                   )}>
                     {Math.round(proteinTotal)}g
                   </div>
-                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g · tap for breakdown</div>
-                </div>
+                  <div className="text-[10px] text-muted-foreground">of {proteinGoal}g | breakdown</div>
+                </button>
                 {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
                     bmr={autoMaintenance.bmr}
@@ -515,10 +514,10 @@ export function CalorieTrackerCompact() {
                 )}
               </div>
 
-              <div className="flex justify-center mt-1.5">
+              <CollapsibleTrigger className="mt-1.5 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
                 {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-              </div>
-            </CollapsibleTrigger>
+              </CollapsibleTrigger>
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkouts } from './useWorkouts';
 import { useUserPreferences } from './useUserPreferences';
 import { useCustomRoutine } from './useCustomRoutine';
@@ -7,6 +8,9 @@ import { resolveSplitDays } from '@/lib/splitTemplates';
 import { findBestMatch } from '@/lib/exerciseMatching';
 import { suggestProgression, ProgressionSuggestion } from '@/lib/progression';
 import { localDateKey } from '@/lib/dateKey';
+import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { PPL_PROGRAM, PPL_SEQUENCE, SessionKey } from '@/lib/adaptivePpl';
 
 export interface NextWorkoutExercise extends ProgressionSuggestion {
   name: string;
@@ -36,12 +40,43 @@ export interface NextWorkout {
  * people to do a little more each session without nagging.
  */
 export function useNextWorkout(): NextWorkout | null {
+  const { user } = useAuth();
   const { workouts } = useWorkouts();
   const { preferences } = useUserPreferences();
   const { customDays, hasCustomRoutine } = useCustomRoutine();
   const { lastUsedMap } = useLastUsedWeights();
+  const trainingState = useQuery({
+    queryKey: ['training-state', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from('training_state' as any) as any).select('next_session').eq('user_id', user!.id).maybeSingle();
+      if (error) throw error;
+      return data?.next_session as string | undefined;
+    },
+  });
 
   return useMemo(() => {
+    const adaptiveKey = trainingState.data;
+    if (adaptiveKey && PPL_SEQUENCE.includes(adaptiveKey as SessionKey)) {
+      const session = PPL_PROGRAM[adaptiveKey as SessionKey];
+      const exercises: NextWorkoutExercise[] = session.exercises
+        .filter(exercise => !['mobility', 'activation', 'warmup', 'cooldown'].includes(exercise.phase))
+        .map(exercise => {
+          const last = findBestMatch(exercise.name, lastUsedMap) as { weight: number; reps: number } | undefined;
+          return { name: exercise.name, category: exercise.phase, ...suggestProgression(exercise.name, exercise.reps, last) };
+        });
+      return {
+        dayKey: adaptiveKey,
+        dayName: session.name,
+        focus: session.objective,
+        completedToday: workouts.some(workout => workout.date === localDateKey()),
+        isRestDay: false,
+        exercises,
+        totalExercises: exercises.length,
+        upgrades: exercises.filter(exercise => exercise.trend === 'up').length,
+      };
+    }
+
     // Same resolution as the workout screen: the chosen split is authoritative
     // unless it's explicitly 'custom', so the "next workout" suggestion can't be
     // hijacked by a leftover custom routine.
@@ -85,5 +120,5 @@ export function useNextWorkout(): NextWorkout | null {
       totalExercises: exercises.length,
       upgrades,
     };
-  }, [workouts, preferences, hasCustomRoutine, customDays, lastUsedMap]);
+  }, [workouts, preferences, hasCustomRoutine, customDays, lastUsedMap, trainingState.data]);
 }
