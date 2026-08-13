@@ -15,8 +15,6 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
 import AdaptiveWorkout from "./pages/AdaptiveWorkout";
@@ -62,8 +60,6 @@ function AppRoutes() {
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
 

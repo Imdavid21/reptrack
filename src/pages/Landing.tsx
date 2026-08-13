@@ -366,7 +366,6 @@ export default function Landing() {
           <Logo size="sm" />
           <nav className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link>
             <Link to="/changelog" className="hover:text-foreground transition-colors">Changelog</Link>
           </nav>
         </div>

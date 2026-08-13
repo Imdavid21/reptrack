@@ -38,7 +38,6 @@
 - **Analytics** – Strength progression, body composition, ML insights, correlation analysis
 - **Personal Records** – Automatic PR detection across all exercises
 - **AI Coach** – Context-aware coaching insights (Lovable AI Gateway)
-- **Blog/SEO** – Built-in blog with 40+ fitness articles for organic traffic
 - **Account control** – Full data export/import (CSV) and one-tap account deletion (GDPR)
 
 > Note: the previously documented public REST API and MCP server edge functions
@@ -125,8 +124,6 @@ src/
 │   ├── History.tsx            # Workout history list
 │   ├── WorkoutDetail.tsx      # Single workout view
 │   ├── Settings.tsx           # User preferences
-│   ├── Blog.tsx               # Blog listing page
-│   ├── BlogPost.tsx           # Individual blog post
 │   ├── Privacy.tsx            # Privacy policy
 │   └── NotFound.tsx           # 404 page
 │
@@ -145,7 +142,6 @@ src/
 │
 ├── hooks/                     # Custom React hooks (26 files)
 ├── contexts/                  # React contexts (Theme, DateRange)
-├── data/                      # Blog post data
 ├── integrations/supabase/     # Auto-generated Supabase types
 ├── lib/                       # Utilities (exercise library, haptics, etc.)
 └── theme/                     # MUI theme configuration
