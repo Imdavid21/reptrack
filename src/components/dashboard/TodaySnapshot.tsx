@@ -5,6 +5,8 @@ import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
+import { useCalorieBurn } from '@/hooks/useCalorieBurn';
+import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { localDateKey } from '@/lib/dateKey';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
@@ -15,11 +17,17 @@ import { toast } from '@/lib/toast';
 
 const today = localDateKey();
 
+function GoalBar({ value, goal }: { value: number; goal: number }) {
+  const progress = goal > 0 ? Math.min(100, Math.round((value / goal) * 100)) : 0;
+  return <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-foreground transition-[width] duration-300" style={{ width: `${progress}%` }} /></div>;
+}
+
 export function TodaySnapshot() {
   const { preferences } = useUserPreferences();
   const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
   const { meals } = useMeals();
   const { totalToday, addWaterLog, isAdding } = useWaterLogs();
+  const { totalBurned } = useCalorieBurn();
   const [sheet, setSheet] = useState<'sleep'|'weight'|null>(null);
   const [foodOpen, setFoodOpen] = useState(false);
   const todayMetric = metrics?.dataPoints.find(point => point.date === today);
@@ -29,6 +37,9 @@ export function TodaySnapshot() {
   const [minutes, setMinutes] = useState(0);
   const calories = useMemo(() => meals.reduce((sum, meal) => sum + Number(meal.calories || 0), 0), [meals]);
   const protein = useMemo(() => meals.reduce((sum, meal) => sum + Number(meal.protein || 0), 0), [meals]);
+  const sleepGoal = preferences?.sleep_goal ?? 8;
+  const waterGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal ?? 3);
+  const calorieGoal = preferences?.daily_calorie_goal ?? 2000;
 
   useEffect(() => { if (sheet === 'weight') setWeight(Number(todayMetric?.bodyweight ?? lastWeight)); }, [sheet, todayMetric?.bodyweight, lastWeight]);
   useEffect(() => { if (sheet === 'sleep') { const value = todayMetric?.sleep_hours ?? 7; setHours(Math.floor(value)); setMinutes(Math.round((value % 1) * 60)); } }, [sheet, todayMetric?.sleep_hours]);
@@ -39,10 +50,10 @@ export function TodaySnapshot() {
 
   return <>
     <section className="rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border">
-      <button onClick={() => setSheet('sleep')} className="w-full h-14 px-4 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Sleep</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.sleep_hours ? `${Math.floor(todayMetric.sleep_hours)} h ${Math.round((todayMetric.sleep_hours % 1) * 60)} m` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></button>
+      <button onClick={() => setSheet('sleep')} className="w-full px-4 py-3 hover:bg-muted/30 transition-colors text-left"><div className="flex items-center justify-between"><span className="text-sm">Sleep</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.sleep_hours ? `${Math.floor(todayMetric.sleep_hours)} h ${Math.round((todayMetric.sleep_hours % 1) * 60)} m` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></div>{todayMetric?.sleep_hours != null && <><GoalBar value={todayMetric.sleep_hours} goal={sleepGoal}/><div className="mt-1 text-[10px] text-muted-foreground tabular-nums">{todayMetric.sleep_hours.toFixed(1)} / {sleepGoal} h goal</div></>}</button>
       <button onClick={() => setSheet('weight')} className="w-full h-14 px-4 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Bodyweight</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.bodyweight ? `${todayMetric.bodyweight.toFixed(1)} kg` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></button>
-      <div className="min-h-14 px-4 py-2 flex items-center gap-2"><span className="text-sm flex-1">Water</span><span className="text-sm font-semibold tabular-nums mr-1">{totalToday.toFixed(2)} L</span><button disabled={isAdding} onClick={() => logWater(.25)} className="h-9 px-3 rounded-full bg-muted text-xs font-bold disabled:opacity-50">+250</button><button disabled={isAdding} onClick={() => logWater(.5)} className="h-9 px-3 rounded-full bg-foreground text-background text-xs font-bold disabled:opacity-50">+500</button></div>
-      <button onClick={() => setFoodOpen(true)} className="w-full min-h-16 px-4 py-2 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Food</span><span className="text-right"><span className="block text-sm font-semibold tabular-nums">{calories ? `${calories.toLocaleString()} kcal` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span>{protein > 0 && <span className="block text-xs text-muted-foreground">{Math.round(protein)} g protein</span>}</span></button>
+      <div className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-sm flex-1">Water</span><span className="text-sm font-semibold tabular-nums mr-1">{totalToday.toFixed(2)} L</span><button disabled={isAdding} onClick={() => logWater(.25)} className="h-9 px-3 rounded-full bg-muted text-xs font-bold disabled:opacity-50">+250</button><button disabled={isAdding} onClick={() => logWater(.5)} className="h-9 px-3 rounded-full bg-foreground text-background text-xs font-bold disabled:opacity-50">+500</button></div><GoalBar value={totalToday} goal={waterGoal}/><div className="mt-1 text-[10px] text-muted-foreground tabular-nums">{totalToday.toFixed(2)} / {waterGoal.toFixed(2)} L goal</div></div>
+      <button onClick={() => setFoodOpen(true)} className="w-full px-4 py-3 hover:bg-muted/30 transition-colors text-left"><div className="flex items-center justify-between"><span className="text-sm">Calories</span><span className="text-right"><span className="block text-sm font-semibold tabular-nums">{calories ? `${calories.toLocaleString()} kcal` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></span></div><div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground tabular-nums"><span>In {calories.toLocaleString()} kcal{protein > 0 ? ` · ${Math.round(protein)} g protein` : ''}</span><span>Out {Math.round(totalBurned).toLocaleString()} kcal</span></div><GoalBar value={calories} goal={calorieGoal}/><div className="mt-1 text-[10px] text-muted-foreground tabular-nums">{calories.toLocaleString()} / {calorieGoal.toLocaleString()} kcal goal</div></button>
       <ActivityLogger compact />
     </section>
 
