@@ -29,6 +29,7 @@ import { BodyScoreTrendCard } from '@/components/analytics/BodyScoreTrendCard';
 import { NextStepsCard } from '@/components/analytics/NextStepsCard';
 import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
 import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
+import { PersonalRecordsCard } from '@/components/analytics/PersonalRecordsCard';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
@@ -510,7 +511,10 @@ function InsightsContent() {
               <ProgressCard />
             </motion.div>
 
-            <InsightSection label="Training" count={5} dotClass="bg-energy" initiallyOpen>
+            <InsightSection label="Training" count={6} dotClass="bg-energy" initiallyOpen>
+              <motion.div variants={staggerItem}>
+              <PersonalRecordsCard />
+              </motion.div>
               <motion.div variants={staggerItem}>
               <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
               </motion.div>

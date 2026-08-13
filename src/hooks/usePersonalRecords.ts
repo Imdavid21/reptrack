@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { getExerciseType, type ExerciseType } from '@/lib/exerciseLibrary';
@@ -9,6 +9,9 @@ export interface PersonalRecord {
   maxWeight: number;
   reps: string;
   date: string;
+  sourceExerciseId: string;
+  sourceWorkoutId: string;
+  sourceTimestamp: string;
   /** The type of PR: 'weight' (heaviest), 'reps' (most reps, for bodyweight), 'duration' (longest hold, for timed) */
   prType?: 'weight' | 'reps' | 'duration';
 }
@@ -22,6 +25,7 @@ export { getCanonicalName, EXERCISE_ALIASES };
 
 export function usePersonalRecords() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['personalRecords', user?.id],
@@ -32,11 +36,14 @@ export function usePersonalRecords() {
       const { data: exercises, error } = await supabase
         .from('exercises')
         .select(`
+          id,
+          workout_id,
           name,
           actual_weight,
           actual_reps,
           workouts!inner (
             date,
+            created_at,
             user_id
           )
         `)
@@ -61,19 +68,26 @@ export function usePersonalRecords() {
         const groupKey = resolveCanonicalName(ex.name);
         const canonicalName = getCanonicalName(ex.name);
         const exType = getExerciseType(canonicalName);
-        const workout = ex.workouts as unknown as { date: string };
+        const workout = ex.workouts as unknown as { date: string; created_at: string };
+        const source = {
+          sourceExerciseId: ex.id,
+          sourceWorkoutId: ex.workout_id,
+          sourceTimestamp: workout.created_at || `${workout.date}T00:00:00`,
+        };
 
         if (exType === 'timed') {
           // Timed: PR = longest duration (stored in actual_reps as seconds)
           const duration = parseFloat(ex.actual_reps || '0');
           if (isNaN(duration) || duration === 0) continue;
 
-          if (!prMap[groupKey] || duration > prMap[groupKey].maxWeight) {
+          if (!prMap[groupKey] || duration > prMap[groupKey].maxWeight ||
+              (duration === prMap[groupKey].maxWeight && source.sourceTimestamp > prMap[groupKey].sourceTimestamp)) {
             prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: duration,
               reps: `${duration}s`,
               date: workout.date,
+              ...source,
               prType: 'duration',
             };
           }
@@ -82,12 +96,14 @@ export function usePersonalRecords() {
           const reps = parseFloat(ex.actual_reps || '0');
           if (isNaN(reps) || reps === 0) continue;
 
-          if (!prMap[groupKey] || reps > prMap[groupKey].maxWeight) {
+          if (!prMap[groupKey] || reps > prMap[groupKey].maxWeight ||
+              (reps === prMap[groupKey].maxWeight && source.sourceTimestamp > prMap[groupKey].sourceTimestamp)) {
             prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: reps,
               reps: `${reps} reps`,
               date: workout.date,
+              ...source,
               prType: 'reps',
             };
           }
@@ -104,12 +120,18 @@ export function usePersonalRecords() {
             weight > existing.maxWeight ||
             (weight === existing.maxWeight && reps > existingReps);
 
-          if (isNew) {
+          const isSamePerformanceMoreRecent = !!existing &&
+            weight === existing.maxWeight &&
+            reps === existingReps &&
+            source.sourceTimestamp > existing.sourceTimestamp;
+
+          if (isNew || isSamePerformanceMoreRecent) {
             prMap[groupKey] = {
               exerciseName: canonicalName,
               maxWeight: weight,
               reps: ex.actual_reps || '',
               date: workout.date,
+              ...source,
               prType: 'weight',
             };
           }
@@ -119,6 +141,31 @@ export function usePersonalRecords() {
       return Object.values(prMap).sort((a, b) => b.maxWeight - a.maxWeight);
     },
     enabled: !!user,
+  });
+
+  const updateRecordMutation = useMutation({
+    mutationFn: async ({ record, weight, reps }: { record: PersonalRecord; weight?: number; reps: number }) => {
+      if (!user) throw new Error('You must be signed in to edit a PR.');
+      const update = record.prType === 'weight'
+        ? { actual_weight: String(weight ?? record.maxWeight), actual_reps: String(reps), completed: true }
+        : { actual_reps: String(reps), completed: true };
+
+      // Update the exact source set. The row ID is authoritative; the workout
+      // timestamp is retained on the PR for deterministic tie-breaking when
+      // identical performances exist on different days.
+      const { error } = await supabase
+        .from('exercises')
+        .update(update)
+        .eq('id', record.sourceExerciseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['personalRecords', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-details'] });
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
+    },
   });
 
   // Helper to get PR for a specific exercise — same case-insensitive
@@ -132,5 +179,7 @@ export function usePersonalRecords() {
   return {
     ...query,
     getPRForExercise,
+    updateRecord: updateRecordMutation.mutateAsync,
+    isUpdatingRecord: updateRecordMutation.isPending,
   };
 }
