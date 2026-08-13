@@ -15,6 +15,7 @@ const legPrep=[e('90/90 Hip Switch','mobility',2,'8/side'),e('Hip CAR','mobility
 const cool=(names:string[])=>names.map(n=>e(n,'cooldown',1,n.includes('breath')?'5 slow breaths':'45 sec/side',{timed:true}));
 
 export const PPL_SEQUENCE:SessionKey[]=['push_a','pull_a','legs_a','push_b','pull_b','legs_b','recovery'];
+export const isSessionKey=(value:unknown):value is SessionKey=>typeof value==='string'&&PPL_SEQUENCE.includes(value as SessionKey);
 export const PPL_PROGRAM:Record<SessionKey,SessionTemplate>={
  push_a:{key:'push_a',name:'Push A',objective:'Upper-chest strength, chest, shoulders, triceps and abs',duration:105,exercises:[e('Arm Circles','mobility',1,'15 each direction'),...upperPrep,e('Light Cable Lateral Raise','activation',1,'20'),e('Light Cable Fly','activation',1,'15'),e('Incline Barbell Bench Press','primary',4,'5-8',{rir:'1-2',rest:210,focus:'upper chest',progression:'Double progression; +2.5 kg after all sets reach 8 at target RIR',substitutions:['Incline Dumbbell Press','Smith Machine Incline Press','Machine Chest Press']}),e('Flat Barbell Bench Press','compound',3,'6-10',{rir:'1-2',rest:180,substitutions:['Machine Chest Press','Dumbbell Bench Press']}),e('Dips','compound',3,'8-12',{rir:'1-2',progression:'Add external load after all sets exceed 12 clean reps',substitutions:['Assisted Dips','Machine Chest Press']}),e('Low-to-High Cable Fly','specialization',3,'10-15',{focus:'upper chest'}),e('Seated Shoulder Press','compound',3,'6-10',{rir:'1-2'}),e('Cable Lateral Raise','specialization',4,'12-20',{focus:'side delts'}),e('Lean-Away Cable Lateral Raise','specialization',2,'15-25',{focus:'side delts'}),e('Overhead Cable Extension','accessory',3,'10-15'),e('Rope Pushdown','accessory',2,'10-15'),e('Cable Crunch','core',4,'8-15',{progression:'Add load or reps with controlled spinal flexion'}),e('Hanging Knee Raise','core',3,'8-15',{progression:'Bent knees → knee-to-chest → straighter legs → straight-leg → weighted'}),...cool(['Doorway Pec Stretch','Lat Stretch','Triceps Stretch','Deep Breathing'])]},
  pull_a:{key:'pull_a',name:'Pull A',objective:'Back strength, thickness, lat width, rear delts and biceps',duration:110,exercises:[...pullPrep,e('Barbell Row','primary',4,'6-10',{rir:'1-2',rest:180,substitutions:['Chest-Supported Row','One-Arm Cable Row']}),e('Pull-Ups','compound',4,'6-12',{rir:'1-2',progression:'Add weight after 3+ sets reach 10-12 clean reps',substitutions:['Assisted Pull-Up','Lat Pulldown']}),e('Chest-Supported Row','compound',3,'8-12'),e('Lat Pulldown','compound',3,'8-12'),e('Seated Cable Row','compound',3,'10-15'),e('Single-Arm Lat Pulldown','specialization',2,'10-15/side',{focus:'lats',unilateral:true}),e('Reverse Pec Deck','specialization',3,'12-20',{focus:'rear delts'}),e('Face Pull','specialization',2,'15-20',{focus:'rear delts'}),e('Barbell Curl','accessory',3,'6-10'),e('Incline Dumbbell Curl','accessory',3,'8-12'),e('Hammer Curl','accessory',2,'10-15'),...cool(['Dead Hang','Lat Stretch','Biceps Stretch','Thoracic Rotation'])]},
@@ -41,8 +42,30 @@ export function adaptSession(template:SessionTemplate,band:ReadinessBand,redChoi
  return {...template,name:band==='red'?`${template.name} · Reduced`:template.name,duration:Math.round(template.duration*multiplier),exercises};
 }
 export function nextSession(current:SessionKey){return PPL_SEQUENCE[(PPL_SEQUENCE.indexOf(current)+1)%PPL_SEQUENCE.length]}
+export function resolveNextSession({
+ persistedNextSession,
+ persistedUpdatedAt,
+ latestCompletedSession,
+ latestCompletedAt,
+ localFallback,
+}: {
+ persistedNextSession?: unknown;
+ persistedUpdatedAt?: string | null;
+ latestCompletedSession?: SessionKey | null;
+ latestCompletedAt?: string | null;
+ localFallback?: SessionKey | null;
+}): SessionKey {
+ const latestTime=latestCompletedAt?new Date(latestCompletedAt).getTime():NaN;
+ const persistedTime=persistedUpdatedAt?new Date(persistedUpdatedAt).getTime():NaN;
+ const historyIsCurrent=!!latestCompletedSession&&(!Number.isFinite(persistedTime)||(Number.isFinite(latestTime)&&latestTime>=persistedTime));
+ if(historyIsCurrent)return nextSession(latestCompletedSession);
+ if(isSessionKey(persistedNextSession))return persistedNextSession;
+ if(localFallback)return localFallback;
+ if(latestCompletedSession)return nextSession(latestCompletedSession);
+ return 'push_a';
+}
 export function sessionKeyFromWorkout(sessionKey?:string|null,dayName?:string|null):SessionKey|null{
- if(sessionKey&&PPL_SEQUENCE.includes(sessionKey as SessionKey))return sessionKey as SessionKey;
+ if(isSessionKey(sessionKey))return sessionKey;
  const normalized=(dayName||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
  return PPL_SEQUENCE.find(key=>normalized===key||normalized.startsWith(`${key}_`))||null;
 }
