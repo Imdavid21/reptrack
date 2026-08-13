@@ -987,7 +987,7 @@ export function CalorieTrackerCompact() {
 
       {/* Protein breakdown */}
       <Dialog open={isProteinOpen} onOpenChange={setIsProteinOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="z-[1400] max-w-md rounded-3xl border-border bg-background p-5 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
               PROTEIN BREAKDOWN{mealDateSuffix.toUpperCase()}
