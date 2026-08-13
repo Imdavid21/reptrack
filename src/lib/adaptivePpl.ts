@@ -7,7 +7,7 @@ export interface PrescriptionExercise {
   focus?:string; progression?:string; substitutions?:string[]; timed?:boolean; unilateral?:boolean;
 }
 export interface SessionTemplate { key:SessionKey; name:string; objective:string; duration:number; exercises:PrescriptionExercise[] }
-export type ConditioningOptionKey='cindy'|'annie'|'chelsea'|'bodyweight_emom';
+export type ConditioningOptionKey='cindy'|'annie'|'chelsea'|'bodyweight_emom'|'mobility';
 const e=(name:string,phase:Phase,sets:number,reps:string,extra:Partial<PrescriptionExercise>={}):PrescriptionExercise=>({name,phase,sets,reps,...extra});
 
 const upperPrep=[e('Wall Slides','mobility',2,'10'),e('Band Pull-Aparts','mobility',2,'15'),e('Band External Rotation','mobility',2,'12/side'),e('Scapular Push-Ups','mobility',2,'10'),e('Thoracic Extension','mobility',1,'8')];
@@ -21,6 +21,15 @@ export const CONDITIONING_OPTIONS:Record<ConditioningOptionKey,SessionTemplate>=
  annie:{key:'recovery',name:'Annie',objective:'50–40–30–20–10 for time',duration:15,exercises:[50,40,30,20,10].map(reps=>e(`${reps} Double-Unders + Sit-Ups`,'compound',1,`${reps} each`,{rir:'3+',rest:0}))},
  chelsea:{key:'recovery',name:'Chelsea',objective:'30-minute EMOM',duration:30,exercises:[e('Chelsea Minute','compound',30,'1 minute · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
  bodyweight_emom:{key:'recovery',name:'Bodyweight EMOM',objective:'15-minute low-equipment conditioning',duration:15,exercises:[e('EMOM Round','compound',15,'1 minute · 5 push-ups · 10 air squats · 20 mountain climbers',{rir:'3+',rest:0})]},
+ mobility:{key:'recovery',name:'Mobility',objective:'20-minute mobility-only reset',duration:20,exercises:[e('Cat-Cow','accessory',1,'10'),e('Open Book','accessory',1,'8/side'),e('90/90 Hip Switch','accessory',2,'8/side'),e('Hip CAR','accessory',1,'5/side'),e('Adductor Rock-Back','accessory',2,'10/side'),e('Knee-to-Wall','accessory',2,'10/side'),e('Deep Squat Hold','accessory',2,'45 sec',{timed:true}),e('Dead Hang','accessory',2,'30 sec',{timed:true})]},
+};
+
+export const CONDITIONING_SPLITS:Record<ConditioningOptionKey,Array<{name:string;prescription:string}>>={
+ cindy:[{name:'Pull-Ups',prescription:'5 reps'},{name:'Push-Ups',prescription:'10 reps'},{name:'Air Squats',prescription:'15 reps'}],
+ annie:[{name:'Double-Unders',prescription:'50 · 40 · 30 · 20 · 10'},{name:'Sit-Ups',prescription:'50 · 40 · 30 · 20 · 10'}],
+ chelsea:[{name:'Pull-Ups',prescription:'5 reps'},{name:'Push-Ups',prescription:'10 reps'},{name:'Air Squats',prescription:'15 reps'}],
+ bodyweight_emom:[{name:'Push-Ups',prescription:'5 reps'},{name:'Air Squats',prescription:'10 reps'},{name:'Mountain Climbers',prescription:'20 reps'}],
+ mobility:[{name:'Cat-Cow',prescription:'10 reps'},{name:'Open Book',prescription:'8/side'},{name:'90/90 Hip Switch',prescription:'2 × 8/side'},{name:'Hip CAR',prescription:'5/side'},{name:'Adductor Rock-Back',prescription:'2 × 10/side'},{name:'Knee-to-Wall',prescription:'2 × 10/side'},{name:'Deep Squat Hold',prescription:'2 × 45 sec'},{name:'Dead Hang',prescription:'2 × 30 sec'}],
 };
 
 export const PPL_SEQUENCE:SessionKey[]=['push_a','pull_a','legs_a','push_b','pull_b','legs_b','recovery'];
