@@ -41,6 +41,11 @@ export function adaptSession(template:SessionTemplate,band:ReadinessBand,redChoi
  return {...template,name:band==='red'?`${template.name} · Reduced`:template.name,duration:Math.round(template.duration*multiplier),exercises};
 }
 export function nextSession(current:SessionKey){return PPL_SEQUENCE[(PPL_SEQUENCE.indexOf(current)+1)%PPL_SEQUENCE.length]}
+export function sessionKeyFromWorkout(sessionKey?:string|null,dayName?:string|null):SessionKey|null{
+ if(sessionKey&&PPL_SEQUENCE.includes(sessionKey as SessionKey))return sessionKey as SessionKey;
+ const normalized=(dayName||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ return PPL_SEQUENCE.find(key=>normalized===key||normalized.startsWith(`${key}_`))||null;
+}
 export function warmupSets(workingKg:number,lowerBody=false){if(!workingKg||workingKg<20)return[];const steps=lowerBody?[.2,.4,.6,.75,.88]:[20/workingKg,.55,.72,.86];return [...new Set(steps.map(p=>Math.max(20,Math.round(workingKg*p/2.5)*2.5)).filter(x=>x<workingKg))].map((load,i,a)=>({load,reps:i===0?12:i===a.length-1?3:i===a.length-2?5:8}));}
 export function nextSet(load:number,reps:number,rir:number,min:number,max:number,increment=2.5){if(reps>=max&&rir>=3)return{load:load+increment,target:`${min}-${max}`,reason:'Top of range with reserve—small load increase'};if(reps<min||rir<=0)return{load:Math.max(0,load-increment),target:`${min}-${max}`,reason:'Below target or at failure—reduce load'};return{load,target:`${min}-${max}`,reason:'Stay at load and earn reps'};}
 export const SORENESS_AREAS=['chest','shoulders','triceps','back','biceps','quads','hamstrings','glutes','calves'];
