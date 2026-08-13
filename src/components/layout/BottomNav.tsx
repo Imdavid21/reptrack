@@ -48,10 +48,11 @@ export function BottomNav() {
         }}
         sx={{
           bgcolor: 'background.paper',
-          height: 60,
+          height: 56,
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
-            py: 1,
+            py: 0.5,
+            transform: 'translateY(3px)',
             color: 'text.secondary',
             '&.Mui-selected': {
               color: 'hsl(var(--foreground))',
@@ -65,7 +66,7 @@ export function BottomNav() {
             fontSize: '0.625rem',
             fontFamily: 'inherit',
             letterSpacing: '0.02em',
-            mt: 0.5,
+            mt: 0.25,
             '&.Mui-selected': {
               fontSize: '0.625rem',
               fontWeight: 700,
@@ -87,7 +88,7 @@ export function BottomNav() {
                     className="nav-dot"
                     sx={{
                       position: 'absolute',
-                      top: -7,
+                      top: -4,
                       width: 4,
                       height: 4,
                       borderRadius: '50%',
@@ -96,7 +97,7 @@ export function BottomNav() {
                       transition: 'opacity 0.15s ease',
                     }}
                   />
-                  <item.icon size={20} />
+                  <item.icon size={19} />
                 </Box>
               }
             />
