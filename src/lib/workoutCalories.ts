@@ -1,89 +1,49 @@
 /**
- * Single source of truth for workout calorie-burn math. Previously this MET
- * table and the day-name-to-category logic were independently copy-pasted
- * across useWorkouts.ts, useCalorieBurn.ts, and useCalorieHistory.ts, and
- * had drifted: none of the three copies matched "Lower" (Upper/Lower split
- * leg days), so those days silently got the generic MET instead of the legs
- * one. Import from here instead of re-deriving this anywhere else.
+ * Compatibility boundary for workout energy estimates.
+ *
+ * Energy Engine V3 deliberately does not infer intensity from "Push", "Pull",
+ * or "Legs". Session structure and actual completion determine a broad band.
  */
-
-/** MET (Metabolic Equivalent of Task) values per workout movement pattern. */
-export const WORKOUT_MET_VALUES: Record<string, number> = {
-  push: 5.0,
-  pull: 5.0,
-  legs: 6.0,
-  accessory: 4.0,
-  strength: 5.0, // generic/full-body fallback
-};
+import { estimateWorkoutEnergy } from './energyEngineV3';
 
 export interface WorkoutForMet {
   day?: string | null;
   day_name?: string | null;
-  exercises?: { category: string }[];
+  exercises?: { category: string; completed?: boolean }[];
+  plannedSets?: number;
+  pausedSeconds?: number;
+}
+
+export function getWorkoutMetCategory(workout: WorkoutForMet): 'light' | 'normal' | 'vigorous' {
+  const rows = (workout.exercises || []).filter(row => row.completed !== false);
+  const compounds = rows.filter(row => ['primary', 'compound'].includes(String(row.category).toLowerCase())).length;
+  return estimateWorkoutEnergy({ durationMinutes: 60, completedSets: rows.length, plannedSets: workout.plannedSets || rows.length, compoundSets: compounds, weightKg: 70 }).intensity;
+}
+
+export function getWorkoutMet(workout: WorkoutForMet, durationMinutes = 60): number {
+  const rows = (workout.exercises || []).filter(row => row.completed !== false);
+  const compounds = rows.filter(row => ['primary', 'compound'].includes(String(row.category).toLowerCase())).length;
+  return estimateWorkoutEnergy({ durationMinutes, pausedSeconds: workout.pausedSeconds, completedSets: rows.length, plannedSets: workout.plannedSets || rows.length, compoundSets: compounds, weightKg: 70 }).met;
+}
+
+export function calculateWorkoutCalories(workout: WorkoutForMet, weightKg: number, durationMinutes: number): number {
+  const rows = (workout.exercises || []).filter(row => row.completed !== false);
+  const compounds = rows.filter(row => ['primary', 'compound'].includes(String(row.category).toLowerCase())).length;
+  const isolation = rows.filter(row => ['accessory', 'specialization', 'core'].includes(String(row.category).toLowerCase())).length;
+  return Math.round(estimateWorkoutEnergy({ durationMinutes, pausedSeconds: workout.pausedSeconds, completedSets: rows.length, plannedSets: workout.plannedSets || rows.length, compoundSets: compounds, isolationSets: isolation, weightKg, hasActualFinish: durationMinutes > 0 }).netKcal);
 }
 
 /**
- * Derive the MET lookup category for a workout. Day text is checked first
- * (push/pull/legs/arm+accessory) since it's the reliable signal; falls back
- * to the majority exercise.category only when the day name says nothing
- * (Full Body / custom splits) — exercise.category is the training-role enum
- * ('primary'/'accessory'/'warmup'), so the majority is almost always
- * 'primary', which isn't a MET key on its own.
- *
- * Matches both "leg" and "lower" — Upper/Lower split day names ("Lower A"/
- * "Lower B") are leg days and don't contain the substring "leg".
- */
-export function getWorkoutMetCategory(workout: WorkoutForMet): string {
-  const text = `${workout.day || ''} ${workout.day_name || ''}`.toLowerCase();
-  if (text.includes('push')) return 'push';
-  if (text.includes('pull')) return 'pull';
-  if (text.includes('leg') || text.includes('lower')) return 'legs';
-  if (text.includes('arm') || text.includes('accessory')) return 'accessory';
-
-  const exercises = workout.exercises || [];
-  if (exercises.length > 0) {
-    const categoryCounts: Record<string, number> = {};
-    exercises.forEach(ex => {
-      const cat = (ex.category || '').toLowerCase();
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-    });
-    const top = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (top === 'accessory') return 'accessory';
-  }
-  return 'strength';
-}
-
-export function getWorkoutMet(workout: WorkoutForMet): number {
-  return WORKOUT_MET_VALUES[getWorkoutMetCategory(workout)] ?? 5.0;
-}
-
-/** Calories = MET × bodyweight(kg) × duration(hours). */
-export function calculateWorkoutCalories(
-  workout: WorkoutForMet,
-  weightKg: number,
-  durationMinutes: number
-): number {
-  if (!durationMinutes || durationMinutes <= 0) return 0;
-  // MET includes resting energy. Maintenance already covers that baseline,
-  // so workout burn reports only the additional active expenditure.
-  return Math.round(Math.max(0, getWorkoutMet(workout) - 1) * weightKg * (durationMinutes / 60));
-}
-
-/**
- * Resolve the bodyweight (kg) to use for calorie-burn math: prefer a real
- * logged average from daily_metrics, then the user's weight_goal (a target
- * weight, not their actual one — worse than a real weigh-in, better than a
- * population-average guess), then a population-average default.
- *
- * Single source of truth for this fallback chain — useWorkouts.ts previously
- * skipped straight to weight_goal with no daily_metrics lookup at all, which
- * meant the persisted calorie_burns row for nearly every workout was
- * computed against a target weight instead of the user's real one.
+ * Legacy callers pass a real smoothed measurement first and the profile's
+ * initial measured weight second. Goal weight is intentionally not accepted
+ * as physiological state by V3.
  */
 export function resolveBodyweightKg(
-  avgLoggedBodyweightKg: number | null | undefined,
-  weightGoalKg: number | null | undefined,
-  fallbackKg = 70
+  smoothedBodyweightKg: number | null | undefined,
+  profileInitialWeightKg: number | null | undefined,
+  temporaryFallbackKg = 70,
 ): number {
-  return avgLoggedBodyweightKg || weightGoalKg || fallbackKg;
+  return Number(smoothedBodyweightKg) > 0 ? Number(smoothedBodyweightKg)
+    : Number(profileInitialWeightKg) > 0 ? Number(profileInitialWeightKg)
+      : temporaryFallbackKg;
 }

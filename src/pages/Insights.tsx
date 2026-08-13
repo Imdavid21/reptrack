@@ -107,6 +107,7 @@ function ProgressCard() {
     setIsSaving(true);
     try {
       const calorieGoal = goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null;
+      const calorieGoalChanged = calorieGoal != null && calorieGoal !== preferences?.daily_calorie_goal;
       // Field collects ml; daily_water_goal is stored in liters (see note above).
       const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) / 1000 : null;
       const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
@@ -114,6 +115,7 @@ function ProgressCard() {
 
       await updatePreferences.mutateAsync({
         daily_calorie_goal: calorieGoal,
+        calorie_target_locked: calorieGoalChanged ? true : preferences?.calorie_target_locked,
         daily_water_goal: waterGoal,
         weekly_workout_goal: workoutGoalValue,
         sleep_goal: sleepGoalValue,

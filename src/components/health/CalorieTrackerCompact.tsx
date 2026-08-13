@@ -3,8 +3,7 @@ import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
-import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
-import { resolveMaintenanceOverride } from '@/lib/metabolism';
+import { useEnergyModel } from '@/hooks/useEnergyModel';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
@@ -74,10 +73,10 @@ export function CalorieTrackerCompact() {
   // or a back-dated day (so its meals/burns show and new meals save there).
   const mealsDate = viewingToday ? undefined : logDate;
   const { meals, mealsByType, totalCalories, addMeal, deleteMeal, isAdding } = useMeals(mealsDate);
-  const { preferences } = useUserPreferences();
+  const { preferences, updatePreferences } = useUserPreferences();
   const { setGoal } = useGoalHistory();
-  const { totalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
-  const autoMaintenance = useAutoMaintenanceCalories(logDate);
+  const { totalBurned: legacyTotalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
+  const energy = useEnergyModel(logDate);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -105,17 +104,16 @@ export function CalorieTrackerCompact() {
 
   const deficitMode = preferences?.deficit_mode_enabled ?? false;
   const deficitTarget = preferences?.daily_deficit_target ?? 500;
-  const dailyGoal = preferences?.daily_calorie_goal ?? 2000;
+  const dailyGoal = energy.model?.calorieTarget ?? preferences?.daily_calorie_goal ?? 2000;
   // Maintenance baseline: explicit override, otherwise the body-based
   // auto-calculation (BMR alone — today's real activity is credited
   // separately in real time via `+ totalBurned` below, not assumed here),
   // otherwise the old circular fallback for users with no profile data yet.
-  const maintenanceOverride = resolveMaintenanceOverride(preferences?.maintenance_calories);
-  const maintenance = maintenanceOverride
-    ?? (autoMaintenance.isAvailable ? autoMaintenance.maintenance : (dailyGoal + deficitTarget));
+  const maintenance = energy.model?.personalBaseline ?? (dailyGoal + (deficitMode ? deficitTarget : 0));
+  const totalBurned = energy.model?.deliberateActivity ?? legacyTotalBurned;
   // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
-  const cap = deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal;
-  const proteinGoal = preferences?.daily_protein_goal ?? 180;
+  const cap = energy.model?.calorieTarget ?? (deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal);
+  const proteinGoal = energy.model?.proteinTarget ?? preferences?.daily_protein_goal ?? 180;
   const proteinTotal = useMemo(
     () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
     [meals]
@@ -138,7 +136,7 @@ export function CalorieTrackerCompact() {
       meals.reduce((s, m) => s + Number((m as any)[key] || 0), 0);
     return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium') };
   }, [meals]);
-  const netDeficit = maintenance - totalCalories + totalBurned; // positive = under maintenance
+  const netDeficit = energy.model ? -energy.model.energyBalance : maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
     if (isEditingGoal) setEditGoal(dailyGoal);
@@ -366,6 +364,8 @@ export function CalorieTrackerCompact() {
         sugar: totalSugar || undefined,
         sodium: totalSodium || undefined,
         food_quality: analysis?.food_quality,
+        nutrition_source: uploadedPhotoUrl ? 'ai_photo' : 'ai_text',
+        source_metadata: { modelEstimated: true, editedBeforeSave: true },
       });
       toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
@@ -387,6 +387,8 @@ export function CalorieTrackerCompact() {
         calories: parseInt(manualData.calories),
         photo_url: uploadedPhotoUrl || undefined,
         is_confirmed: true,
+        nutrition_source: 'manual',
+        source_metadata: { modelEstimated: false },
       });
       toast.success(`Meal logged${mealDateSuffix}`);
       setIsDialogOpen(false);
@@ -418,6 +420,7 @@ export function CalorieTrackerCompact() {
   const handleSaveCalorieGoal = async () => {
     try {
       await setGoal('daily_calorie_goal', editGoal, dailyGoal);
+      await updatePreferences.mutateAsync({ calorie_target_locked: true });
       setIsEditingGoal(false);
       toast.success('Calorie goal updated');
     } catch {
@@ -502,11 +505,11 @@ export function CalorieTrackerCompact() {
                   </div>
                   <div className="text-xs text-muted-foreground">{Math.round(proteinTotal)}g / {proteinGoal}g · {Math.max(0, Math.round(proteinGoal - proteinTotal))}g remaining</div>
                 </button>
-                {isExpanded && autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
+                {isExpanded && energy.model && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
-                    bmr={autoMaintenance.bmr}
+                    bmr={energy.model.ree}
                     maintenance={maintenance}
-                    isOverride={maintenanceOverride != null}
+                    isOverride={false}
                     totalBurnedToday={viewingToday ? totalBurned : 0}
                     isToday={viewingToday}
                   />
@@ -607,6 +610,22 @@ export function CalorieTrackerCompact() {
 
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
             <div className="mt-4 pt-4 border-t border-border space-y-3 overflow-hidden">
+              {energy.model && (
+                <div className="rounded-xl bg-muted/25 p-3 space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Normal day</span><span className="tabular-nums">~{energy.breakdown.normalDay.toLocaleString()} kcal</span></div>
+                  {energy.breakdown.workout > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Workout</span><span className="tabular-nums">~{energy.breakdown.workout} kcal</span></div>}
+                  {energy.breakdown.walking > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Walking</span><span className="tabular-nums">~{energy.breakdown.walking} kcal</span></div>}
+                  {energy.breakdown.running > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Running</span><span className="tabular-nums">~{energy.breakdown.running} kcal</span></div>}
+                  {energy.breakdown.cycling > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cycling</span><span className="tabular-nums">~{energy.breakdown.cycling} kcal</span></div>}
+                  {energy.breakdown.boxing + energy.breakdown.other > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Other activity</span><span className="tabular-nums">~{energy.breakdown.boxing + energy.breakdown.other} kcal</span></div>}
+                  <div className="flex justify-between border-t border-border pt-2 font-semibold"><span>Estimated expenditure</span><span className="tabular-nums">~{energy.breakdown.expenditure.toLocaleString()} kcal</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
+                  <details className="pt-1 text-xs text-muted-foreground">
+                    <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
+                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}–{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
+                  </details>
+                </div>
+              )}
               {(burns.length > 0 || showCalculatedWorkout) && (
                 <div className="space-y-1 overflow-hidden">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">

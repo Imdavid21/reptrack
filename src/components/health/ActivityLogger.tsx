@@ -8,6 +8,7 @@ import { useLogDate } from '@/contexts/LogDateContext';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ENERGY_MODEL_VERSION, estimateActivity, netActivityKcal, type ActivityObservation } from '@/lib/energyEngineV3';
 
 export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 
@@ -31,7 +32,7 @@ export const ACTIVITY_CONFIG: Record<ActivityKind, {
 // Boxing has no distance, so there's no pace to calculate a MET from — it
 // keeps a fixed intensity estimate. The other three compute MET from actual
 // speed instead (see effectiveMet).
-const BOXING_MET = 9.0;
+const BOXING_MET = 6.0;
 
 // Bounds a computed speed to what's physiologically plausible for each
 // activity, so a mistyped distance or time (an extra zero, a unit mix-up)
@@ -122,7 +123,8 @@ export function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: nu
 }
 
 /**
- * kcal = MET * weight(kg) * hours
+ * Net kcal uses (MET - 1) above rest so it can be added to the normal-day
+ * baseline without counting resting expenditure twice.
  * For km-based activities, `minutesOverride` (if > 0) replaces the default
  * pace-derived duration — see effectiveMet, which calculates MET from
  * whatever pace that implies rather than a fixed per-activity number.
@@ -136,7 +138,7 @@ export function activityCalories(
   const minutes = activityDuration(kind, value, minutesOverride);
   const met = effectiveMet(kind, value, minutes);
   // Maintenance already includes resting expenditure; log only active kcal.
-  return Math.round(Math.max(0, met - 1) * weightKg * (minutes / 60));
+  return Math.round(netActivityKcal(met, weightKg, minutes));
 }
 
 export function activityDuration(kind: ActivityKind, value: number, minutesOverride?: number) {
@@ -154,20 +156,17 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [value, setValue] = useState('');
   const [minutes, setMinutes] = useState('');
+  const [boxingIntensity, setBoxingIntensity] = useState<'technique' | 'normal' | 'conditioning' | 'sparring'>('normal');
   const [saving, setSaving] = useState(false);
 
   const cfg = ACTIVITY_CONFIG[kind];
   const numericValue = parseFloat(value) || 0;
   const numericMinutes = parseFloat(minutes) || 0;
-  const kcal = useMemo(
-    () => activityCalories(kind, numericValue, weightKg, numericMinutes),
-    [kind, numericValue, numericMinutes, weightKg],
-  );
-  const duration = activityDuration(kind, numericValue, numericMinutes);
-  const met = useMemo(
-    () => effectiveMet(kind, numericValue, duration),
-    [kind, numericValue, duration],
-  );
+  const activityHistory: ActivityObservation[] = useMemo(() => manualBurns.map(entry => ({ date: entry.date, activityType: entry.activity_type || 'other', distanceKm: entry.distance_km, durationMinutes: entry.duration_minutes })), [manualBurns]);
+  const estimate = useMemo(() => estimateActivity({ kind, date: logDate, weight: weightKg, distanceKm: cfg.unit === 'km' ? numericValue : null, durationMinutes: cfg.unit === 'min' ? numericValue : numericMinutes || null, history: activityHistory, boxingIntensity }), [kind, logDate, weightKg, numericValue, numericMinutes, cfg.unit, activityHistory, boxingIntensity]);
+  const kcal = Math.round(estimate.netKcal);
+  const duration = Math.round(estimate.durationMinutes);
+  const met = estimate.met;
   const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
 
   // Existing activity of this type already logged on the selected date.
@@ -210,12 +209,23 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
     if (numericValue <= 0) return;
     setSaving(true);
     try {
+      const endedAt = isBackDated ? null : new Date();
+      const startedAt = endedAt ? new Date(endedAt.getTime() - duration * 60_000) : null;
       await addBurn.mutateAsync({
         source: 'manual',
         activity_type: kind,
         duration_minutes: duration,
         distance_km: cfg.unit === 'km' ? numericValue : null,
         calories: kcal,
+        started_at: startedAt?.toISOString() || null,
+        ended_at: endedAt?.toISOString() || null,
+        intensity_band: kind === 'boxing' ? boxingIntensity : 'pace_based',
+        intensity_source: estimate.paceSource,
+        met_estimate: estimate.met,
+        effective_weight_kg: estimate.effectiveWeightKg,
+        confidence: estimate.confidence,
+        energy_model_version: ENERGY_MODEL_VERSION,
+        calculation_inputs: { paceMinutesPerKm: estimate.paceMinutesPerKm, paceSource: estimate.paceSource, warnings: estimate.warnings, eventTimeSource: endedAt ? 'log_time_minus_duration' : 'unknown_backdated_time' },
         ...(isBackDated ? { date: logDateStr } : {}),
       });
       const when = isBackDated ? ` on ${format(logDate, 'MMM d')}` : '';
@@ -325,6 +335,16 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
               </div>
             )}
 
+            {kind === 'boxing' && (
+              <div className="grid grid-cols-2 gap-2">
+                {(['technique', 'normal', 'conditioning', 'sparring'] as const).map(level => (
+                  <button key={level} type="button" onClick={() => setBoxingIntensity(level)} className={cn('rounded-xl border px-3 py-2 text-xs capitalize', boxingIntensity === level ? 'border-foreground bg-foreground text-background' : 'border-border')}>
+                    {level}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Burn</div>
@@ -344,7 +364,7 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
 
 
             <p className="text-[11px] text-muted-foreground">
-              Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {met.toFixed(1)}
+              Based on {weightKg.toFixed(1)} kg · {estimate.paceSource.replace(/_/g, ' ')} · intensity {met.toFixed(1)} MET · {estimate.confidence} confidence
             </p>
 
             <div className="flex gap-2">

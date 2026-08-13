@@ -14,8 +14,11 @@ export interface DraftWorkout {
   step: 'select-day' | 'review' | 'exercises';
   lastSavedAt: string;
   workoutStartTime?: string;
-  /** Active session time; excludes time the app was backgrounded. */
+  /** Active session time; includes background time and excludes only explicit pauses. */
   elapsedSeconds?: number;
+  pausedSeconds?: number;
+  pauseStartedAt?: string;
+  pauseIntervals?: Array<{ pausedAt: string; resumedAt?: string }>;
 }
 
 const DRAFT_KEY = 'fittrack_draft_workout';

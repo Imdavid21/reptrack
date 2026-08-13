@@ -20,7 +20,10 @@ export type DataTable =
   | 'readiness_checkins'
   | 'post_workout_checkins'
   | 'mobility_assessments'
-  | 'physique_checkins';
+  | 'physique_checkins'
+  | 'workout_pauses'
+  | 'energy_model_states'
+  | 'energy_targets';
 
 interface ExportOptions {
   tables: DataTable[];
@@ -45,6 +48,8 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   workouts: [
     'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
     'started_at', 'completed_at', 'workout_duration_minutes', 'is_skipped',
+    'explicit_pause_seconds', 'energy_model_version', 'estimated_net_kcal',
+    'energy_confidence', 'energy_inputs',
     'pre_energy', 'pre_motivation', 'pre_soreness', 'post_difficulty', 'post_satisfaction',
     'session_key', 'readiness_band', 'completion_percent',
     'created_at'
@@ -64,11 +69,14 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   meals: [
     'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
     'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'food_quality',
-    'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed', 'notes', 'created_at'
+    'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed',
+    'nutrition_source', 'source_metadata', 'notes', 'created_at'
   ],
   calorie_burns: [
     'id', 'user_id', 'date', 'calories', 'source', 'activity_type',
-    'duration_minutes', 'distance_km', 'created_at'
+    'duration_minutes', 'distance_km', 'started_at', 'ended_at',
+    'intensity_band', 'intensity_source', 'met_estimate', 'effective_weight_kg',
+    'confidence', 'energy_model_version', 'calculation_inputs', 'created_at'
   ],
   habits: [
     'id', 'workout_id', 'pullups', 'water_intake', 'sleep_hours',
@@ -78,9 +86,11 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'id', 'user_id', 'routine_name', 'routine_data', 'is_active', 'created_at'
   ],
   user_preferences: [
-    'id', 'user_id', 'name', 'age', 'gender', 'height_cm', 'activity_level',
+    'id', 'user_id', 'name', 'age', 'date_of_birth', 'gender', 'height_cm',
+    'initial_weight_kg', 'nonexercise_lifestyle', 'activity_level',
     'units_system', 'weight_goal_type', 'weight_goal', 'sleep_goal',
     'weekly_workout_goal', 'daily_calorie_goal', 'daily_protein_goal',
+    'calorie_target_locked', 'protein_target_locked',
     'daily_carbs_goal', 'daily_fat_goal', 'daily_fiber_goal', 'daily_sugar_goal',
     'daily_sodium_goal', 'daily_water_goal', 'dietary_preferences',
     'deficit_mode_enabled', 'daily_deficit_target', 'maintenance_calories',
@@ -106,6 +116,19 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   post_workout_checkins: ['id', 'user_id', 'workout_id', 'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'exercise_felt_wrong', 'completion_percent', 'notes', 'created_at'],
   mobility_assessments: ['id', 'user_id', 'assessment_date', 'deep_squat_depth', 'heels_down', 'discomfort', 'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'created_at'],
   physique_checkins: ['id', 'user_id', 'checkin_date', 'bodyweight', 'waist_cm', 'upper_arm_left_cm', 'upper_arm_right_cm', 'chest_cm', 'calf_left_cm', 'calf_right_cm', 'photo_paths', 'created_at'],
+  workout_pauses: ['id', 'user_id', 'workout_id', 'paused_at', 'resumed_at', 'created_at'],
+  energy_model_states: [
+    'id', 'user_id', 'effective_date', 'energy_model_version', 'effective_weight_kg',
+    'weight_source', 'formula_ree', 'nonexercise_factor', 'formula_baseline',
+    'calibration_adjustment', 'personal_baseline', 'predicted_tdee', 'calibrated_tdee',
+    'likely_low', 'likely_high', 'data_quality', 'calibration_confidence',
+    'calibration_eligible', 'inputs', 'calculated_at', 'created_at'
+  ],
+  energy_targets: [
+    'id', 'user_id', 'effective_from', 'calorie_target', 'protein_target',
+    'estimated_maintenance', 'target_adjustment', 'basis', 'reason',
+    'energy_model_version', 'generated_at', 'created_at'
+  ],
 };
 
 // Tables that link via a foreign key to another exported table's row,
@@ -120,6 +143,7 @@ export const LINKED_TABLES: Partial<Record<DataTable, { parentTable: DataTable; 
   habits: { parentTable: 'workouts', fkColumn: 'workout_id' },
   adaptive_session_logs: { parentTable: 'adaptive_lifecycles', fkColumn: 'lifecycle_id' },
   post_workout_checkins: { parentTable: 'workouts', fkColumn: 'workout_id' },
+  workout_pauses: { parentTable: 'workouts', fkColumn: 'workout_id' },
 };
 
 const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
@@ -140,6 +164,9 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   post_workout_checkins: { column: 'created_at', ascending: true },
   mobility_assessments: { column: 'assessment_date', ascending: true },
   physique_checkins: { column: 'checkin_date', ascending: true },
+  workout_pauses: { column: 'paused_at', ascending: true },
+  energy_model_states: { column: 'effective_date', ascending: true },
+  energy_targets: { column: 'effective_from', ascending: true },
 };
 
 /** Every column that's a genuine number in the DB, across all tables — used to parse CSV strings back to numbers on import. */
@@ -153,14 +180,15 @@ export const NUMERIC_FIELDS = new Set([
   // meals
   'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'ai_confidence',
   // calorie_burns
-  'duration_minutes', 'distance_km',
+  'duration_minutes', 'distance_km', 'met_estimate', 'effective_weight_kg',
   // habits
   'water_intake',
   // workouts
-  'workout_duration_minutes', 'week_number', 'pre_energy', 'pre_motivation',
+  'workout_duration_minutes', 'explicit_pause_seconds', 'estimated_net_kcal',
+  'energy_model_version', 'week_number', 'pre_energy', 'pre_motivation',
   'pre_soreness', 'post_difficulty', 'post_satisfaction',
   // user_preferences
-  'age', 'height_cm', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
+  'age', 'height_cm', 'initial_weight_kg', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
   'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
   'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_water_goal',
   'daily_deficit_target', 'maintenance_calories', 'default_rest_seconds',
@@ -174,6 +202,11 @@ export const NUMERIC_FIELDS = new Set([
   'carryover_in', 'carryover_out',
   // adaptive_session_logs
   'leading_load', 'leading_reps', 'backoff_load', 'backoff_reps',
+  // versioned energy model
+  'effective_weight_kg', 'formula_ree', 'nonexercise_factor', 'formula_baseline',
+  'calibration_adjustment', 'personal_baseline', 'predicted_tdee', 'calibrated_tdee',
+  'likely_low', 'likely_high', 'calorie_target', 'protein_target',
+  'estimated_maintenance', 'target_adjustment',
 ]);
 
 /** Every column that's a genuine boolean in the DB — parsed from the CSV's "true"/"1" text back to a real boolean on import. */
@@ -182,9 +215,10 @@ export const BOOLEAN_FIELDS = new Set([
   'onboarding_completed', 'routine_setup_completed', 'deficit_mode_enabled',
   'adaptive_mode_enabled', 'is_rest_day',
   'show_bmr_on_dashboard', 'deload_active', 'illness', 'sharp_pain', 'exercise_felt_wrong', 'heels_down',
+  'calorie_target_locked', 'protein_target_locked', 'calibration_eligible',
 ]);
 
-const JSON_FIELDS = new Set(['routine_data', 'dietary_preferences', 'rest_days', 'weak_points_targeted', 'prescription', 'soreness', 'recommendation', 'photo_paths']);
+const JSON_FIELDS = new Set(['routine_data', 'dietary_preferences', 'rest_days', 'weak_points_targeted', 'prescription', 'soreness', 'recommendation', 'photo_paths', 'source_metadata', 'calculation_inputs', 'energy_inputs', 'inputs']);
 
 const PAGE_SIZE = 1000;
 
@@ -433,6 +467,9 @@ export function useDataExport() {
       'post_workout_checkins',
       'mobility_assessments',
       'physique_checkins',
+      'workout_pauses',
+      'energy_model_states',
+      'energy_targets',
     ];
 
     return await exportToCSV({ tables: allTables });

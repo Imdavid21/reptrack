@@ -15,6 +15,8 @@
  * happened on a day with nothing logged.
  */
 
+import { calculateRee, nonexerciseBaselineFactor } from './energyEngineV3';
+
 export type Gender = 'male' | 'female' | string | null | undefined;
 
 /**
@@ -22,13 +24,7 @@ export type Gender = 'male' | 'female' | string | null | undefined;
  * workouts/walks/runs because those are added to today's balance separately.
  */
 export function baselineMaintenanceMultiplier(activityLevel?: string | null): number {
-  switch (activityLevel) {
-    case 'light': return 1.3;
-    case 'moderate': return 1.4;
-    case 'active': return 1.5;
-    case 'very_active': return 1.6;
-    default: return 1.2;
-  }
+  return nonexerciseBaselineFactor(activityLevel);
 }
 
 export function estimateBaselineMaintenance(bmr: number, activityLevel?: string | null): number {
@@ -37,8 +33,7 @@ export function estimateBaselineMaintenance(bmr: number, activityLevel?: string 
 
 /** Mifflin-St Jeor basal metabolic rate, in kcal/day. */
 export function calculateBMR(weightKg: number, heightCm: number, age: number, gender: Gender): number {
-  const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-  return Math.round(gender === 'female' ? base - 161 : base + 5);
+  return calculateRee(weightKg, heightCm, age, gender);
 }
 
 /** How much of today (0–1) has elapsed as of `now`. */

@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { parseDateKey } from '@/lib/dateKey';
 import { Trash2 } from 'lucide-react';
 import { ACTIVITY_CONFIG, activityCalories, activityDuration, effectiveMet, type ActivityKind } from './ActivityLogger';
+import { ENERGY_MODEL_VERSION } from '@/lib/energyEngineV3';
 
 interface Props {
   burn: BurnEntry | null;
@@ -19,6 +20,11 @@ interface Props {
     duration_minutes: number;
     distance_km: number | null;
     calories: number;
+    met_estimate: number;
+    effective_weight_kg: number;
+    confidence: 'medium';
+    energy_model_version: number;
+    calculation_inputs: Record<string, unknown>;
   }) => Promise<unknown>;
   onDelete: (id: string) => Promise<unknown>;
 }
@@ -31,7 +37,7 @@ interface Props {
  * the type itself changes).
  */
 export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
-  const { weightKg } = useCalorieBurn();
+  const { weightKg } = useCalorieBurn(burn ? parseDateKey(burn.date) : undefined);
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [value, setValue] = useState('');
   const [minutes, setMinutes] = useState('');
@@ -81,6 +87,11 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
         duration_minutes: duration,
         distance_km: cfg.unit === 'km' ? numericValue : null,
         calories: kcal,
+        met_estimate: met,
+        effective_weight_kg: weightKg,
+        confidence: 'medium',
+        energy_model_version: ENERGY_MODEL_VERSION,
+        calculation_inputs: { paceSource: numericMinutes > 0 ? 'actual_timing' : 'generic_fallback', editedAt: new Date().toISOString() },
       });
       toast.success(`Updated ${cfg.label.toLowerCase()} · ${kcal} kcal`);
       onClose();

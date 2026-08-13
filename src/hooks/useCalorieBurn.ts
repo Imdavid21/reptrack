@@ -4,8 +4,9 @@ import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
-import { getWorkoutMetCategory, WORKOUT_MET_VALUES, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { calculateWorkoutCalories as estimateWorkoutCalories } from '@/lib/workoutCalories';
 import { calculateBMR as sharedCalculateBMR } from '@/lib/metabolism';
+import { effectiveWeightAt } from '@/lib/energyEngineV3';
 
 interface CalorieBurn {
   id: string;
@@ -16,6 +17,15 @@ interface CalorieBurn {
   duration_minutes?: number;
   distance_km?: number | null;
   activity_type?: string;
+  started_at?: string | null;
+  ended_at?: string | null;
+  intensity_band?: string;
+  intensity_source?: string;
+  met_estimate?: number;
+  effective_weight_kg?: number;
+  confidence?: 'low' | 'medium' | 'high';
+  energy_model_version?: number;
+  calculation_inputs?: Record<string, unknown>;
 }
 
 interface WorkoutWithExercises {
@@ -25,8 +35,10 @@ interface WorkoutWithExercises {
   started_at?: string;
   completed_at?: string;
   workout_duration_minutes?: number;
+  explicit_pause_seconds?: number;
   exercises: {
     category: string;
+    completed?: boolean;
   }[];
 }
 
@@ -36,9 +48,9 @@ export function useCalorieBurn(date?: Date) {
   const queryClient = useQueryClient();
   const dateStr = format(date || new Date(), 'yyyy-MM-dd');
 
-  // Get actual bodyweight from daily metrics, fall back to weight_goal, then 70kg
-  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
-  const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
+  const referenceDate = date || new Date();
+  const { data: metricsData } = useDailyMetrics({ from: new Date(referenceDate.getTime() - 30 * 86400000), to: referenceDate });
+  const weightKg = effectiveWeightAt((metricsData?.dataPoints || []).map(point => ({ date: point.date, kg: Number(point.bodyweight) })), dateStr, preferences?.initial_weight_kg).kg;
 
   // Fetch today's workouts so manual activity and exercise burn can coexist
   const { data: todayWorkouts = [] } = useQuery({
@@ -55,8 +67,10 @@ export function useCalorieBurn(date?: Date) {
           started_at,
           completed_at,
           workout_duration_minutes,
+          explicit_pause_seconds,
           exercises (
-            category
+            category,
+            completed
           )
         `)
         .eq('user_id', user.id)
@@ -74,8 +88,8 @@ export function useCalorieBurn(date?: Date) {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('calorie_burns')
+      const { data, error } = await (supabase
+        .from('calorie_burns') as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('date', dateStr)
@@ -93,8 +107,8 @@ export function useCalorieBurn(date?: Date) {
       if (!user) throw new Error('No user');
 
       const { date: burnDate, ...rest } = burn;
-      const { data, error } = await supabase
-        .from('calorie_burns')
+      const { data, error } = await (supabase
+        .from('calorie_burns') as any)
         .upsert({
           user_id: user.id,
           date: burnDate ?? dateStr,
@@ -113,6 +127,7 @@ export function useCalorieBurn(date?: Date) {
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
       queryClient.invalidateQueries({ queryKey: ['manual-burns'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -133,15 +148,11 @@ export function useCalorieBurn(date?: Date) {
 
   // Calculate calories burned from an already-resolved category (the MET
   // table itself lives in lib/workoutCalories.ts, single source of truth).
-  const calculateWorkoutCalories = (durationMinutes: number, category: string = 'strength') => {
-    const met = WORKOUT_MET_VALUES[category] ?? 5.0;
-    return Math.round(Math.max(0, met - 1) * weightKg * (durationMinutes / 60));
-  };
+  const calculateWorkoutCalories = (durationMinutes: number) =>
+    estimateWorkoutCalories({ exercises: [] }, weightKg, durationMinutes);
 
   // Category derivation also lives in lib/workoutCalories.ts — see that file
   // for why day_name is checked before exercise.category.
-  const getPrimaryCategory = (workout: WorkoutWithExercises): string =>
-    getWorkoutMetCategory({ day_name: workout.day_name, exercises: workout.exercises });
 
   // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)
   const calculateStepCalories = (steps: number) => {
@@ -158,11 +169,10 @@ export function useCalorieBurn(date?: Date) {
   // Calculate today's workout calories across all workouts on the day
   const workoutSummaries = todayWorkouts.map((workout) => {
     const calculatedDuration = calculateWorkoutDuration(workout);
-    const primaryCategory = getPrimaryCategory(workout);
     const calculatedCalories = calculatedDuration > 0
-      ? calculateWorkoutCalories(calculatedDuration, primaryCategory)
+      ? estimateWorkoutCalories({ day_name: workout.day_name, exercises: workout.exercises, pausedSeconds: workout.explicit_pause_seconds }, weightKg, calculatedDuration)
       : 0;
-    return { ...workout, calculatedDuration, calculatedCalories, primaryCategory };
+    return { ...workout, calculatedDuration, calculatedCalories };
   });
   const workoutCaloriesFromDuration = workoutSummaries.reduce((sum, w) => sum + w.calculatedCalories, 0);
   const primaryWorkout = workoutSummaries.reduce<typeof workoutSummaries[number] | null>((longest, workout) => {
@@ -270,6 +280,7 @@ export function useManualBurns(days: number = 30) {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -284,6 +295,11 @@ export function useManualBurns(days: number = 30) {
       duration_minutes: number;
       distance_km: number | null;
       calories: number;
+      met_estimate?: number;
+      effective_weight_kg?: number;
+      confidence?: 'low' | 'medium' | 'high';
+      energy_model_version?: number;
+      calculation_inputs?: Record<string, unknown>;
     }) => {
       const { id, ...fields } = input;
       const { error } = await supabase.from('calorie_burns').update(fields).eq('id', id);
@@ -294,6 +310,7 @@ export function useManualBurns(days: number = 30) {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 

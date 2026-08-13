@@ -74,7 +74,7 @@ export default function History() {
   }, {} as Record<string, number>);
 
   const burnsByDate = (calorieHistory || []).reduce((acc, entry) => {
-    acc[entry.date] = entry.burned;
+    acc[entry.date] = entry.expenditure;
     return acc;
   }, {} as Record<string, number>);
 

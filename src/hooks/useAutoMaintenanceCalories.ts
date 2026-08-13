@@ -1,44 +1,37 @@
-import { useUserPreferences } from './useUserPreferences';
-import { useDailyMetrics } from './useDailyMetrics';
-import { resolveBodyweightKg } from '@/lib/workoutCalories';
-import { calculateBMR, estimateBaselineMaintenance } from '@/lib/metabolism';
+import { useEnergyModel } from './useEnergyModel';
 
 export interface AutoMaintenance {
   bmr: number;
-  /** Baseline daily maintenance excluding separately logged activity. */
   maintenance: number;
+  predictedTdee: number;
+  likelyRange: [number, number];
+  confidence: 'low' | 'medium' | 'high';
+  effectiveWeightKg: number;
+  calibrationAdjustment: number;
+  calorieTarget: number;
+  proteinTarget: number;
+  targetReason: string;
+  modelVersion: number;
   isLoading: boolean;
-  /** False when profile is missing age/height/gender — nothing to compute from yet. */
   isAvailable: boolean;
 }
 
-/**
- * The body-based, auto-updating replacement for Deficit Mode's manually-typed
- * maintenance baseline: BMR (Mifflin-St Jeor) from the user's own bodyweight
- * (a trailing 30-day average, smoothing day-to-day water-weight noise) +
- * profile age/height/gender. Recomputes on every render, so a new weigh-in
- * shifts the number automatically — nothing to remember to re-enter. Today's
- * actual activity is credited separately and in real time by the caller
- * (netDeficit's `+ totalBurned`), not assumed here from history.
- */
+/** Compatibility view backed by Personal Energy Engine V3. */
 export function useAutoMaintenanceCalories(referenceDate: Date = new Date()): AutoMaintenance {
-  const { preferences, isLoading: prefsLoading } = useUserPreferences();
-  const { data: metricsData, isLoading: metricsLoading } = useDailyMetrics({
-    from: new Date(referenceDate.getTime() - 30 * 86400000),
-    to: referenceDate,
-  });
-
-  const age = preferences?.age;
-  const heightCm = preferences?.height_cm;
-  const gender = preferences?.gender;
-  const isAvailable = !!age && !!heightCm && !!gender;
-
-  if (!isAvailable) {
-    return { bmr: 0, maintenance: 0, isAvailable: false, isLoading: prefsLoading };
-  }
-
-  const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
-  const bmr = calculateBMR(weightKg, heightCm as number, age as number, gender);
-
-  return { bmr, maintenance: estimateBaselineMaintenance(bmr, preferences?.activity_level), isAvailable: true, isLoading: prefsLoading || metricsLoading };
+  const { model, isLoading, hasProfileInputs } = useEnergyModel(referenceDate);
+  return {
+    bmr: model?.ree ?? 0,
+    maintenance: model?.personalBaseline ?? 0,
+    predictedTdee: model?.calibratedTdee ?? 0,
+    likelyRange: model?.likelyRange ?? [0, 0],
+    confidence: model?.confidence ?? 'low',
+    effectiveWeightKg: model?.effectiveWeight.kg ?? 0,
+    calibrationAdjustment: model?.calibrationAdjustment ?? 0,
+    calorieTarget: model?.calorieTarget ?? 0,
+    proteinTarget: model?.proteinTarget ?? 0,
+    targetReason: model?.targetReason ?? '',
+    modelVersion: model?.modelVersion ?? 3,
+    isLoading,
+    isAvailable: !!model && hasProfileInputs,
+  };
 }

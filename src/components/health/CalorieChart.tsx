@@ -16,7 +16,7 @@ export function CalorieChart() {
 
   // Period stats for summary
   const totalIntake = calorieData.reduce((sum, d) => sum + d.intake, 0);
-  const totalBurned = calorieData.reduce((sum, d) => sum + d.burned, 0);
+  const totalBurned = calorieData.reduce((sum, d) => sum + d.expenditure, 0);
   const totalWorkoutBurned = calorieData.reduce((sum, d) => sum + d.workoutBurned, 0);
   const totalManualBurned = calorieData.reduce((sum, d) => sum + d.manualBurned, 0);
   const netBalance = totalIntake - totalBurned;
@@ -29,8 +29,8 @@ export function CalorieChart() {
     displayDate: format(parseISO(d.date), 'MMM d'),
     shortDate: format(parseISO(d.date), 'd'),
     intakeValue: d.intake,
-    burnedValue: -d.burned,
-    net: d.intake - d.burned,
+    burnedValue: -d.expenditure,
+    net: d.net,
   }));
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -47,22 +47,25 @@ export function CalorieChart() {
             <span className="text-xs text-insight-mint">Intake</span>
             <span className="text-sm font-semibold tabular-nums">+{data.intake.toLocaleString()}</span>
           </div>
-          {data.manualBurned > 0 ? (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-insight-coral">Normal day</span>
+            <span className="text-sm font-semibold tabular-nums">-{data.baseline.toLocaleString()}</span>
+          </div>
+          {(data.workoutBurned > 0 || data.manualBurned > 0) && (
             <>
+              {data.workoutBurned > 0 && (
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-insight-coral">Workout</span>
                 <span className="text-sm font-semibold tabular-nums">-{data.workoutBurned.toLocaleString()}</span>
               </div>
+              )}
+              {data.manualBurned > 0 && (
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-insight-coral">Activity</span>
                 <span className="text-sm font-semibold tabular-nums">-{data.manualBurned.toLocaleString()}</span>
               </div>
+              )}
             </>
-          ) : (
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-xs text-insight-coral">Burned</span>
-              <span className="text-sm font-semibold tabular-nums">-{data.burned.toLocaleString()}</span>
-            </div>
           )}
           <div className="border-t border-border pt-1.5">
             <div className="flex items-center justify-between gap-4">
@@ -93,7 +96,7 @@ export function CalorieChart() {
 
   // Calculate Y-axis domain
   const maxIntake = Math.max(...calorieData.map(d => d.intake), 0);
-  const maxBurned = Math.max(...calorieData.map(d => d.burned), 0);
+  const maxBurned = Math.max(...calorieData.map(d => d.expenditure), 0);
   const maxValue = Math.max(maxIntake, maxBurned, 500);
   const yDomain = [-maxValue * 1.1, maxValue * 1.1];
 

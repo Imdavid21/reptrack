@@ -131,7 +131,12 @@ export function useGoalHistory() {
    *  can back-fill its genesis entry correctly. */
   const setGoal = useCallback(async (goalKey: GoalKey, value: number, previousValue?: number | null) => {
     await backfillGenesisIfNeeded(goalKey, previousValue);
-    await updatePreferences.mutateAsync({ [goalKey]: value } as any);
+    const lockField = goalKey === 'daily_calorie_goal'
+      ? { calorie_target_locked: true }
+      : goalKey === 'daily_protein_goal'
+        ? { protein_target_locked: true }
+        : {};
+    await updatePreferences.mutateAsync({ [goalKey]: value, ...lockField } as any);
     await recordChange.mutateAsync({ goalKey, value, effectiveFrom: localDateKey(new Date()) });
   }, [backfillGenesisIfNeeded, updatePreferences, recordChange]);
 

@@ -21,12 +21,17 @@ export interface UserPreferences {
   user_id: string;
   name: string | null;
   age: number | null;
+  date_of_birth?: string | null;
   height_cm: number | null;
   gender: string | null;
+  initial_weight_kg?: number | null;
+  nonexercise_lifestyle?: 'mostly_seated' | 'mixed_seated_standing' | 'physically_active_occupation' | null;
   onboarding_completed: boolean;
   daily_water_goal: number;
   daily_calorie_goal: number;
   daily_protein_goal: number;
+  calorie_target_locked?: boolean;
+  protein_target_locked?: boolean;
   weekly_workout_goal: number;
   sleep_goal: number;
   weight_goal: number | null;

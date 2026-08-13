@@ -135,6 +135,7 @@ export function useDailyMetrics(dateRange?: DateRangeFilter) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['dailyMetrics'] });
+      await queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
       await queryClient.refetchQueries({ queryKey: ['dailyMetrics'] });
     },
   });

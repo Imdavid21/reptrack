@@ -22,6 +22,8 @@ export interface Meal {
   is_confirmed: boolean;
   notes: string | null;
   created_at: string;
+  nutrition_source?: 'manual' | 'ai_photo' | 'ai_text' | 'saved_meal' | 'import' | 'legacy';
+  source_metadata?: Record<string, unknown>;
 }
 
 export function useMeals(date?: Date) {
@@ -65,13 +67,15 @@ export function useMeals(date?: Date) {
       is_confirmed?: boolean;
       food_quality?: string;
       notes?: string;
+      nutrition_source?: 'manual' | 'ai_photo' | 'ai_text' | 'saved_meal' | 'import';
+      source_metadata?: Record<string, unknown>;
       /** Optional back-date (yyyy-MM-dd); defaults to the hook's date. */
       date?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('meals')
+      const { data, error } = await (supabase
+        .from('meals') as any)
         .insert({
           user_id: user.id,
           date: dateStr,
@@ -86,6 +90,7 @@ export function useMeals(date?: Date) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -106,6 +111,7 @@ export function useMeals(date?: Date) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -123,6 +129,7 @@ export function useMeals(date?: Date) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 

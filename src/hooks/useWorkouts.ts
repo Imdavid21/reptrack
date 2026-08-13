@@ -2,10 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
-import { useDailyMetrics } from './useDailyMetrics';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
 import { localDateKey } from '@/lib/dateKey';
-import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
 
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
@@ -67,10 +66,6 @@ export function useWorkouts() {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
   const queryClient = useQueryClient();
-  // Same 30-day-average bodyweight window useCalorieBurn.ts uses, so the
-  // number persisted here at workout-creation time matches what the rest of
-  // the app computes on the fly for the same day.
-  const { data: metricsData } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
 
   const workoutsQuery = useQuery({
     queryKey: ['workouts', user?.id],
@@ -100,11 +95,24 @@ export function useWorkouts() {
       durationMinutes?: number;
       startedAt?: Date;
       completedAt?: Date;
+      explicitPauseSeconds?: number;
+      pauseIntervals?: Array<{ pausedAt: string; resumedAt?: string }>;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
       // Format date for Supabase (YYYY-MM-DD) using LOCAL time, not UTC.
       const workoutDate = localDateKey(workout.date ?? new Date());
+
+      const weightWindowStart = new Date(`${workoutDate}T12:00:00`);
+      weightWindowStart.setDate(weightWindowStart.getDate() - 30);
+      const { data: weightRows } = await supabase.from('daily_metrics').select('date,bodyweight').eq('user_id', user.id).gte('date', localDateKey(weightWindowStart)).lte('date', workoutDate).not('bodyweight', 'is', null).order('date');
+      const weight = effectiveWeightAt((weightRows || []).map(row => ({ date: row.date, kg: Number(row.bodyweight) })), workoutDate, preferences?.initial_weight_kg);
+      const completedSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
+      const plannedSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
+      const compoundSets = workout.exercises.filter(exercise => ['primary', 'compound'].includes(exercise.category)).reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
+      const isolationSets = workout.exercises.filter(exercise => ['accessory', 'specialization', 'core'].includes(exercise.category)).reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
+      const burnDuration = workout.durationMinutes || 0;
+      const burnEstimate = estimateWorkoutEnergy({ durationMinutes: burnDuration + (workout.explicitPauseSeconds || 0) / 60, pausedSeconds: workout.explicitPauseSeconds || 0, completedSets, plannedSets, compoundSets, isolationSets, weightKg: weight.kg, hasActualFinish: !!workout.completedAt });
 
       const workoutPayload = {
         user_id: user.id,
@@ -115,6 +123,11 @@ export function useWorkouts() {
         workout_duration_minutes: workout.durationMinutes,
         started_at: workout.startedAt?.toISOString(),
         completed_at: workout.completedAt?.toISOString(),
+        explicit_pause_seconds: workout.explicitPauseSeconds || 0,
+        energy_model_version: ENERGY_MODEL_VERSION,
+        estimated_net_kcal: burnEstimate.netKcal,
+        energy_confidence: burnEstimate.confidence,
+        energy_inputs: { effectiveWeightKg: weight.kg, weightSource: weight.source, intensity: burnEstimate.intensity, met: burnEstimate.met, completedSets, plannedSets, compoundSets, isolationSets },
       };
 
       // Build exercise rows
@@ -140,13 +153,7 @@ export function useWorkouts() {
         bodyweight: workout.habits.bodyweight,
         notes: workout.habits.notes,
       } : null;
-      const burnDuration = workout.durationMinutes || 0;
-      const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
-      const burnCalories = calculateWorkoutCalories(
-        { day: workout.day, day_name: workout.day_name, exercises: workout.exercises },
-        weightKg,
-        burnDuration
-      );
+      const burnCalories = Math.round(burnEstimate.netKcal);
 
       const rollbackWorkout = async (workoutId: string, originalError: unknown) => {
         const { error: rollbackError } = await supabase.from('workouts').delete().eq('id', workoutId);
@@ -158,8 +165,8 @@ export function useWorkouts() {
 
       try {
         // Try online first
-        const { data: workoutData, error: workoutError } = await supabase
-          .from('workouts')
+        const { data: workoutData, error: workoutError } = await (supabase
+          .from('workouts') as any)
           .insert(workoutPayload)
           .select()
           .single();
@@ -180,9 +187,14 @@ export function useWorkouts() {
           if (habitsError) await rollbackWorkout(workoutData.id, habitsError);
         }
 
+        if (workout.pauseIntervals?.length) {
+          const { error: pausesError } = await (supabase.from('workout_pauses' as any) as any).insert(workout.pauseIntervals.map(interval => ({ user_id: user.id, workout_id: workoutData.id, paused_at: interval.pausedAt, resumed_at: interval.resumedAt || workout.completedAt?.toISOString() || null })));
+          if (pausesError) await rollbackWorkout(workoutData.id, pausesError);
+        }
+
         if (burnCalories > 0) {
-          const { error: burnError } = await supabase
-            .from('calorie_burns')
+          const { error: burnError } = await (supabase
+            .from('calorie_burns') as any)
             .upsert({
               user_id: user.id,
               date: workoutDate,
@@ -190,6 +202,13 @@ export function useWorkouts() {
               activity_type: `workout:${workoutData.id}`,
               duration_minutes: burnDuration,
               calories: burnCalories,
+              intensity_band: burnEstimate.intensity,
+              intensity_source: 'workout_structure',
+              met_estimate: burnEstimate.met,
+              effective_weight_kg: weight.kg,
+              confidence: burnEstimate.confidence,
+              energy_model_version: ENERGY_MODEL_VERSION,
+              calculation_inputs: workoutPayload.energy_inputs,
           }, { onConflict: 'user_id,date,source,activity_type' });
           if (burnError) await rollbackWorkout(workoutData.id, burnError);
         }
@@ -237,6 +256,13 @@ export function useWorkouts() {
             });
           }
 
+
+          if (workout.pauseIntervals?.length) {
+            for (let i = 0; i < workout.pauseIntervals.length; i++) {
+              await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: { user_id: user.id, workout_id: tempWorkoutId, paused_at: workout.pauseIntervals[i].pausedAt, resumed_at: workout.pauseIntervals[i].resumedAt || workout.completedAt?.toISOString() || null }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + i });
+            }
+          }
+
           if (burnCalories > 0) {
             await enqueueOperation({
               table: 'calorie_burns',
@@ -248,9 +274,16 @@ export function useWorkouts() {
                 activity_type: `workout:${tempWorkoutId}`,
                 duration_minutes: burnDuration,
                 calories: burnCalories,
+                intensity_band: burnEstimate.intensity,
+                intensity_source: 'workout_structure',
+                met_estimate: burnEstimate.met,
+                effective_weight_kg: weight.kg,
+                confidence: burnEstimate.confidence,
+                energy_model_version: ENERGY_MODEL_VERSION,
+                calculation_inputs: workoutPayload.energy_inputs,
               },
               groupId,
-              groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1),
+              groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + (workout.pauseIntervals?.length || 0),
             });
           }
 
@@ -280,6 +313,7 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
       queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -306,6 +340,7 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
       queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 
@@ -346,6 +381,7 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
       queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
       queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
     },
   });
 

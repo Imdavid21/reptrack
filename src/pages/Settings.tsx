@@ -35,7 +35,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
-import { resolveMaintenanceOverride } from '@/lib/metabolism';
 import { toast } from '@/lib/toast';
 
 import { DataManagementSection } from '@/components/settings/DataManagementSection';
@@ -70,8 +69,11 @@ export default function Settings() {
   const [profile, setProfile] = useState({
     name: '',
     age: '',
+    date_of_birth: '',
     height_cm: '',
     gender: '',
+    initial_weight_kg: '',
+    nonexercise_lifestyle: 'mostly_seated',
   });
 
   useEffect(() => {
@@ -79,8 +81,11 @@ export default function Settings() {
       setProfile({
         name: preferences.name || '',
         age: preferences.age?.toString() || '',
+        date_of_birth: preferences.date_of_birth || '',
         height_cm: preferences.height_cm?.toString() || '',
         gender: preferences.gender || '',
+        initial_weight_kg: preferences.initial_weight_kg?.toString() || '',
+        nonexercise_lifestyle: preferences.nonexercise_lifestyle || 'mostly_seated',
       });
       setProfileDirty(false);
     }
@@ -102,8 +107,11 @@ export default function Settings() {
       await updatePreferences.mutateAsync({
         name: profile.name || null,
         age: profile.age ? parseInt(profile.age) : null,
+        date_of_birth: profile.date_of_birth || null,
         height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
         gender: profile.gender || null,
+        initial_weight_kg: profile.initial_weight_kg ? parseFloat(profile.initial_weight_kg) : null,
+        nonexercise_lifestyle: profile.nonexercise_lifestyle as 'mostly_seated' | 'mixed_seated_standing' | 'physically_active_occupation',
       });
       toast.success('Profile updated');
       setProfileDirty(false);
@@ -116,7 +124,7 @@ export default function Settings() {
     }
   };
 
-  const isProfileComplete = profile.age && profile.height_cm && profile.gender;
+  const isProfileComplete = (profile.date_of_birth || profile.age) && profile.height_cm && profile.gender;
 
   return (
     <MainLayout>
@@ -182,9 +190,9 @@ export default function Settings() {
                             {profile.name}
                           </span>
                         )}
-                        {profile.age && (
+                        {(profile.date_of_birth || profile.age) && (
                           <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5">
-                            {profile.age} yrs
+                            {profile.date_of_birth || `${profile.age} yrs`}
                           </span>
                         )}
                         {profile.height_cm && (
@@ -197,6 +205,11 @@ export default function Settings() {
                             {profile.gender}
                           </span>
                         )}
+                        {profile.initial_weight_kg && (
+                          <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5">
+                            Initial {profile.initial_weight_kg} kg
+                          </span>
+                        )}
                       </Box>
                     </Box>
                   ) : (
@@ -206,7 +219,7 @@ export default function Settings() {
                         Profile Details
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                        Help AI give you better insights
+                        Used for personalised energy estimates
                       </Typography>
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -222,12 +235,11 @@ export default function Settings() {
                         </Box>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">AGE</Label>
+                            <Label className="text-xs text-muted-foreground">DATE OF BIRTH</Label>
                             <Input
-                              type="number"
-                              placeholder="25"
-                              value={profile.age}
-                              onChange={(e) => { setProfile(p => ({ ...p, age: e.target.value })); setProfileDirty(true); }}
+                              type="date"
+                              value={profile.date_of_birth}
+                              onChange={(e) => { setProfile(p => ({ ...p, date_of_birth: e.target.value })); setProfileDirty(true); }}
                               className="input-terminal mt-1"
                             />
                           </Box>
@@ -240,6 +252,43 @@ export default function Settings() {
                               onChange={(e) => { setProfile(p => ({ ...p, height_cm: e.target.value })); setProfileDirty(true); }}
                               className="input-terminal mt-1"
                             />
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <Label className="text-xs text-muted-foreground">INITIAL MEASURED WEIGHT (KG)</Label>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="Used until weight is logged"
+                            value={profile.initial_weight_kg}
+                            onChange={(e) => { setProfile(p => ({ ...p, initial_weight_kg: e.target.value })); setProfileDirty(true); }}
+                            className="input-terminal mt-1"
+                          />
+                        </Box>
+
+                        <Box>
+                          <Label className="text-xs text-muted-foreground">TYPICAL NON-EXERCISE DAY</Label>
+                          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
+                            {[
+                              ['mostly_seated', 'Mostly seated'],
+                              ['mixed_seated_standing', 'Mixed'],
+                              ['physically_active_occupation', 'Active job'],
+                            ].map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => { setProfile(p => ({ ...p, nonexercise_lifestyle: value })); setProfileDirty(true); }}
+                                className={cn(
+                                  'border p-2 text-xs transition-colors rounded',
+                                  profile.nonexercise_lifestyle === value
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-border hover:bg-muted'
+                                )}
+                              >
+                                {label}
+                              </button>
+                            ))}
                           </Box>
                         </Box>
 
@@ -665,41 +714,46 @@ export default function Settings() {
                   <>
                     <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
-                        Maintenance Calories
+                        Personal energy model
                       </Typography>
                       {autoMaintenance.isAvailable ? (
                         <>
                           <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                            Updated from your 30-day average bodyweight and activity baseline.
-                            Today's logged workouts and activity are added in real time.
+                            Uses weight at the time, dynamic age, normal-day movement, logged activity, and completed workout time.
                           </Typography>
                           <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center', mb: 1.5 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated baseline maintenance</Typography>
-                            <Typography variant="body1" fontWeight={700}>{autoMaintenance.maintenance.toLocaleString()} kcal</Typography>
-                            <Typography variant="caption" color="text.secondary">BMR {autoMaintenance.bmr.toLocaleString()} kcal</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated expenditure today</Typography>
+                            <Typography variant="body1" fontWeight={700}>{autoMaintenance.predictedTdee.toLocaleString()} kcal</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}–{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Normal day {autoMaintenance.maintenance.toLocaleString()} | REE {autoMaintenance.bmr.toLocaleString()} | calibration {autoMaintenance.calibrationAdjustment >= 0 ? '+' : ''}{autoMaintenance.calibrationAdjustment}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                              Target {autoMaintenance.calorieTarget.toLocaleString()} kcal | Protein {autoMaintenance.proteinTarget} g | Model v{autoMaintenance.modelVersion}
+                            </Typography>
                           </Box>
+                          {(preferences?.calorie_target_locked || preferences?.protein_target_locked) && (
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                              {preferences.calorie_target_locked && (
+                                <Button size="small" variant="outlined" onClick={() => updatePreferences.mutate({ calorie_target_locked: false })}>
+                                  Use automatic calories
+                                </Button>
+                              )}
+                              {preferences.protein_target_locked && (
+                                <Button size="small" variant="outlined" onClick={() => updatePreferences.mutate({ protein_target_locked: false })}>
+                                  Use automatic protein
+                                </Button>
+                              )}
+                            </Box>
+                          )}
                         </>
                       ) : (
                         <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                          Add your age, height, and gender in Account above to auto-calculate this from your body.
+                          Add your date of birth, height, gender, and a measured weight in Account above.
                         </Typography>
                       )}
-                      <TextField
-                        type="number"
-                        size="small"
-                        fullWidth
-                        label="Manual override (optional)"
-                        value={resolveMaintenanceOverride(preferences?.maintenance_calories) ?? ''}
-                        placeholder={autoMaintenance.isAvailable ? String(autoMaintenance.maintenance) : 'e.g. 2400'}
-                        onChange={(e) => {
-                          // Treat 0 the same as clearing the field — 0 kcal maintenance
-                          // isn't a real override, and would otherwise silently zero out
-                          // NET on the dashboard instead of falling back to auto-calc.
-                          const parsed = e.target.value === '' ? null : parseInt(e.target.value, 10);
-                          updatePreferences.mutate({ maintenance_calories: resolveMaintenanceOverride(parsed) } as any);
-                        }}
-                        inputProps={{ min: 1000, max: 5000, step: 50 }}
-                      />
                     </Box>
 
                     <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

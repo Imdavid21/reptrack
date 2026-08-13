@@ -6,13 +6,16 @@ import { APP_VERSION } from '@/lib/version';
 const changelogEntries = [
   {
     date: '2026-08-13',
-    title: 'A calmer daily training flow',
+    title: 'Adaptive training and personal energy',
     items: [
       'Today, Train, and Timeline now make up the primary navigation; Settings is available from the Today header.',
       'Today now keeps sleep, bodyweight, water, food, and activity logging within one or two taps.',
       'Training starts with a single primary action, with optional warm-up, session selection, and “Feeling rough?” adaptation controls.',
       'Sets prefill from your prescription and history for quicker tap-based logging; completion no longer requires a post-workout form.',
       'Weekly physique and mobility check-ins now appear on Mondays and remain visible until completed; bodyweight uses your logged average.',
+      'Energy estimates now use historical weight, dynamic resting expenditure, net activity above rest, and broad workout-intensity bands instead of fixed Push/Pull/Legs values.',
+      'Maintenance and nutrition targets now adapt gradually from multi-week, quality-gated evidence while retaining uncertainty and calculation provenance.',
+      'Workout timing now survives backgrounding and subtracts only explicit pauses; activity, food, targets, and model state remain exportable and versioned.',
     ],
   },
   {

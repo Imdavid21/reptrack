@@ -6,6 +6,7 @@ import { useDailyMetrics } from './useDailyMetrics';
 import { format, eachDayOfInterval, parseISO, differenceInMinutes, subDays } from 'date-fns';
 import { DateRange } from '@/contexts/DateRangeContext';
 import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { ageOnDate, calculateRee, effectiveWeightAt, nonexerciseBaselineFactor } from '@/lib/energyEngineV3';
 
 interface CalorieDataPoint {
   date: string;
@@ -15,6 +16,11 @@ interface CalorieDataPoint {
   workoutBurned: number;
   /** Portion of `burned` from manually-logged activity (walk/run/cycle/box). */
   manualBurned: number;
+  /** Normal day expenditure before deliberate exercise. */
+  baseline: number;
+  /** Baseline plus deliberate exercise/activity. */
+  expenditure: number;
+  /** Food minus total expenditure. Negative is a predicted deficit. */
   net: number;
 }
 
@@ -28,18 +34,18 @@ export function useCalorieHistory(dateRange: DateRange) {
     to: dateRange.to,
   });
   const avgBodyweight = metricsData?.totals?.avgBodyweight;
-  const fallbackWeight = resolveBodyweightKg(avgBodyweight, preferences?.weight_goal);
+  const fallbackWeight = resolveBodyweightKg(avgBodyweight, preferences?.initial_weight_kg);
 
   const startDateStr = format(dateRange.from, 'yyyy-MM-dd');
   const endDateStr = format(dateRange.to, 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: ['calorie-history', user?.id, startDateStr, endDateStr, fallbackWeight],
+    queryKey: ['calorie-history', user?.id, startDateStr, endDateStr, fallbackWeight, preferences?.height_cm, preferences?.gender, preferences?.date_of_birth, preferences?.nonexercise_lifestyle],
     queryFn: async (): Promise<CalorieDataPoint[]> => {
       if (!user) return [];
 
       // Fetch meals (intake), manual burns, workouts, and bodyweight history in parallel
-      const [mealsRes, burnsRes, workoutsRes, weightsRes] = await Promise.all([
+      const [mealsRes, burnsRes, workoutsRes, weightsRes, statesRes] = await Promise.all([
         supabase
           .from('meals')
           .select('date, calories')
@@ -72,23 +78,24 @@ export function useCalorieHistory(dateRange: DateRange) {
           .eq('user_id', user.id)
           .not('bodyweight', 'is', null)
           .order('date', { ascending: true }),
+        (supabase.from('energy_model_states' as any) as any)
+          .select('effective_date,personal_baseline')
+          .eq('user_id', user.id)
+          .gte('effective_date', format(subDays(dateRange.from, 365), 'yyyy-MM-dd'))
+          .lte('effective_date', endDateStr)
+          .order('effective_date', { ascending: true }),
       ]);
+      if (statesRes.error && !/schema cache|does not exist/i.test(statesRes.error.message || '')) throw statesRes.error;
 
-      // Build per-date bodyweight map with carry-forward fallback
+      // Build a historical, recency-weighted bodyweight map. Goal weight is
+      // never used as if it were measured physiology.
       const weightByDate: Record<string, number> = {};
-      let lastWeight = fallbackWeight;
       const sortedWeights = (weightsRes.data || []) as { date: string; bodyweight: number }[];
-      const weightIdx: Record<string, number> = {};
-      sortedWeights.forEach(w => { weightIdx[w.date] = Number(w.bodyweight); });
+      const observations = sortedWeights.map(w => ({ date: w.date, kg: Number(w.bodyweight) }));
       const allRangeDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
-      // Seed lastWeight from any earlier-dated weigh-in
-      const firstRangeDateStr = format(dateRange.from, 'yyyy-MM-dd');
-      const earliestSeed = sortedWeights.filter(w => w.date <= firstRangeDateStr).slice(-1)[0];
-      if (earliestSeed) lastWeight = Number(earliestSeed.bodyweight);
       allRangeDays.forEach(d => {
         const ds = format(d, 'yyyy-MM-dd');
-        if (weightIdx[ds]) lastWeight = weightIdx[ds];
-        weightByDate[ds] = lastWeight;
+        weightByDate[ds] = effectiveWeightAt(observations, ds, preferences?.initial_weight_kg).kg;
       });
 
       // Group intake by date
@@ -150,18 +157,32 @@ export function useCalorieHistory(dateRange: DateRange) {
 
       // Generate array for all days in range
       const allDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+      const modelStates = statesRes.error ? [] : (statesRes.data || []);
       
       return allDays.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd');
         const intake = intakeByDate[dateStr] || 0;
         const burned = burnsByDate[dateStr] || 0;
+        const latestState = modelStates.filter((state: any) => state.effective_date <= dateStr).slice(-1)[0];
+        const formulaBaseline = Math.round(
+          calculateRee(
+            weightByDate[dateStr] || fallbackWeight,
+            Number(preferences?.height_cm) || 170,
+            ageOnDate(preferences?.date_of_birth, dateStr, preferences?.age),
+            preferences?.gender,
+          ) * nonexerciseBaselineFactor(preferences?.nonexercise_lifestyle),
+        );
+        const baseline = Math.round(Number(latestState?.personal_baseline) || formulaBaseline);
+        const expenditure = baseline + burned;
         return {
           date: dateStr,
           intake,
           burned,
           workoutBurned: workoutBurnByDate[dateStr] || 0,
           manualBurned: manualBurnByDate[dateStr] || 0,
-          net: intake - burned,
+          baseline,
+          expenditure,
+          net: intake - expenditure,
         };
       });
     },
