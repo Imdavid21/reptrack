@@ -8,9 +8,10 @@ interface MainLayoutProps {
   children: ReactNode;
   showBack?: boolean;
   backTo?: string;
+  hideNav?: boolean;
 }
 
-export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
+export function MainLayout({ children, showBack, backTo, hideNav = false }: MainLayoutProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -22,7 +23,7 @@ export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
   };
 
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: 'calc(80px + env(safe-area-inset-bottom))' }}>
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : 'calc(80px + env(safe-area-inset-bottom))' }}>
       {showBack && (
         <Box
           component="header"
@@ -45,7 +46,7 @@ export function MainLayout({ children, showBack, backTo }: MainLayoutProps) {
       <Box component="main" sx={{ px: 2, py: 2 }}>
         {children}
       </Box>
-      <BottomNav />
+      {!hideNav && <BottomNav />}
     </Box>
   );
 }
