@@ -13,7 +13,7 @@ const envelope = (start: string, end: string, timezone: string, data: unknown, s
   ({ start_date: start, end_date: end, timezone, data, summary, metadata });
 
 async function workoutRows(db: Client, start: string, end: string, limit = 50, filters: Args = {}) {
-  let q = db.from("workouts").select("id,date,day,day_name,completed_at,started_at,workout_duration_minutes,is_skipped,exercises(id,name,category,actual_reps,actual_weight,target_reps,target_weight,completed,sort_order)")
+  let q = db.from("workouts").select("id,date,day,day_name,completed_at,started_at,workout_duration_minutes,is_skipped,session_key,readiness_band,completion_percent,exercises(id,name,category,actual_reps,actual_weight,target_reps,target_weight,completed,sort_order,actual_rir,rom_quality,pain_score,set_kind,prescription)")
     .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(limit + 1);
   if (filters.workout_type) q = q.ilike("day_name", `%${filters.workout_type}%`);
   const { data, error } = await q;
@@ -45,7 +45,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
 
   if (name === "get_workouts") {
     const limit = Math.min(args.limit ?? 50, 50), result = await workoutRows(db, start, end, limit, args);
-    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, reps: e.actual_reps, load: e.actual_weight, completed: e.completed })) }));
+    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, session_key:w.session_key, readiness:w.readiness_band, completion_percent:w.completion_percent, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, set_kind:e.set_kind, reps: e.actual_reps, load: e.actual_weight, rir:e.actual_rir, rom_quality:e.rom_quality, pain_score:e.pain_score, completed: e.completed })) }));
     return envelope(start, end, timezone, data, { workouts_returned: data.length }, { has_more: result.hasMore, limit });
   }
 

@@ -19,13 +19,12 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
-import LogWorkout from "./pages/LogWorkout";
+import AdaptiveWorkout from "./pages/AdaptiveWorkout";
 import Insights from "./pages/Insights";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import LifecycleTracker from "./pages/LifecycleTracker";
 import WorkoutDetail from "./pages/WorkoutDetail";
-import Chat from "./pages/Chat";
 import OAuthConsent from "./pages/OAuthConsent";
 import McpStatus from "./pages/McpStatus";
 
@@ -70,11 +69,11 @@ function AppRoutes() {
 
         {/* App routes (authenticated, eagerly loaded for instant navigation) */}
         <Route path="/app" element={<AppIndex />} />
-        <Route path="/app/log" element={<LogWorkout />} />
+        <Route path="/app/log" element={<AdaptiveWorkout />} />
         <Route path="/app/insights" element={<Insights />} />
         <Route path="/app/history" element={<History />} />
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
-        <Route path="/app/chat" element={<Chat />} />
+        <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/settings/mcp" element={<McpStatus />} />
         <Route path="/app/lifecycle" element={<LifecycleTracker />} />

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Skeleton, useTheme, TextField, Collapse, IconButton, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
@@ -10,8 +9,6 @@ import {
   Check,
   X,
   Loader2,
-  Brain,
-  ChevronRight,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/layout/AnimatedPage';
@@ -474,7 +471,6 @@ function ProgressCard() {
 }
 
 function InsightsContent() {
-  const navigate = useNavigate();
   const { dateRange } = useDateRange();
   const { overview, trend, isLoading: overviewLoading } = useBodyOverview(dateRange);
   const { data: muscleData, isLoading: muscleLoading } = useMuscleIntelligence();
@@ -558,30 +554,6 @@ function InsightsContent() {
               <HydrationChart />
             </motion.div>
 
-            {/* Chat with your data */}
-            <motion.div variants={staggerItem}>
-              <MuiCard>
-                <Box
-                  component="button"
-                  onClick={() => navigate('/app/chat')}
-                  sx={{
-                    display: 'flex', alignItems: 'center', gap: 1.5, width: '100%',
-                    border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', p: 0,
-                  }}
-                >
-                  <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: 'action.hover', display: 'flex' }}>
-                    <Brain size={18} />
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Chat with your data</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      Ask anything about your training, nutrition, or recovery
-                    </Typography>
-                  </Box>
-                  <ChevronRight size={18} style={{ opacity: 0.4, flexShrink: 0 }} />
-                </Box>
-              </MuiCard>
-            </motion.div>
           </Box>
         </motion.div>
       </Box>
