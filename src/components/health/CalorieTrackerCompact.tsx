@@ -413,6 +413,9 @@ export function CalorieTrackerCompact() {
   // but showing that as an already-hit green goal before a single meal is
   // logged rewards not tracking rather than actually hitting the target.
   const hitDeficit = netDeficit >= deficitTarget && meals.length > 0;
+  const deficitProgress = meals.length > 0
+    ? Math.min(100, Math.max(0, (netDeficit / Math.max(deficitTarget, 1)) * 100))
+    : 0;
   // Workout calories are calculated from duration when no burn entry was persisted yet.
   const hasPersistedWorkoutBurn = burns.some(b => b.source === 'workout');
   const showCalculatedWorkout = !hasPersistedWorkoutBurn && !!todayWorkout && todayWorkout.calculatedCalories > 0;
@@ -455,7 +458,7 @@ export function CalorieTrackerCompact() {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold tracking-tight">
                 {viewingToday
-                  ? (deficitMode ? 'Calorie balance' : "Today's calories")
+                  ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'DEFICIT' : 'CALORIES'}`}
               </h3>
               <button
@@ -473,14 +476,38 @@ export function CalorieTrackerCompact() {
             <>
               <div className="divide-y divide-border">
                 <div className="py-3">
-                  <div className="text-xs text-muted-foreground">Deficit today</div>
-                  <div className={cn(
-                    "text-xl font-bold tabular-nums leading-tight",
-                    hitDeficit ? "text-[#DAF1DC]" : netDeficit > 0 ? "text-foreground" : "text-[#ff9b9b]"
-                  )}>
-                    {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
+                  <div className="flex items-end justify-between gap-3">
+                    <div className={cn(
+                      "text-xl font-bold tabular-nums leading-tight",
+                      netDeficit >= 0 ? "text-foreground" : "text-destructive"
+                    )}>
+                      {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`} <span className="text-xs font-medium text-muted-foreground">kcal</span>
+                    </div>
+                    <div className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
+                      hitDeficit ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                    )}>
+                      {hitDeficit && <Check className="h-3 w-3" aria-hidden="true" />}
+                      {hitDeficit ? 'Target reached' : 'In progress'}
+                    </div>
                   </div>
-                  <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground"><span>Target -{deficitTarget} kcal</span><span>{hitDeficit ? 'On target' : 'In progress'}</span></div>
+                  <div
+                    className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+                    role="progressbar"
+                    aria-label="Calorie deficit progress"
+                    aria-valuemin={0}
+                    aria-valuemax={deficitTarget}
+                    aria-valuenow={Math.min(deficitTarget, Math.max(0, netDeficit))}
+                  >
+                    <div
+                      className="h-full rounded-full bg-foreground transition-[width] duration-300"
+                      style={{ width: `${deficitProgress}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>0</span>
+                    <span>Target -{deficitTarget} kcal</span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 divide-x divide-border">
                   <div className="py-3 pr-3"><div className="text-xs text-muted-foreground">Food in</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
