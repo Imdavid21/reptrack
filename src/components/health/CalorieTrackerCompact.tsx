@@ -4,6 +4,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { useCalorieBurn } from '@/hooks/useCalorieBurn';
 import { useEnergyModel } from '@/hooks/useEnergyModel';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeFoodImage, FoodAnalysisError, type AnalysisStep, type FoodAnalysis } from '@/lib/analyzeFoodImage';
 import { AnalysisProgress } from './AnalysisProgress';
@@ -19,9 +20,11 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/lib/toast';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useLogDate } from '@/contexts/LogDateContext';
 import { cn } from '@/lib/utils';
+import { ageOnDate } from '@/lib/energyEngineV3';
+import { calculateBMR, estimateBaselineMaintenance } from '@/lib/metabolism';
 
 const MEAL_ICONS = {
   breakfast: Coffee,
@@ -77,6 +80,8 @@ export function CalorieTrackerCompact() {
   const { setGoal } = useGoalHistory();
   const { totalBurned: legacyTotalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
   const energy = useEnergyModel(logDate);
+  const metricsRange = useMemo(() => ({ from: subDays(logDate, 365), to: logDate }), [logDate]);
+  const { data: recentMetrics } = useDailyMetrics(metricsRange);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -114,6 +119,20 @@ export function CalorieTrackerCompact() {
   // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
   const cap = energy.model?.calorieTarget ?? (deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal);
   const proteinGoal = energy.model?.proteinTarget ?? preferences?.daily_protein_goal ?? 180;
+  const fallbackBmr = useMemo(() => {
+    if (!preferences) return null;
+    const latestWeight = [...(recentMetrics?.dataPoints || [])]
+      .reverse()
+      .find(point => point.bodyweight && point.bodyweight > 0)?.bodyweight;
+    const weight = Number(latestWeight || preferences.initial_weight_kg);
+    const height = Number(preferences.height_cm);
+    const age = ageOnDate(preferences.date_of_birth, format(logDate, 'yyyy-MM-dd'), preferences.age);
+    if (!weight || !height || !age || !preferences.gender) return null;
+    return calculateBMR(weight, height, age, preferences.gender);
+  }, [preferences, recentMetrics?.dataPoints, logDate]);
+  const displayedBmr = energy.model?.ree ?? fallbackBmr;
+  const displayedMaintenance = energy.model?.personalBaseline
+    ?? (displayedBmr ? estimateBaselineMaintenance(displayedBmr, preferences?.nonexercise_lifestyle) : null);
   const proteinTotal = useMemo(
     () => meals.reduce((sum, m) => sum + Number(m.protein || 0), 0),
     [meals]
@@ -513,6 +532,19 @@ export function CalorieTrackerCompact() {
                   <div className="py-3 pr-3"><div className="text-xs text-muted-foreground">Food in</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                   <div className="py-3 pl-3"><div className="text-xs text-muted-foreground">Activity out</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                 </div>
+                {displayedBmr && displayedMaintenance ? (
+                  <div className="py-3">
+                    <BmrBreakdownTile
+                      bmr={displayedBmr}
+                      maintenance={displayedMaintenance}
+                      isOverride={false}
+                      totalBurnedToday={viewingToday ? totalBurned : 0}
+                      isToday={viewingToday}
+                    />
+                  </div>
+                ) : (
+                  <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsProteinOpen(open => !open)}
@@ -552,11 +584,11 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          {energy.model && (
+          {!deficitMode && displayedBmr && displayedMaintenance && (
             <div className="mt-3">
               <BmrBreakdownTile
-                bmr={energy.model.ree}
-                maintenance={maintenance}
+                bmr={displayedBmr}
+                maintenance={displayedMaintenance}
                 isOverride={false}
                 totalBurnedToday={viewingToday ? totalBurned : 0}
                 isToday={viewingToday}
