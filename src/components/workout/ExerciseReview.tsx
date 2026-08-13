@@ -37,6 +37,7 @@ interface ExerciseReviewProps {
   onSelectExercise?: (index: number) => void;
   onFinish?: () => void;
   isFinishing?: boolean;
+  startLabel?: string;
 }
 
 function ExerciseItemCard({
@@ -395,6 +396,7 @@ export function ExerciseReview({
   onSelectExercise,
   onFinish,
   isFinishing,
+  startLabel,
 }: ExerciseReviewProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -436,8 +438,8 @@ export function ExerciseReview({
     setShowPicker(false);
   };
 
-  const primaryExercises = exercises.filter(ex => ex.category === 'primary');
-  const accessoryExercises = exercises.filter(ex => ex.category === 'accessory');
+  const primaryExercises = exercises.filter(ex => ex.category === 'primary' || ex.category === 'compound');
+  const accessoryExercises = exercises.filter(ex => ex.category !== 'primary' && ex.category !== 'compound');
 
   const renderExerciseItem = (exercise: WorkoutExercise) => {
     const globalIndex = exercises.indexOf(exercise);
@@ -605,7 +607,7 @@ export function ExerciseReview({
               className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
             >
               <Play className="h-4 w-4" />
-              {isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`}
+              {startLabel || (isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`)}
             </button>
 
             {/* Skip exercises */}

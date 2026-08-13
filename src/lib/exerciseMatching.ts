@@ -25,6 +25,10 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'bb bench press': 'Barbell Bench Press',
   'bench press': 'Barbell Bench Press',
   'flat barbell bench': 'Barbell Bench Press',
+  'flat barbell bench press': 'Barbell Bench Press',
+  'barbell flat bench press': 'Barbell Bench Press',
+  'flat bench press': 'Barbell Bench Press',
+  'flat bench': 'Barbell Bench Press',
   'barbell curls': 'Barbell Curl',
   'bb curl': 'Barbell Curl',
   'bb curls': 'Barbell Curl',
@@ -78,6 +82,11 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'db shoulder press': 'Dumbbell Shoulder Press',
   'seated db shoulder press': 'Dumbbell Shoulder Press',
   'seated dumbbell shoulder press': 'Dumbbell Shoulder Press',
+  // Legacy programs stored the dumbbell version under the shorter label.
+  // Keep it in the same history family so this renamed prescription retains
+  // its PRs and last-used load rather than starting from an empty record.
+  'seated shoulder press': 'Dumbbell Shoulder Press',
+  'seated shoulder presses': 'Dumbbell Shoulder Press',
   'preacher curl': 'EZ Bar Preacher Curls',
   'preacher curls': 'EZ Bar Preacher Curls',
   'face pull': 'Face Pulls',

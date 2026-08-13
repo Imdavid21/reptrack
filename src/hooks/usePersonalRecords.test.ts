@@ -26,6 +26,9 @@ describe('getCanonicalName', () => {
     expect(getCanonicalName('DB Lateral Raise')).toBe('Lateral Raises');
     expect(getCanonicalName('Cable Rows')).toBe('Seated Cable Row');
     expect(getCanonicalName('Cable Crossover')).toBe('Cable Flyes');
+    expect(getCanonicalName('Flat Barbell Bench Press')).toBe('Barbell Bench Press');
+    expect(getCanonicalName('Flat Bench Press')).toBe('Barbell Bench Press');
+    expect(getCanonicalName('Seated Shoulder Press')).toBe('Dumbbell Shoulder Press');
   });
 
   // Genuinely different exercises/PR metrics must NOT be merged — e.g. a
