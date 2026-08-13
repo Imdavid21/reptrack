@@ -12,11 +12,8 @@ export function DashboardDateBar() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">
-          {isBackDated ? 'Logging for' : 'Today'}
-        </span>
-        <LogDateChip date={logDate} onChange={setLogDate} align="end" />
+      <div className="flex items-center">
+        <LogDateChip date={logDate} onChange={setLogDate} align="start" />
       </div>
       {isBackDated && (
         <button
