@@ -8,6 +8,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @layer base {
+  /* A horizontally-scrollable picker must never widen the iPhone viewport.
+     Keep the page fixed while its own rail handles horizontal scrolling. */
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   /* iOS Safari zooms a focused form control whose computed text is below
      16px. Keep data entry stable on phone-width layouts, including raw
      inputs created by third-party components. */

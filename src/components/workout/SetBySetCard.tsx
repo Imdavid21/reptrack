@@ -444,7 +444,7 @@ export function SetBySetCard({
 
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="w-full min-w-0 space-y-4 animate-fade-in">
       {/* Exercise progress — tappable segments */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
@@ -679,7 +679,7 @@ export function SetBySetCard({
                 />
               </div>
             ) : (
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
+              <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                 {weightOptions.map((w) => (
                   <button
                     key={w}
@@ -727,7 +727,7 @@ export function SetBySetCard({
                 />
               </div>
             ) : (
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x justify-center">
+              <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                 {repOptions.map((r) => (
                   <button
                     key={r}

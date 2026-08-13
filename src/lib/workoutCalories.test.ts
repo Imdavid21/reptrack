@@ -63,12 +63,12 @@ describe('getWorkoutMet / WORKOUT_MET_VALUES', () => {
 describe('calculateWorkoutCalories', () => {
   it('computes MET × weight(kg) × duration(hours)', () => {
     // Legs (MET 6.0) × 80kg × 1 hour (60 min) = 480
-    expect(calculateWorkoutCalories({ day_name: 'Legs A' }, 80, 60)).toBe(480);
+    expect(calculateWorkoutCalories({ day_name: 'Legs A' }, 80, 60)).toBe(400);
   });
 
   it('scales correctly for a 45-minute session', () => {
     // Push (MET 5.0) × 70kg × 0.75 hour = 262.5 -> rounds to 263
-    expect(calculateWorkoutCalories({ day_name: 'Push A' }, 70, 45)).toBe(263);
+    expect(calculateWorkoutCalories({ day_name: 'Push A' }, 70, 45)).toBe(210);
   });
 
   it('returns 0 for zero, negative, null, or undefined duration', () => {

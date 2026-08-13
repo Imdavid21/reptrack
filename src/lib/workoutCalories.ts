@@ -64,7 +64,9 @@ export function calculateWorkoutCalories(
   durationMinutes: number
 ): number {
   if (!durationMinutes || durationMinutes <= 0) return 0;
-  return Math.round(getWorkoutMet(workout) * weightKg * (durationMinutes / 60));
+  // MET includes resting energy. Maintenance already covers that baseline,
+  // so workout burn reports only the additional active expenditure.
+  return Math.round(Math.max(0, getWorkoutMet(workout) - 1) * weightKg * (durationMinutes / 60));
 }
 
 /**
