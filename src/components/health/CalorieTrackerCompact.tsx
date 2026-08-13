@@ -452,8 +452,8 @@ export function CalorieTrackerCompact() {
         className="hidden"
       />
 
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
-        <div className="rounded-[20px] border border-border bg-card p-4 h-full flex flex-col flex-1 min-h-0">
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
+        <div className="rounded-[20px] border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold tracking-tight">
@@ -609,7 +609,7 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          <div className="flex gap-2 mt-auto pt-3 border-t border-border">
+          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
             <button
               onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
               aria-label="Choose a food photo from your library"
