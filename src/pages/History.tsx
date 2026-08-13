@@ -141,7 +141,7 @@ export default function History() {
           <header className="flex items-end justify-between gap-4 pb-2">
             <div>
               <p className="text-[10px] font-bold tracking-[.16em] text-muted-foreground">YOUR RECORD</p>
-              <h1 className="text-3xl font-bold tracking-tight">Timeline</h1>
+              <h1 className="text-3xl font-bold tracking-tight">History</h1>
               <p className="text-sm text-muted-foreground mt-1">Training, recovery, and nutrition in one place.</p>
             </div>
             <button onClick={() => navigate('/app/insights')} className="h-10 px-4 rounded-full border border-border text-xs font-semibold whitespace-nowrap hover:bg-muted">View trends</button>

@@ -9,7 +9,7 @@ export function BottomNav() {
   const navItems = [
     { path: '/app', icon: Home, label: 'Today' },
     { path: '/app/log', icon: Dumbbell, label: 'Train' },
-    { path: '/app/history', icon: History, label: 'Timeline' },
+    { path: '/app/history', icon: History, label: 'History' },
   ];
 
   const currentPath = location.pathname;
