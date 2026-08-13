@@ -140,9 +140,7 @@ export default function History() {
         <div className="space-y-4 pb-10">
           <header className="pb-2">
             <div>
-              <p className="text-[10px] font-bold tracking-[.16em] text-muted-foreground">YOUR RECORD</p>
-              <h1 className="text-3xl font-bold tracking-tight">History</h1>
-              <p className="text-sm text-muted-foreground mt-1">Training, recovery, and nutrition in one place.</p>
+              <h1 className="type-page-title">History</h1>
             </div>
           </header>
           {!hasAnyHistory ? (
@@ -165,30 +163,30 @@ export default function History() {
               <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
                 <div className="card-brutalist text-center !py-4">
                   <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase mt-1">This Month</div>
+                  <div className="type-caption mt-1">This month</div>
                 </div>
                 <div className="card-brutalist text-center !py-4">
                   <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase mt-1">All Time</div>
+                  <div className="type-caption mt-1">All time</div>
                 </div>
                 <div className="card-brutalist text-center !py-4">
                   <div className="text-xl font-bold tabular-nums">
                     {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
                   </div>
-                  <div className="text-[9px] text-muted-foreground uppercase mt-1">Weeks</div>
+                  <div className="type-caption mt-1">Weeks</div>
                 </div>
               </motion.div>
 
               {/* Calorie display toggle */}
               <motion.div variants={staggerItem} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase">
+                <div className="flex items-center gap-1.5 type-caption">
                   <Flame size={11} /> Calories
                 </div>
                 <div className="inline-flex rounded-xl bg-muted p-0.5">
                   <button
                     onClick={() => setCalorieMode('net')}
                     className={cn(
-                      'px-3 py-1 text-[10px] font-semibold uppercase rounded-lg transition-colors',
+                      'px-3 py-1 text-xs font-semibold rounded-lg transition-colors',
                       calorieMode === 'net' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                     )}
                   >
@@ -197,7 +195,7 @@ export default function History() {
                   <button
                     onClick={() => setCalorieMode('split')}
                     className={cn(
-                      'px-3 py-1 text-[10px] font-semibold uppercase rounded-lg transition-colors',
+                      'px-3 py-1 text-xs font-semibold rounded-lg transition-colors',
                       calorieMode === 'split' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                     )}
                   >
@@ -239,10 +237,10 @@ export default function History() {
                               {isToday ? 'Today' : format(date, 'EEE, MMM d')}
                             </span>
                             {isToday && (
-                              <span className="badge-modern text-[10px] px-2 py-0.5">TODAY</span>
+                              <span className="badge-modern text-xs px-2 py-0.5">TODAY</span>
                             )}
                             {isSkipped && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
                                 <EyeOff className="h-2.5 w-2.5" />
                                 SKIPPED
                               </span>
@@ -279,7 +277,7 @@ export default function History() {
                                     min="0"
                                     max="24"
                                   />
-                                  <span className="text-[10px] text-muted-foreground font-medium">hr</span>
+                                  <span className="text-xs text-muted-foreground font-medium">hr</span>
                                   <input
                                     type="number"
                                     placeholder="M"
@@ -289,7 +287,7 @@ export default function History() {
                                     min="0"
                                     max="59"
                                   />
-                                  <span className="text-[10px] text-muted-foreground font-medium">min</span>
+                                  <span className="text-xs text-muted-foreground font-medium">min</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
@@ -303,7 +301,7 @@ export default function History() {
                                   min="0"
                                   step="0.1"
                                 />
-                                <span className="text-[10px] text-muted-foreground font-medium">kg</span>
+                                <span className="text-xs text-muted-foreground font-medium">kg</span>
                               </div>
                             </div>
                             <div className="flex justify-end gap-2">

@@ -47,7 +47,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">Body score trend</div>
+          <div className="type-component-title">Body score trend</div>
           {/* No standalone "current" score here on purpose — it's a trailing-7-day
               figure that can genuinely diverge a lot from the headline card's
               longer-range average, and showing two different score-shaped numbers
@@ -59,7 +59,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
             <span className="text-xl font-bold tabular-nums leading-none">
               {delta > 0 ? '+' : ''}{Math.round(delta)}
             </span>
-            <span className="text-[11px] font-medium text-muted-foreground">over range</span>
+            <span className="text-xs font-medium text-muted-foreground">over range</span>
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-[10px] text-muted-foreground mt-2">
+      <p className="text-xs text-muted-foreground mt-2">
         Each point is your overall score over the prior 7 days. Dashed line = 70 (on track).
       </p>
     </div>

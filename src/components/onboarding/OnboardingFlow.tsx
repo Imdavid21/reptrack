@@ -305,7 +305,7 @@ function GoalProfileStep({
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono uppercase tracking-wider">
+        <div className="flex items-center gap-2 type-caption">
           <Target className="w-4 h-4" />
           Step 1 of 4
         </div>
@@ -317,7 +317,7 @@ function GoalProfileStep({
 
       {/* Goal selection */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Your goal</Label>
+        <Label className="type-caption">Your goal</Label>
         <div className="space-y-2">
           {goals.map((goal) => (
             <button
@@ -340,7 +340,7 @@ function GoalProfileStep({
 
       {/* Profile fields */}
       <div className="space-y-4 pt-2">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Profile</Label>
+        <Label className="type-caption">Profile</Label>
 
         {/* Gender */}
         <div className="flex gap-2">
@@ -419,7 +419,7 @@ function HydrationStep({
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono uppercase tracking-wider">
+        <div className="flex items-center gap-2 type-caption">
           <Droplets className="w-4 h-4" />
           Step 2 of 4
         </div>
@@ -477,7 +477,7 @@ function TrainingStep({
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono uppercase tracking-wider">
+        <div className="flex items-center gap-2 type-caption">
           <Dumbbell className="w-4 h-4" />
           Step 3 of 4
         </div>
@@ -491,7 +491,7 @@ function TrainingStep({
         {/* Workouts per week */}
         <div className="space-y-4">
           <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground uppercase tracking-wider">Workouts per week</span>
+            <span className="type-supporting">Workouts per week</span>
             <span className="text-2xl font-bold">{workouts}</span>
           </div>
           <Slider
@@ -510,7 +510,7 @@ function TrainingStep({
 
         {/* Training split */}
         <div className="space-y-3">
-          <span className="text-sm text-muted-foreground uppercase tracking-wider">Training split</span>
+          <span className="type-supporting">Training split</span>
           <div className="grid grid-cols-2 gap-2">
             {availableSplits.map((s) => (
               <button
@@ -533,7 +533,7 @@ function TrainingStep({
         {/* Calories */}
         <div className="space-y-4">
           <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground uppercase tracking-wider">Daily calories</span>
+            <span className="type-supporting">Daily calories</span>
             <span className="text-2xl font-bold">{calories.toLocaleString()}</span>
           </div>
           <Slider
@@ -568,7 +568,7 @@ function RecoveryStep({
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono uppercase tracking-wider">
+        <div className="flex items-center gap-2 type-caption">
           <Moon className="w-4 h-4" />
           Step 4 of 4
         </div>

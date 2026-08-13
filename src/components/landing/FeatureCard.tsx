@@ -35,8 +35,8 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
         </motion.div>
       </motion.div>
 
-      <h3 className="text-[11px] md:text-sm font-semibold leading-tight">{title}</h3>
-      <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed hidden md:block">{description}</p>
+      <h3 className="text-xs md:text-sm font-semibold leading-tight">{title}</h3>
+      <p className="text-xs md:text-xs text-muted-foreground leading-relaxed hidden md:block">{description}</p>
 
       <motion.div
         className="absolute inset-0 rounded-2xl pointer-events-none"

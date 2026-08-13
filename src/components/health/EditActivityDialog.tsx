@@ -147,7 +147,7 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
                       )}
                     >
                       <Icon className="w-4 h-4" />
-                      <span className="text-[11px] font-semibold">{c.label}</span>
+                      <span className="text-xs font-semibold">{c.label}</span>
                     </button>
                   );
                 })}
@@ -186,7 +186,7 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
                   <Label htmlFor="edit-activity-minutes" className="flex items-center justify-between">
                     <span>Time (min) <span className="text-muted-foreground font-normal">— optional</span></span>
                     {usingCustomTime && (
-                      <span className="text-[10px] text-muted-foreground">using your time</span>
+                      <span className="text-xs text-muted-foreground">using your time</span>
                     )}
                   </Label>
                   <Input
@@ -204,16 +204,16 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
 
               <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Burn</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Burn</div>
                   <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Duration</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
                   <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
                 </div>
               </div>
 
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Based on {weightKg.toFixed(1)} kg · {cfg.paceLabel} pace · MET {met.toFixed(1)}
               </p>
 

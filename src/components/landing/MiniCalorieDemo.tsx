@@ -73,7 +73,7 @@ export default function MiniCalorieDemo() {
                   <span>Chicken Rice Bowl</span>
                   <span className="font-semibold">620 kcal</span>
                 </div>
-                <div className="flex gap-3 text-[10px] text-muted-foreground">
+                <div className="flex gap-3 text-xs text-muted-foreground">
                   <span>P: 42g</span>
                   <span>C: 65g</span>
                   <span>F: 18g</span>
@@ -84,7 +84,7 @@ export default function MiniCalorieDemo() {
         </AnimatePresence>
       </div>
 
-      <div className="text-[10px] text-center text-muted-foreground">
+      <div className="text-xs text-center text-muted-foreground">
         AI identifies food from photos instantly
       </div>
     </div>

@@ -486,8 +486,7 @@ function InsightsContent() {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, pb: .5 }}>
           <Box>
-            <Typography variant="h4" fontWeight={800}>Insights</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: .25 }}>Progress, patterns, and what to do next.</Typography>
+            <Typography variant="h1">Insights</Typography>
           </Box>
           <DateRangeSelector />
         </Box>

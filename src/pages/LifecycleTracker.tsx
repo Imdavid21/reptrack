@@ -49,7 +49,7 @@ export default function LifecycleTracker() {
               return (
                 <motion.div key={pattern.key} variants={staggerItem} className="rounded-2xl border border-border bg-card p-4">
                   <div className="text-sm font-bold">{pattern.name}</div>
-                  <p className="text-[11px] text-muted-foreground mt-1">No lifecycles tracked yet.</p>
+                  <p className="text-xs text-muted-foreground mt-1">No lifecycles tracked yet.</p>
                 </motion.div>
               );
             }
@@ -61,7 +61,7 @@ export default function LifecycleTracker() {
               <motion.div key={pattern.key} variants={staggerItem} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-baseline justify-between mb-3">
                   <div className="text-sm font-bold">{pattern.name}</div>
-                  <div className="text-[11px] text-muted-foreground tabular-nums">
+                  <div className="text-xs text-muted-foreground tabular-nums">
                     +{Math.round(state.carryoverTotal * 10) / 10}kg total
                   </div>
                 </div>
@@ -72,7 +72,7 @@ export default function LifecycleTracker() {
                       <div className={`h-2 w-2 rounded-full shrink-0 ${l.status === 'active' ? 'bg-energy' : 'bg-muted-foreground/40'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">{l.variation_name}</div>
-                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-2.5 w-2.5" />
                           {l.start_date} → {l.end_date ?? 'active'} · {durationDays(l)}d
                           {l.weak_points_targeted?.length ? ` · ${l.weak_points_targeted.join(', ')}` : ''}
@@ -81,7 +81,7 @@ export default function LifecycleTracker() {
                       <div className="text-right shrink-0 tabular-nums">
                         <div className="font-bold">{l.starting_load ?? '—'}{l.ending_load != null ? ` → ${l.ending_load}` : ''}kg</div>
                         {l.carryover_out != null && (
-                          <div className="text-[10px] text-energy-ink font-semibold">+{l.carryover_out}kg</div>
+                          <div className="text-xs text-energy-ink font-semibold">+{l.carryover_out}kg</div>
                         )}
                       </div>
                     </div>
@@ -89,7 +89,7 @@ export default function LifecycleTracker() {
                 </div>
 
                 {durations.length >= 2 && (
-                  <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-xs text-muted-foreground">
                     <TrendingUp className={`h-3.5 w-3.5 shrink-0 ${trendingFaster ? 'text-energy-ink' : 'text-fuel-ink rotate-180'}`} />
                     Lifecycles are {trendingFaster ? 'closing faster' : 'running longer'} than when you started this pattern
                     ({durations[0]}d → {durations.at(-1)}d) — {trendingFaster ? 'a sign of rising training maturity' : 'still building a base here'}.

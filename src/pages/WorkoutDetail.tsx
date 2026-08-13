@@ -182,7 +182,7 @@ export default function WorkoutDetail() {
           <div className="flex items-center gap-2">
             <div className="text-right mr-1">
               <span className="text-lg font-bold tabular-nums">{completedCount}/{totalCount}</span>
-              <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+              <p className="text-xs text-muted-foreground uppercase">SETS</p>
             </div>
             <button
               className={cn(
@@ -208,7 +208,7 @@ export default function WorkoutDetail() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-semibold text-sm">{baseName}</h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {sets[0].category} · {sets.filter(s => s.completed).length}/{sets.length} done
                   </p>
                 </div>
@@ -217,7 +217,7 @@ export default function WorkoutDetail() {
               {/* Sets table */}
               <div className="space-y-1">
                 {/* Header */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-[9px] text-muted-foreground uppercase tracking-wider">
+                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-xs text-muted-foreground uppercase tracking-wider">
                   <span className="text-center">#</span>
                   <span className="text-center">Weight</span>
                   <span className="text-center">Reps</span>
@@ -243,7 +243,7 @@ export default function WorkoutDetail() {
                     >
                       {/* Set number */}
                       <div className={cn(
-                        'h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-medium mx-auto',
+                        'h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium mx-auto',
                         set.completed ? 'bg-energy text-energy-foreground' : 'bg-muted text-muted-foreground'
                       )}>
                         {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
@@ -312,7 +312,7 @@ export default function WorkoutDetail() {
               {isEditMode && (
                 <button
                   onClick={() => handleAddSet(baseName, sets)}
-                  className="w-full mt-1 py-1.5 border border-dashed border-border rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full mt-1 py-1.5 border border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-foreground flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Plus className="h-3 w-3" />
                   Add Set
@@ -341,7 +341,7 @@ export default function WorkoutDetail() {
 
         {/* Tap to edit hint */}
         {!isEditMode && Object.keys(groupedExercises).length > 0 && (
-          <p className="text-[11px] text-muted-foreground text-center">
+          <p className="text-xs text-muted-foreground text-center">
             Tap any set to edit weight & reps
           </p>
         )}

@@ -28,7 +28,7 @@ function GrowthBadge({ startWeight, endWeight }: { startWeight: number; endWeigh
   const isPositive = pct > 0;
   return (
     <span className={cn(
-      'inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded',
+      'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded',
       isPositive ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'
     )}>
       {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}

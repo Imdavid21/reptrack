@@ -50,7 +50,7 @@ export function FormBreakdownLogger({
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Leading set</label>
+          <label className="type-caption">Leading set</label>
           <div className="flex gap-1.5 mt-1">
             <input
               type="number"
@@ -71,7 +71,7 @@ export function FormBreakdownLogger({
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Back-off sets</label>
+          <label className="type-caption">Back-off sets</label>
           <div className="flex gap-1.5 mt-1">
             <input
               type="number"
@@ -94,7 +94,7 @@ export function FormBreakdownLogger({
       </div>
 
       <div>
-        <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Form broke down at (optional)</label>
+        <label className="type-caption">Form broke down at (optional)</label>
         <div className="flex flex-wrap gap-1.5 mt-1">
           {ZONES.map((z) => (
             <button
@@ -102,7 +102,7 @@ export function FormBreakdownLogger({
               type="button"
               onClick={() => setZone(zone === z.value ? null : z.value)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors',
+                'px-2.5 py-1 rounded-full text-xs font-semibold transition-colors',
                 zone === z.value ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
               )}
             >

@@ -172,12 +172,12 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
               <div className="text-xs text-muted-foreground truncate">
                 {option.muscleGroup} | {option.defaultWeight} | {option.defaultReps}
                 {option.exerciseType && option.exerciseType !== 'weighted' && (
-                  <span className="ml-1 text-[10px] uppercase opacity-60">
+                  <span className="ml-1 text-xs uppercase opacity-60">
                     ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
                   </span>
                 )}
               </div>
-              {alreadyAdded && <div className="text-[11px] text-muted-foreground mt-0.5">Already in workout</div>}
+              {alreadyAdded && <div className="text-xs text-muted-foreground mt-0.5">Already in workout</div>}
             </div>
             <span className={cn(
               'shrink-0 text-xs px-2 py-0.5 rounded-md',
@@ -242,7 +242,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
               </p>
             ) : (
               <>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-1 mb-1">
+                <p className="type-caption px-1 mb-1">
                   {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} across all categories
                 </p>
                 {searchResults.map(renderExerciseRow)}
@@ -256,7 +256,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
               <div className="space-y-1">
                 <div className="flex items-center gap-1 px-1">
                   <Star className="h-3 w-3 text-energy-ink" />
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Your exercises</span>
+                  <span className="type-caption">Your exercises</span>
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                   {quickExercises.map((option) => {
@@ -297,7 +297,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
                       <button
                         onClick={() => setSelectedMuscle('All')}
                         className={cn(
-                          'shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors',
+                          'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                           selectedMuscle === 'All'
                             ? 'bg-foreground text-background'
                             : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -310,7 +310,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
                           key={group}
                           onClick={() => setSelectedMuscle(selectedMuscle === group ? 'All' : group)}
                           className={cn(
-                            'shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors',
+                            'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                             selectedMuscle === group
                               ? 'bg-foreground text-background'
                               : 'bg-muted text-muted-foreground hover:text-foreground'

@@ -610,7 +610,7 @@ export default function LogWorkout() {
           {step === 'select-day' && (
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Logging for</span>
+                <span className="type-caption">Logging for</span>
                 <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
               </div>
               <DaySelectorWithCheckin
@@ -692,7 +692,7 @@ export default function LogWorkout() {
                     <h3 className="text-sm font-semibold leading-tight">
                       {selectedDay === 'custom' ? 'Freestyle' : (dayData?.name || 'Workout')}
                     </h3>
-                    <p className="text-[10px] text-muted-foreground">{selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}</p>
+                    <p className="text-xs text-muted-foreground">{selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -700,7 +700,7 @@ export default function LogWorkout() {
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
                     </span>
-                    <p className="text-[10px] text-muted-foreground uppercase">SETS</p>
+                    <p className="text-xs text-muted-foreground uppercase">SETS</p>
                   </div>
                   <button
                     onClick={handleEditExercises}

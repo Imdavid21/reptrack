@@ -109,7 +109,7 @@ export function DaySelectorWithCheckin({
                 </span>
               )}
               <div className="font-bold text-sm">{dayData.name}</div>
-              <div className="text-[11px] opacity-60 mt-0.5 truncate">
+              <div className="text-xs opacity-60 mt-0.5 truncate">
                 {dayData.focus}
               </div>
             </button>

@@ -484,7 +484,7 @@ export function CalorieTrackerCompact() {
                       {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`} <span className="text-xs font-medium text-muted-foreground">kcal</span>
                     </div>
                     <div className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
+                      "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium",
                       hitDeficit ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
                     )}>
                       {hitDeficit && <Check className="h-3 w-3" aria-hidden="true" />}
@@ -504,7 +504,7 @@ export function CalorieTrackerCompact() {
                       style={{ width: `${deficitProgress}%` }}
                     />
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                     <span>0</span>
                     <span>Target -{deficitTarget} kcal</span>
                   </div>
@@ -771,7 +771,7 @@ export function CalorieTrackerCompact() {
                       <div key={i} className="aspect-video bg-muted overflow-hidden rounded-xl relative">
                         <img src={url} alt={`Food ${i + 1}`} className="w-full h-full object-cover" />
                         {previewUrls.length > 1 && (
-                          <span className="absolute top-1 left-1 bg-background/80 text-[10px] px-1.5 py-0.5 rounded tabular-nums">
+                          <span className="absolute top-1 left-1 bg-background/80 text-xs px-1.5 py-0.5 rounded tabular-nums">
                             {i + 1}/{previewUrls.length}
                           </span>
                         )}
@@ -965,7 +965,7 @@ export function CalorieTrackerCompact() {
                         <div className="text-sm font-bold tabular-nums">
                           {Math.round(pendingMacros[m.key])}{m.unit}
                         </div>
-                        <div className="text-[10px] text-muted-foreground tracking-wide">{m.label}</div>
+                        <div className="text-xs text-muted-foreground tracking-wide">{m.label}</div>
                       </div>
                     ))}
                   </div>

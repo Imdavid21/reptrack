@@ -27,7 +27,7 @@ function getPasswordStrength(pw: string): { label: string; color: string; percen
 
 function LastUsedBadge() {
   return (
-    <span className="ml-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+    <span className="ml-2 type-caption bg-muted px-2 py-0.5 rounded-full">
       Last used
     </span>
   );
@@ -263,7 +263,7 @@ export default function Auth() {
           <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
-          <p className="text-xs text-muted-foreground tracking-wider uppercase">
+          <p className="type-caption">
             {step === 'email' && 'Enter your email to get started'}
             {step === 'password' && accountStatus === 'new' && 'Create a password'}
             {step === 'password' && accountStatus !== 'new' && 'Welcome back'}
@@ -353,7 +353,7 @@ export default function Auth() {
               {/* Email form */}
               <form onSubmit={handleEmailContinue} className="space-y-4">
                 <div className="relative">
-                  <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">Email</Label>
+                  <Label className="type-caption">Email</Label>
                   <div className="relative mt-1.5">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -409,7 +409,7 @@ export default function Auth() {
               </div>
 
               <div>
-                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+                <Label className="type-caption">
                   {accountStatus === 'new' ? 'Create a password' : 'Password'}
                 </Label>
                 <div className="relative">
@@ -475,7 +475,7 @@ export default function Auth() {
               className="space-y-4"
             >
               <div>
-                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">Email</Label>
+                <Label className="type-caption">Email</Label>
                 <div className="relative mt-1.5">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -512,7 +512,7 @@ export default function Auth() {
               className="space-y-4"
             >
               <div>
-                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">New Password</Label>
+                <Label className="type-caption">New password</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -533,7 +533,7 @@ export default function Auth() {
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground font-medium tracking-wider uppercase">Confirm Password</Label>
+                <Label className="type-caption">Confirm password</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}

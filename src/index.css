@@ -249,6 +249,40 @@
 }
 
 @layer components {
+  /* Product typography: use these semantic roles instead of inventing local
+     font sizes. No visible product text may render below 12px. */
+  .type-page-title {
+    @apply text-3xl font-bold tracking-tight leading-[1.12];
+  }
+
+  .type-section-title {
+    @apply text-2xl font-bold tracking-tight leading-[1.18];
+  }
+
+  .type-card-title {
+    @apply text-lg font-bold tracking-tight leading-[1.3];
+  }
+
+  .type-component-title {
+    @apply text-sm font-semibold leading-[1.4];
+  }
+
+  .type-body {
+    @apply text-base font-normal leading-6;
+  }
+
+  .type-supporting {
+    @apply text-sm font-normal leading-5 text-muted-foreground;
+  }
+
+  .type-caption {
+    @apply text-xs font-medium leading-4 text-muted-foreground;
+  }
+
+  .type-eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.08em] leading-4 text-muted-foreground;
+  }
+
   /* Brutalist button - high contrast, obvious clickable */
   .btn-brutalist {
     @apply bg-primary text-primary-foreground rounded-xl px-5 py-3 text-sm font-semibold;
@@ -308,7 +342,7 @@
   /* Energy badge / chip — soft tint + ink text, matching every other pillar
      chip and guaranteeing legibility at small sizes in both themes. */
   .badge-energy {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold tracking-wide rounded-full;
     @apply bg-energy-soft text-energy-ink;
   }
 

@@ -59,11 +59,11 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-[10px] text-muted-foreground tracking-wider">BMR ESTIMATE</div>
+          <div className="text-xs text-muted-foreground tracking-wider">BMR ESTIMATE</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
-            {bmr.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">kcal/day</span>
+            {bmr.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal/day</span>
           </div>
-          <div className="text-[10px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             Baseline maintenance {maintenance.toLocaleString()} kcal
             {isOverride && <span> (override)</span>}
           </div>
@@ -75,23 +75,23 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
         <div className="mt-3 pt-3 border-t border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
           {isToday ? (
             <div className="flex items-baseline justify-between">
-              <span className="text-[11px] text-muted-foreground">Burned at rest so far today</span>
+              <span className="text-xs text-muted-foreground">Burned at rest so far today</span>
               <span className="text-sm font-bold tabular-nums text-foreground">{restBurnedSoFar.toFixed(2)} kcal</span>
             </div>
           ) : (
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               Live "so far today" tracking only applies when viewing today.
             </div>
           )}
           {isToday && totalBurnedToday > 0 && (
             <div className="flex items-baseline justify-between">
-              <span className="text-[11px] text-muted-foreground">+ Logged activity today</span>
+              <span className="text-xs text-muted-foreground">+ Logged activity today</span>
               <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedToday.toLocaleString()} kcal</span>
             </div>
           )}
           {isToday && totalBurnedToday > 0 && (
             <div className="flex items-baseline justify-between border-t border-border pt-2">
-              <span className="text-[11px] font-semibold text-foreground">Total burned so far</span>
+              <span className="text-xs font-semibold text-foreground">Total burned so far</span>
               <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedSoFar.toFixed(2)} kcal</span>
             </div>
           )}

@@ -51,7 +51,7 @@ export default function MiniWaterDemo() {
           >
             {level.toFixed(1)}L
           </motion.span>
-          <span className="text-[10px] text-muted-foreground">/ {goal}L</span>
+          <span className="text-xs text-muted-foreground">/ {goal}L</span>
         </div>
       </div>
 

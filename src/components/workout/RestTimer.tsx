@@ -138,7 +138,7 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Timer className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Rest Timer
             </span>
           </div>
@@ -180,7 +180,7 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
               key={preset}
               onClick={() => handlePresetSelect(preset)}
               className={cn(
-                'h-7 px-2.5 rounded-full text-[11px] font-medium transition-all',
+                'h-7 px-2.5 rounded-full text-xs font-medium transition-all',
                 totalDuration === preset && isRunning
                   ? 'bg-foreground text-background'
                   : 'bg-muted text-muted-foreground hover:text-foreground'

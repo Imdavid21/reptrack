@@ -200,7 +200,7 @@ export function CalorieChart() {
 
       {/* Burned breakdown - only worth showing once manual activity exists in the period */}
       {totalManualBurned > 0 && (
-        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Dumbbell className="h-3 w-3" /> Workout {totalWorkoutBurned.toLocaleString()}
           </span>

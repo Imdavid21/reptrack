@@ -64,7 +64,7 @@ export default function MiniWorkoutDemo() {
                 <motion.span
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded"
+                  className="text-xs font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded"
                 >
                   NEW PR
                 </motion.span>

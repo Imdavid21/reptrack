@@ -150,7 +150,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
           <span className="text-xs" style={{ color }}>{cfg.label}</span>
           <span className="text-sm font-semibold tabular-nums">{d.value}{cfg.unit}</span>
         </div>
-        <div className="text-[10px] text-muted-foreground mt-1">{pct}% of {d.target}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
+        <div className="text-xs text-muted-foreground mt-1">{pct}% of {d.target}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
       </div>
     );
   };

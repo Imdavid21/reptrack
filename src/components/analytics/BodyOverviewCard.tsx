@@ -92,7 +92,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
         <ScoreRing score={overview.overall} />
         <div className="min-w-0">
           <div className="text-base font-bold leading-tight">{scoreWord(overview.overall)}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Across training, fuel, recovery and hydration — last {overview.rangeDays} day{overview.rangeDays === 1 ? '' : 's'}.
           </p>
         </div>
@@ -111,7 +111,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-xs font-semibold">{meta.label}</span>
-                  <span className="text-[11px] text-muted-foreground truncate">{p.valueLabel}</span>
+                  <span className="text-xs text-muted-foreground truncate">{p.valueLabel}</span>
                 </div>
                 <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
                   {p.score != null && (

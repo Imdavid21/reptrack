@@ -47,14 +47,14 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="flex items-baseline justify-between mb-1">
         <div className="text-sm font-bold">Muscle balance</div>
-        <div className="text-[11px] text-muted-foreground">sets / week</div>
+        <div className="text-xs text-muted-foreground">sets / week</div>
       </div>
       <div className="mb-4">
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Weekly volume vs hypertrophy landmarks over the selected range.
         </p>
         {ordered.some(b => (b.fromActivity ?? 0) > 0) && (
-          <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1">
+          <p className="text-xs text-muted-foreground/70 mt-1 flex items-center gap-1">
             <Activity className="h-3 w-3 shrink-0" />
             Includes stimulus from logged activity (walk/run/cycle/boxing), not lifting alone.
           </p>
@@ -82,7 +82,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
               <div className="w-10 shrink-0 text-right text-xs font-bold tabular-nums">
                 {m.status === 'untrained' ? '—' : m.weeklySets}
               </div>
-              <div className={`w-24 shrink-0 text-right text-[10px] font-semibold uppercase tracking-wide ${meta.text}`}>
+              <div className={`w-24 shrink-0 text-right text-xs font-semibold uppercase tracking-wide ${meta.text}`}>
                 {meta.label}
               </div>
             </div>
@@ -96,7 +96,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
           {data.untrained.length > 0 && (
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-3.5 w-3.5 text-fuel-ink shrink-0 mt-0.5" />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">Not trained at all:</span>{' '}
                 {data.untrained.join(', ')}. Add e.g.{' '}
                 <span className="font-semibold text-foreground">
@@ -108,7 +108,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
           {data.balance.filter(b => b.status === 'under').slice(0, 1).map(b => (
             <div key={b.bodyPart} className="flex items-start gap-2">
               <Plus className="h-3.5 w-3.5 text-energy-ink shrink-0 mt-0.5" />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{b.bodyPart}</span> is below its growth
                 threshold ({b.weeklySets}/wk) — try adding{' '}
                 <span className="font-semibold text-foreground">{b.suggestion}</span>.

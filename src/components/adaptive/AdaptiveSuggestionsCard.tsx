@@ -53,7 +53,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
         <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between text-left gap-2">
           <div className="min-w-0">
             <div className="text-sm font-semibold">{pattern.name}</div>
-            <div className="text-[11px] text-muted-foreground truncate">
+            <div className="text-xs text-muted-foreground truncate">
               {historySeed ? `Suggestion available from your history` : `Not started — key movement: ${pattern.keyMovement}`}
             </div>
           </div>
@@ -64,7 +64,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="pt-3 space-y-2.5">
                 {historySeed && (
-                  <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-energy/10">
+                  <p className="text-xs text-muted-foreground flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-energy/10">
                     <History className="h-3 w-3 text-energy-ink shrink-0 mt-0.5" />
                     {whyText}
                   </p>
@@ -113,13 +113,13 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
             <div className="text-sm font-semibold truncate">{pattern.name}</div>
             {endTrigger && <AlertTriangle className="h-3.5 w-3.5 text-fuel-ink shrink-0" />}
           </div>
-          <div className="text-[11px] text-muted-foreground truncate">{activeLifecycle.variation_name}</div>
+          <div className="text-xs text-muted-foreground truncate">{activeLifecycle.variation_name}</div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {sessionTargets && (
             <div className="text-right">
               <div className="text-xs font-bold tabular-nums">{sessionTargets.leading.load}kg × {sessionTargets.leading.reps}</div>
-              <div className="text-[10px] text-muted-foreground">leading</div>
+              <div className="text-xs text-muted-foreground">leading</div>
             </div>
           )}
           <ChevronRight className={cn('h-4 w-4 text-muted-foreground transition-transform', expanded && 'rotate-90')} />
@@ -130,13 +130,13 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
         {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="pt-3 space-y-3">
-              <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+              <p className="text-xs text-muted-foreground flex items-start gap-1.5">
                 <Sparkles className="h-3 w-3 text-energy-ink shrink-0 mt-0.5" />
                 {whyText}
               </p>
 
               {openWeakPoint && (
-                <div className="text-[11px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive font-medium">
+                <div className="text-xs px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive font-medium">
                   Weak point being addressed: {openWeakPoint}
                 </div>
               )}
@@ -144,7 +144,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
               {endTrigger && (
                 <div className="p-2.5 rounded-lg bg-fuel/10 border border-fuel/30 space-y-2">
                   <div className="text-xs font-semibold text-fuel-ink">{END_TRIGGER_LABEL[endTrigger.type]}</div>
-                  <p className="text-[11px] text-muted-foreground">{endTrigger.detail} Time to rotate variations.</p>
+                  <p className="text-xs text-muted-foreground">{endTrigger.detail} Time to rotate variations.</p>
                   <button
                     onClick={() => rotateVariation.mutate({ patternKey: pattern.key, endTrigger: endTrigger.type })}
                     disabled={rotateVariation.isPending}
@@ -159,11 +159,11 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
               {sessionTargets && (
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 rounded-lg bg-muted/50">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Leading</div>
+                    <div className="type-caption">Leading</div>
                     <div className="text-sm font-bold tabular-nums">{sessionTargets.leading.load}kg × {sessionTargets.leading.reps}</div>
                   </div>
                   <div className="p-2 rounded-lg bg-muted/50">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Back-off</div>
+                    <div className="type-caption">Back-off</div>
                     <div className="text-sm font-bold tabular-nums">{sessionTargets.backoff.load}kg × {sessionTargets.backoff.reps}</div>
                   </div>
                 </div>
@@ -171,7 +171,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
 
               {/* Regular vs Adaptive — informational choice only; doesn't alter the regular programming engine's output. */}
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Following today</div>
+                <div className="type-caption mb-1">Following today</div>
                 <div className="flex rounded-lg bg-muted p-0.5">
                   {(['regular', 'adaptive'] as const).map(opt => (
                     <button
@@ -224,7 +224,7 @@ export function AdaptiveSuggestionsCard() {
         <Sparkles className="h-4 w-4 text-energy-ink" />
         <div className="text-sm font-bold">Adaptive suggestions</div>
       </div>
-      <p className="text-[11px] text-muted-foreground mb-3">
+      <p className="text-xs text-muted-foreground mb-3">
         Infinite Progression rotation, alongside your regular programming — pick which to follow per pattern.
       </p>
       <div className="space-y-2">

@@ -478,16 +478,16 @@ export function SetBySetCard({
           <div className="flex items-baseline gap-2 flex-wrap">
             <h2 className="text-base font-bold">{exercise.name}</h2>
             {isTimed && (
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
             )}
             {isBodyweight && (
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
             )}
             {isWeightedBW && (
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW+</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW+</span>
             )}
             {personalRecord && !isNewPR && (
-              <span className="text-[10px] text-muted-foreground tabular-nums">
+              <span className="text-xs text-muted-foreground tabular-nums">
                 PR: {personalRecord.prType === 'duration'
                   ? formatTime(personalRecord.maxWeight)
                   : personalRecord.prType === 'reps'
@@ -496,7 +496,7 @@ export function SetBySetCard({
               </span>
             )}
             {isNewPR && (
-              <span className="text-[10px] text-primary font-bold">NEW PR!</span>
+              <span className="text-xs text-primary font-bold">NEW PR!</span>
             )}
           </div>
           <span className="text-xs text-muted-foreground">
@@ -589,7 +589,7 @@ export function SetBySetCard({
                   {formatTime(selectedTime)}
                 </div>
               )}
-              <div className="text-[10px] text-muted-foreground mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 {isTimerRunning ? 'TIMING...' : `TARGET: ${formatTime(baseTime)}`}
               </div>
             </div>
@@ -611,7 +611,7 @@ export function SetBySetCard({
             {/* Quick time selection (when timer not running) */}
             {!isTimerRunning && (
               <>
-                <div className="text-[10px] text-muted-foreground text-center uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground text-center uppercase tracking-wider">
                   Or set duration
                 </div>
                 {showTimeInput ? (
@@ -647,7 +647,7 @@ export function SetBySetCard({
                     ))}
                     <button
                       onClick={() => setShowTimeInput(true)}
-                      className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
+                      className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                     >
                       ···
                     </button>
@@ -661,7 +661,7 @@ export function SetBySetCard({
         {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
         {showWeight && !isTimed && (
           <div className="mb-4">
-            <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
               {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
             </div>
             {showWeightInput ? (
@@ -697,7 +697,7 @@ export function SetBySetCard({
                 ))}
                 <button
                   onClick={() => setShowWeightInput(true)}
-                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
+                  className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                 >
                   ···
                 </button>
@@ -709,7 +709,7 @@ export function SetBySetCard({
         {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
         {showReps && !isTimed && (
           <div>
-            <div className="text-[10px] text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
               Reps
             </div>
             {showRepsInput ? (
@@ -744,7 +744,7 @@ export function SetBySetCard({
                 ))}
                 <button
                   onClick={() => setShowRepsInput(true)}
-                  className="h-9 px-2 rounded-full text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
+                  className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
                 >
                   ···
                 </button>
