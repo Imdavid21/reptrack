@@ -1,26 +1,55 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, IconButton } from '@mui/material';
-import { ChevronRight, Droplets, Plus, Utensils, X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Minus, Plus, Utensils, X } from 'lucide-react';
+import { useDailyMetrics } from '@/hooks/useDailyMetrics';
+import { useMeals } from '@/hooks/useMeals';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
-import { supabase } from '@/integrations/supabase/client';
 import { localDateKey } from '@/lib/dateKey';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
+const today = localDateKey();
+
 export function TodaySnapshot() {
-  const { user } = useAuth(); const { preferences } = useUserPreferences(); const { totalToday, addWaterLog, isAdding } = useWaterLogs();
-  const [foodOpen, setFoodOpen] = useState(false); const [moreOpen, setMoreOpen] = useState(false); const [data, setData] = useState({ sleep: null as number|null, protein: 0 });
-  useEffect(() => { if (!user) return; Promise.all([supabase.from('daily_metrics').select('sleep_hours').eq('user_id', user.id).eq('date', localDateKey()).maybeSingle(), supabase.from('meals').select('protein').eq('user_id', user.id).eq('date', localDateKey())]).then(([metrics, meals]: any[]) => setData({ sleep: metrics.data?.sleep_hours ?? null, protein: (meals.data || []).reduce((sum: number, item: any) => sum + Number(item.protein || 0), 0) })); }, [user, foodOpen]);
-  const logWater = async (amount: number) => { try { await addWaterLog({ amount }); toast.success(`Added ${Math.round(amount * 1000)} ml water`); } catch { toast.error('Could not log water'); } };
-  const rows = [['Sleep', data.sleep == null ? 'Not logged' : `${data.sleep}h`], ['Protein', data.protein ? `${Math.round(data.protein)} / ${preferences?.daily_protein_goal || 180}g` : 'Not logged'], ['Water', totalToday ? `${totalToday.toFixed(2)}L` : 'Not logged']];
-  return <><section className="rounded-2xl border border-border bg-card overflow-hidden"><header className="px-4 pt-4 pb-2"><div className="text-[10px] font-bold tracking-[.16em] text-muted-foreground">TODAY</div></header><div className="px-4">{rows.map(([label, value]) => <div key={label} className="h-11 border-t border-border flex items-center justify-between"><span className="text-sm">{label}</span><span className={`text-sm font-semibold tabular-nums ${value === 'Not logged' ? 'text-muted-foreground' : ''}`}>{value}</span></div>)}</div>
-    <div className="grid grid-cols-3 gap-2 p-3 border-t border-border"><button disabled={isAdding} onClick={() => logWater(.25)} className="h-11 rounded-xl bg-muted hover:bg-muted/70 text-xs font-bold flex items-center justify-center gap-1.5"><Droplets className="h-4 w-4" />250 ml</button><button disabled={isAdding} onClick={() => logWater(.5)} className="h-11 rounded-xl bg-muted hover:bg-muted/70 text-xs font-bold flex items-center justify-center gap-1.5"><Plus className="h-4 w-4" />500 ml</button><button onClick={() => setFoodOpen(true)} className="h-11 rounded-xl bg-foreground text-background text-xs font-bold flex items-center justify-center gap-1.5"><Utensils className="h-4 w-4" />Food</button></div>
-    <button onClick={() => setMoreOpen(true)} className="w-full h-11 px-4 border-t border-border flex items-center justify-between text-xs font-semibold text-muted-foreground hover:text-foreground"><span>More logs</span><ChevronRight className="h-4 w-4" /></button></section>
-    <Dialog open={foodOpen} onClose={() => setFoodOpen(false)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 4, maxHeight: '92dvh' } }}><DialogContent sx={{ p: 2 }}><div className="flex items-center justify-between mb-3"><div><div className="text-[10px] font-bold tracking-[.16em] text-muted-foreground">TODAY</div><h2 className="text-xl font-bold">Log food</h2></div><IconButton onClick={() => setFoodOpen(false)} aria-label="Close food logger"><X /></IconButton></div><CalorieTrackerCompact /></DialogContent></Dialog>
-    <Dialog open={moreOpen} onClose={() => setMoreOpen(false)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 4, maxHeight: '90dvh' } }}><DialogContent sx={{ p: 2 }}><div className="flex items-center justify-between mb-3"><h2 className="text-xl font-bold">Log activity</h2><IconButton onClick={() => setMoreOpen(false)} aria-label="Close"><X /></IconButton></div><ActivityLogger /></DialogContent></Dialog>
+  const { preferences } = useUserPreferences();
+  const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
+  const { meals } = useMeals();
+  const { totalToday, addWaterLog, isAdding } = useWaterLogs();
+  const [sheet, setSheet] = useState<'sleep'|'weight'|null>(null);
+  const [foodOpen, setFoodOpen] = useState(false);
+  const todayMetric = metrics?.dataPoints.find(point => point.date === today);
+  const lastWeight = [...(metrics?.dataPoints || [])].reverse().find(point => point.bodyweight && point.bodyweight > 0)?.bodyweight ?? preferences?.weight_goal ?? 70;
+  const [weight, setWeight] = useState(Number(lastWeight));
+  const [hours, setHours] = useState(7);
+  const [minutes, setMinutes] = useState(0);
+  const calories = useMemo(() => meals.reduce((sum, meal) => sum + Number(meal.calories || 0), 0), [meals]);
+  const protein = useMemo(() => meals.reduce((sum, meal) => sum + Number(meal.protein || 0), 0), [meals]);
+
+  useEffect(() => { if (sheet === 'weight') setWeight(Number(todayMetric?.bodyweight ?? lastWeight)); }, [sheet, todayMetric?.bodyweight, lastWeight]);
+  useEffect(() => { if (sheet === 'sleep') { const value = todayMetric?.sleep_hours ?? 7; setHours(Math.floor(value)); setMinutes(Math.round((value % 1) * 60)); } }, [sheet, todayMetric?.sleep_hours]);
+
+  const saveWeight = async () => { if (!Number.isFinite(weight) || weight <= 0) return; await upsertMetrics({ date: today, bodyweight: Math.round(weight * 10) / 10 }); haptic('light'); setSheet(null); };
+  const saveSleep = async () => { const value = hours + minutes / 60; if (value <= 0 || value > 24) return; await upsertMetrics({ date: today, sleep_hours: Math.round(value * 100) / 100 }); haptic('light'); setSheet(null); };
+  const logWater = async (amount: number) => { try { await addWaterLog({ amount }); } catch { toast.error('Water was not saved. Try again.'); } };
+
+  return <>
+    <section className="rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border">
+      <button onClick={() => setSheet('sleep')} className="w-full h-14 px-4 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Sleep</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.sleep_hours ? `${Math.floor(todayMetric.sleep_hours)} h ${Math.round((todayMetric.sleep_hours % 1) * 60)} m` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></button>
+      <button onClick={() => setSheet('weight')} className="w-full h-14 px-4 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Bodyweight</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.bodyweight ? `${todayMetric.bodyweight.toFixed(1)} kg` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></button>
+      <div className="min-h-14 px-4 py-2 flex items-center gap-2"><span className="text-sm flex-1">Water</span><span className="text-sm font-semibold tabular-nums mr-1">{totalToday.toFixed(2)} L</span><button disabled={isAdding} onClick={() => logWater(.25)} className="h-9 px-3 rounded-full bg-muted text-xs font-bold disabled:opacity-50">+250</button><button disabled={isAdding} onClick={() => logWater(.5)} className="h-9 px-3 rounded-full bg-foreground text-background text-xs font-bold disabled:opacity-50">+500</button></div>
+      <button onClick={() => setFoodOpen(true)} className="w-full min-h-16 px-4 py-2 flex items-center justify-between hover:bg-muted/30 transition-colors text-left"><span className="text-sm">Food</span><span className="text-right"><span className="block text-sm font-semibold tabular-nums">{calories ? `${calories.toLocaleString()} kcal` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span>{protein > 0 && <span className="block text-xs text-muted-foreground">{Math.round(protein)} g protein</span>}</span></button>
+      <ActivityLogger compact />
+    </section>
+
+    <Drawer open={sheet === 'weight'} onOpenChange={open => !open && setSheet(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="text-left px-6"><DrawerTitle>Bodyweight</DrawerTitle></DrawerHeader><div className="px-6 pb-6 space-y-6"><button onClick={() => document.getElementById('weight-entry')?.focus()} className="w-full text-center"><Input id="weight-entry" type="number" inputMode="decimal" step="0.1" value={weight} onChange={event => setWeight(Number(event.target.value))} className="border-0 h-20 text-center text-5xl font-bold shadow-none focus-visible:ring-0"/><span className="text-sm text-muted-foreground">kg</span></button><div className="grid grid-cols-2 gap-3"><button onClick={() => setWeight(value => Math.round((value - .1) * 10) / 10)} className="h-12 rounded-xl bg-muted flex items-center justify-center gap-2 font-semibold"><Minus className="h-4 w-4"/>0.1</button><button onClick={() => setWeight(value => Math.round((value + .1) * 10) / 10)} className="h-12 rounded-xl bg-muted flex items-center justify-center gap-2 font-semibold"><Plus className="h-4 w-4"/>0.1</button></div><p className="text-sm text-muted-foreground text-center">Last entry · {Number(lastWeight).toFixed(1)} kg</p><button onClick={saveWeight} disabled={isUpserting || weight <= 0} className="w-full h-14 rounded-2xl bg-foreground text-background font-bold disabled:opacity-50">{isUpserting ? 'Saving…' : `Log ${weight.toFixed(1)} kg`}</button></div></DrawerContent></Drawer>
+
+    <Drawer open={sheet === 'sleep'} onOpenChange={open => !open && setSheet(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="text-left px-6"><DrawerTitle>Sleep</DrawerTitle></DrawerHeader><div className="px-6 pb-6 space-y-6"><div className="text-center"><div className="text-5xl font-bold tabular-nums">{hours} h {minutes} m</div><p className="text-sm text-muted-foreground mt-2">Last night</p></div><div className="grid grid-cols-2 gap-3"><div><div className="text-xs text-muted-foreground text-center mb-2">HOURS</div><div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setHours(value => Math.max(0, value - 1))} className="h-12 rounded-xl bg-muted">−</button><Input type="number" inputMode="numeric" value={hours} onChange={event => setHours(Math.max(0, Math.min(23, Number(event.target.value))))} className="h-12 text-center text-xl font-bold"/><button onClick={() => setHours(value => Math.min(23, value + 1))} className="h-12 rounded-xl bg-muted">+</button></div></div><div><div className="text-xs text-muted-foreground text-center mb-2">MINUTES</div><div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setMinutes(value => value === 0 ? 45 : value - 15)} className="h-12 rounded-xl bg-muted">−</button><Input type="number" inputMode="numeric" value={minutes} onChange={event => setMinutes(Math.max(0, Math.min(59, Number(event.target.value))))} className="h-12 text-center text-xl font-bold"/><button onClick={() => setMinutes(value => value >= 45 ? 0 : value + 15)} className="h-12 rounded-xl bg-muted">+</button></div></div></div><button onClick={saveSleep} disabled={isUpserting || hours + minutes === 0} className="w-full h-14 rounded-2xl bg-foreground text-background font-bold disabled:opacity-50">{isUpserting ? 'Saving…' : 'Log sleep'}</button></div></DrawerContent></Drawer>
+
+    <Dialog open={foodOpen} onClose={() => setFoodOpen(false)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 4, maxHeight: '92dvh' } }}><DialogContent sx={{ p: 2 }}><div className="flex items-center justify-between mb-3"><div><div className="text-[10px] font-bold tracking-[.16em] text-muted-foreground">TODAY</div><h2 className="text-xl font-bold flex items-center gap-2"><Utensils className="h-5 w-5"/>Food</h2></div><IconButton onClick={() => setFoodOpen(false)} aria-label="Close food logger"><X /></IconButton></div><CalorieTrackerCompact /></DialogContent></Dialog>
   </>;
 }

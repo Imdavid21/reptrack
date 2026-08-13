@@ -145,7 +145,7 @@ export function activityDuration(kind: ActivityKind, value: number, minutesOverr
   return Math.round(value * cfg.paceMinPerKm);
 }
 
-export function ActivityLogger() {
+export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   const { weightKg, addBurn } = useCalorieBurn();
   const { data: manualBurns = [] } = useManualBurns(180);
   const { logDate, isBackDated } = useLogDate();
@@ -175,6 +175,7 @@ export function ActivityLogger() {
     () => manualBurns.find(b => b.date === logDateStr && b.activity_type === kind),
     [manualBurns, logDateStr, kind],
   );
+  const recentForDay = useMemo(() => manualBurns.find(b => b.date === logDateStr), [manualBurns, logDateStr]);
 
   // When opening or changing date/type, preload any existing entry so the user
   // updates it instead of unknowingly overwriting it (addBurn upserts per day+type).
@@ -235,10 +236,9 @@ export function ActivityLogger() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"
+        className={compact ? "w-full h-14 flex items-center justify-between px-4 hover:bg-muted/30 transition-colors text-sm" : "w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"}
       >
-        <Activity className="w-4 h-4" />
-        Log Activity{isBackDated ? ` · ${format(logDate, 'MMM d')}` : ''}
+        {compact ? <><span>Activity</span><span className="flex items-center gap-2 font-semibold">{recentForDay ? `${ACTIVITY_CONFIG[(recentForDay.activity_type || 'walking') as ActivityKind]?.label || 'Activity'} · ${recentForDay.distance_km ?? recentForDay.duration_minutes}${recentForDay.distance_km != null ? ' km' : ' min'}` : 'Add'}<span aria-hidden>›</span></span></> : <><Activity className="w-4 h-4" />Log Activity{isBackDated ? ` · ${format(logDate, 'MMM d')}` : ''}</>}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
