@@ -31,7 +31,100 @@ function WarmupDialog({ open, items, selected, onToggle, onClose }: { open: bool
 }
 
 function WorkoutPicker({ open, value, onSelect, onClose }: { open: boolean; value: SessionKey; onSelect: (key: SessionKey) => void; onClose: () => void }) {
-  return <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 4, maxHeight: '88dvh' } }}><DialogContent sx={{ p: 2.5 }}><Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Box><Typography variant="h6" fontWeight={800}>Choose a workout</Typography><Typography variant="body2" color="text.secondary">Choose today’s session. Your rotation stays in place.</Typography></Box><IconButton onClick={onClose} aria-label="Close"><X /></IconButton></Box><Box sx={{ display: 'grid', gap: 1 }}>{PPL_SEQUENCE.map(item => { const session = PPL_PROGRAM[item]; const exercises = session.exercises.filter(ex => workingPhases.includes(ex.phase)); return <Button key={item} variant="outlined" onClick={() => { onSelect(item); onClose(); }} sx={{ display: 'block', textAlign: 'left', textTransform: 'none', color: 'text.primary', borderRadius: 3, p: 2, borderWidth: value === item ? 2 : 1 }}><Box sx={{ display: 'flex', gap: 1 }}><Typography fontWeight={800} sx={{ flex: 1 }}>{session.name}</Typography><Typography variant="caption" color="text.secondary">~{session.duration} min</Typography>{value === item && <Check size={17}/>}</Box><Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{session.objective}</Typography><Typography variant="caption" sx={{ display: 'block', mt: 1.25, lineHeight: 1.5 }}>{exercises.map(ex => ex.name).join(' | ')}</Typography></Button>; })}</Box></DialogContent></Dialog>;
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      PaperProps={{
+        sx: {
+          m: 2,
+          maxHeight: 'min(82dvh, 680px)',
+          borderRadius: 3,
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
+          border: 1,
+          borderColor: 'divider',
+          boxShadow: '0 20px 60px rgba(0,0,0,.24)',
+        },
+      }}
+      BackdropProps={{ sx: { bgcolor: 'rgba(0,0,0,.68)', backdropFilter: 'blur(8px)' } }}
+    >
+      <DialogContent sx={{ p: 0 }}>
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2.25,
+            py: 1.75,
+            bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="h5">Choose workout</Typography>
+          <IconButton onClick={onClose} aria-label="Close workout picker" size="small">
+            <X size={19} />
+          </IconButton>
+        </Box>
+
+        <Box role="listbox" aria-label="Workout" sx={{ px: 1.25, py: 1 }}>
+          {PPL_SEQUENCE.map((item, index) => {
+            const session = PPL_PROGRAM[item];
+            const exercises = session.exercises.filter(ex => workingPhases.includes(ex.phase));
+            const preview = exercises.slice(0, 3).map(ex => ex.name).join(' · ');
+            const remaining = Math.max(0, exercises.length - 3);
+            const selected = value === item;
+
+            return (
+              <Button
+                key={item}
+                role="option"
+                aria-selected={selected}
+                onClick={() => { onSelect(item); onClose(); }}
+                sx={{
+                  width: '100%',
+                  display: 'block',
+                  textAlign: 'left',
+                  color: 'text.primary',
+                  px: 1.25,
+                  py: 1.4,
+                  borderRadius: 1.5,
+                  borderBottom: index < PPL_SEQUENCE.length - 1 ? 1 : 0,
+                  borderColor: 'divider',
+                  bgcolor: selected ? 'action.selected' : 'transparent',
+                  '&:hover': { bgcolor: selected ? 'action.selected' : 'action.hover', boxShadow: 'none' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="h5" sx={{ flex: 1 }}>{session.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{session.duration} min</Typography>
+                  <Box sx={{ width: 20, display: 'flex', justifyContent: 'flex-end' }}>
+                    {selected && <Check size={17} aria-hidden="true" />}
+                  </Box>
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: .65, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {preview}{remaining > 0 ? ` · +${remaining}` : ''}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: .45 }}>
+                  {exercises.length} exercises
+                </Typography>
+              </Button>
+            );
+          })}
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function AdaptiveWorkout() {
