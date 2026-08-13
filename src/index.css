@@ -17,6 +17,18 @@
     overflow-x: hidden;
   }
 
+  /* Keep the daily dashboard in priority order without duplicating its
+     individual trackers: bodyweight, sleep, water, food, activity. */
+  .daily-snapshot {
+    display: flex;
+    flex-direction: column;
+  }
+  .daily-snapshot > button:nth-of-type(1) { order: 2; }
+  .daily-snapshot > button:nth-of-type(2) { order: 1; }
+  .daily-snapshot > div { order: 3; }
+  .daily-snapshot > button:nth-of-type(3) { order: 4; }
+  .daily-snapshot > button:nth-of-type(4) { order: 5; }
+
   /* iOS Safari zooms a focused form control whose computed text is below
      16px. Keep data entry stable on phone-width layouts, including raw
      inputs created by third-party components. */
