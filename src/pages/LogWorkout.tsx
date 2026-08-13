@@ -704,7 +704,7 @@ export default function LogWorkout() {
                   </div>
                   <button
                     onClick={handleEditExercises}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
                     title="Edit exercises"
                   >
                     <Pencil size={14} />

@@ -186,15 +186,17 @@ export default function WorkoutDetail() {
             </div>
             <button
               className={cn(
-                'h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors',
+                isEditMode ? 'h-8 px-3' : 'h-8 w-8 justify-center',
+                'rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors',
                 isEditMode
                   ? 'bg-foreground text-background'
                   : 'border border-border text-muted-foreground hover:text-foreground'
               )}
               onClick={() => setIsEditMode(!isEditMode)}
+              aria-label={isEditMode ? 'Done editing workout' : 'Edit workout'}
+              title={isEditMode ? 'Done' : 'Edit workout'}
             >
-              {isEditMode ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
-              {isEditMode ? 'Done' : 'Edit'}
+              {isEditMode ? <><Check className="h-3.5 w-3.5" />Done</> : <Edit2 className="h-3.5 w-3.5" />}
             </button>
           </div>
         </div>

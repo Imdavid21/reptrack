@@ -171,10 +171,11 @@ export default function Settings() {
                         <Typography variant="body2" fontWeight={600}>Profile Details</Typography>
                         <button
                           onClick={() => setIsEditingProfile(true)}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                          className="p-1.5 -mr-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                          aria-label="Edit profile"
+                          title="Edit profile"
                         >
                           <Edit2 size={12} />
-                          Edit
                         </button>
                       </Box>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -304,10 +305,11 @@ export default function Settings() {
                         </Box>
                         <button
                           onClick={() => setIsEditingEmail(true)}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                          className="p-1.5 -mr-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                          aria-label="Edit email"
+                          title="Edit email"
                         >
                           <Edit2 size={12} />
-                          Edit
                         </button>
                       </Box>
                       <span className="text-xs bg-background border border-border rounded-lg px-2.5 py-1.5 inline-block">
