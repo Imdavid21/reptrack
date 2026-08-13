@@ -12,6 +12,7 @@ import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { Dumbbell, ChevronRight } from 'lucide-react';
+import { WeeklyAdaptiveCheckin } from '@/components/dashboard/WeeklyAdaptiveCheckin';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -65,6 +66,10 @@ export default function Dashboard() {
                 <NextWorkoutCard />
               </motion.div>
             )}
+
+            <motion.div variants={staggerItem}>
+              <WeeklyAdaptiveCheckin />
+            </motion.div>
 
 
 
