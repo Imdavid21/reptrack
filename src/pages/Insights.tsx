@@ -478,10 +478,20 @@ function InsightsContent() {
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-        {/* Date range selector */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, pb: 1 }}>
+          <Box>
+            <Typography variant="overline" color="text.secondary">YOUR RECORD</Typography>
+            <Typography variant="h4" fontWeight={800}>Trends</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: .5, maxWidth: 360 }}>A clear read on what is moving, what needs attention, and the detail behind it.</Typography>
+          </Box>
           <DateRangeSelector />
         </Box>
+
+        <MuiCard>
+          <Typography variant="overline" color="text.secondary">AT A GLANCE</Typography>
+          <Typography variant="h6" fontWeight={800} sx={{ mt: .5 }}>{overview?.overall != null ? `${overview.overall}/100 overall momentum` : 'Start with the next useful log.'}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{overview ? `${overview.activeDays} active day${overview.activeDays === 1 ? '' : 's'} in the last ${overview.rangeDays} days. Your highest-priority action is shown below.` : 'Trends become useful as you log workouts, recovery, and food.'}</Typography>
+        </MuiCard>
 
         {/* Main content - single scroll view */}
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
