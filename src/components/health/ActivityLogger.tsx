@@ -135,7 +135,8 @@ export function activityCalories(
 ) {
   const minutes = activityDuration(kind, value, minutesOverride);
   const met = effectiveMet(kind, value, minutes);
-  return Math.round(met * weightKg * (minutes / 60));
+  // Maintenance already includes resting expenditure; log only active kcal.
+  return Math.round(Math.max(0, met - 1) * weightKg * (minutes / 60));
 }
 
 export function activityDuration(kind: ActivityKind, value: number, minutesOverride?: number) {

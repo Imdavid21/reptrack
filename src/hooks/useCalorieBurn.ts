@@ -135,7 +135,7 @@ export function useCalorieBurn(date?: Date) {
   // table itself lives in lib/workoutCalories.ts, single source of truth).
   const calculateWorkoutCalories = (durationMinutes: number, category: string = 'strength') => {
     const met = WORKOUT_MET_VALUES[category] ?? 5.0;
-    return Math.round(met * weightKg * (durationMinutes / 60));
+    return Math.round(Math.max(0, met - 1) * weightKg * (durationMinutes / 60));
   };
 
   // Category derivation also lives in lib/workoutCalories.ts — see that file
