@@ -552,7 +552,7 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          {energy.model && (preferences?.show_bmr_on_dashboard ?? true) && (
+          {energy.model && (
             <div className="mt-3">
               <BmrBreakdownTile
                 bmr={energy.model.ree}

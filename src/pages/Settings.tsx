@@ -756,20 +756,6 @@ export default function Settings() {
                       )}
                     </Box>
 
-                    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ pr: 2 }}>
-                        <Typography variant="body2" fontWeight={600}>Show BMR on dashboard</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Display the BMR/maintenance breakdown tile on today's deficit card
-                        </Typography>
-                      </Box>
-                      <Switch
-                        checked={preferences?.show_bmr_on_dashboard ?? true}
-                        onChange={(e) => updatePreferences.mutate({ show_bmr_on_dashboard: e.target.checked } as any)}
-                        color="primary"
-                      />
-                    </Box>
-
                     <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
                         Daily Deficit Target
