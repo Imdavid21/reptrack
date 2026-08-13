@@ -17,6 +17,24 @@
 
 export type Gender = 'male' | 'female' | string | null | undefined;
 
+/**
+ * Conservative non-exercise activity multiplier. Deliberately excludes logged
+ * workouts/walks/runs because those are added to today's balance separately.
+ */
+export function baselineMaintenanceMultiplier(activityLevel?: string | null): number {
+  switch (activityLevel) {
+    case 'light': return 1.3;
+    case 'moderate': return 1.4;
+    case 'active': return 1.5;
+    case 'very_active': return 1.6;
+    default: return 1.2;
+  }
+}
+
+export function estimateBaselineMaintenance(bmr: number, activityLevel?: string | null): number {
+  return Math.round(bmr * baselineMaintenanceMultiplier(activityLevel));
+}
+
 /** Mifflin-St Jeor basal metabolic rate, in kcal/day. */
 export function calculateBMR(weightKg: number, heightCm: number, age: number, gender: Gender): number {
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;

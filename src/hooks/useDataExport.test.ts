@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeCSV, parseCSVLine, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS, DataTable } from './useDataExport';
+import { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS, DataTable } from './useDataExport';
 
 describe('escapeCSV / parseCSVLine round-trip', () => {
   it('round-trips a plain value unchanged', () => {
@@ -34,6 +34,14 @@ describe('escapeCSV / parseCSVLine round-trip', () => {
   it('turns null/undefined into an empty field', () => {
     expect(escapeCSV(null)).toBe('');
     expect(escapeCSV(undefined)).toBe('');
+  });
+
+  it('keeps quoted multiline values in one imported row', () => {
+    const content = 'name,notes\nMeal,"first line\nsecond line"\n';
+    expect(parseCSVRows(content)).toEqual([
+      ['name', 'notes'],
+      ['Meal', 'first line\nsecond line'],
+    ]);
   });
 });
 

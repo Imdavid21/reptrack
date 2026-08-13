@@ -39,6 +39,11 @@ const TABLE_LABELS: Record<DataTable, string> = {
   goal_history: 'Goal History',
   adaptive_lifecycles: 'Adaptive Mode Lifecycles',
   adaptive_session_logs: 'Adaptive Mode Sessions',
+  training_state: 'Training State',
+  readiness_checkins: 'Readiness Checks',
+  post_workout_checkins: 'Post-workout Checks',
+  mobility_assessments: 'Mobility Assessments',
+  physique_checkins: 'Physique Checks',
 };
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {
@@ -59,6 +64,8 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
     'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
     'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
     'goal_history', 'adaptive_lifecycles', 'adaptive_session_logs',
+    'training_state', 'readiness_checkins', 'post_workout_checkins',
+    'mobility_assessments', 'physique_checkins',
   ]);
   const [importResult, setImportResult] = useState<{
     success: boolean;

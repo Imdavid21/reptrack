@@ -59,12 +59,12 @@ export function BmrBreakdownTile({ bmr, maintenance, isOverride, totalBurnedToda
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-[10px] text-muted-foreground tracking-wider">BMR = MAINTENANCE</div>
+          <div className="text-[10px] text-muted-foreground tracking-wider">BASELINE MAINTENANCE</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
             {maintenance.toLocaleString()}
             {isOverride && <span className="text-[10px] font-normal text-muted-foreground"> (override)</span>}
           </div>
-          <div className="text-[10px] text-muted-foreground">at rest, counted in NET</div>
+          <div className="text-[10px] text-muted-foreground">BMR plus daily activity baseline</div>
         </div>
         <ChevronRight className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform', expanded && 'rotate-90')} />
       </div>

@@ -1,11 +1,11 @@
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
 import { resolveBodyweightKg } from '@/lib/workoutCalories';
-import { calculateBMR } from '@/lib/metabolism';
+import { calculateBMR, estimateBaselineMaintenance } from '@/lib/metabolism';
 
 export interface AutoMaintenance {
   bmr: number;
-  /** Deliberately equal to bmr — see metabolism.ts for why activity isn't folded in here. */
+  /** Baseline daily maintenance excluding separately logged activity. */
   maintenance: number;
   isLoading: boolean;
   /** False when profile is missing age/height/gender — nothing to compute from yet. */
@@ -14,7 +14,7 @@ export interface AutoMaintenance {
 
 /**
  * The body-based, auto-updating replacement for Deficit Mode's manually-typed
- * "maintenance calories": BMR (Mifflin-St Jeor) from the user's own bodyweight
+ * maintenance baseline: BMR (Mifflin-St Jeor) from the user's own bodyweight
  * (a trailing 30-day average, smoothing day-to-day water-weight noise) +
  * profile age/height/gender. Recomputes on every render, so a new weigh-in
  * shifts the number automatically — nothing to remember to re-enter. Today's
@@ -40,5 +40,5 @@ export function useAutoMaintenanceCalories(): AutoMaintenance {
   const weightKg = resolveBodyweightKg(metricsData?.totals?.avgBodyweight, preferences?.weight_goal);
   const bmr = calculateBMR(weightKg, heightCm as number, age as number, gender);
 
-  return { bmr, maintenance: bmr, isAvailable: true, isLoading: prefsLoading || metricsLoading };
+  return { bmr, maintenance: estimateBaselineMaintenance(bmr, preferences?.activity_level), isAvailable: true, isLoading: prefsLoading || metricsLoading };
 }

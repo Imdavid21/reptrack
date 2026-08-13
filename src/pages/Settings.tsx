@@ -25,7 +25,6 @@ import {
   Dumbbell,
   Link2,
   TrendingDown,
-  Repeat2,
   Server,
 } from 'lucide-react';
 import AppleIcon from '@/components/landing/AppleIcon';
@@ -593,57 +592,6 @@ export default function Settings() {
                   </Box>
                 </Box>
 
-                {/* Training Focus */}
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                    Training Focus
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                    How sets &amp; reps get programmed for every exercise, adapted from your own logged history
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    {([
-                      { value: 'volume', label: 'Volume', hint: 'More sets, higher reps' },
-                      { value: 'strength', label: 'Strength', hint: 'Fewer reps, more rest' },
-                      { value: 'mix', label: 'Mix', hint: 'Alternates by day' },
-                    ] as const).map(opt => {
-                      const current = preferences?.training_focus || 'mix';
-                      const isLoading = updatePreferences.isPending;
-                      return (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            updatePreferences.mutate({ training_focus: opt.value }, {
-                              onError: (err) => {
-                                // Surface the real DB/Postgrest message (e.g. a missing
-                                // column from an unapplied migration) instead of a
-                                // generic toast — that's the difference between this
-                                // being self-diagnosing and a silent "nothing happened".
-                                const detail = err instanceof Error ? err.message : String(err);
-                                toast.error(`Failed to save training focus: ${detail}`);
-                                console.error('Training focus update error:', err);
-                              },
-                              onSuccess: () => {
-                                toast.success(`Training focus set to ${opt.label}`);
-                              },
-                            });
-                          }}
-                          disabled={isLoading}
-                          title={opt.hint}
-                          className={cn(
-                            'flex-1 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                            current === opt.value
-                              ? 'bg-foreground text-background'
-                              : 'bg-muted text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {isLoading ? <Loader2 className="h-4 w-4 inline animate-spin" /> : opt.label}
-                        </button>
-                      );
-                    })}
-                  </Box>
-                </Box>
-
                 {/* Auto-start rest timer toggle */}
                 <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -683,7 +631,7 @@ export default function Settings() {
                   <Typography variant="body1" fontWeight={600}>Deficit Mode</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {preferences?.deficit_mode_enabled
-                      ? `Active · -${preferences?.daily_deficit_target ?? 500} kcal/day`
+                      ? `Active | -${preferences?.daily_deficit_target ?? 500} kcal/day`
                       : 'Track for fat loss'}
                   </Typography>
                 </Box>
@@ -722,13 +670,13 @@ export default function Settings() {
                       {autoMaintenance.isAvailable ? (
                         <>
                           <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                            Auto-calculated from your latest weigh-in — updates on its own as it changes.
-                            Today's logged workouts/activity are credited on top in real time, not assumed here,
-                            so a rest day isn't charged for activity that didn't happen.
+                            Updated from your 30-day average bodyweight and activity baseline.
+                            Today's logged workouts and activity are added in real time.
                           </Typography>
                           <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'background.paper', textAlign: 'center', mb: 1.5 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>BMR = Maintenance</Typography>
-                            <Typography variant="body1" fontWeight={700}>{autoMaintenance.bmr.toLocaleString()}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated baseline maintenance</Typography>
+                            <Typography variant="body1" fontWeight={700}>{autoMaintenance.maintenance.toLocaleString()} kcal</Typography>
+                            <Typography variant="caption" color="text.secondary">BMR {autoMaintenance.bmr.toLocaleString()} kcal</Typography>
                           </Box>
                         </>
                       ) : (
@@ -774,9 +722,9 @@ export default function Settings() {
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {[
-                          { label: 'Mild · 250', value: 250 },
-                          { label: 'Moderate · 500', value: 500 },
-                          { label: 'Aggressive · 750', value: 750 },
+                          { label: 'Mild | 250', value: 250 },
+                          { label: 'Moderate | 500', value: 500 },
+                          { label: 'Aggressive | 750', value: 750 },
                         ].map(opt => {
                           const current = preferences?.daily_deficit_target ?? 500;
                           return (
@@ -797,70 +745,6 @@ export default function Settings() {
                       </Box>
                     </Box>
                   </>
-                )}
-              </Box>
-            </Collapse>
-          </MuiCard>
-
-          <MuiCard>
-            <Box
-              onClick={() => toggleSection('adaptive')}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                py: 1,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Repeat2 size={18} className="text-energy-ink" />
-                <Box>
-                  <Typography variant="body1" fontWeight={600}>Adaptive Mode</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {preferences?.adaptive_mode_enabled
-                      ? 'Active · Infinite Progression rotation'
-                      : 'Exercise suggestions and rotation'}
-                  </Typography>
-                </Box>
-              </Box>
-              <ChevronRight
-                size={18}
-                style={{
-                  transform: expandedSections.adaptive ? 'rotate(90deg)' : 'none',
-                  transition: 'transform 0.2s',
-                }}
-              />
-            </Box>
-
-            <Collapse in={expandedSections.adaptive}>
-              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ pr: 2 }}>
-                    <Typography variant="body2" fontWeight={600}>Enable Adaptive Mode</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Your workout split shows an adaptive suggestion — rotated variation, leading/back-off
-                      targets, and why — next to your regular programming, so you can compare and pick per session.
-                    </Typography>
-                  </Box>
-                  <Switch
-                    checked={preferences?.adaptive_mode_enabled ?? false}
-                    onChange={(e) => updatePreferences.mutate({ adaptive_mode_enabled: e.target.checked } as any)}
-                    color="primary"
-                  />
-                </Box>
-
-                {preferences?.adaptive_mode_enabled && (
-                  <button
-                    onClick={() => navigate('/app/lifecycle')}
-                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-colors text-left"
-                  >
-                    <div>
-                      <div className="text-sm font-semibold">Lifecycle Tracker</div>
-                      <div className="text-[11px] text-muted-foreground">Rotation history, carryover, and duration trends per pattern</div>
-                    </div>
-                    <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-                  </button>
                 )}
               </Box>
             </Collapse>

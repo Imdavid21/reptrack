@@ -15,7 +15,12 @@ export type DataTable =
   | 'user_preferences'
   | 'goal_history'
   | 'adaptive_lifecycles'
-  | 'adaptive_session_logs';
+  | 'adaptive_session_logs'
+  | 'training_state'
+  | 'readiness_checkins'
+  | 'post_workout_checkins'
+  | 'mobility_assessments'
+  | 'physique_checkins';
 
 interface ExportOptions {
   tables: DataTable[];
@@ -41,12 +46,13 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
     'started_at', 'completed_at', 'workout_duration_minutes', 'is_skipped',
     'pre_energy', 'pre_motivation', 'pre_soreness', 'post_difficulty', 'post_satisfaction',
+    'session_key', 'readiness_band', 'completion_percent',
     'created_at'
   ],
   exercises: [
     'id', 'workout_id', 'name', 'category', 'sort_order',
     'target_weight', 'target_reps', 'actual_weight', 'actual_reps',
-    'completed'
+    'completed', 'actual_rir', 'rom_quality', 'pain_score', 'set_kind', 'prescription'
   ],
   daily_metrics: [
     'id', 'user_id', 'date', 'sleep_hours', 'bodyweight', 'pullups',
@@ -80,7 +86,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'deficit_mode_enabled', 'daily_deficit_target', 'maintenance_calories',
     'adaptive_mode_enabled', 'onboarding_completed', 'routine_setup_completed',
     'rest_days', 'training_split', 'training_focus', 'default_rest_seconds',
-    'auto_rest_timer', 'fitness_goal', 'created_at', 'updated_at'
+    'auto_rest_timer', 'show_bmr_on_dashboard', 'fitness_goal', 'created_at', 'updated_at'
   ],
   goal_history: [
     'id', 'user_id', 'goal_key', 'value', 'effective_from', 'created_at'
@@ -95,6 +101,11 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'id', 'user_id', 'lifecycle_id', 'session_date', 'leading_load', 'leading_reps',
     'backoff_load', 'backoff_reps', 'weak_point_zone', 'form_note', 'created_at'
   ],
+  training_state: ['user_id', 'next_session', 'block_name', 'deload_active', 'deload_started_on', 'updated_at'],
+  readiness_checkins: ['id', 'user_id', 'session_key', 'checkin_date', 'sleep_hours', 'soreness', 'joint_discomfort', 'fatigue', 'motivation', 'resting_hr', 'illness', 'sharp_pain', 'readiness', 'recommendation', 'created_at'],
+  post_workout_checkins: ['id', 'user_id', 'workout_id', 'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'exercise_felt_wrong', 'completion_percent', 'notes', 'created_at'],
+  mobility_assessments: ['id', 'user_id', 'assessment_date', 'deep_squat_depth', 'heels_down', 'discomfort', 'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'created_at'],
+  physique_checkins: ['id', 'user_id', 'checkin_date', 'bodyweight', 'waist_cm', 'photo_paths', 'created_at'],
 };
 
 // Tables that link via a foreign key to another exported table's row,
@@ -108,6 +119,7 @@ export const LINKED_TABLES: Partial<Record<DataTable, { parentTable: DataTable; 
   exercises: { parentTable: 'workouts', fkColumn: 'workout_id' },
   habits: { parentTable: 'workouts', fkColumn: 'workout_id' },
   adaptive_session_logs: { parentTable: 'adaptive_lifecycles', fkColumn: 'lifecycle_id' },
+  post_workout_checkins: { parentTable: 'workouts', fkColumn: 'workout_id' },
 };
 
 const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
@@ -123,6 +135,11 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   goal_history: { column: 'effective_from', ascending: true },
   adaptive_lifecycles: { column: 'start_date', ascending: true },
   adaptive_session_logs: { column: 'session_date', ascending: true },
+  training_state: null,
+  readiness_checkins: { column: 'checkin_date', ascending: true },
+  post_workout_checkins: { column: 'created_at', ascending: true },
+  mobility_assessments: { column: 'assessment_date', ascending: true },
+  physique_checkins: { column: 'checkin_date', ascending: true },
 };
 
 /** Every column that's a genuine number in the DB, across all tables — used to parse CSV strings back to numbers on import. */
@@ -147,6 +164,9 @@ export const NUMERIC_FIELDS = new Set([
   'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
   'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_water_goal',
   'daily_deficit_target', 'maintenance_calories', 'default_rest_seconds',
+  'completion_percent', 'actual_rir', 'rom_quality', 'pain_score', 'fatigue', 'motivation', 'resting_hr',
+  'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'discomfort',
+  'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'waist_cm',
   // goal_history
   'value',
   // adaptive_lifecycles
@@ -161,7 +181,10 @@ export const BOOLEAN_FIELDS = new Set([
   'completed', 'is_confirmed', 'is_skipped', 'auto_rest_timer', 'is_active',
   'onboarding_completed', 'routine_setup_completed', 'deficit_mode_enabled',
   'adaptive_mode_enabled', 'is_rest_day',
+  'show_bmr_on_dashboard', 'deload_active', 'illness', 'sharp_pain', 'exercise_felt_wrong', 'heels_down',
 ]);
+
+const JSON_FIELDS = new Set(['routine_data', 'dietary_preferences', 'rest_days', 'weak_points_targeted', 'prescription', 'soreness', 'recommendation', 'photo_paths']);
 
 const PAGE_SIZE = 1000;
 
@@ -222,6 +245,30 @@ export function parseCSVLine(line: string): string[] {
   result.push(current.trim());
 
   return result;
+}
+
+/** Parse a full CSV document, retaining newlines that appear inside quoted cells. */
+export function parseCSVRows(content: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let index = 0; index < content.length; index++) {
+    const char = content[index];
+    if (char === '"') {
+      if (inQuotes && content[index + 1] === '"') { current += '"'; index++; }
+      else inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) { row.push(current.trim()); current = ''; }
+    else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && content[index + 1] === '\n') index++;
+      row.push(current.trim());
+      if (row.some(cell => cell.length > 0)) rows.push(row);
+      row = []; current = '';
+    } else current += char;
+  }
+  row.push(current.trim());
+  if (row.some(cell => cell.length > 0)) rows.push(row);
+  return rows;
 }
 
 export function useDataExport() {
@@ -381,6 +428,11 @@ export function useDataExport() {
       'goal_history',
       'adaptive_lifecycles',
       'adaptive_session_logs',
+      'training_state',
+      'readiness_checkins',
+      'post_workout_checkins',
+      'mobility_assessments',
+      'physique_checkins',
     ];
 
     return await exportToCSV({ tables: allTables });
@@ -451,15 +503,14 @@ export function useDataExport() {
         const linked = LINKED_TABLES[table];
 
         try {
-          const lines = content.split('\n').filter(line => line.trim());
-          if (lines.length < 2) continue;
+          const csvRows = parseCSVRows(content);
+          if (csvRows.length < 2) continue;
 
-          const headers = parseCSVLine(lines[0]);
+          const headers = csvRows[0];
           const oldIds: (string | null)[] = [];
           let skippedForMissingParent = 0;
 
-          const rows = lines.slice(1).map(line => {
-            const values = parseCSVLine(line);
+          const rows = csvRows.slice(1).map(values => {
             const row: Record<string, any> = {};
             let oldId: string | null = null;
             let oldFkValue: string | null = null;
@@ -490,6 +541,8 @@ export function useDataExport() {
                 value = value === 'true' || value === '1';
               } else if (NUMERIC_FIELDS.has(header)) {
                 value = value ? parseFloat(value) : null;
+              } else if (JSON_FIELDS.has(header) || (table === 'readiness_checkins' && header === 'joint_discomfort')) {
+                try { value = JSON.parse(value); } catch { throw new Error(`Invalid JSON in ${table}.${header}`); }
               }
 
               row[header] = value;
@@ -538,7 +591,11 @@ export function useDataExport() {
             // after it by one.
             const batchOldIds = oldIds.slice(j, j + batchSize);
 
-            if (isParentTable) {
+            if (table === 'user_preferences' || table === 'training_state') {
+              const { error } = await (supabase.from(table) as any).upsert(batch, { onConflict: 'user_id' });
+              if (error) errors.push(`Error importing ${table}: ${error.message}`);
+              else insertedCount += batch.length;
+            } else if (isParentTable) {
               // Need the freshly-generated ids back to remap dependent tables.
               const { data, error } = await (supabase.from(table) as any).insert(batch).select('id');
               if (error) {
