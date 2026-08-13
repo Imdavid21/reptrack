@@ -105,7 +105,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   readiness_checkins: ['id', 'user_id', 'session_key', 'checkin_date', 'sleep_hours', 'soreness', 'joint_discomfort', 'fatigue', 'motivation', 'resting_hr', 'illness', 'sharp_pain', 'readiness', 'recommendation', 'created_at'],
   post_workout_checkins: ['id', 'user_id', 'workout_id', 'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'exercise_felt_wrong', 'completion_percent', 'notes', 'created_at'],
   mobility_assessments: ['id', 'user_id', 'assessment_date', 'deep_squat_depth', 'heels_down', 'discomfort', 'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'created_at'],
-  physique_checkins: ['id', 'user_id', 'checkin_date', 'bodyweight', 'waist_cm', 'photo_paths', 'created_at'],
+  physique_checkins: ['id', 'user_id', 'checkin_date', 'bodyweight', 'waist_cm', 'upper_arm_left_cm', 'upper_arm_right_cm', 'chest_cm', 'calf_left_cm', 'calf_right_cm', 'photo_paths', 'created_at'],
 };
 
 // Tables that link via a foreign key to another exported table's row,
