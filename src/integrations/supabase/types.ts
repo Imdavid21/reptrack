@@ -782,6 +782,149 @@ export type Database = {
         }
         Relationships: []
       }
+      mobility_assessments: {
+        Row: {
+          assessment_date: string
+          created_at: string
+          deep_squat_depth: string | null
+          discomfort: string | null
+          heels_down: boolean | null
+          hip_90_90_left: number | null
+          hip_90_90_right: number | null
+          hip_flexion_restriction: number | null
+          id: string
+          knee_to_wall_left_cm: number | null
+          knee_to_wall_right_cm: number | null
+          user_id: string
+        }
+        Insert: {
+          assessment_date?: string
+          created_at?: string
+          deep_squat_depth?: string | null
+          discomfort?: string | null
+          heels_down?: boolean | null
+          hip_90_90_left?: number | null
+          hip_90_90_right?: number | null
+          hip_flexion_restriction?: number | null
+          id?: string
+          knee_to_wall_left_cm?: number | null
+          knee_to_wall_right_cm?: number | null
+          user_id: string
+        }
+        Update: {
+          assessment_date?: string
+          created_at?: string
+          deep_squat_depth?: string | null
+          discomfort?: string | null
+          heels_down?: boolean | null
+          hip_90_90_left?: number | null
+          hip_90_90_right?: number | null
+          hip_flexion_restriction?: number | null
+          id?: string
+          knee_to_wall_left_cm?: number | null
+          knee_to_wall_right_cm?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      physique_checkins: {
+        Row: {
+          bodyweight: number | null
+          calf_left_cm: number | null
+          calf_right_cm: number | null
+          checkin_date: string
+          chest_cm: number | null
+          created_at: string
+          id: string
+          photo_paths: Json
+          upper_arm_left_cm: number | null
+          upper_arm_right_cm: number | null
+          user_id: string
+          waist_cm: number | null
+        }
+        Insert: {
+          bodyweight?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          checkin_date?: string
+          chest_cm?: number | null
+          created_at?: string
+          id?: string
+          photo_paths?: Json
+          upper_arm_left_cm?: number | null
+          upper_arm_right_cm?: number | null
+          user_id: string
+          waist_cm?: number | null
+        }
+        Update: {
+          bodyweight?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          checkin_date?: string
+          chest_cm?: number | null
+          created_at?: string
+          id?: string
+          photo_paths?: Json
+          upper_arm_left_cm?: number | null
+          upper_arm_right_cm?: number | null
+          user_id?: string
+          waist_cm?: number | null
+        }
+        Relationships: []
+      }
+      post_workout_checkins: {
+        Row: {
+          completion_percent: number | null
+          created_at: string
+          energy: number | null
+          exercise_felt_wrong: string | null
+          id: string
+          joint_discomfort: number | null
+          notes: string | null
+          pump: number | null
+          target_stimulus: number | null
+          user_id: string
+          workout_difficulty: number | null
+          workout_id: string | null
+        }
+        Insert: {
+          completion_percent?: number | null
+          created_at?: string
+          energy?: number | null
+          exercise_felt_wrong?: string | null
+          id?: string
+          joint_discomfort?: number | null
+          notes?: string | null
+          pump?: number | null
+          target_stimulus?: number | null
+          user_id: string
+          workout_difficulty?: number | null
+          workout_id?: string | null
+        }
+        Update: {
+          completion_percent?: number | null
+          created_at?: string
+          energy?: number | null
+          exercise_felt_wrong?: string | null
+          id?: string
+          joint_discomfort?: number | null
+          notes?: string | null
+          pump?: number | null
+          target_stimulus?: number | null
+          user_id?: string
+          workout_difficulty?: number | null
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_workout_checkins_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -797,6 +940,60 @@ export type Database = {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      readiness_checkins: {
+        Row: {
+          checkin_date: string
+          created_at: string
+          fatigue: number | null
+          id: string
+          illness: boolean | null
+          joint_discomfort: number | null
+          motivation: number | null
+          readiness: number | null
+          recommendation: string | null
+          resting_hr: number | null
+          session_key: string | null
+          sharp_pain: boolean | null
+          sleep_hours: number | null
+          soreness: number | null
+          user_id: string
+        }
+        Insert: {
+          checkin_date?: string
+          created_at?: string
+          fatigue?: number | null
+          id?: string
+          illness?: boolean | null
+          joint_discomfort?: number | null
+          motivation?: number | null
+          readiness?: number | null
+          recommendation?: string | null
+          resting_hr?: number | null
+          session_key?: string | null
+          sharp_pain?: boolean | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          user_id: string
+        }
+        Update: {
+          checkin_date?: string
+          created_at?: string
+          fatigue?: number | null
+          id?: string
+          illness?: boolean | null
+          joint_discomfort?: number | null
+          motivation?: number | null
+          readiness?: number | null
+          recommendation?: string | null
+          resting_hr?: number | null
+          session_key?: string | null
+          sharp_pain?: boolean | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -851,6 +1048,33 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           workout_readiness?: number | null
+        }
+        Relationships: []
+      }
+      training_state: {
+        Row: {
+          block_name: string | null
+          deload_active: boolean
+          deload_started_on: string | null
+          next_session: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_name?: string | null
+          deload_active?: boolean
+          deload_started_on?: string | null
+          next_session?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_name?: string | null
+          deload_active?: boolean
+          deload_started_on?: string | null
+          next_session?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
