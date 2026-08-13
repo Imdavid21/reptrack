@@ -1,6 +1,6 @@
 import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, History } from 'lucide-react';
+import { Home, Dumbbell, History, TrendingUp } from 'lucide-react';
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export function BottomNav() {
     { path: '/app', icon: Home, label: 'Today' },
     { path: '/app/log', icon: Dumbbell, label: 'Train' },
     { path: '/app/history', icon: History, label: 'History' },
+    { path: '/app/insights', icon: TrendingUp, label: 'Trends' },
   ];
 
   const currentPath = location.pathname;
