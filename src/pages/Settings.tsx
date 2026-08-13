@@ -537,7 +537,7 @@ export default function Settings() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Dumbbell size={18} className="text-energy-ink" />
+                <Dumbbell size={18} />
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Workout</Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -626,7 +626,7 @@ export default function Settings() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <TrendingDown size={18} className="text-fuel-ink" />
+                <TrendingDown size={18} />
                 <Box>
                   <Typography variant="body1" fontWeight={600}>Deficit Mode</Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -948,7 +948,7 @@ export default function Settings() {
           <MuiCard>
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 py-1 text-sm font-medium text-destructive hover:opacity-70 transition-opacity"
+              className="w-full flex items-center justify-center gap-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
             >
               <LogOut size={16} />
               Sign Out
