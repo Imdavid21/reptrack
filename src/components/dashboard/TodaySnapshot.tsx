@@ -6,6 +6,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useWaterLogs } from '@/hooks/useWaterLogs';
 import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { localDateKey } from '@/lib/dateKey';
+import { useLogDate } from '@/contexts/LogDateContext';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
 import { ActivityLogger } from '@/components/health/ActivityLogger';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -24,10 +25,11 @@ function logTime(timestamp?: string | null) {
 }
 
 export function TodaySnapshot() {
-  const today = localDateKey();
+  const { logDate, isBackDated } = useLogDate();
+  const today = localDateKey(logDate);
   const { preferences } = useUserPreferences();
-  const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(Date.now() - 30 * 86400000), to: new Date() });
-  const { totalToday, waterLogs, addWaterLog, isAdding } = useWaterLogs();
+  const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(logDate.getTime() - 30 * 86400000), to: logDate });
+  const { totalToday, waterLogs, addWaterLog, isAdding } = useWaterLogs(logDate);
   const [sheet, setSheet] = useState<'sleep' | 'weight' | null>(null);
   const [waterExpanded, setWaterExpanded] = useState(false);
   const todayMetric = metrics?.dataPoints.find(point => point.date === today);
@@ -43,7 +45,7 @@ export function TodaySnapshot() {
 
   const saveWeight = async () => { if (!Number.isFinite(weight) || weight <= 0) return; await upsertMetrics({ date: today, bodyweight: Math.round(weight * 10) / 10 }); haptic('light'); setSheet(null); };
   const saveSleep = async () => { const value = hours + minutes / 60; if (value <= 0 || value > 24) return; await upsertMetrics({ date: today, sleep_hours: Math.round(value * 100) / 100 }); haptic('light'); setSheet(null); };
-  const logWater = async (amount: number) => { try { await addWaterLog({ amount }); } catch { toast.error('Water was not saved. Try again.'); } };
+  const logWater = async (amount: number) => { try { await addWaterLog({ amount, ...(isBackDated ? { loggedAt: logDate } : {}) }); } catch { toast.error('Water was not saved. Try again.'); } };
 
   return <>
     <section className="daily-snapshot rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border">

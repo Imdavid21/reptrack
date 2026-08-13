@@ -148,6 +148,14 @@ export function useWorkouts() {
         burnDuration
       );
 
+      const rollbackWorkout = async (workoutId: string, originalError: unknown) => {
+        const { error: rollbackError } = await supabase.from('workouts').delete().eq('id', workoutId);
+        if (rollbackError) {
+          console.error('[useWorkouts] rollback failed after incomplete workout save', rollbackError);
+        }
+        throw originalError;
+      };
+
       try {
         // Try online first
         const { data: workoutData, error: workoutError } = await supabase
@@ -162,14 +170,14 @@ export function useWorkouts() {
           const { error: exercisesError } = await supabase
             .from('exercises')
             .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
-          if (exercisesError) throw exercisesError;
+          if (exercisesError) await rollbackWorkout(workoutData.id, exercisesError);
         }
 
         if (habitsPayload) {
           const { error: habitsError } = await supabase
             .from('habits')
             .insert({ workout_id: workoutData.id, ...habitsPayload });
-          if (habitsError) throw habitsError;
+          if (habitsError) await rollbackWorkout(workoutData.id, habitsError);
         }
 
         if (burnCalories > 0) {
@@ -182,8 +190,8 @@ export function useWorkouts() {
               activity_type: `workout:${workoutData.id}`,
               duration_minutes: burnDuration,
               calories: burnCalories,
-            }, { onConflict: 'user_id,date,source,activity_type' });
-          if (burnError) throw burnError;
+          }, { onConflict: 'user_id,date,source,activity_type' });
+          if (burnError) await rollbackWorkout(workoutData.id, burnError);
         }
 
         return workoutData;

@@ -50,7 +50,10 @@ export function useNextWorkout(): NextWorkout | null {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from('training_state' as any) as any).select('next_session').eq('user_id', user!.id).maybeSingle();
-      if (error) throw error;
+      // Existing production projects can briefly lag a schema migration.
+      // Fall through to the history-based resolver instead of putting Home
+      // into an error state while the migration catches up.
+      if (error && error.code !== 'PGRST205') throw error;
       return data?.next_session as string | undefined;
     },
   });

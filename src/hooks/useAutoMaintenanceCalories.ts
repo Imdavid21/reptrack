@@ -21,11 +21,11 @@ export interface AutoMaintenance {
  * actual activity is credited separately and in real time by the caller
  * (netDeficit's `+ totalBurned`), not assumed here from history.
  */
-export function useAutoMaintenanceCalories(): AutoMaintenance {
+export function useAutoMaintenanceCalories(referenceDate: Date = new Date()): AutoMaintenance {
   const { preferences, isLoading: prefsLoading } = useUserPreferences();
   const { data: metricsData, isLoading: metricsLoading } = useDailyMetrics({
-    from: new Date(Date.now() - 30 * 86400000),
-    to: new Date(),
+    from: new Date(referenceDate.getTime() - 30 * 86400000),
+    to: referenceDate,
   });
 
   const age = preferences?.age;

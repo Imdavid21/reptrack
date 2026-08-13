@@ -14,6 +14,8 @@ export interface DraftWorkout {
   step: 'select-day' | 'review' | 'exercises';
   lastSavedAt: string;
   workoutStartTime?: string;
+  /** Active session time; excludes time the app was backgrounded. */
+  elapsedSeconds?: number;
 }
 
 const DRAFT_KEY = 'fittrack_draft_workout';

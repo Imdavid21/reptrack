@@ -17,6 +17,12 @@ export function BottomNav() {
     item.path === currentPath ||
     (item.path !== '/app' && currentPath.startsWith(item.path))
   );
+  const requestNavigation = (path: string) => {
+    if (path === currentPath) return;
+    const request = new CustomEvent('reptrack-request-leave-session', { cancelable: true });
+    window.dispatchEvent(request);
+    if (!request.defaultPrevented) navigate(path);
+  };
 
   return (
     <Paper 
@@ -37,7 +43,7 @@ export function BottomNav() {
         showLabels
         value={currentValue >= 0 ? currentValue : 0}
         onChange={(_, newValue) => {
-          navigate(navItems[newValue].path);
+          requestNavigation(navItems[newValue].path);
         }}
         sx={{
           bgcolor: 'background.paper',

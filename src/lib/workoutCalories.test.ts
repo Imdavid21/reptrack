@@ -71,6 +71,12 @@ describe('calculateWorkoutCalories', () => {
     expect(calculateWorkoutCalories({ day_name: 'Push A' }, 70, 45)).toBe(210);
   });
 
+  it('does not infer a full workout from a short logged session', () => {
+    // A single logged set after one active minute must remain a small estimate;
+    // the calculator only receives active session time, never planned volume.
+    expect(calculateWorkoutCalories({ day_name: 'Push A' }, 70, 1)).toBe(5);
+  });
+
   it('returns 0 for zero, negative, null, or undefined duration', () => {
     expect(calculateWorkoutCalories({ day_name: 'Legs A' }, 80, 0)).toBe(0);
     expect(calculateWorkoutCalories({ day_name: 'Legs A' }, 80, -10)).toBe(0);

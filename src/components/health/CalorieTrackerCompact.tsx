@@ -77,7 +77,7 @@ export function CalorieTrackerCompact() {
   const { preferences } = useUserPreferences();
   const { setGoal } = useGoalHistory();
   const { totalBurned, burns, todayWorkout } = useCalorieBurn(mealsDate);
-  const autoMaintenance = useAutoMaintenanceCalories();
+  const autoMaintenance = useAutoMaintenanceCalories(logDate);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
