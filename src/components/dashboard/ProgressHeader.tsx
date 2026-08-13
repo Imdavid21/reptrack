@@ -158,7 +158,7 @@ export function ProgressHeader() {
         <div className="space-y-3">
            <div className="flex items-center justify-between">
              <span className="text-xs text-muted-foreground uppercase tracking-wider">52-WEEK PROGRAM</span>
-             <span className="text-xs font-mono">
+             <span className="text-xs tabular-nums">
                {workouts.length}/{totalSessions} SESSIONS
              </span>
            </div>
