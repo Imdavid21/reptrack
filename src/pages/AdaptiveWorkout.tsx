@@ -178,7 +178,7 @@ export default function AdaptiveWorkout() {
         </Box>
 
         <Box sx={{ mt: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25 }}><Typography variant="h6">Session plan</Typography><Button size="small" startIcon={<Gauge size={15}/>} onClick={() => setRoughOpen(true)} sx={{ color: 'text.secondary' }}>Adjust</Button></Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25 }}><Typography variant="h6">Session plan</Typography><Button size="small" startIcon={<Gauge size={15}/>} onClick={() => setRoughOpen(true)} sx={{ color: 'text.secondary' }}>Warm Up?</Button></Box>
           <Box sx={{ display: 'grid', gap: 0 }}>
             {selectedPlan.slice(0, 5).map((exercise, index) => <Box key={exercise.name} sx={{ display: 'grid', gridTemplateColumns: '2rem minmax(0,1fr) auto', alignItems: 'center', py: 1.25, borderTop: index ? 1 : 0, borderColor: 'divider' }}><Typography variant="caption" color="text.secondary" className="tabular-nums">{String(index + 1).padStart(2, '0')}</Typography><Typography variant="body2" fontWeight={600}>{exercise.name}</Typography><Typography variant="caption" color="text.secondary">{exercise.sets} × {exercise.reps}</Typography></Box>)}
             {selectedPlan.length > 5 && <Typography variant="caption" color="text.secondary" sx={{ pt: 1.25 }}>+{selectedPlan.length - 5} more exercises</Typography>}
@@ -188,8 +188,7 @@ export default function AdaptiveWorkout() {
 
       <Box sx={{ mt: 'auto', pt: 4 }}>
         <Button fullWidth size="large" variant="contained" startIcon={<Play size={17}/>} onClick={() => beginSession()} sx={{ minHeight: 54, borderRadius: 2.5 }}>Start workout</Button>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5, mt: 1.5 }}>
-          <Button variant="outlined" onClick={() => setWarmupEditorOpen(true)} sx={{ minHeight: 48, borderRadius: 2.5 }}>Warm-up</Button>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, mt: 1.5 }}>
           <Button variant="outlined" startIcon={<RefreshCw size={15}/>} onClick={() => setPickerOpen(true)} sx={{ minHeight: 48, borderRadius: 2.5 }}>Change</Button>
           <Button variant="text" startIcon={<SkipForward size={15}/>} onClick={skipWorkout} sx={{ minHeight: 48, color: 'text.secondary' }}>Skip</Button>
         </Box>
