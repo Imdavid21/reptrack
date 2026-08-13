@@ -448,9 +448,9 @@ export function CalorieTrackerCompact() {
 
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="h-full flex flex-col flex-1">
         <div className="rounded-[20px] border border-border bg-card p-4 h-full flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <h3 className="section-header mb-0">
+              <h3 className="text-sm font-semibold tracking-tight">
                 {viewingToday
                   ? (deficitMode ? 'Calorie balance' : "Today's calories")
                   : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'DEFICIT' : 'CALORIES'}`}
@@ -463,40 +463,34 @@ export function CalorieTrackerCompact() {
                 <Pencil className="h-3 w-3" />
               </button>
             </div>
-            <Utensils className="h-4 w-4 text-muted-foreground" />
+              <Utensils className="h-4 w-4 text-muted-foreground/70" />
           </div>
 
           {deficitMode ? (
             <>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="col-span-2 p-3 rounded-xl border border-border bg-muted/20">
-                  <div className="text-xs text-muted-foreground tracking-wide">Deficit today</div>
+              <div className="divide-y divide-border">
+                <div className="py-3">
+                  <div className="text-xs text-muted-foreground">Deficit today</div>
                   <div className={cn(
                     "text-xl font-bold tabular-nums leading-tight",
                     hitDeficit ? "text-[#DAF1DC]" : netDeficit > 0 ? "text-foreground" : "text-[#ff9b9b]"
                   )}>
                     {netDeficit >= 0 ? `-${netDeficit}` : `+${Math.abs(netDeficit)}`}
                   </div>
-                  <div className="text-xs text-muted-foreground">Target -{deficitTarget} kcal</div>
+                  <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground"><span>Target -{deficitTarget} kcal</span><span>{hitDeficit ? 'On target' : 'In progress'}</span></div>
                 </div>
-                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
-                  <div className="text-xs text-muted-foreground tracking-wide">Food in</div>
-                  <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalCalories.toLocaleString()}</div>
-                  <div className="text-xs text-muted-foreground">Calories eaten</div>
-                </div>
-                <div className="p-2.5 rounded-xl border border-border bg-muted/20">
-                  <div className="text-xs text-muted-foreground tracking-wide">Activity out</div>
-                  <div className="text-xl font-bold tabular-nums leading-tight text-foreground">{totalBurned.toLocaleString()}</div>
-                  <div className="text-xs text-muted-foreground">Calories burned</div>
+                <div className="grid grid-cols-2 divide-x divide-border">
+                  <div className="py-3 pr-3"><div className="text-xs text-muted-foreground">Food in</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
+                  <div className="py-3 pl-3"><div className="text-xs text-muted-foreground">Activity out</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsProteinOpen(open => !open)}
                   className={cn(
-                    "col-span-2 rounded-xl border p-3 text-left transition-colors",
+                    "w-full py-3 text-left transition-colors",
                     proteinTotal >= proteinGoal
-                      ? "border-energy/30 bg-energy-soft/70 hover:bg-energy-soft"
-                      : "border-border bg-muted/20 hover:bg-muted/40"
+                      ? "text-energy-ink"
+                      : "hover:bg-muted/30"
                   )}
                 >
                   <div className="flex items-center justify-between"><div className="text-xs text-muted-foreground tracking-wide">Protein</div><span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide details' : 'View details'}</span></div>
@@ -508,7 +502,7 @@ export function CalorieTrackerCompact() {
                   </div>
                   <div className="text-xs text-muted-foreground">{Math.round(proteinTotal)}g / {proteinGoal}g · {Math.max(0, Math.round(proteinGoal - proteinTotal))}g remaining</div>
                 </button>
-                {autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
+                {isExpanded && autoMaintenance.isAvailable && (preferences?.show_bmr_on_dashboard ?? true) && (
                   <BmrBreakdownTile
                     bmr={autoMaintenance.bmr}
                     maintenance={maintenance}
@@ -519,7 +513,7 @@ export function CalorieTrackerCompact() {
                 )}
               </div>
 
-              <CollapsibleTrigger className="mt-1.5 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
+              <CollapsibleTrigger className="pt-2 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
                 {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </CollapsibleTrigger>
             </>
@@ -585,12 +579,12 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          <div className="flex gap-2 mt-auto pt-3">
+          <div className="flex gap-2 mt-auto pt-3 border-t border-border">
             <button
               onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
-              aria-label="Add a meal manually"
-              title="Add meal"
-              className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
+              aria-label="Choose a food photo from your library"
+              title="Choose photo"
+              className="h-11 w-11 border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -598,13 +592,13 @@ export function CalorieTrackerCompact() {
               onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
               aria-label="Describe a meal"
               title="Describe meal"
-              className="border border-border px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm font-medium"
+              className="h-11 w-11 border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
             >
               <Utensils className="h-4 w-4" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-              className="btn-brutalist flex-1 flex items-center justify-center gap-2"
+              className="h-11 rounded-xl bg-foreground text-background flex-1 flex items-center justify-center gap-2 text-sm font-semibold active:scale-[0.98] transition-transform"
             >
               <Camera className="h-4 w-4" />
               Add food photo
