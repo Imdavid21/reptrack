@@ -31,42 +31,60 @@ const baseTheme: ThemeOptions = {
   typography: {
     fontFamily: '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
-      fontSize: '1.75rem',
+      fontSize: '1.875rem',
       fontWeight: 700,
       letterSpacing: '-0.02em',
+      lineHeight: 1.12,
     },
     h2: {
+      fontSize: '1.5rem',
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+      lineHeight: 1.18,
+    },
+    h3: {
       fontSize: '1.25rem',
       fontWeight: 700,
       letterSpacing: '-0.01em',
-    },
-    h3: {
-      fontSize: '1rem',
-      fontWeight: 600,
+      lineHeight: 1.25,
     },
     h4: {
-      fontSize: '0.875rem',
-      fontWeight: 600,
+      fontSize: '1.125rem',
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+      lineHeight: 1.3,
     },
     h5: {
-      fontSize: '0.75rem',
-      fontWeight: 600,
+      fontSize: '1rem',
+      fontWeight: 700,
+      lineHeight: 1.35,
     },
     h6: {
-      fontSize: '1.5rem',
-      fontWeight: 700,
+      fontSize: '0.875rem',
+      fontWeight: 600,
+      lineHeight: 1.4,
     },
     body1: {
-      fontSize: '0.875rem',
+      fontSize: '1rem',
+      lineHeight: 1.5,
     },
     body2: {
-      fontSize: '0.75rem',
+      fontSize: '0.875rem',
+      lineHeight: 1.45,
     },
     caption: {
-      fontSize: '0.625rem',
+      fontSize: '0.75rem',
       textTransform: 'none' as const,
       letterSpacing: '0.01em',
       fontWeight: 500,
+      lineHeight: 1.35,
+    },
+    overline: {
+      fontSize: '0.6875rem',
+      lineHeight: 1.2,
+      fontWeight: 700,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase' as const,
     },
   },
   shape: {
@@ -78,6 +96,8 @@ const baseTheme: ThemeOptions = {
         root: {
           textTransform: 'none',
           fontWeight: 600,
+          fontSize: '0.875rem',
+          lineHeight: 1.25,
           borderRadius: 10,
           padding: '10px 20px',
           boxShadow: 'none',
