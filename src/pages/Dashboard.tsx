@@ -5,7 +5,6 @@ import { ChevronRight, Dumbbell, Ruler, SlidersHorizontal } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
 import { TodaySnapshot } from '@/components/dashboard/TodaySnapshot';
-import { ProgressInsight } from '@/components/dashboard/ProgressInsight';
 import { WeeklyAdaptiveCheckin } from '@/components/dashboard/WeeklyAdaptiveCheckin';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
@@ -18,6 +17,6 @@ export default function Dashboard() {
     <DashboardDateBar />
     {draft && hasProgress ? <button onClick={() => navigate('/app/log')} className="w-full rounded-[24px] bg-foreground text-background p-5 flex items-center gap-3 text-left active:scale-[.99] transition-transform"><span className="h-10 w-10 rounded-xl bg-background/15 flex items-center justify-center"><Dumbbell className="h-5 w-5" /></span><span className="flex-1"><span className="block text-[10px] font-bold tracking-[.16em] opacity-60">RESUME</span><span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span><span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span></span><ChevronRight className="h-5 w-5" /></button>:<NextWorkoutCard />}
     <Box><Typography variant="overline" color="text.secondary">DAILY</Typography><TodaySnapshot /></Box>
-    <WeeklyAdaptiveCheckin open={checkOpen} onOpenChange={setCheckOpen} fallback={<ProgressInsight />} />
+    <WeeklyAdaptiveCheckin open={checkOpen} onOpenChange={setCheckOpen} />
   </Box></LogDateProvider></MainLayout>;
 }
