@@ -47,6 +47,7 @@ export interface WorkoutEnergyInput {
   averageRir?: number | null;
   weightKg: number;
   hasActualFinish?: boolean;
+  intensityOverride?: WorkoutIntensity;
 }
 
 export interface WorkoutEnergyEstimate {
@@ -324,9 +325,11 @@ export function estimateWorkoutEnergy(input: WorkoutEnergyInput): WorkoutEnergyE
   const density = activeDurationMinutes > 0 ? sets / activeDurationMinutes : 0;
   const compoundRatio = sets > 0 ? (input.compoundSets || 0) / sets : 0;
   const completion = input.plannedSets ? sets / Math.max(1, input.plannedSets) : 1;
-  let intensity: WorkoutIntensity = 'normal';
-  if (sets <= 5 || activeDurationMinutes < 20 || completion < 0.35) intensity = 'light';
-  else if (sets >= 14 && activeDurationMinutes >= 40 && (density >= 0.18 || compoundRatio >= 0.45 || (input.averageRir != null && input.averageRir <= 1.5))) intensity = 'vigorous';
+  let intensity: WorkoutIntensity = input.intensityOverride || 'normal';
+  if (!input.intensityOverride) {
+    if (sets <= 5 || activeDurationMinutes < 20 || completion < 0.35) intensity = 'light';
+    else if (sets >= 14 && activeDurationMinutes >= 40 && (density >= 0.18 || compoundRatio >= 0.45 || (input.averageRir != null && input.averageRir <= 1.5))) intensity = 'vigorous';
+  }
   const met = intensity === 'light' ? 3.5 : intensity === 'vigorous' ? 5.5 : 4.5;
   const netKcal = netActivityKcal(met, input.weightKg, activeDurationMinutes);
   const confidence: EnergyConfidence = input.hasActualFinish === false || suspiciousDuration ? 'low' : sets >= 8 && activeDurationMinutes >= 25 ? 'medium' : 'low';

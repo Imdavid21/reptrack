@@ -22,6 +22,7 @@ import {
   ageOnDate,
   WeightObservation,
 } from '@/lib/energyEngineV3';
+import { workoutIntensityOverride } from '@/lib/workoutCalories';
 
 interface EnergyBreakdown {
   normalDay: number;
@@ -107,7 +108,7 @@ export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelRes
         const compound = completed.filter((exercise: any) => ['primary', 'compound'].includes(String(exercise.category).toLowerCase())).length;
         const isolation = completed.filter((exercise: any) => ['accessory', 'specialization', 'core'].includes(String(exercise.category).toLowerCase())).length;
         const timing = timingFromWorkout(workout);
-        const estimate = estimateWorkoutEnergy({ durationMinutes: timing.elapsedMinutes, pausedSeconds: timing.pausedSeconds, completedSets: completed.length, plannedSets: rows.length, compoundSets: compound, isolationSets: isolation, weightKg: weight.kg, hasActualFinish: !!workout.completed_at });
+        const estimate = estimateWorkoutEnergy({ durationMinutes: timing.elapsedMinutes, pausedSeconds: timing.pausedSeconds, completedSets: completed.length, plannedSets: rows.length, compoundSets: compound, isolationSets: isolation, weightKg: weight.kg, hasActualFinish: !!workout.completed_at, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
         categories.workout += estimate.netKcal;
         confidences.push(estimate.confidence);
       });

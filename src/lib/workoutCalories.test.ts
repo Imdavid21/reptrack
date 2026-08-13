@@ -24,6 +24,14 @@ describe('workout energy compatibility boundary', () => {
     })).toBe('normal');
   });
 
+  it('treats named conditioning sessions as vigorous and mobility as light', () => {
+    expect(getWorkoutMetCategory({ day_name: 'Cindy' })).toBe('vigorous');
+    expect(getWorkoutMetCategory({ day_name: 'Chelsea' })).toBe('vigorous');
+    expect(getWorkoutMetCategory({ day_name: 'Mobility' })).toBe('light');
+    expect(calculateWorkoutCalories({ day_name: 'Cindy', exercises: completed('compound', 5), plannedSets: 20 }, 75, 20))
+      .toBeGreaterThan(calculateWorkoutCalories({ day_name: 'Push A', exercises: completed('compound', 5), plannedSets: 20 }, 75, 20));
+  });
+
   it('keeps a one-minute partial workout small', () => {
     expect(calculateWorkoutCalories({
       exercises: completed('primary', 1),

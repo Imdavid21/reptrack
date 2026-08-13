@@ -5,6 +5,7 @@ import { useUserPreferences } from './useUserPreferences';
 import { enqueueOperation } from '@/lib/offlineSyncQueue';
 import { localDateKey } from '@/lib/dateKey';
 import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
+import { workoutIntensityOverride } from '@/lib/workoutCalories';
 
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
@@ -112,7 +113,7 @@ export function useWorkouts() {
       const compoundSets = workout.exercises.filter(exercise => ['primary', 'compound'].includes(exercise.category)).reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
       const isolationSets = workout.exercises.filter(exercise => ['accessory', 'specialization', 'core'].includes(exercise.category)).reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
       const burnDuration = workout.durationMinutes || 0;
-      const burnEstimate = estimateWorkoutEnergy({ durationMinutes: burnDuration + (workout.explicitPauseSeconds || 0) / 60, pausedSeconds: workout.explicitPauseSeconds || 0, completedSets, plannedSets, compoundSets, isolationSets, weightKg: weight.kg, hasActualFinish: !!workout.completedAt });
+      const burnEstimate = estimateWorkoutEnergy({ durationMinutes: burnDuration + (workout.explicitPauseSeconds || 0) / 60, pausedSeconds: workout.explicitPauseSeconds || 0, completedSets, plannedSets, compoundSets, isolationSets, weightKg: weight.kg, hasActualFinish: !!workout.completedAt, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
 
       const workoutPayload = {
         user_id: user.id,

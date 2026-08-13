@@ -44,7 +44,9 @@ export function MainLayout({ children, showBack, backTo, hideNav = false }: Main
         </Box>
       )}
       <Box component="main" sx={{ px: 2, py: 2, width: '100%', minWidth: 0, overflowX: 'hidden' }}>
-        {children}
+        <Box sx={{ width: '100%', maxWidth: 680, mx: 'auto' }}>
+          {children}
+        </Box>
       </Box>
       {!hideNav && <BottomNav />}
     </Box>
