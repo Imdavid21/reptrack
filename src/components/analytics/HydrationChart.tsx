@@ -19,7 +19,6 @@ import {
 
 export function HydrationChart() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { preferences } = useUserPreferences();
   const { resolveGoal } = useGoalHistory();
@@ -28,9 +27,8 @@ export function HydrationChart() {
   const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
   const { data, isLoading } = useHydrationData(dateRange);
 
-  // High contrast black/white
-  const primaryColor = isDark ? '#FFFFFF' : '#000000';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+  const primaryColor = theme.palette.text.primary;
+  const mutedColor = theme.palette.text.secondary;
 
 
   // Each day is judged against the goal that was actually active on it (via
@@ -124,7 +122,7 @@ export function HydrationChart() {
           <Box sx={{ 
             p: 1, 
             borderRadius: 2, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            bgcolor: 'action.hover',
           }}>
             <Droplets size={14} />
           </Box>
@@ -138,7 +136,7 @@ export function HydrationChart() {
             height: 24,
             fontSize: '0.7rem',
             fontWeight: 600,
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            bgcolor: 'action.hover',
             '& .MuiChip-icon': { color: 'inherit' },
           }}
         />
@@ -177,7 +175,7 @@ export function HydrationChart() {
           <Box sx={{ 
             flex: 1, 
             p: 1.5, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+            bgcolor: 'action.hover',
             borderRadius: 2,
             textAlign: 'center',
             border: 1,
@@ -191,7 +189,7 @@ export function HydrationChart() {
           <Box sx={{ 
             flex: 1, 
             p: 1.5, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+            bgcolor: 'action.hover',
             borderRadius: 2,
             textAlign: 'center',
             border: 1,
@@ -205,7 +203,7 @@ export function HydrationChart() {
           <Box sx={{ 
             flex: 1, 
             p: 1.5, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+            bgcolor: 'action.hover',
             borderRadius: 2,
             textAlign: 'center',
             border: 1,

@@ -22,7 +22,6 @@ type MetricType = 'weight' | 'sleep';
 
 export function DailyVitalsChart() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useDailyMetrics(dateRange);
   const { preferences } = useUserPreferences();
@@ -35,8 +34,8 @@ export function DailyVitalsChart() {
   // actually active then, not whatever it's since been changed to.
   const sleepGoal = resolveGoal('sleep_goal', localDateKey(dateRange.to), preferences?.sleep_goal || 7);
 
-  const primaryColor = isDark ? '#FFFFFF' : '#000000';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+  const primaryColor = theme.palette.text.primary;
+  const mutedColor = theme.palette.text.secondary;
 
   const weightData = useMemo(() => {
     if (!data?.dataPoints) return [];
@@ -176,7 +175,7 @@ export function DailyVitalsChart() {
           <Box sx={{ 
             p: 1, 
             borderRadius: 2, 
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            bgcolor: 'action.hover',
           }}>
             {activeMetric === 'weight' ? <Scale size={14} /> : <Moon size={14} />}
           </Box>
@@ -197,7 +196,7 @@ export function DailyVitalsChart() {
               fontWeight: 600,
               borderColor: 'divider',
               '&.Mui-selected': {
-                bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                bgcolor: 'action.hover',
                 color: 'text.primary',
               },
             },
@@ -251,7 +250,7 @@ export function DailyVitalsChart() {
                   strokeWidth={2}
                   fill={activeMetric === 'sleep'
                     ? 'hsl(var(--recover) / 0.12)'
-                    : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}
+                    : theme.palette.action.hover}
                   dot={{ r: 3, fill: activeMetric === 'sleep' ? 'hsl(var(--recover))' : primaryColor }}
                   connectNulls
                 />

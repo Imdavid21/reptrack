@@ -187,35 +187,42 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: palette.black.main,
+      main: 'hsl(0 0% 8%)',
       light: palette.black.light,
       dark: palette.black.dark,
       contrastText: '#ffffff',
     },
     secondary: {
-      main: palette.gray[400],
+      main: 'hsl(0 0% 38%)',
       light: palette.gray[200],
       dark: palette.gray[600],
     },
     error: {
-      main: palette.gray[700],
+      main: 'hsl(0 72% 44%)',
     },
     success: {
-      main: palette.gray[600],
-      light: palette.gray[200],
+      main: 'hsl(142 70% 31%)',
+      light: 'hsl(142 45% 90%)',
+    },
+    warning: {
+      main: 'hsl(32 95% 32%)',
+    },
+    info: {
+      main: 'hsl(211 90% 40%)',
     },
     background: {
-      default: palette.gray[50],
+      default: 'hsl(0 0% 97%)',
       paper: '#ffffff',
     },
     text: {
-      primary: palette.black.main,
-      secondary: palette.gray[500],
+      primary: 'hsl(0 0% 8%)',
+      secondary: 'hsl(0 0% 38%)',
     },
-    divider: palette.gray[200],
+    divider: 'hsl(0 0% 86%)',
     action: {
       hover: 'rgba(0, 0, 0, 0.04)',
       selected: 'rgba(0, 0, 0, 0.08)',
+      disabledOpacity: 0.5,
     },
   },
 });
@@ -225,34 +232,41 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: palette.white.main,
+      main: 'hsl(0 0% 96%)',
       light: palette.white.light,
       dark: palette.white.dark,
     },
     secondary: {
-      main: palette.gray[500],
+      main: 'hsl(0 0% 68%)',
       light: palette.gray[400],
       dark: palette.gray[600],
     },
     error: {
-      main: palette.gray[400],
+      main: 'hsl(0 82% 68%)',
     },
     success: {
-      main: palette.gray[400],
-      light: 'rgba(255, 255, 255, 0.06)',
+      main: 'hsl(142 55% 62%)',
+      light: 'hsl(142 35% 18%)',
+    },
+    warning: {
+      main: 'hsl(38 90% 62%)',
+    },
+    info: {
+      main: 'hsl(210 90% 68%)',
     },
     background: {
-      default: palette.black.main,
-      paper: palette.gray[900],
+      default: 'hsl(0 0% 5%)',
+      paper: 'hsl(0 0% 7%)',
     },
     text: {
-      primary: palette.white.main,
-      secondary: palette.gray[400],
+      primary: 'hsl(0 0% 96%)',
+      secondary: 'hsl(0 0% 68%)',
     },
-    divider: 'rgba(255, 255, 255, 0.06)',
+    divider: 'hsl(0 0% 20%)',
     action: {
-      hover: 'rgba(255, 255, 255, 0.03)',
-      selected: 'rgba(255, 255, 255, 0.06)',
+      hover: 'rgba(255, 255, 255, 0.07)',
+      selected: 'rgba(255, 255, 255, 0.12)',
+      disabledOpacity: 0.5,
     },
   },
   components: {
@@ -260,7 +274,7 @@ export const darkTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: palette.black.main,
+          backgroundColor: 'hsl(0 0% 5%)',
           transition: 'background-color 0.3s ease, color 0.3s ease',
         },
       },

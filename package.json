@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "check:typography": "node scripts/check-typography.mjs",
+    "check:colors": "node scripts/check-colors.mjs",
     "test": "vitest run",
     "preview": "vite preview"
   },

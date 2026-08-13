@@ -3,7 +3,7 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'rec
 import { useExerciseSets, ExerciseProgression } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { MuiCard } from '@/components/ui/MuiCard';
-import { Box, Typography, Chip, Collapse, useTheme } from '@mui/material';
+import { Box, Typography, Chip, Collapse } from '@mui/material';
 import { TrendingUp, TrendingDown, ChevronDown, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getMuscleGroup } from '@/lib/exerciseClassification';
@@ -29,7 +29,7 @@ function GrowthBadge({ startWeight, endWeight }: { startWeight: number; endWeigh
   return (
     <span className={cn(
       'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded',
-      isPositive ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'
+      isPositive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
     )}>
       {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
       {isPositive ? '+' : ''}{pct}%
@@ -134,8 +134,6 @@ function ExerciseCard({ progression }: { progression: ExerciseProgression }) {
 }
 
 export function ExerciseProgressionChart() {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
   const [showAll, setShowAll] = useState(false);
@@ -178,7 +176,7 @@ export function ExerciseProgressionChart() {
       <Box sx={{
         p: 1,
         borderRadius: 2,
-        bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+        bgcolor: 'action.hover',
       }}>
         <Dumbbell size={14} />
       </Box>

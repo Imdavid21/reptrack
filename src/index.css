@@ -27,46 +27,47 @@
   }
 
   :root {
-    /* Core palette - Pure black & white */
-    --background: 0 0% 98%; /* near white */
-    --foreground: 0 0% 0%; /* pure black */
+    color-scheme: light;
+
+    /* Neutral surfaces: softened contrast without sacrificing legibility. */
+    --background: 0 0% 97%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Primary - Pure Black */
-    --primary: 0 0% 0%;
+    --primary: 0 0% 8%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Light gray */
-    --secondary: 0 0% 93%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 38%;
 
     /* Accent is a subtle surface (shadcn semantics) */
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    --accent-foreground: 0 0% 12%;
 
-    /* Soft destructive/warning - soft red */
-    --destructive: 0 86% 68%;
-    --destructive-foreground: 0 0% 0%;
+    /* Semantic colors are reserved for meaning, never decoration. */
+    --destructive: 0 72% 44%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Status colors - soft tones */
-    --success: 130 40% 43%;
-    --success-foreground: 0 0% 0%;
-    --success-light: 130 40% 88%;
-    --warning: 0 86% 68%;
-    --warning-foreground: 0 0% 0%;
+    --success: 142 70% 31%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 45% 90%;
+    --warning: 32 95% 32%;
+    --warning-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 20%;
+    --border: 0 0% 86%;
+    --input: 0 0% 55%;
+    --ring: 0 0% 18%;
 
     /* Radius - Modern rounded */
     --radius: 12px;
@@ -105,12 +106,12 @@
        Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover.
        The base value is for FILLS (bars, badges with dark text). The -ink value
        is contrast-safe for TEXT/ICONS on cards and soft tints. */
-    --energy-ink: 130 40% 40%;
+    --energy-ink: 130 40% 36%;
     --water: 200 70% 55%;
-    --water-ink: 200 72% 40%;
+    --water-ink: 200 72% 38%;
     --water-soft: 200 64% 90%;
     --fuel: 40 80% 62%;
-    --fuel-ink: 35 78% 45%;
+    --fuel-ink: 35 78% 36%;
     --fuel-soft: 40 80% 90%;
     --recover: 256 52% 62%;
     --recover-ink: 256 46% 50%;
@@ -118,41 +119,43 @@
   }
 
   .dark {
-    /* Ultra-dark base - true black foundation */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    color-scheme: dark;
 
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 100%;
+    /* Near-black layers retain depth without muddy gray cards. */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 96%;
 
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 100%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 96%;
 
     /* Primary - bright white on black */
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 94%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 50%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 68%;
 
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 90%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 94%;
 
-    --destructive: 0 86% 75%;
-    --destructive-foreground: 0 0% 0%;
+    --destructive: 0 82% 68%;
+    --destructive-foreground: 0 0% 7%;
 
-    --success: 130 40% 68%;
-    --success-foreground: 0 0% 0%;
-    --success-light: 130 40% 15%;
-    --warning: 0 86% 75%;
-    --warning-foreground: 0 0% 0%;
+    --success: 142 55% 62%;
+    --success-foreground: 0 0% 7%;
+    --success-light: 142 35% 18%;
+    --warning: 38 90% 62%;
+    --warning-foreground: 0 0% 7%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 0 0% 80%;
+    --border: 0 0% 20%;
+    --input: 0 0% 38%;
+    --ring: 0 0% 82%;
 
     /* Heatmap - from near-invisible to bright soft palette */
     --heat-0: 0 0% 8%;
@@ -198,6 +201,16 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: hsl(var(--foreground) / 0.16);
+    color: hsl(var(--foreground));
   }
 
   html {

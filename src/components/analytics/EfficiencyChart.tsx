@@ -14,7 +14,6 @@ export function EfficiencyChart() {
   const { dateRange } = useDateRange();
   const { data, isLoading } = useAutoMetrics(dateRange);
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const [mode, setMode] = useState<ViewMode>('volume');
 
   if (isLoading) {
@@ -100,10 +99,9 @@ export function EfficiencyChart() {
     );
   };
 
-  // High contrast black/white only
-  const barColor = isDark ? '#FFFFFF' : '#000000';
-  const lineColor = isDark ? '#FFFFFF' : '#000000';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+  const barColor = theme.palette.text.primary;
+  const lineColor = theme.palette.text.primary;
+  const mutedColor = theme.palette.text.secondary;
 
   return (
     <MuiCard>
@@ -112,7 +110,7 @@ export function EfficiencyChart() {
           <Box sx={{
             p: 1,
             borderRadius: 2,
-            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            bgcolor: 'action.hover',
           }}>
             {isVolume ? <Zap size={14} style={{ color: theme.palette.text.primary }} /> : <Dumbbell size={14} style={{ color: theme.palette.text.primary }} />}
           </Box>
@@ -124,7 +122,7 @@ export function EfficiencyChart() {
           display: 'flex',
           alignItems: 'center',
           gap: 0.5,
-          bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+          bgcolor: 'action.hover',
           px: 1.5,
           py: 0.5,
           borderRadius: 2
@@ -218,7 +216,7 @@ export function EfficiencyChart() {
       <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
         {isVolume ? (
           <>
-            <Box sx={{ flex: 1, p: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgDuration || '—'}m
@@ -227,7 +225,7 @@ export function EfficiencyChart() {
                 AVG DURATION
               </Typography>
             </Box>
-            <Box sx={{ flex: 1, p: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgVolume ? `${(avgVolume / 1000).toFixed(1)}k` : '—'}
@@ -239,7 +237,7 @@ export function EfficiencyChart() {
           </>
         ) : (
           <>
-            <Box sx={{ flex: 1, p: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <Dumbbell size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {peakStrength || '—'}
@@ -248,7 +246,7 @@ export function EfficiencyChart() {
                 PEAK EST. 1RM (KG)
               </Typography>
             </Box>
-            <Box sx={{ flex: 1, p: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgStrength || '—'}

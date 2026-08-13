@@ -17,8 +17,7 @@ interface Props {
  */
 export function BodyScoreTrendCard({ trend, isLoading }: Props) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+  const mutedColor = theme.palette.text.secondary;
 
   const points = useMemo(() => trend.filter(p => p.score != null), [trend]);
 
@@ -79,8 +78,9 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
             <Tooltip
               cursor={{ stroke: mutedColor, strokeWidth: 1 }}
               contentStyle={{
-                background: isDark ? '#111' : '#fff',
-                border: `1px solid ${isDark ? '#222' : '#eee'}`,
+                background: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 12,
                 fontSize: 12,
                 padding: '6px 10px',

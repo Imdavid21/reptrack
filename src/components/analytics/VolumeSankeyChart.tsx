@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme } from '@mui/material';
+import { alpha, Box, Typography, Skeleton, useTheme } from '@mui/material';
 import { Layers } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
@@ -19,12 +19,11 @@ interface CategoryData {
 
 export function VolumeSankeyChart() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const { dateRange } = useDateRange();
   const { data, isLoading } = useExerciseSets(dateRange);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // High contrast black/white only. Includes 'other' so an exercise with no
+  // A single neutral scale keeps every segment visible in both themes. Includes 'other' so an exercise with no
   // muscle-group match (getMuscleGroup's fallback) still shows up somewhere
   // instead of silently vanishing from the chart while still being counted
   // in the total volume denominator — which used to pull every visible
@@ -32,16 +31,16 @@ export function VolumeSankeyChart() {
   const MUSCLE_GROUP_LABELS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core', 'other'];
 
   const CATEGORY_FILLS = useMemo(() => {
-    const base = isDark ? 255 : 0;
+    const foreground = theme.palette.text.primary;
     return {
-      chest: isDark ? '#FFFFFF' : '#000000',
-      back: `rgba(${base},${base},${base},0.75)`,
-      shoulders: `rgba(${base},${base},${base},0.55)`,
-      arms: `rgba(${base},${base},${base},0.4)`,
-      legs: `rgba(${base},${base},${base},0.28)`,
-      core: `rgba(${base},${base},${base},0.18)`,
+      chest: foreground,
+      back: alpha(foreground, 0.86),
+      shoulders: alpha(foreground, 0.74),
+      arms: alpha(foreground, 0.64),
+      legs: alpha(foreground, 0.54),
+      core: alpha(foreground, 0.44),
     } as Record<string, string>;
-  }, [isDark]);
+  }, [theme.palette.text.primary]);
 
   const { categories, totalVolume, radialData } = useMemo(() => {
     if (!data?.sets || data.sets.length === 0) {
@@ -94,7 +93,7 @@ export function VolumeSankeyChart() {
         name: cat,
         volume: categoryMap[cat].volume,
         percentage: Math.round((categoryMap[cat].volume / total) * 100),
-        fill: CATEGORY_FILLS[cat] || (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'),
+        fill: CATEGORY_FILLS[cat] || alpha(theme.palette.text.primary, 0.44),
         exercises: categoryMap[cat].exercises.map(ex => ({
           ...ex,
           percentage: Math.round((ex.volume / categoryMap[cat].volume) * 100),
@@ -114,7 +113,7 @@ export function VolumeSankeyChart() {
     }));
 
     return { categories: cats, totalVolume: total, radialData: radial };
-  }, [data?.sets, CATEGORY_FILLS, isDark]);
+  }, [data?.sets, CATEGORY_FILLS, theme.palette.text.primary]);
 
   const formatVolume = (value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -169,7 +168,7 @@ export function VolumeSankeyChart() {
         <Box sx={{
           p: 1,
           borderRadius: 2,
-          bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+          bgcolor: 'action.hover',
         }}>
           <Layers size={14} />
         </Box>
@@ -197,7 +196,7 @@ export function VolumeSankeyChart() {
               <RadialBar
                 dataKey="value"
                 cornerRadius={4}
-                background={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                background={{ fill: theme.palette.action.hover }}
                 onClick={(data) => {
                   if (data?.name) toggleCategory(data.name);
                 }}
@@ -227,7 +226,7 @@ export function VolumeSankeyChart() {
                     borderRadius: 1,
                     cursor: 'pointer',
                     bgcolor: selectedCategory === cat.name
-                      ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)')
+                      ? theme.palette.action.selected
                       : 'transparent',
                     border: 1,
                     borderColor: selectedCategory === cat.name ? 'divider' : 'transparent',
@@ -279,7 +278,7 @@ export function VolumeSankeyChart() {
                 <Box sx={{
                   p: 1.5,
                   borderRadius: 2,
-                  bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  bgcolor: 'action.hover',
                   border: 1,
                   borderColor: 'divider',
                 }}>
@@ -309,7 +308,7 @@ export function VolumeSankeyChart() {
                             width: 40,
                             height: 6,
                             borderRadius: 1,
-                            bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            bgcolor: 'action.hover',
                             overflow: 'hidden',
                             flexShrink: 0,
                           }}
