@@ -1,16 +1,64 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {ReactNode,useEffect,useState} from 'react';
-import {Box,Button,Collapse,TextField,Typography} from '@mui/material';
-import {ChevronDown,Ruler} from 'lucide-react';
-import {supabase} from '@/integrations/supabase/client';
-import {useAuth} from '@/hooks/useAuth';
-import {localDateKey} from '@/lib/dateKey';
-import {toast} from '@/lib/toast';
+import { ReactNode, useEffect, useState } from 'react';
+import { Box, Button, Dialog, DialogContent, IconButton, TextField, Typography } from '@mui/material';
+import { Ruler, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { localDateKey } from '@/lib/dateKey';
+import { toast } from '@/lib/toast';
 
-export function WeeklyAdaptiveCheckin({fallback=null}:{fallback?:ReactNode}){
- const{user}=useAuth();const[due,setDue]=useState(false);const[loaded,setLoaded]=useState(false);const[open,setOpen]=useState(false);const[averageWeight,setAverageWeight]=useState<number|null>(null);const[waist,setWaist]=useState('');const[left,setLeft]=useState('');const[right,setRight]=useState('');const[heels,setHeels]=useState(true);const[restriction,setRestriction]=useState('0');const[saving,setSaving]=useState(false);
- useEffect(()=>{if(!user)return;const today=new Date();const daysSinceMonday=(today.getDay()+6)%7;const monday=new Date(today.getFullYear(),today.getMonth(),today.getDate()-daysSinceMonday);const mondayKey=localDateKey(monday);const sevenDaysAgo=new Date(today.getFullYear(),today.getMonth(),today.getDate()-6);Promise.all([(supabase.from('physique_checkins' as any) as any).select('checkin_date').eq('user_id',user.id).gte('checkin_date',mondayKey).limit(1).maybeSingle(),(supabase.from('mobility_assessments' as any) as any).select('assessment_date').eq('user_id',user.id).gte('assessment_date',mondayKey).limit(1).maybeSingle(),supabase.from('daily_metrics').select('bodyweight,date').eq('user_id',user.id).gte('date',localDateKey(sevenDaysAgo)).lte('date',localDateKey(today)).not('bodyweight','is',null).order('date')]).then(([p,m,weights]:any[])=>{setDue(!(p.data&&m.data));const values=(weights.data||[]).map((x:any)=>Number(x.bodyweight)).filter((x:number)=>Number.isFinite(x)&&x>0);setAverageWeight(values.length?Math.round(values.reduce((a:number,b:number)=>a+b,0)/values.length*100)/100:null)}).finally(()=>setLoaded(true))},[user]);
- if(!loaded)return null;if(!due)return <>{fallback}</>;
- const save=async()=>{if(!user)return;if(averageWeight==null){toast.error('Log bodyweight on Today first so the 7-day average can be calculated.');return}if(!waist||!left||!right||restriction===''){toast.error('Complete every field so the weekly check is not dismissed accidentally.');setOpen(true);return}setSaving(true);try{await Promise.all([(supabase.from('physique_checkins' as any) as any).insert({user_id:user.id,checkin_date:localDateKey(),bodyweight:averageWeight,waist_cm:Number(waist)}),(supabase.from('mobility_assessments' as any) as any).insert({user_id:user.id,assessment_date:localDateKey(),heels_down:heels,knee_to_wall_left_cm:Number(left),knee_to_wall_right_cm:Number(right),hip_flexion_restriction:Number(restriction)})]);setDue(false);toast.success('Weekly trend check saved until next Monday')}catch{toast.error('Could not save weekly check-in')}finally{setSaving(false)}};
- return <Box sx={{borderBottom:1,borderColor:'divider',pb:open?0:1.25}}><Box component="button" type="button" onClick={()=>setOpen(!open)} aria-expanded={open} sx={{width:'100%',border:0,bgcolor:'transparent',p:1,display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',textAlign:'left',color:'text.primary','&:hover':{bgcolor:'action.hover',borderRadius:2}}}><Box sx={{display:'flex',gap:1,alignItems:'center'}}><Ruler size={16}/><Box><Typography variant="body2" fontWeight={600}>Weekly physique & mobility check</Typography><Typography variant="caption" color="text.secondary" sx={{display:'block',fontSize:'0.66rem'}}>Due this week</Typography></Box></Box><ChevronDown size={17} style={{transform:open?'rotate(180deg)':'none',transition:'transform 160ms ease'}}/></Box><Collapse in={open}><Box sx={{mt:2,mb:2,display:'grid',gap:2}}><Box sx={{p:2,bgcolor:'action.hover',borderRadius:2}}><Typography variant="caption" color="text.secondary">AVERAGE BODYWEIGHT</Typography><Typography variant="h6" fontWeight={800}>{averageWeight!=null?`${averageWeight.toFixed(2)} kg`:'Not enough data'}</Typography></Box><Box sx={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1.5}}><TextField required label="Waist (cm)" value={waist} onChange={e=>setWaist(e.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall L (cm)" value={left} onChange={e=>setLeft(e.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall R (cm)" value={right} onChange={e=>setRight(e.target.value)} inputMode="decimal"/></Box><Button variant={heels?'contained':'outlined'} onClick={()=>setHeels(!heels)}>Heels {heels?'stay down':'lift'}</Button><TextField required label="Hip flexion restriction (0–10)" value={restriction} onChange={e=>setRestriction(e.target.value)} inputMode="numeric"/><Button variant="contained" onClick={save} disabled={saving||averageWeight==null}>Save weekly check</Button></Box></Collapse></Box>
+type Props = { fallback?: ReactNode; open: boolean; onOpenChange: (open: boolean) => void };
+
+export function WeeklyAdaptiveCheckin({ fallback = null, open, onOpenChange }: Props) {
+  const { user } = useAuth();
+  const [due, setDue] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [averageWeight, setAverageWeight] = useState<number | null>(null);
+  const [weightTrend, setWeightTrend] = useState<number | null>(null);
+  const [waist, setWaist] = useState('');
+  const [left, setLeft] = useState('');
+  const [right, setRight] = useState('');
+  const [heels, setHeels] = useState(true);
+  const [restriction, setRestriction] = useState('0');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date();
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
+    const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 13);
+    Promise.all([
+      (supabase.from('physique_checkins') as any).select('checkin_date').eq('user_id', user.id).gte('checkin_date', localDateKey(monday)).limit(1).maybeSingle(),
+      (supabase.from('mobility_assessments') as any).select('assessment_date').eq('user_id', user.id).gte('assessment_date', localDateKey(monday)).limit(1).maybeSingle(),
+      supabase.from('daily_metrics').select('bodyweight,date').eq('user_id', user.id).gte('date', localDateKey(from)).lte('date', localDateKey(today)).not('bodyweight', 'is', null).order('date'),
+    ]).then(([physique, mobility, weights]: any[]) => {
+      setDue(!(physique.data && mobility.data));
+      const values = (weights.data || []).map((item: any) => Number(item.bodyweight)).filter((value: number) => value > 0);
+      const recent = values.slice(-7); const prior = values.slice(0, Math.max(0, values.length - 7));
+      setAverageWeight(recent.length ? Math.round(recent.reduce((a, b) => a + b, 0) / recent.length * 100) / 100 : null);
+      setWeightTrend(recent.length && prior.length ? Math.round((recent.reduce((a, b) => a + b, 0) / recent.length - prior.reduce((a, b) => a + b, 0) / prior.length) * 100) / 100 : null);
+    }).finally(() => setLoaded(true));
+  }, [user]);
+
+  const save = async () => {
+    if (!user) return;
+    if (averageWeight == null) return toast.error('Log bodyweight on Today first so the 7-day average can be calculated.');
+    if (!waist || !left || !right || restriction === '') return toast.error('Complete the measurements before saving.');
+    setSaving(true);
+    try {
+      await Promise.all([
+        (supabase.from('physique_checkins') as any).insert({ user_id: user.id, checkin_date: localDateKey(), bodyweight: averageWeight, waist_cm: Number(waist) }),
+        (supabase.from('mobility_assessments') as any).insert({ user_id: user.id, assessment_date: localDateKey(), heels_down: heels, knee_to_wall_left_cm: Number(left), knee_to_wall_right_cm: Number(right), hip_flexion_restriction: Number(restriction) }),
+      ]);
+      setDue(false); onOpenChange(false); toast.success('Weekly check saved until next Monday.');
+    } catch { toast.error('Could not save weekly check-in.'); } finally { setSaving(false); }
+  };
+
+  if (!loaded) return null;
+  return <>{fallback}{due && <Dialog open={open} onClose={() => onOpenChange(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 4 } }}><DialogContent sx={{ p: 2.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2.5 }}><Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}><Ruler size={17}/><Box><Typography fontWeight={800}>Weekly check</Typography><Typography variant="caption" color="text.secondary">A few measurements for your trend</Typography></Box></Box><IconButton onClick={() => onOpenChange(false)} aria-label="Close weekly check"><X /></IconButton></Box>
+    <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: 'action.hover', display: 'flex', justifyContent: 'space-between', mb: 2 }}><Box><Typography variant="caption" color="text.secondary">7-DAY AVERAGE WEIGHT</Typography><Typography variant="h6" fontWeight={800}>{averageWeight != null ? `${averageWeight.toFixed(2)} kg` : 'Not enough data'}</Typography></Box>{weightTrend != null && <Typography variant="body2" color="text.secondary">{weightTrend > 0 ? '+' : ''}{weightTrend.toFixed(2)} kg vs prior 7 days</Typography>}</Box>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}><TextField required label="Waist (cm)" value={waist} onChange={event => setWaist(event.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall L (cm)" value={left} onChange={event => setLeft(event.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall R (cm)" value={right} onChange={event => setRight(event.target.value)} inputMode="decimal"/></Box>
+    <Button fullWidth variant={heels ? 'contained' : 'outlined'} onClick={() => setHeels(value => !value)} sx={{ mt: 1.5, textTransform: 'none' }}>Heels {heels ? 'stay down' : 'lift'}</Button><TextField fullWidth required label="Hip flexion restriction (0–10)" value={restriction} onChange={event => setRestriction(event.target.value)} inputMode="numeric" sx={{ mt: 1.5 }}/><Button fullWidth variant="contained" onClick={save} disabled={saving || averageWeight == null} sx={{ mt: 2 }}>{saving ? 'Saving…' : 'Save weekly check'}</Button>
+  </DialogContent></Dialog>}</>;
 }
