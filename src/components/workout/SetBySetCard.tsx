@@ -35,6 +35,8 @@ interface SetBySetCardProps {
   exercise: WorkoutExercise;
   exerciseIndex: number;
   totalExercises: number;
+  completedWorkoutSets?: number;
+  totalWorkoutSets?: number;
   currentSetIndex: number;
   onChange: (exercise: WorkoutExercise) => void;
   onSetIndexChange: (index: number) => void;
@@ -70,6 +72,8 @@ export function SetBySetCard({
   exercise,
   exerciseIndex,
   totalExercises,
+  completedWorkoutSets,
+  totalWorkoutSets,
   currentSetIndex,
   onChange,
   onSetIndexChange,
@@ -443,7 +447,7 @@ export function SetBySetCard({
     <div className="space-y-4 animate-fade-in">
       {/* Exercise progress — tappable segments */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground tabular-nums">
+        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
           {exerciseIndex + 1}/{totalExercises}
         </span>
         <div className="flex gap-0.5 flex-1">
@@ -461,6 +465,11 @@ export function SetBySetCard({
             />
           ))}
         </div>
+        {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && (
+          <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">
+            {completedWorkoutSets}/{totalWorkoutSets} sets
+          </span>
+        )}
       </div>
 
       {/* Exercise name with PR / type badge */}
