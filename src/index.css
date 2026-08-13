@@ -233,7 +233,9 @@
   /* iOS safe area support */
   body {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    /* The fixed tab bar owns the bottom safe area. Padding the body as well
+       creates a false gap and makes the navigation look like it is floating. */
+    padding-bottom: 0;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
