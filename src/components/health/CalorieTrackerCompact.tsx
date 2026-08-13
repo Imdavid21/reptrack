@@ -48,6 +48,11 @@ function getMealTypeByTime(): MealType {
   return 'snack';
 }
 
+function mealTime(timestamp?: string | null) {
+  const date = timestamp ? new Date(timestamp) : null;
+  return date && !Number.isNaN(date.getTime()) ? format(date, 'h:mm a') : 'Time unavailable';
+}
+
 type EditableFood = {
   name: string;
   portion: string;
@@ -653,7 +658,7 @@ export function CalorieTrackerCompact() {
                       <div key={meal.id} className="flex items-start justify-between text-sm pl-5 group min-w-0 gap-2">
                         <span className="break-words min-w-0 flex-1 leading-snug">{meal.food_name || 'Unnamed'}</span>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs tabular-nums text-muted-foreground">{format(new Date(meal.created_at), 'h:mm a')} · {meal.calories} cal</span>
+                          <span className="text-xs tabular-nums text-muted-foreground">{mealTime(meal.created_at)} · {meal.calories} cal</span>
                           <button
                             onClick={() => handleDeleteMeal(meal.id)}
                             aria-label={`Delete ${meal.food_name || 'meal'}`}
