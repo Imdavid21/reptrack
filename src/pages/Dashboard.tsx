@@ -13,7 +13,6 @@ import { LogDateProvider } from '@/contexts/LogDateContext';
 import { useDraftWorkout } from '@/hooks/useDraftWorkout';
 import { Dumbbell, ChevronRight } from 'lucide-react';
 import { WeeklyAdaptiveCheckin } from '@/components/dashboard/WeeklyAdaptiveCheckin';
-import { DailyReadinessCheck } from '@/components/dashboard/DailyReadinessCheck';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -60,10 +59,6 @@ export default function Dashboard() {
                 </button>
               </motion.div>
             )}
-
-            <motion.div variants={staggerItem}>
-              <DailyReadinessCheck />
-            </motion.div>
 
             {/* Adaptive next-workout hero (hidden while a draft is in progress) */}
             {!(draft && hasProgress) && (
