@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
-import { format, eachDayOfInterval, parseISO, differenceInMinutes, subDays } from 'date-fns';
+import { format, eachDayOfInterval, subDays } from 'date-fns';
 import { DateRange } from '@/contexts/DateRangeContext';
-import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { resolveBodyweightKg } from '@/lib/workoutCalories';
+import { estimateDayActivity } from '@/lib/dayActivity';
 import { ageOnDate, calculateRee, effectiveWeightAt, nonexerciseBaselineFactor } from '@/lib/energyEngineV3';
 
 interface CalorieDataPoint {
@@ -54,7 +55,7 @@ export function useCalorieHistory(dateRange: DateRange) {
           .lte('date', endDateStr),
         supabase
           .from('calorie_burns')
-          .select('date, calories, source, activity_type')
+          .select('date, calories, source, activity_type, duration_minutes, distance_km')
           .eq('user_id', user.id)
           .gte('date', startDateStr)
           .lte('date', endDateStr),
@@ -67,7 +68,9 @@ export function useCalorieHistory(dateRange: DateRange) {
             started_at,
             completed_at,
             workout_duration_minutes,
-            exercises ( category )
+            explicit_pause_seconds,
+            is_skipped,
+            exercises ( category, completed )
           `)
           .eq('user_id', user.id)
           .gte('date', startDateStr)
@@ -104,56 +107,40 @@ export function useCalorieHistory(dateRange: DateRange) {
         intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (meal.calories || 0);
       });
 
-      // Group persisted burns by date; track per-workout rows so fallback calculations do not double-count.
-      // Also split by source so the UI can show workout vs manual-activity attribution, not just a combined total.
-      const persistedWorkoutBurnIds = new Set<string>();
+      // Recompute every day's deliberate activity with the same V3 engine the
+      // dashboard uses. Stored `calories` is deliberately not trusted here:
+      // pre-V3 rows hold gross MET figures that include resting expenditure,
+      // which made History read 35-40% higher than Home for the same day.
+      const activityHistory = (burnsRes.data || [])
+        .filter((burn: any) => burn.source === 'manual')
+        .map((burn: any) => ({ date: burn.date, activityType: burn.activity_type, distanceKm: burn.distance_km, durationMinutes: burn.duration_minutes }));
+
+      const burnsGrouped: Record<string, any[]> = {};
+      (burnsRes.data || []).forEach((burn: any) => {
+        (burnsGrouped[burn.date] ||= []).push(burn);
+      });
+      const workoutsGrouped: Record<string, any[]> = {};
+      (workoutsRes.data || []).forEach((workout: any) => {
+        (workoutsGrouped[workout.date] ||= []).push(workout);
+      });
+
       const burnsByDate: Record<string, number> = {};
       const workoutBurnByDate: Record<string, number> = {};
       const manualBurnByDate: Record<string, number> = {};
-      (burnsRes.data || []).forEach((burn: any) => {
-        burnsByDate[burn.date] = (burnsByDate[burn.date] || 0) + (burn.calories || 0);
-        if (burn.source === 'workout') {
-          workoutBurnByDate[burn.date] = (workoutBurnByDate[burn.date] || 0) + (burn.calories || 0);
-          if (burn.activity_type?.startsWith('workout:')) {
-            persistedWorkoutBurnIds.add(burn.activity_type.replace('workout:', ''));
-          }
-        } else if (burn.source === 'manual') {
-          manualBurnByDate[burn.date] = (manualBurnByDate[burn.date] || 0) + (burn.calories || 0);
-        }
+      eachDayOfInterval({ start: dateRange.from, end: dateRange.to }).forEach(day => {
+        const ds = format(day, 'yyyy-MM-dd');
+        const { categories, total } = estimateDayActivity({
+          date: ds,
+          workouts: workoutsGrouped[ds] || [],
+          burns: burnsGrouped[ds] || [],
+          weight: weightByDate[ds] || fallbackWeight,
+          history: activityHistory,
+        });
+        burnsByDate[ds] = Math.round(total);
+        workoutBurnByDate[ds] = Math.round(categories.workout);
+        manualBurnByDate[ds] = Math.round(total - categories.workout);
       });
 
-      // Calculate workout calories from workout data
-      (workoutsRes.data || []).forEach((workout: any) => {
-        const date = workout.date;
-
-        // Only skip the exact workout if its burn has already been persisted
-        if (persistedWorkoutBurnIds.has(workout.id)) return;
-
-        const exercises = workout.exercises || [];
-
-        // Calculate duration - prioritize stored duration, then started_at/completed_at
-        let durationMinutes = workout.workout_duration_minutes;
-
-        if (!durationMinutes && workout.started_at && workout.completed_at) {
-          durationMinutes = Math.max(
-            differenceInMinutes(parseISO(workout.completed_at), parseISO(workout.started_at)),
-            0
-          );
-        }
-
-        if (durationMinutes && durationMinutes > 0) {
-          // MET category derivation and the MET table itself live in
-          // lib/workoutCalories.ts (single source of truth).
-          const dayWeight = weightByDate[date] || fallbackWeight;
-          const calories = calculateWorkoutCalories(
-            { day_name: workout.day_name, exercises },
-            dayWeight,
-            durationMinutes
-          );
-          burnsByDate[date] = (burnsByDate[date] || 0) + calories;
-          workoutBurnByDate[date] = (workoutBurnByDate[date] || 0) + calories;
-        }
-      });
 
       // Generate array for all days in range
       const allDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });

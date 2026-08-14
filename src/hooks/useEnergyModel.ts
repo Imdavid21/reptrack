@@ -13,16 +13,15 @@ import {
   CalibrationDay,
   DailyEnergyModel,
   effectiveWeightAt,
-  EnergyConfidence,
   ENERGY_MODEL_VERSION,
-  estimateActivity,
-  estimateWorkoutEnergy,
+  EnergyConfidence,
   nonexerciseBaselineFactor,
   calculateRee,
   ageOnDate,
   WeightObservation,
 } from '@/lib/energyEngineV3';
-import { workoutIntensityOverride } from '@/lib/workoutCalories';
+import { estimateDayActivity as estimateDayActivityShared } from '@/lib/dayActivity';
+
 
 interface EnergyBreakdown {
   normalDay: number;
@@ -47,16 +46,6 @@ interface EnergyModelResult {
 
 const emptyBreakdown: EnergyBreakdown = { normalDay: 0, workout: 0, walking: 0, running: 0, cycling: 0, boxing: 0, other: 0, expenditure: 0, food: 0, balance: 0 };
 const unavailable = (error: any) => error?.code === 'PGRST205' || /schema cache|does not exist/i.test(error?.message || '');
-const timingFromWorkout = (workout: any) => {
-  const start = workout.started_at ? new Date(workout.started_at).getTime() : NaN;
-  const finish = workout.completed_at ? new Date(workout.completed_at).getTime() : NaN;
-  if (Number.isFinite(start) && Number.isFinite(finish)) {
-    return { elapsedMinutes: Math.max(0, (finish - start) / 60000), pausedSeconds: Number(workout.explicit_pause_seconds) || 0 };
-  }
-  // Legacy stored duration is already active duration, so there is no pause
-  // to subtract again when timestamps are unavailable.
-  return { elapsedMinutes: Math.max(0, Number(workout.workout_duration_minutes) || 0), pausedSeconds: 0 };
-};
 
 export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelResult {
   const { user } = useAuth();
@@ -99,33 +88,9 @@ export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelRes
     const estimateDayActivity = (day: string) => {
       const data = bucket(day);
       const weight = effectiveWeightAt(weights, day, (preferences as any).initial_weight_kg);
-      const categories = { workout: 0, walking: 0, running: 0, cycling: 0, boxing: 0, other: 0 };
-      const confidences: EnergyConfidence[] = [];
-
-      data.workouts.filter(workout => !workout.is_skipped && workout.completed_at).forEach(workout => {
-        const rows = workout.exercises || [];
-        const completed = rows.filter((exercise: any) => exercise.completed !== false);
-        const compound = completed.filter((exercise: any) => ['primary', 'compound'].includes(String(exercise.category).toLowerCase())).length;
-        const isolation = completed.filter((exercise: any) => ['accessory', 'specialization', 'core'].includes(String(exercise.category).toLowerCase())).length;
-        const timing = timingFromWorkout(workout);
-        const estimate = estimateWorkoutEnergy({ durationMinutes: timing.elapsedMinutes, pausedSeconds: timing.pausedSeconds, completedSets: completed.length, plannedSets: rows.length, compoundSets: compound, isolationSets: isolation, weightKg: weight.kg, hasActualFinish: !!workout.completed_at, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
-        categories.workout += estimate.netKcal;
-        confidences.push(estimate.confidence);
-      });
-
-      data.burns.filter(burn => burn.source !== 'workout').forEach(burn => {
-        const kind = ['walking', 'running', 'cycling', 'boxing'].includes(burn.activity_type) ? burn.activity_type : 'other';
-        if (burn.source === 'manual' && Number(burn.duration_minutes) > 0) {
-          const estimate = estimateActivity({ kind, date: day, weight, distanceKm: burn.distance_km, durationMinutes: burn.duration_minutes, history: activityHistory });
-          categories[kind as keyof typeof categories] += estimate.netKcal;
-          confidences.push(estimate.confidence);
-        } else {
-          categories.other += Math.max(0, Number(burn.calories) || 0);
-          confidences.push('low');
-        }
-      });
-      return { categories, total: Object.values(categories).reduce((sum, value) => sum + value, 0), confidences };
+      return estimateDayActivityShared({ date: day, workouts: data.workouts, burns: data.burns, weight, history: activityHistory });
     };
+
 
     const profileHeight = Number(preferences.height_cm) || 170;
     const lifestyle = (preferences as any).nonexercise_lifestyle || 'mostly_seated';
