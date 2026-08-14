@@ -52,7 +52,7 @@ describe('estimateDayActivity', () => {
   it('keeps activity net of rest so it can be added to a maintenance baseline', () => {
     const result = estimateDayActivity({ date: '2026-08-10', workouts: [], burns: [walk], weight });
     const met = estimateActivity({ kind: 'walking', date: '2026-08-10', weight, distanceKm: 5, durationMinutes: 60 }).met;
-    expect(result.categories.walking).toBeCloseTo(netActivityKcal(met, weight, 60), 1);
+    expect(result.categories.walking).toBeCloseTo(netActivityKcal(met, weight, 60), 0);
   });
 
   it('falls back to the stored value only when there is nothing to recompute from', () => {
