@@ -550,21 +550,31 @@ export function CalorieTrackerCompact() {
                 <button
                   type="button"
                   onClick={() => setIsProteinOpen(open => !open)}
-                  className={cn(
-                    "w-full py-3 text-left transition-colors",
-                    proteinTotal >= proteinGoal
-                      ? "text-energy-ink"
-                      : "hover:bg-muted/30"
-                  )}
+                  className="w-full py-3 text-left transition-colors hover:bg-muted/30"
                 >
-                  <div className="flex items-center justify-between"><div className="text-xs text-muted-foreground tracking-wide">Protein</div><span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide details' : 'View details'}</span></div>
-                  <div className={cn(
-                    "text-xl font-bold tabular-nums leading-tight",
-                    proteinTotal >= proteinGoal ? "text-energy-ink" : "text-foreground"
-                  )}>
-                    {Math.round(proteinTotal)}g
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold">Protein</div>
+                    <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">{Math.round(proteinTotal)}g / {proteinGoal}g · {Math.max(0, Math.round(proteinGoal - proteinTotal))}g remaining</div>
+                  <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+                    <div className="min-w-0">
+                      <div className="text-2xl font-semibold tracking-tight tabular-nums">
+                        {Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span>
+                      </div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-foreground transition-[width] duration-300"
+                          style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
+                      {proteinTotal >= proteinGoal
+                        ? `+${Math.round(proteinTotal - proteinGoal)}g over`
+                        : `${Math.round(proteinGoal - proteinTotal)}g left`}
+                    </div>
+                  </div>
+
                 </button>
               </div>
 
@@ -1078,17 +1088,7 @@ export function CalorieTrackerCompact() {
           <div className="flex items-center justify-between"><div className="text-sm font-semibold">Protein{mealDateSuffix}</div><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Hide</button></div>
 
           <div className="min-w-0 space-y-4">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 pb-3 border-b border-border">
-              <div className="min-w-0">
-                <div className="text-2xl font-semibold tracking-tight tabular-nums">{Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span></div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-foreground transition-[width] duration-300" style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }} /></div>
-              </div>
-              <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
-                {proteinTotal >= proteinGoal
-                  ? `+${Math.round(proteinTotal - proteinGoal)}g over`
-                  : `${Math.round(proteinGoal - proteinTotal)}g left`}
-              </div>
-            </div>
+
 
             <div>
               <Label className="text-xs text-muted-foreground">By meal</Label>
