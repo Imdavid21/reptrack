@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
-import { format, eachDayOfInterval, parseISO, differenceInMinutes, subDays } from 'date-fns';
+import { format, eachDayOfInterval, subDays } from 'date-fns';
 import { DateRange } from '@/contexts/DateRangeContext';
-import { calculateWorkoutCalories, resolveBodyweightKg } from '@/lib/workoutCalories';
+import { resolveBodyweightKg } from '@/lib/workoutCalories';
+import { estimateDayActivity } from '@/lib/dayActivity';
 import { ageOnDate, calculateRee, effectiveWeightAt, nonexerciseBaselineFactor } from '@/lib/energyEngineV3';
 
 interface CalorieDataPoint {
@@ -54,7 +55,7 @@ export function useCalorieHistory(dateRange: DateRange) {
           .lte('date', endDateStr),
         supabase
           .from('calorie_burns')
-          .select('date, calories, source, activity_type')
+          .select('date, calories, source, activity_type, duration_minutes, distance_km')
           .eq('user_id', user.id)
           .gte('date', startDateStr)
           .lte('date', endDateStr),
@@ -67,7 +68,9 @@ export function useCalorieHistory(dateRange: DateRange) {
             started_at,
             completed_at,
             workout_duration_minutes,
-            exercises ( category )
+            explicit_pause_seconds,
+            is_skipped,
+            exercises ( category, completed )
           `)
           .eq('user_id', user.id)
           .gte('date', startDateStr)
