@@ -540,6 +540,8 @@ export function CalorieTrackerCompact() {
                       isOverride={false}
                       totalBurnedToday={viewingToday ? totalBurned : 0}
                       isToday={viewingToday}
+                      calibrationAdjustment={energy.model?.calibrationAdjustment}
+                      formulaBaseline={energy.model?.formulaBaseline}
                     />
                   </div>
                 ) : (
@@ -592,6 +594,8 @@ export function CalorieTrackerCompact() {
                 isOverride={false}
                 totalBurnedToday={viewingToday ? totalBurned : 0}
                 isToday={viewingToday}
+                calibrationAdjustment={energy.model?.calibrationAdjustment}
+                formulaBaseline={energy.model?.formulaBaseline}
               />
             </div>
           )}
