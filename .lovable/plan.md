@@ -1,55 +1,41 @@
-# Deficit Mode
+# Lead with maintenance, not BMR
 
-A toggle in Settings flips the dashboard calorie card into a cutting-focused view: hard cap countdown, real-time net deficit (intake − burn − target), and protein elevated as the primary metric.
+The calorie tile currently headlines "BMR ESTIMATE 1665" and buries the number that actually drives your deficit (1962) as grey subtext. This flips the emphasis.
 
-## 1. Data model
+## What changes
 
-Add columns to `user_preferences` (migration):
-- `deficit_mode_enabled boolean default false`
-- `daily_deficit_target integer default 500` (kcal under maintenance)
-- `maintenance_calories integer` (nullable; falls back to `daily_calorie_goal + daily_deficit_target` if unset)
+The tile on the home screen becomes:
 
-When Deficit mode is ON, the effective intake cap = `maintenance_calories − daily_deficit_target` (or just `daily_calorie_goal` if maintenance is unset).
+```text
+MAINTENANCE (BEFORE EXERCISE)
+1,962 kcal/day
+Resting 1,665 + daily living                    >
+```
 
-## 2. Settings (`src/pages/Settings.tsx`)
+Expanded (tap to open), it keeps the live ticker and adds the chain:
 
-New compact "Deficit Mode" section under the existing Goals area:
-- Toggle switch (on/off)
-- When ON, reveal two inputs: Maintenance kcal, Deficit kcal/day (default 500)
-- Save/Done pattern consistent with existing Settings chips
+```text
+Resting burn (BMR)                    1,665 kcal/day
+Daily living (non-exercise)             +297 kcal
+Personal calibration                     -36 kcal
+-----------------------------------------------
+Maintenance before exercise            1,962 kcal
 
-## 3. Dashboard card (`src/components/health/CalorieTrackerCompact.tsx`)
+Burned at rest so far today          1,041.32 kcal   (live)
++ Logged activity today                 +420 kcal
+-----------------------------------------------
+Total burned so far                  1,461.32 kcal
+```
 
-Branch on `deficit_mode_enabled`:
+Plus one line of plain-English framing: logged workouts, walks, runs and rides are added on top of maintenance, which is why maintenance itself excludes them.
 
-**Normal mode** — unchanged.
+## Scope
 
-**Deficit mode** — restructured card:
-- Top row: small "DEFICIT" badge (pastel coral) next to the heading
-- Hero metric: **Calories remaining** = `cap + todayBurn − todayIntake`. Big number, "kcal left today" label. Goes red when negative.
-- Secondary strip (3 small stats):
-  - Net deficit today: `(maintenance − intake + burn)` with sign; green if ≥ target, amber if partial, red if surplus
-  - Protein: `consumed / goal g` — promoted to primary color, bold
-  - Burn: `+X kcal added` (from `useCalorieBurn`)
-- Progress ring/bar represents intake vs cap (fills then turns red on overflow)
-- Quick-add buttons unchanged
-
-Burn integration: pull from existing `useCalorieBurn` hook (already used elsewhere) and add it to the remaining budget.
-
-## 4. Dashboard badge (`src/pages/Dashboard.tsx`)
-
-Small "Deficit" pill near the header when the mode is on, so the state is visible without opening Settings.
+- Only the presentation of this tile changes. No change to how BMR, maintenance, deficit or net calories are calculated.
+- The tile appears in both normal and Deficit Mode on the home screen; both get the same new layout.
 
 ## Technical notes
 
-- New migration adds three nullable/defaulted columns; no breaking changes to existing rows.
-- `useUserPreferences` type extended with the three fields.
-- Reuses `useMeals` (intake), `useCalorieBurn` (burn), `usePreferences` (cap + protein goal). No new API calls.
-- Keeps the Dark AF aesthetic: pastel coral accent for deficit state, same `rounded-xl`, no gradients, no emojis.
-- No changes to Insights, History, or meal-logging flows.
-
-## Out of scope
-
-- Weekly deficit streak chart (can be added to Insights later)
-- Auto-detect from `weight_goal_type` (deferred per your "Settings + badge" choice)
-- Macro recalculation (carbs/fat targets stay as-is; only protein is emphasized visually)
+- `src/components/health/BmrBreakdownTile.tsx`: swap headline/subtext, add the breakdown rows in the expanded state.
+- The daily-living and calibration rows need the pieces that make up maintenance. `CalorieTrackerCompact.tsx` already reads `energy.model`, which carries `formulaRee`, `nonexerciseFactor`, `formulaBaseline`, `calibrationAdjustment` and `personalBaseline` — pass those through as optional props.
+- Fall back gracefully when the model row is absent (older days, incomplete profile): show headline maintenance and resting only, skip the calibration row.
