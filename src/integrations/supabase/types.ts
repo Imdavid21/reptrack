@@ -743,6 +743,7 @@ export type Database = {
           notes: string | null
           nutrition_source: string
           photo_url: string | null
+          potassium: number | null
           protein: number | null
           sodium: number | null
           source_metadata: Json
@@ -766,6 +767,7 @@ export type Database = {
           notes?: string | null
           nutrition_source?: string
           photo_url?: string | null
+          potassium?: number | null
           protein?: number | null
           sodium?: number | null
           source_metadata?: Json
@@ -789,6 +791,7 @@ export type Database = {
           notes?: string | null
           nutrition_source?: string
           photo_url?: string | null
+          potassium?: number | null
           protein?: number | null
           sodium?: number | null
           source_metadata?: Json
@@ -1105,6 +1108,7 @@ export type Database = {
           daily_deficit_target: number
           daily_fat_goal: number | null
           daily_fiber_goal: number | null
+          daily_potassium_goal: number | null
           daily_protein_goal: number
           daily_sodium_goal: number | null
           daily_sugar_goal: number | null
@@ -1145,6 +1149,7 @@ export type Database = {
           daily_deficit_target?: number
           daily_fat_goal?: number | null
           daily_fiber_goal?: number | null
+          daily_potassium_goal?: number | null
           daily_protein_goal?: number
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
@@ -1185,6 +1190,7 @@ export type Database = {
           daily_deficit_target?: number
           daily_fat_goal?: number | null
           daily_fiber_goal?: number | null
+          daily_potassium_goal?: number | null
           daily_protein_goal?: number
           daily_sodium_goal?: number | null
           daily_sugar_goal?: number | null
