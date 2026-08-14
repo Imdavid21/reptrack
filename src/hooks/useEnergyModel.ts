@@ -99,33 +99,9 @@ export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelRes
     const estimateDayActivity = (day: string) => {
       const data = bucket(day);
       const weight = effectiveWeightAt(weights, day, (preferences as any).initial_weight_kg);
-      const categories = { workout: 0, walking: 0, running: 0, cycling: 0, boxing: 0, other: 0 };
-      const confidences: EnergyConfidence[] = [];
-
-      data.workouts.filter(workout => !workout.is_skipped && workout.completed_at).forEach(workout => {
-        const rows = workout.exercises || [];
-        const completed = rows.filter((exercise: any) => exercise.completed !== false);
-        const compound = completed.filter((exercise: any) => ['primary', 'compound'].includes(String(exercise.category).toLowerCase())).length;
-        const isolation = completed.filter((exercise: any) => ['accessory', 'specialization', 'core'].includes(String(exercise.category).toLowerCase())).length;
-        const timing = timingFromWorkout(workout);
-        const estimate = estimateWorkoutEnergy({ durationMinutes: timing.elapsedMinutes, pausedSeconds: timing.pausedSeconds, completedSets: completed.length, plannedSets: rows.length, compoundSets: compound, isolationSets: isolation, weightKg: weight.kg, hasActualFinish: !!workout.completed_at, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
-        categories.workout += estimate.netKcal;
-        confidences.push(estimate.confidence);
-      });
-
-      data.burns.filter(burn => burn.source !== 'workout').forEach(burn => {
-        const kind = ['walking', 'running', 'cycling', 'boxing'].includes(burn.activity_type) ? burn.activity_type : 'other';
-        if (burn.source === 'manual' && Number(burn.duration_minutes) > 0) {
-          const estimate = estimateActivity({ kind, date: day, weight, distanceKm: burn.distance_km, durationMinutes: burn.duration_minutes, history: activityHistory });
-          categories[kind as keyof typeof categories] += estimate.netKcal;
-          confidences.push(estimate.confidence);
-        } else {
-          categories.other += Math.max(0, Number(burn.calories) || 0);
-          confidences.push('low');
-        }
-      });
-      return { categories, total: Object.values(categories).reduce((sum, value) => sum + value, 0), confidences };
+      return estimateDayActivityShared({ date: day, workouts: data.workouts, burns: data.burns, weight, history: activityHistory });
     };
+
 
     const profileHeight = Number(preferences.height_cm) || 170;
     const lifestyle = (preferences as any).nonexercise_lifestyle || 'mostly_seated';
