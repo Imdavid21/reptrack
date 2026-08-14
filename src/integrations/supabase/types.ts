@@ -565,11 +565,16 @@ export type Database = {
       exercises: {
         Row: {
           actual_reps: string | null
+          actual_rir: number | null
           actual_weight: string | null
           category: string
           completed: boolean | null
           id: string
           name: string
+          pain_score: number | null
+          prescription: Json | null
+          rom_quality: number | null
+          set_kind: string
           sort_order: number | null
           target_reps: string | null
           target_weight: string | null
@@ -577,11 +582,16 @@ export type Database = {
         }
         Insert: {
           actual_reps?: string | null
+          actual_rir?: number | null
           actual_weight?: string | null
           category: string
           completed?: boolean | null
           id?: string
           name: string
+          pain_score?: number | null
+          prescription?: Json | null
+          rom_quality?: number | null
+          set_kind?: string
           sort_order?: number | null
           target_reps?: string | null
           target_weight?: string | null
@@ -589,11 +599,16 @@ export type Database = {
         }
         Update: {
           actual_reps?: string | null
+          actual_rir?: number | null
           actual_weight?: string | null
           category?: string
           completed?: boolean | null
           id?: string
           name?: string
+          pain_score?: number | null
+          prescription?: Json | null
+          rom_quality?: number | null
+          set_kind?: string
           sort_order?: number | null
           target_reps?: string | null
           target_weight?: string | null
@@ -1108,6 +1123,7 @@ export type Database = {
           protein_target_locked: boolean
           rest_days: Json | null
           routine_setup_completed: boolean | null
+          show_bmr_on_dashboard: boolean | null
           sleep_goal: number | null
           training_focus: string | null
           training_split: string | null
@@ -1147,6 +1163,7 @@ export type Database = {
           protein_target_locked?: boolean
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
+          show_bmr_on_dashboard?: boolean | null
           sleep_goal?: number | null
           training_focus?: string | null
           training_split?: string | null
@@ -1186,6 +1203,7 @@ export type Database = {
           protein_target_locked?: boolean
           rest_days?: Json | null
           routine_setup_completed?: boolean | null
+          show_bmr_on_dashboard?: boolean | null
           sleep_goal?: number | null
           training_focus?: string | null
           training_split?: string | null
@@ -1263,6 +1281,7 @@ export type Database = {
       workouts: {
         Row: {
           completed_at: string | null
+          completion_percent: number | null
           created_at: string | null
           date: string
           day: string
@@ -1279,6 +1298,9 @@ export type Database = {
           pre_energy: number | null
           pre_motivation: number | null
           pre_soreness: number | null
+          readiness_band: string | null
+          readiness_id: string | null
+          session_key: string | null
           started_at: string | null
           user_id: string
           week_number: number
@@ -1286,6 +1308,7 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          completion_percent?: number | null
           created_at?: string | null
           date?: string
           day: string
@@ -1302,6 +1325,9 @@ export type Database = {
           pre_energy?: number | null
           pre_motivation?: number | null
           pre_soreness?: number | null
+          readiness_band?: string | null
+          readiness_id?: string | null
+          session_key?: string | null
           started_at?: string | null
           user_id: string
           week_number?: number
@@ -1309,6 +1335,7 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          completion_percent?: number | null
           created_at?: string | null
           date?: string
           day?: string
@@ -1325,12 +1352,23 @@ export type Database = {
           pre_energy?: number | null
           pre_motivation?: number | null
           pre_soreness?: number | null
+          readiness_band?: string | null
+          readiness_id?: string | null
+          session_key?: string | null
           started_at?: string | null
           user_id?: string
           week_number?: number
           workout_duration_minutes?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workouts_readiness_id_fkey"
+            columns: ["readiness_id"]
+            isOneToOne: false
+            referencedRelation: "readiness_checkins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
