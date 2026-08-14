@@ -14,6 +14,7 @@ import {
   DailyEnergyModel,
   effectiveWeightAt,
   ENERGY_MODEL_VERSION,
+  EnergyConfidence,
   nonexerciseBaselineFactor,
   calculateRee,
   ageOnDate,
