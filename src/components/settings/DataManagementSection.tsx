@@ -53,6 +53,9 @@ const TABLE_LABELS: Record<DataTable, string> = {
   post_workout_checkins: 'Post-workout Checks',
   mobility_assessments: 'Mobility Assessments',
   physique_checkins: 'Physique Checks',
+  energy_model_states: 'Energy Model States',
+  energy_targets: 'Energy Targets',
+  workout_pauses: 'Workout Pauses',
 };
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {

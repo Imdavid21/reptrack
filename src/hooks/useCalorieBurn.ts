@@ -302,7 +302,7 @@ export function useManualBurns(days: number = 30) {
       calculation_inputs?: Record<string, unknown>;
     }) => {
       const { id, ...fields } = input;
-      const { error } = await supabase.from('calorie_burns').update(fields).eq('id', id);
+      const { error } = await supabase.from('calorie_burns').update(fields as never).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

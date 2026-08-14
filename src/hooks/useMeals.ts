@@ -100,7 +100,7 @@ export function useMeals(date?: Date) {
 
       const { data, error } = await supabase
         .from('meals')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single();
