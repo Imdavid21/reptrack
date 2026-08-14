@@ -23,6 +23,8 @@ import {
   WeightObservation,
 } from '@/lib/energyEngineV3';
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
+import { estimateDayActivity as estimateDayActivityShared } from '@/lib/dayActivity';
+
 
 interface EnergyBreakdown {
   normalDay: number;
