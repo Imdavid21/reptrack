@@ -13,16 +13,12 @@ import {
   CalibrationDay,
   DailyEnergyModel,
   effectiveWeightAt,
-  EnergyConfidence,
   ENERGY_MODEL_VERSION,
-  estimateActivity,
-  estimateWorkoutEnergy,
   nonexerciseBaselineFactor,
   calculateRee,
   ageOnDate,
   WeightObservation,
 } from '@/lib/energyEngineV3';
-import { workoutIntensityOverride } from '@/lib/workoutCalories';
 import { estimateDayActivity as estimateDayActivityShared } from '@/lib/dayActivity';
 
 
@@ -49,16 +45,6 @@ interface EnergyModelResult {
 
 const emptyBreakdown: EnergyBreakdown = { normalDay: 0, workout: 0, walking: 0, running: 0, cycling: 0, boxing: 0, other: 0, expenditure: 0, food: 0, balance: 0 };
 const unavailable = (error: any) => error?.code === 'PGRST205' || /schema cache|does not exist/i.test(error?.message || '');
-const timingFromWorkout = (workout: any) => {
-  const start = workout.started_at ? new Date(workout.started_at).getTime() : NaN;
-  const finish = workout.completed_at ? new Date(workout.completed_at).getTime() : NaN;
-  if (Number.isFinite(start) && Number.isFinite(finish)) {
-    return { elapsedMinutes: Math.max(0, (finish - start) / 60000), pausedSeconds: Number(workout.explicit_pause_seconds) || 0 };
-  }
-  // Legacy stored duration is already active duration, so there is no pause
-  // to subtract again when timestamps are unavailable.
-  return { elapsedMinutes: Math.max(0, Number(workout.workout_duration_minutes) || 0), pausedSeconds: 0 };
-};
 
 export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelResult {
   const { user } = useAuth();
