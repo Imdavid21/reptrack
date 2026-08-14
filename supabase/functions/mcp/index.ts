@@ -84,7 +84,7 @@ function createServer(ctx:{user:{id:string},db:any}) {
       const started=Date.now();
       try {
         let args=raw;
-        if(name==="get_recent_fitness_data") { const {data:p}=await ctx.db.from("user_preferences").select("timezone").maybeSingle(); const tz=p?.timezone||"Asia/Kolkata", end=todayIn(tz); args={start_date:minusDays(end,raw.days??14),end_date:end}; }
+        if(name==="get_recent_fitness_data") { const {data:p}=await ctx.db.from("user_preferences").select("*").maybeSingle(); const tz=(p as any)?.timezone||"Asia/Kolkata", end=todayIn(tz); args={start_date:minusDays(end,raw.days??14),end_date:end}; }
         const result=await executeTool(name,args,ctx.db); await audit(ctx.user.id,name,started,true,null);
         return { content:[{type:"text",text:JSON.stringify(result)}], structuredContent:result };
       } catch(e) { const category=e instanceof Error?e.message:"INTERNAL_ERROR"; await audit(ctx.user.id,name,started,false,category); return {isError:true,content:[{type:"text",text:JSON.stringify({error:"Unable to retrieve fitness data",category})}]}; }
