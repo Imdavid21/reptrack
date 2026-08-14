@@ -440,7 +440,8 @@ function ProgressCard() {
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
-              WORKOUTS
+              WORKOUTS THIS MONTH
+
             </Typography>
             <Typography variant="caption" sx={{
               fontWeight: 600,
