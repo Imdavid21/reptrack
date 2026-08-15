@@ -14,7 +14,11 @@ export interface DraftWorkout {
   step: 'select-day' | 'review' | 'exercises';
   lastSavedAt: string;
   workoutStartTime?: string;
-  /** Active session time; includes background time and excludes only explicit pauses. */
+  /** Manually set session start (used for back-dated logging). */
+  manualStart?: string;
+  /** Manually set session duration in minutes (used for back-dated logging). */
+  manualDuration?: number;
+
   elapsedSeconds?: number;
   pausedSeconds?: number;
   pauseStartedAt?: string;
