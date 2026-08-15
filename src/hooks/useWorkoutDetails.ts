@@ -132,6 +132,9 @@ export function useWorkoutDetails(workoutId: string | null) {
       category: string;
       target_weight?: string;
       target_reps?: string;
+      actual_weight?: string;
+      actual_reps?: string;
+      completed?: boolean;
       sort_order: number;
     }) => {
       const { error } = await supabase
@@ -142,8 +145,10 @@ export function useWorkoutDetails(workoutId: string | null) {
           category: exercise.category,
           target_weight: exercise.target_weight,
           target_reps: exercise.target_reps,
+          actual_weight: exercise.actual_weight ?? null,
+          actual_reps: exercise.actual_reps ?? null,
           sort_order: exercise.sort_order,
-          completed: false,
+          completed: exercise.completed ?? false,
         });
 
       if (error) throw error;
@@ -162,6 +167,43 @@ export function useWorkoutDetails(workoutId: string | null) {
         .delete()
         .eq('id', exerciseId);
 
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      invalidateSetDerivedQueries(queryClient);
+    },
+  });
+
+  const deleteExerciseGroupMutation = useMutation({
+    mutationFn: async (exerciseIds: string[]) => {
+      if (exerciseIds.length === 0) return;
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .in('id', exerciseIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      invalidateSetDerivedQueries(queryClient);
+    },
+  });
+
+  const renameExerciseGroupMutation = useMutation({
+    mutationFn: async (payload: { updates: { id: string; name: string }[]; category?: string }) => {
+      const results = await Promise.all(
+        payload.updates.map(u =>
+          supabase
+            .from('exercises')
+            .update(payload.category ? { name: u.name, category: payload.category } : { name: u.name })
+            .eq('id', u.id)
+        )
+      );
+      const error = results.find(r => r.error)?.error;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -198,6 +240,8 @@ export function useWorkoutDetails(workoutId: string | null) {
     createExercise: createExerciseMutation.mutateAsync,
     isCreatingExercise: createExerciseMutation.isPending,
     deleteExercise: deleteExerciseMutation.mutateAsync,
+    deleteExerciseGroup: deleteExerciseGroupMutation.mutateAsync,
+    renameExerciseGroup: renameExerciseGroupMutation.mutateAsync,
     isDeletingExercise: deleteExerciseMutation.isPending,
     reorderExercises: reorderExercisesMutation.mutateAsync,
   };
