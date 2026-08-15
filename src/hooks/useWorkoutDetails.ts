@@ -132,6 +132,9 @@ export function useWorkoutDetails(workoutId: string | null) {
       category: string;
       target_weight?: string;
       target_reps?: string;
+      actual_weight?: string;
+      actual_reps?: string;
+      completed?: boolean;
       sort_order: number;
     }) => {
       const { error } = await supabase
@@ -142,8 +145,10 @@ export function useWorkoutDetails(workoutId: string | null) {
           category: exercise.category,
           target_weight: exercise.target_weight,
           target_reps: exercise.target_reps,
+          actual_weight: exercise.actual_weight ?? null,
+          actual_reps: exercise.actual_reps ?? null,
           sort_order: exercise.sort_order,
-          completed: false,
+          completed: exercise.completed ?? false,
         });
 
       if (error) throw error;
