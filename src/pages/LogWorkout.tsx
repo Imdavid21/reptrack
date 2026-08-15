@@ -690,15 +690,32 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              {draft && draft.exercises?.length > 0 && (
+                <button
+                  onClick={handleResumeDraft}
+                  className="w-full rounded-[24px] bg-foreground text-background p-5 flex items-center gap-3 text-left active:scale-[.99] transition-transform"
+                >
+                  <span className="h-10 w-10 rounded-xl bg-background/15 flex items-center justify-center">
+                    <Dumbbell className="h-5 w-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">RESUME SESSION</span>
+                    <span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span>
+                    <span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
               <div className="flex items-center justify-between">
                 <span className="type-caption">Logging for</span>
-                <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
               </div>
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 selectedDate={selectedDate}
                 onSelect={handleDaySelect}
               />
+
 
               {preferences?.adaptive_mode_enabled && (
                 <motion.div variants={staggerItem}>
