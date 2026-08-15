@@ -191,6 +191,40 @@ export default function AdaptiveWorkout() {
     {sessionStartedAt && stage !== 'prepare' && <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><Button size="small" startIcon={<ArrowLeft size={15}/>} onClick={() => setExitOpen(true)} sx={{ px: 0, color: 'text.secondary', textTransform: 'none' }}>Back</Button><Button size="small" startIcon={pauseStartedAt ? <Play size={14}/> : <Pause size={14}/>} onClick={togglePause} sx={{ color: 'text.secondary', textTransform: 'none' }}>{pauseStartedAt ? 'Resume' : 'Pause'} · {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}</Button></Box>}
     {stage === 'prepare' && <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Box component="section" sx={{ pt: { xs: 1, sm: 2 } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <Button
+            size="small"
+            onClick={() => setLogOptionsOpen(value => !value)}
+            startIcon={<CalendarDays size={14}/>}
+            sx={{
+              color: isBackdated ? 'text.primary' : 'text.secondary',
+              textTransform: 'none',
+              borderRadius: 6,
+              px: 1.5,
+              py: .5,
+              bgcolor: isBackdated ? 'action.selected' : 'transparent',
+              border: 1,
+              borderColor: isBackdated ? 'action.selected' : 'divider',
+              '&:hover': { bgcolor: isBackdated ? 'action.selected' : 'action.hover' },
+            }}
+          >
+            {isBackdated
+              ? `${new Date(logDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}${manualTime ? ` · ${manualTime}` : ''}${manualDuration ? ` · ${manualDuration}m` : ''}`
+              : 'Log live'}
+          </Button>
+        </Box>
+        {logOptionsOpen && <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}>
+            <Typography variant="body2" fontWeight={600}>Log for</Typography>
+            {isBackdated && <Button size="small" onClick={() => { setLogDate(localDateKey()); setManualTime(''); setManualDuration(''); }} sx={{ ml: 'auto', color: 'text.secondary', textTransform: 'none' }}>Reset to now</Button>}
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
+            <TextField size="small" type="date" label="Date" value={logDate} onChange={event => setLogDate(event.target.value)} InputLabelProps={{ shrink: true }}/>
+            <TextField size="small" type="time" label="Start" value={manualTime} onChange={event => setManualTime(event.target.value)} InputLabelProps={{ shrink: true }}/>
+            <TextField size="small" type="number" label="Minutes" value={manualDuration} onChange={event => setManualDuration(event.target.value)} placeholder="60" InputLabelProps={{ shrink: true }} inputProps={{ min: 1 }}/>
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{isBackdated ? 'This session saves to the date and time above.' : 'Leave as is to log this session live.'}</Typography>
+        </Box>}
         <Typography variant="overline" color="text.secondary">{key === 'recovery' ? 'Optional conditioning' : 'Next in sequence'}</Typography>
         <Typography variant="h1" sx={{ mt: .75 }}>{template.name}</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 560 }}>{template.objective}</Typography>
