@@ -784,6 +784,14 @@ export default function LogWorkout() {
                     <p className="text-xs text-muted-foreground uppercase">SETS</p>
                   </div>
                   <button
+                    onClick={() => setShowTimeDialog(true)}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                    title="Set session time"
+                    aria-label="Set session start time and duration"
+                  >
+                    <Clock size={14} />
+                  </button>
+                  <button
                     onClick={handleEditExercises}
                     className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
                     title="Edit exercises"
