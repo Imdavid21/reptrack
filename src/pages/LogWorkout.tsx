@@ -531,12 +531,10 @@ export default function LogWorkout() {
       return;
     }
 
-    const durationMinutes = workoutStartTime
-      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000)
-      : undefined;
+    const times = resolveSessionTimes(workoutStartTime);
 
     try {
-      const saveDate = resolveSaveDate(workoutStartTime);
+      const saveDate = resolveSaveDate(times.startedAt);
       console.log('[FinishWorkout] Saving…', { completedSets, totalSets, exerciseCount: exercises.length, date: localDateKey(saveDate) });
       await createWorkout({
         day: selectedDay,
@@ -544,9 +542,9 @@ export default function LogWorkout() {
         week_number: weekNumber,
         date: saveDate,
         exercises,
-        durationMinutes,
-        startedAt: workoutStartTime || undefined,
-        completedAt: new Date(),
+        durationMinutes: times.durationMinutes,
+        startedAt: times.startedAt,
+        completedAt: times.completedAt,
       });
       // Remember which exercises the user actually trained (for the picker).
       recordUsage(
@@ -571,13 +569,17 @@ export default function LogWorkout() {
     }
   };
 
+  const hasCompletedProgress = exercises.some(ex => ex.sets.some(s => s.completed));
+
   const handleBack = () => {
     if (step === 'review') {
-      // Going back to day selection — only clear exercises if nothing has been completed
-      const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
-      if (!hasCompletedSets) {
-        setExercises([]);
+      // An active session must never be dropped by a back tap — offer to pause
+      // it (draft stays saved) or discard it explicitly.
+      if (hasCompletedProgress || workoutStartTime) {
+        setShowExitDialog(true);
+        return;
       }
+      setExercises([]);
       setStep('select-day');
     } else if (step === 'exercises') {
       if (currentSetIndex > 0) {
@@ -591,6 +593,26 @@ export default function LogWorkout() {
       }
     }
   };
+
+  // Leave the session running in the background — the draft is already saved,
+  // so the Resume card on Today (and here) picks it right back up.
+  const handlePauseAndExit = () => {
+    setShowExitDialog(false);
+    toast.info('Session saved — resume it anytime');
+    navigate('/app');
+  };
+
+  const handleDiscardSession = () => {
+    setShowExitDialog(false);
+    clearDraft();
+    setExercises([]);
+    setWorkoutStartTime(null);
+    setManualStart(null);
+    setManualDuration(null);
+    setDraftRestored(true);
+    setStep('select-day');
+  };
+
 
   // Switch to a different day from the review screen — preserve any completed progress
   const handleSwitchDay = (dayKey: string) => {
