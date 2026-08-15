@@ -169,6 +169,17 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {workout && (
+                <SessionTimeDialog
+                    open={showTimeDialog}
+                    onOpenChange={setShowTimeDialog}
+                    startTime={workout.started_at ? new Date(workout.started_at) : null}
+                    durationMinutes={workout.workout_duration_minutes ?? null}
+                    date={parseDateKey(workout.date)}
+                    onSave={handleSaveTime}
+                />
+            )}
         </>
     );
 }
