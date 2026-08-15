@@ -385,12 +385,31 @@ export default function LogWorkout() {
 
   // Final safety net against mis-dated saves: a session that was actually
   // trained today must never land on the draft's stale calendar date. If the
-  // selected date isn't today but the session clock started today, snap it.
+  // selected date isn't today but the session clock started today, snap it —
+  // unless the user deliberately picked a date or set a manual session time.
   const resolveSaveDate = (startedAt?: Date | null) => {
     const todayKey = localDateKey(new Date());
+    if (dateTouched || manualStart) return selectedDate;
     if (localDateKey(selectedDate) === todayKey) return selectedDate;
     if (startedAt && localDateKey(startedAt) === todayKey) return new Date();
     return selectedDate;
+  };
+
+  // Explicit session time wins over the live timer (back-dated entries).
+  const resolveSessionTimes = (liveStart: Date | null) => {
+    if (manualStart) {
+      const duration = manualDuration ?? 60;
+      return {
+        startedAt: manualStart,
+        completedAt: new Date(manualStart.getTime() + duration * 60000),
+        durationMinutes: duration,
+      };
+    }
+    const startedAt = liveStart || new Date();
+    const durationMinutes = liveStart
+      ? Math.max(1, Math.round((Date.now() - liveStart.getTime()) / 60000))
+      : undefined;
+    return { startedAt, completedAt: new Date(), durationMinutes };
   };
 
   const handleQuickLog = async () => {
@@ -399,15 +418,17 @@ export default function LogWorkout() {
       return;
     }
     try {
-      const saveDate = resolveSaveDate(new Date());
+      const times = resolveSessionTimes(workoutStartTime);
+      const saveDate = resolveSaveDate(times.startedAt);
       await createWorkout({
         day: selectedDay,
         day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
         date: saveDate,
         exercises: [],
-        startedAt: new Date(),
-        completedAt: new Date(),
+        durationMinutes: times.durationMinutes,
+        startedAt: times.startedAt,
+        completedAt: times.completedAt,
       });
       clearDraft();
       toast.success('Workout logged! 💪');
@@ -416,6 +437,7 @@ export default function LogWorkout() {
       toast.error('Failed to save workout');
     }
   };
+
 
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
