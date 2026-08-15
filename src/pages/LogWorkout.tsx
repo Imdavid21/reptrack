@@ -27,9 +27,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Plus, Pencil } from 'lucide-react';
+import { ChevronLeft, Plus, Pencil, Clock, Dumbbell, ChevronRight } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
+import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -169,6 +171,17 @@ export default function LogWorkout() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
+  // Manual session time (used when back-dating or correcting a quick entry)
+  const [manualStart, setManualStart] = useState<Date | null>(null);
+  const [manualDuration, setManualDuration] = useState<number | null>(null);
+  const [showTimeDialog, setShowTimeDialog] = useState(false);
+  // Guard: switching days would rebuild the exercise list and wipe logged sets
+  const [pendingDaySelect, setPendingDaySelect] = useState<{ day: string; date: Date; week: number } | null>(null);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  // True once the user deliberately picks a log date (enables back-dating)
+  const [dateTouched, setDateTouched] = useState(false);
+
+
 
   const splitDays = useMemo(() => {
     // Single source of truth: the chosen training split wins unless it's
@@ -225,6 +238,8 @@ export default function LogWorkout() {
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
+      if (draft.manualStart) setManualStart(new Date(draft.manualStart));
+      if (draft.manualDuration) setManualDuration(draft.manualDuration);
       if (draft.workoutStartTime) {
         setWorkoutStartTime(new Date(draft.workoutStartTime));
       } else {
@@ -236,31 +251,35 @@ export default function LogWorkout() {
         }
       }
       setDraftRestored(true);
-      toast.info('Restored your previous session');
+      toast.info('Resumed your session');
     }
   }, [loaded, draft, draftRestored]);
 
   // Auto-save draft
   useEffect(() => {
     if (step === 'select-day' || !selectedDay) return;
-    const timeoutId = setTimeout(() => {
-      saveDraft({
-        day: selectedDay,
-        dayName: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || ''),
-        date: selectedDate.toISOString(),
-        weekNumber,
-        exercises,
-        habits: { pullups: 0, water_intake: 0, sleep_hours: 0 },
-        currentExerciseIndex,
-        currentSetIndex,
-        step,
-        workoutStartTime: workoutStartTime?.toISOString(),
-      });
-    }, 500);
+    const payload = {
+      day: selectedDay,
+      dayName: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || ''),
+      date: selectedDate.toISOString(),
+      weekNumber,
+      exercises,
+      habits: { pullups: 0, water_intake: 0, sleep_hours: 0 },
+      currentExerciseIndex,
+      currentSetIndex,
+      step,
+      workoutStartTime: workoutStartTime?.toISOString(),
+      manualStart: manualStart?.toISOString(),
+      manualDuration: manualDuration ?? undefined,
+    };
+    // Persist immediately (no data loss if the app is killed within the debounce
+    // window), then again after the debounce so React state settles.
+    saveDraft(payload);
+    const timeoutId = setTimeout(() => saveDraft(payload), 500);
     return () => clearTimeout(timeoutId);
-  }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
+  }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, manualStart, manualDuration, saveDraft, splitDays]);
 
-  const handleDaySelect = (day: string, date: Date, week: number) => {
+  const applyDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
@@ -274,6 +293,24 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setStep('review');
   };
+
+  const handleDaySelect = (day: string, date: Date, week: number) => {
+    // Never silently rebuild the exercise list over a session that already has
+    // logged sets — that's how in-progress work used to disappear.
+    const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
+    if (hasCompletedSets) {
+      setPendingDaySelect({ day, date, week });
+      return;
+    }
+    applyDaySelect(day, date, week);
+  };
+
+  // Jump back into the saved session from the day picker
+  const handleResumeDraft = () => {
+    if (!draft) return;
+    setStep(draft.step === 'review' ? 'review' : 'exercises');
+  };
+
 
   // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
   // that day's review, with last-used weights already applied. Skipped if a
@@ -351,12 +388,31 @@ export default function LogWorkout() {
 
   // Final safety net against mis-dated saves: a session that was actually
   // trained today must never land on the draft's stale calendar date. If the
-  // selected date isn't today but the session clock started today, snap it.
+  // selected date isn't today but the session clock started today, snap it —
+  // unless the user deliberately picked a date or set a manual session time.
   const resolveSaveDate = (startedAt?: Date | null) => {
     const todayKey = localDateKey(new Date());
+    if (dateTouched || manualStart) return selectedDate;
     if (localDateKey(selectedDate) === todayKey) return selectedDate;
     if (startedAt && localDateKey(startedAt) === todayKey) return new Date();
     return selectedDate;
+  };
+
+  // Explicit session time wins over the live timer (back-dated entries).
+  const resolveSessionTimes = (liveStart: Date | null) => {
+    if (manualStart) {
+      const duration = manualDuration ?? 60;
+      return {
+        startedAt: manualStart,
+        completedAt: new Date(manualStart.getTime() + duration * 60000),
+        durationMinutes: duration,
+      };
+    }
+    const startedAt = liveStart || new Date();
+    const durationMinutes = liveStart
+      ? Math.max(1, Math.round((Date.now() - liveStart.getTime()) / 60000))
+      : undefined;
+    return { startedAt, completedAt: new Date(), durationMinutes };
   };
 
   const handleQuickLog = async () => {
@@ -365,15 +421,17 @@ export default function LogWorkout() {
       return;
     }
     try {
-      const saveDate = resolveSaveDate(new Date());
+      const times = resolveSessionTimes(workoutStartTime);
+      const saveDate = resolveSaveDate(times.startedAt);
       await createWorkout({
         day: selectedDay,
         day_name: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || 'Workout'),
         week_number: weekNumber,
         date: saveDate,
         exercises: [],
-        startedAt: new Date(),
-        completedAt: new Date(),
+        durationMinutes: times.durationMinutes,
+        startedAt: times.startedAt,
+        completedAt: times.completedAt,
       });
       clearDraft();
       toast.success('Workout logged! 💪');
@@ -382,6 +440,7 @@ export default function LogWorkout() {
       toast.error('Failed to save workout');
     }
   };
+
 
 
   const handleExerciseChange = (updatedExercise: WorkoutExercise) => {
@@ -472,12 +531,10 @@ export default function LogWorkout() {
       return;
     }
 
-    const durationMinutes = workoutStartTime
-      ? Math.round((Date.now() - workoutStartTime.getTime()) / 60000)
-      : undefined;
+    const times = resolveSessionTimes(workoutStartTime);
 
     try {
-      const saveDate = resolveSaveDate(workoutStartTime);
+      const saveDate = resolveSaveDate(times.startedAt);
       console.log('[FinishWorkout] Saving…', { completedSets, totalSets, exerciseCount: exercises.length, date: localDateKey(saveDate) });
       await createWorkout({
         day: selectedDay,
@@ -485,9 +542,9 @@ export default function LogWorkout() {
         week_number: weekNumber,
         date: saveDate,
         exercises,
-        durationMinutes,
-        startedAt: workoutStartTime || undefined,
-        completedAt: new Date(),
+        durationMinutes: times.durationMinutes,
+        startedAt: times.startedAt,
+        completedAt: times.completedAt,
       });
       // Remember which exercises the user actually trained (for the picker).
       recordUsage(
@@ -512,13 +569,17 @@ export default function LogWorkout() {
     }
   };
 
+  const hasCompletedProgress = exercises.some(ex => ex.sets.some(s => s.completed));
+
   const handleBack = () => {
     if (step === 'review') {
-      // Going back to day selection — only clear exercises if nothing has been completed
-      const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
-      if (!hasCompletedSets) {
-        setExercises([]);
+      // An active session must never be dropped by a back tap — offer to pause
+      // it (draft stays saved) or discard it explicitly.
+      if (hasCompletedProgress || workoutStartTime) {
+        setShowExitDialog(true);
+        return;
       }
+      setExercises([]);
       setStep('select-day');
     } else if (step === 'exercises') {
       if (currentSetIndex > 0) {
@@ -532,6 +593,26 @@ export default function LogWorkout() {
       }
     }
   };
+
+  // Leave the session running in the background — the draft is already saved,
+  // so the Resume card on Today (and here) picks it right back up.
+  const handlePauseAndExit = () => {
+    setShowExitDialog(false);
+    toast.info('Session saved — resume it anytime');
+    navigate('/app');
+  };
+
+  const handleDiscardSession = () => {
+    setShowExitDialog(false);
+    clearDraft();
+    setExercises([]);
+    setWorkoutStartTime(null);
+    setManualStart(null);
+    setManualDuration(null);
+    setDraftRestored(true);
+    setStep('select-day');
+  };
+
 
   // Switch to a different day from the review screen — preserve any completed progress
   const handleSwitchDay = (dayKey: string) => {

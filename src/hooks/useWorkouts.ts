@@ -322,19 +322,51 @@ export function useWorkouts() {
     mutationFn: async (workout: Partial<Workout> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
 
+      const patch: Record<string, any> = {};
+      if ((workout as any).is_skipped !== undefined) patch.is_skipped = (workout as any).is_skipped;
+      if ((workout as any).notes !== undefined) patch.notes = (workout as any).notes;
+      if (workout.date !== undefined) patch.date = workout.date;
+      if (workout.started_at !== undefined) patch.started_at = workout.started_at;
+      if (workout.completed_at !== undefined) patch.completed_at = workout.completed_at;
+      if (workout.workout_duration_minutes !== undefined) patch.workout_duration_minutes = workout.workout_duration_minutes;
+
       const { data, error } = await supabase
         .from('workouts')
-        .update({
-          is_skipped: (workout as any).is_skipped, // Cast as any if column not in type yet
-          notes: (workout as any).notes,
-        })
+        .update(patch)
         .eq('id', workout.id)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Keep the linked calorie burn consistent when duration or date changes.
+      if (workout.workout_duration_minutes !== undefined || workout.date !== undefined) {
+        const { data: burn } = await supabase
+          .from('calorie_burns')
+          .select('id,duration_minutes,calories')
+          .eq('user_id', user.id)
+          .eq('source', 'workout')
+          .eq('activity_type', `workout:${workout.id}`)
+          .maybeSingle();
+
+        if (burn) {
+          const burnPatch: Record<string, any> = {};
+          if (workout.date !== undefined) burnPatch.date = workout.date;
+          if (workout.workout_duration_minutes !== undefined) {
+            const oldDuration = Number(burn.duration_minutes) || 0;
+            const newDuration = Number(workout.workout_duration_minutes) || 0;
+            burnPatch.duration_minutes = newDuration;
+            if (oldDuration > 0 && newDuration > 0) {
+              burnPatch.calories = Math.round((Number(burn.calories) || 0) * (newDuration / oldDuration));
+            }
+          }
+          await supabase.from('calorie_burns').update(burnPatch).eq('id', burn.id);
+        }
+      }
+
       return data;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
