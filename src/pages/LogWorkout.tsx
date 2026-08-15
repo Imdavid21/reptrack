@@ -861,6 +861,63 @@ export default function LogWorkout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Switching day over an in-progress session */}
+      <AlertDialog open={pendingDaySelect !== null} onOpenChange={(open) => { if (!open) setPendingDaySelect(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard current session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have logged sets in this session. Switching days rebuilds the exercise list and discards them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDaySelect(null)}>Keep session</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDaySelect) applyDaySelect(pendingDaySelect.day, pendingDaySelect.date, pendingDaySelect.week);
+                setPendingDaySelect(null);
+              }}
+            >
+              Switch & discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leaving an active session */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved. You can pause and resume it later, or discard it completely.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <button
+              type="button"
+              onClick={handleDiscardSession}
+              className="h-10 px-4 rounded-xl border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              Discard
+            </button>
+            <AlertDialogAction onClick={handlePauseAndExit}>Pause & exit</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Manual session time (back-dated logging or corrections) */}
+      <SessionTimeDialog
+        open={showTimeDialog}
+        onOpenChange={setShowTimeDialog}
+        startTime={manualStart ?? workoutStartTime}
+        durationMinutes={manualDuration}
+        date={selectedDate}
+        onSave={(start, mins) => { setManualStart(start); setManualDuration(mins); }}
+        onClear={manualStart ? () => { setManualStart(null); setManualDuration(null); } : undefined}
+      />
     </MainLayout>
   );
 }
