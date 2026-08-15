@@ -52,7 +52,7 @@ export function isResumableDraft(draft: DraftWorkout | null | undefined): boolea
 }
 
 export function useDraftWorkout() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [draft, setDraft] = useState<DraftWorkout | null>(null);
   const [loaded, setLoaded] = useState(false);
   const pendingSaveRef = useRef<DraftWorkout | null>(null);
@@ -64,6 +64,10 @@ export function useDraftWorkout() {
 
   // Load draft from localStorage on mount
   useEffect(() => {
+    // Wait for auth to settle. Reporting "loaded with no draft" while the
+    // session is still resolving makes consumers mark the restore as done and
+    // silently skip the paused session that arrives a tick later.
+    if (authLoading) return;
     if (!user) {
       setLoaded(true);
       return;
@@ -96,7 +100,7 @@ export function useDraftWorkout() {
       }
     }
     setLoaded(true);
-  }, [user, getKey]);
+  }, [user, authLoading, getKey]);
 
   // Aggressive persistence — save immediately when app is backgrounded, closed, or killed
   useEffect(() => {
