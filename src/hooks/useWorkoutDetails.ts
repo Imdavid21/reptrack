@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { WorkoutExercise } from './useWorkouts';
+import { useUserPreferences } from './useUserPreferences';
+import { syncWorkoutEnergy } from '@/lib/workoutEnergySync';
 
 // Editing a set from here (History → "tap any set to edit weight & reps") is
 // the same underlying `exercises` row every PR/volume/progression view reads
@@ -13,6 +15,15 @@ import { WorkoutExercise } from './useWorkouts';
 // refetch them.
 function invalidateSetDerivedQueries(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
+  // Editing sets changes the workout's estimated burn, so every energy surface
+  // (Insights charts, daily net calories, history totals) has to refetch too.
+  queryClient.invalidateQueries({ queryKey: ['calorie-burns'] });
+  queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+  queryClient.invalidateQueries({ queryKey: ['dailyBurns'] });
+  queryClient.invalidateQueries({ queryKey: ['workout-with-exercises'] });
+  queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+  queryClient.invalidateQueries({ queryKey: ['muscleBalance'] });
+  queryClient.invalidateQueries({ queryKey: ['workoutHistory'] });
   // 'exerciseSets' is the one real query key behind volume charts, exercise
   // progression, and muscle balance — NOT 'volumeData'/'exerciseProgression',
   // which read like plausible names but match no actual useQuery anywhere in
@@ -56,6 +67,20 @@ export interface WorkoutWithDetails {
 export function useWorkoutDetails(workoutId: string | null) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { preferences } = useUserPreferences();
+
+  const resyncEnergy = async () => {
+    if (!user || !workoutId) return;
+    try {
+      await syncWorkoutEnergy(supabase, {
+        userId: user.id,
+        workoutId,
+        initialWeightKg: preferences?.initial_weight_kg,
+      });
+    } catch (error) {
+      console.error('[useWorkoutDetails] failed to resync workout energy', error);
+    }
+  };
 
   const query = useQuery({
     queryKey: ['workout-details', workoutId],
@@ -118,7 +143,8 @@ export function useWorkoutDetails(workoutId: string | null) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await resyncEnergy();
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       invalidateSetDerivedQueries(queryClient);
@@ -153,7 +179,8 @@ export function useWorkoutDetails(workoutId: string | null) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await resyncEnergy();
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       invalidateSetDerivedQueries(queryClient);
@@ -169,7 +196,8 @@ export function useWorkoutDetails(workoutId: string | null) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await resyncEnergy();
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       invalidateSetDerivedQueries(queryClient);
@@ -186,7 +214,8 @@ export function useWorkoutDetails(workoutId: string | null) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await resyncEnergy();
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       invalidateSetDerivedQueries(queryClient);
@@ -206,7 +235,8 @@ export function useWorkoutDetails(workoutId: string | null) {
       const error = results.find(r => r.error)?.error;
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await resyncEnergy();
       queryClient.invalidateQueries({ queryKey: ['workout-details', workoutId] });
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       invalidateSetDerivedQueries(queryClient);
