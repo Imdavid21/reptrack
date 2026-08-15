@@ -27,9 +27,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Plus, Pencil } from 'lucide-react';
+import { ChevronLeft, Plus, Pencil, Clock, Dumbbell, ChevronRight } from 'lucide-react';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
+import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
+
 import {
   AlertDialog,
   AlertDialogContent,
