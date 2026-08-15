@@ -178,6 +178,9 @@ export default function LogWorkout() {
   // Guard: switching days would rebuild the exercise list and wipe logged sets
   const [pendingDaySelect, setPendingDaySelect] = useState<{ day: string; date: Date; week: number } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  // True once the user deliberately picks a log date (enables back-dating)
+  const [dateTouched, setDateTouched] = useState(false);
+
 
 
   const splitDays = useMemo(() => {
