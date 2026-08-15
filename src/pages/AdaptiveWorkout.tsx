@@ -246,16 +246,6 @@ export default function AdaptiveWorkout() {
         </Box>
       </Box>
 
-      <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}><CalendarDays size={15}/><Typography variant="body2" fontWeight={600}>Log for</Typography>{isBackdated && <Button size="small" onClick={() => { setLogDate(localDateKey()); setManualTime(''); setManualDuration(''); }} sx={{ ml: 'auto', color: 'text.secondary', textTransform: 'none' }}>Reset to now</Button>}</Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
-          <TextField size="small" type="date" label="Date" value={logDate} onChange={event => setLogDate(event.target.value)} InputLabelProps={{ shrink: true }}/>
-          <TextField size="small" type="time" label="Start" value={manualTime} onChange={event => setManualTime(event.target.value)} InputLabelProps={{ shrink: true }}/>
-          <TextField size="small" type="number" label="Minutes" value={manualDuration} onChange={event => setManualDuration(event.target.value)} placeholder="60" InputLabelProps={{ shrink: true }} inputProps={{ min: 1 }}/>
-        </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{isBackdated ? 'This session saves to the date and time above.' : 'Leave as is to log this session live.'}</Typography>
-      </Box>
-
       <Box sx={{ mt: 'auto', pt: 4 }}>
         <Button fullWidth size="large" variant="contained" startIcon={<Play size={17}/>} onClick={() => beginSession()} sx={{ minHeight: 54, borderRadius: 2.5 }}>{key === 'recovery' ? `Start ${template.name}` : 'Start workout'}</Button>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, mt: 1.5 }}>
