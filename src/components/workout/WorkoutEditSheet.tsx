@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/drawer';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { toast } from '@/lib/toast';
-import { Edit, Trash2, Moon } from 'lucide-react';
+import { Edit, Trash2, Moon, Clock } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { parseDateKey } from '@/lib/dateKey';
+import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 
 interface WorkoutEditSheetProps {
     workout: Workout | null;
@@ -35,8 +36,25 @@ interface WorkoutEditSheetProps {
 
 export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, dateStr }: WorkoutEditSheetProps) {
     const navigate = useNavigate();
-    const { deleteWorkout } = useWorkouts();
+    const { deleteWorkout, updateWorkout } = useWorkouts();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [showTimeDialog, setShowTimeDialog] = useState(false);
+
+    const handleSaveTime = async (start: Date, mins: number) => {
+        if (!workout) return;
+        try {
+            await updateWorkout({
+                id: workout.id,
+                started_at: start.toISOString(),
+                completed_at: new Date(start.getTime() + mins * 60000).toISOString(),
+                workout_duration_minutes: mins,
+            });
+            toast.success('Session time updated');
+            onOpenChange(false);
+        } catch (e) {
+            toast.error('Failed to update session time');
+        }
+    };
 
     const handleEdit = () => {
         if (workout) {
