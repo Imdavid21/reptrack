@@ -28,6 +28,7 @@ import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil, Clock, Dumbbell, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
@@ -672,7 +673,17 @@ export default function LogWorkout() {
                 <ChevronLeft size={16} />
                 Select Split
               </button>
-              <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTimeDialog(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Set session start time and duration"
+                >
+                  <Clock size={13} />
+                  {manualStart ? `${format(manualStart, 'HH:mm')} · ${manualDuration ?? 60}m` : 'Time'}
+                </button>
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
+              </div>
             </div>
           )}
 
@@ -690,15 +701,32 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              {draft && draft.exercises?.length > 0 && (
+                <button
+                  onClick={handleResumeDraft}
+                  className="w-full rounded-[24px] bg-foreground text-background p-5 flex items-center gap-3 text-left active:scale-[.99] transition-transform"
+                >
+                  <span className="h-10 w-10 rounded-xl bg-background/15 flex items-center justify-center">
+                    <Dumbbell className="h-5 w-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">RESUME SESSION</span>
+                    <span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span>
+                    <span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
               <div className="flex items-center justify-between">
                 <span className="type-caption">Logging for</span>
-                <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
               </div>
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 selectedDate={selectedDate}
                 onSelect={handleDaySelect}
               />
+
 
               {preferences?.adaptive_mode_enabled && (
                 <motion.div variants={staggerItem}>
@@ -784,6 +812,14 @@ export default function LogWorkout() {
                     <p className="text-xs text-muted-foreground uppercase">SETS</p>
                   </div>
                   <button
+                    onClick={() => setShowTimeDialog(true)}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                    title="Set session time"
+                    aria-label="Set session start time and duration"
+                  >
+                    <Clock size={14} />
+                  </button>
+                  <button
                     onClick={handleEditExercises}
                     className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
                     title="Edit exercises"
@@ -861,6 +897,63 @@ export default function LogWorkout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Switching day over an in-progress session */}
+      <AlertDialog open={pendingDaySelect !== null} onOpenChange={(open) => { if (!open) setPendingDaySelect(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard current session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have logged sets in this session. Switching days rebuilds the exercise list and discards them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDaySelect(null)}>Keep session</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDaySelect) applyDaySelect(pendingDaySelect.day, pendingDaySelect.date, pendingDaySelect.week);
+                setPendingDaySelect(null);
+              }}
+            >
+              Switch & discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leaving an active session */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved. You can pause and resume it later, or discard it completely.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <button
+              type="button"
+              onClick={handleDiscardSession}
+              className="h-10 px-4 rounded-xl border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              Discard
+            </button>
+            <AlertDialogAction onClick={handlePauseAndExit}>Pause & exit</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Manual session time (back-dated logging or corrections) */}
+      <SessionTimeDialog
+        open={showTimeDialog}
+        onOpenChange={setShowTimeDialog}
+        startTime={manualStart ?? workoutStartTime}
+        durationMinutes={manualDuration}
+        date={selectedDate}
+        onSave={(start, mins) => { setManualStart(start); setManualDuration(mins); }}
+        onClear={manualStart ? () => { setManualStart(null); setManualDuration(null); } : undefined}
+      />
     </MainLayout>
   );
 }
