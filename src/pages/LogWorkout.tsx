@@ -171,6 +171,14 @@ export default function LogWorkout() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [showSwapPicker, setShowSwapPicker] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<WorkoutExercise | null>(null);
+  // Manual session time (used when back-dating or correcting a quick entry)
+  const [manualStart, setManualStart] = useState<Date | null>(null);
+  const [manualDuration, setManualDuration] = useState<number | null>(null);
+  const [showTimeDialog, setShowTimeDialog] = useState(false);
+  // Guard: switching days would rebuild the exercise list and wipe logged sets
+  const [pendingDaySelect, setPendingDaySelect] = useState<{ day: string; date: Date; week: number } | null>(null);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
 
   const splitDays = useMemo(() => {
     // Single source of truth: the chosen training split wins unless it's
