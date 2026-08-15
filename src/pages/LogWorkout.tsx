@@ -672,7 +672,17 @@ export default function LogWorkout() {
                 <ChevronLeft size={16} />
                 Select Split
               </button>
-              <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTimeDialog(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Set session start time and duration"
+                >
+                  <Clock size={13} />
+                  {manualStart ? `${format(manualStart, 'HH:mm')} · ${manualDuration ?? 60}m` : 'Time'}
+                </button>
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
+              </div>
             </div>
           )}
 
