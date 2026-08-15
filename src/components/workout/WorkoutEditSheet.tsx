@@ -119,6 +119,19 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                                     </button>
 
                                     <button
+                                        onClick={() => setShowTimeDialog(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                                    >
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Edit Time & Duration</span>
+                                        {workout.workout_duration_minutes ? (
+                                            <span className="ml-auto text-xs text-muted-foreground tabular-nums">{workout.workout_duration_minutes}m</span>
+                                        ) : null}
+                                    </button>
+
+
+
+                                    <button
                                         onClick={() => setShowDeleteAlert(true)}
                                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
                                     >
