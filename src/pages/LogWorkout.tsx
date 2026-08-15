@@ -235,6 +235,8 @@ export default function LogWorkout() {
       setStep(validStep);
       setCurrentExerciseIndex(draft.currentExerciseIndex);
       setCurrentSetIndex(draft.currentSetIndex ?? 0);
+      if (draft.manualStart) setManualStart(new Date(draft.manualStart));
+      if (draft.manualDuration) setManualDuration(draft.manualDuration);
       if (draft.workoutStartTime) {
         setWorkoutStartTime(new Date(draft.workoutStartTime));
       } else {
@@ -246,31 +248,35 @@ export default function LogWorkout() {
         }
       }
       setDraftRestored(true);
-      toast.info('Restored your previous session');
+      toast.info('Resumed your session');
     }
   }, [loaded, draft, draftRestored]);
 
   // Auto-save draft
   useEffect(() => {
     if (step === 'select-day' || !selectedDay) return;
-    const timeoutId = setTimeout(() => {
-      saveDraft({
-        day: selectedDay,
-        dayName: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || ''),
-        date: selectedDate.toISOString(),
-        weekNumber,
-        exercises,
-        habits: { pullups: 0, water_intake: 0, sleep_hours: 0 },
-        currentExerciseIndex,
-        currentSetIndex,
-        step,
-        workoutStartTime: workoutStartTime?.toISOString(),
-      });
-    }, 500);
+    const payload = {
+      day: selectedDay,
+      dayName: selectedDay === 'custom' ? 'Freestyle' : (splitDays[selectedDay]?.name || ''),
+      date: selectedDate.toISOString(),
+      weekNumber,
+      exercises,
+      habits: { pullups: 0, water_intake: 0, sleep_hours: 0 },
+      currentExerciseIndex,
+      currentSetIndex,
+      step,
+      workoutStartTime: workoutStartTime?.toISOString(),
+      manualStart: manualStart?.toISOString(),
+      manualDuration: manualDuration ?? undefined,
+    };
+    // Persist immediately (no data loss if the app is killed within the debounce
+    // window), then again after the debounce so React state settles.
+    saveDraft(payload);
+    const timeoutId = setTimeout(() => saveDraft(payload), 500);
     return () => clearTimeout(timeoutId);
-  }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, saveDraft, splitDays]);
+  }, [exercises, step, currentExerciseIndex, currentSetIndex, selectedDay, selectedDate, weekNumber, workoutStartTime, manualStart, manualDuration, saveDraft, splitDays]);
 
-  const handleDaySelect = (day: string, date: Date, week: number) => {
+  const applyDaySelect = (day: string, date: Date, week: number) => {
     setSelectedDay(day);
     setSelectedDate(date);
     setWeekNumber(week);
@@ -284,6 +290,24 @@ export default function LogWorkout() {
     setCurrentSetIndex(0);
     setStep('review');
   };
+
+  const handleDaySelect = (day: string, date: Date, week: number) => {
+    // Never silently rebuild the exercise list over a session that already has
+    // logged sets — that's how in-progress work used to disappear.
+    const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
+    if (hasCompletedSets) {
+      setPendingDaySelect({ day, date, week });
+      return;
+    }
+    applyDaySelect(day, date, week);
+  };
+
+  // Jump back into the saved session from the day picker
+  const handleResumeDraft = () => {
+    if (!draft) return;
+    setStep(draft.step === 'review' ? 'review' : 'exercises');
+  };
+
 
   // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
   // that day's review, with last-used weights already applied. Skipped if a
