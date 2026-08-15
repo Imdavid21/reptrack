@@ -158,7 +158,7 @@ export default function AdaptiveWorkout() {
   const [stage, setStage] = useState<Stage>('prepare'); const [key, setKey] = useState<SessionKey>('push_a'); const [band, setBand] = useState<ReadinessBand>('green'); const [sleep, setSleep] = useState<number | null>(null); const [showFullPlan, setShowFullPlan] = useState(false); const [conditioningOption, setConditioningOption] = useState<ConditioningOptionKey>('cindy'); const [conditioningPickerOpen, setConditioningPickerOpen] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]); const [warmupExercises, setWarmupExercises] = useState<WorkoutExercise[]>([]); const [extraExercises, setExtraExercises] = useState<WorkoutExercise[]>([]); const [selectedWork, setSelectedWork] = useState<Set<string>>(new Set()); const [selectedPrep, setSelectedPrep] = useState<Set<string>>(new Set()); const [completedPrep, setCompletedPrep] = useState<Set<string>>(new Set());
   const [exerciseIndex, setExerciseIndex] = useState(0); const [setIndex, setSetIndex] = useState(0); const [warmupIndex, setWarmupIndex] = useState(0); const [pickerOpen, setPickerOpen] = useState(false); const [roughOpen, setRoughOpen] = useState(false); const [warmupEditorOpen, setWarmupEditorOpen] = useState(false); const [draftRestored, setDraftRestored] = useState(false); const [busy, setBusy] = useState(false); const [sessionStartedAt, setSessionStartedAt] = useState<Date | null>(null); const [elapsedSeconds, setElapsedSeconds] = useState(0); const [pausedSeconds, setPausedSeconds] = useState(0); const [pauseStartedAt, setPauseStartedAt] = useState<Date | null>(null); const [pauseIntervals, setPauseIntervals] = useState<Array<{ pausedAt: string; resumedAt?: string }>>([]); const [exitOpen, setExitOpen] = useState(false); const [pendingPath, setPendingPath] = useState<string | null>(null);
-  const [logDate, setLogDate] = useState<string>(localDateKey()); const [manualTime, setManualTime] = useState<string>(''); const [manualDuration, setManualDuration] = useState<string>('');
+  const [logDate, setLogDate] = useState<string>(localDateKey()); const [manualTime, setManualTime] = useState<string>(''); const [manualDuration, setManualDuration] = useState<string>(''); const [logOptionsOpen, setLogOptionsOpen] = useState(false);
   const isBackdated = logDate !== localDateKey() || !!manualTime;
   const template = key === 'recovery' ? CONDITIONING_OPTIONS[conditioningOption] : PPL_PROGRAM[key]; const adapted = useMemo(() => adaptSession(template, band), [template, band]); const prep = useMemo(() => adapted.exercises.filter(ex => prepPhases.includes(ex.phase)), [adapted]); const work = useMemo(() => adapted.exercises.filter(ex => workingPhases.includes(ex.phase)), [adapted]); const planned = [...work, ...extraExercises]; const chosenPrep = prep.filter(ex => selectedPrep.has(ex.name)); const selectedPlan = planned.filter(ex => selectedWork.has(ex.name)); const plannedSets = selectedPlan.reduce((sum, exercise) => sum + (Array.isArray(exercise.sets) ? exercise.sets.length : exercise.sets), 0); const planItems = key === 'recovery' ? CONDITIONING_SPLITS[conditioningOption] : selectedPlan.map(exercise => ({ name: exercise.name, prescription: Array.isArray(exercise.sets) ? `${exercise.sets.length} × ${exercise.sets[0]?.targetReps ?? ''}` : `${exercise.sets} × ${'reps' in exercise ? exercise.reps : ''}` })); const dayType = template.name.startsWith('Push') ? 'Push' : template.name.startsWith('Pull') ? 'Pull' : template.name.startsWith('Legs') ? 'Legs' : 'Conditioning';
 
@@ -191,6 +191,40 @@ export default function AdaptiveWorkout() {
     {sessionStartedAt && stage !== 'prepare' && <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><Button size="small" startIcon={<ArrowLeft size={15}/>} onClick={() => setExitOpen(true)} sx={{ px: 0, color: 'text.secondary', textTransform: 'none' }}>Back</Button><Button size="small" startIcon={pauseStartedAt ? <Play size={14}/> : <Pause size={14}/>} onClick={togglePause} sx={{ color: 'text.secondary', textTransform: 'none' }}>{pauseStartedAt ? 'Resume' : 'Pause'} · {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}</Button></Box>}
     {stage === 'prepare' && <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Box component="section" sx={{ pt: { xs: 1, sm: 2 } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <Button
+            size="small"
+            onClick={() => setLogOptionsOpen(value => !value)}
+            startIcon={<CalendarDays size={14}/>}
+            sx={{
+              color: isBackdated ? 'text.primary' : 'text.secondary',
+              textTransform: 'none',
+              borderRadius: 6,
+              px: 1.5,
+              py: .5,
+              bgcolor: isBackdated ? 'action.selected' : 'transparent',
+              border: 1,
+              borderColor: isBackdated ? 'action.selected' : 'divider',
+              '&:hover': { bgcolor: isBackdated ? 'action.selected' : 'action.hover' },
+            }}
+          >
+            {isBackdated
+              ? `${new Date(logDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}${manualTime ? ` · ${manualTime}` : ''}${manualDuration ? ` · ${manualDuration}m` : ''}`
+              : 'Log live'}
+          </Button>
+        </Box>
+        {logOptionsOpen && <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}>
+            <Typography variant="body2" fontWeight={600}>Log for</Typography>
+            {isBackdated && <Button size="small" onClick={() => { setLogDate(localDateKey()); setManualTime(''); setManualDuration(''); }} sx={{ ml: 'auto', color: 'text.secondary', textTransform: 'none' }}>Reset to now</Button>}
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
+            <TextField size="small" type="date" label="Date" value={logDate} onChange={event => setLogDate(event.target.value)} InputLabelProps={{ shrink: true }}/>
+            <TextField size="small" type="time" label="Start" value={manualTime} onChange={event => setManualTime(event.target.value)} InputLabelProps={{ shrink: true }}/>
+            <TextField size="small" type="number" label="Minutes" value={manualDuration} onChange={event => setManualDuration(event.target.value)} placeholder="60" InputLabelProps={{ shrink: true }} inputProps={{ min: 1 }}/>
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{isBackdated ? 'This session saves to the date and time above.' : 'Leave as is to log this session live.'}</Typography>
+        </Box>}
         <Typography variant="overline" color="text.secondary">{key === 'recovery' ? 'Optional conditioning' : 'Next in sequence'}</Typography>
         <Typography variant="h1" sx={{ mt: .75 }}>{template.name}</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 560 }}>{template.objective}</Typography>
@@ -210,16 +244,6 @@ export default function AdaptiveWorkout() {
             {planItems.length > 5 && <Button size="small" aria-expanded={showFullPlan} onClick={() => setShowFullPlan(value => !value)} sx={{ justifySelf: 'start', minWidth: 0, px: 0, pt: 1.25, color: 'text.secondary', '&:hover': { bgcolor: 'transparent', color: 'text.primary', boxShadow: 'none' } }}>{showFullPlan ? 'Show less' : `+${planItems.length - 5} more exercises`}</Button>}
           </Box>
         </Box>
-      </Box>
-
-      <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}><CalendarDays size={15}/><Typography variant="body2" fontWeight={600}>Log for</Typography>{isBackdated && <Button size="small" onClick={() => { setLogDate(localDateKey()); setManualTime(''); setManualDuration(''); }} sx={{ ml: 'auto', color: 'text.secondary', textTransform: 'none' }}>Reset to now</Button>}</Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
-          <TextField size="small" type="date" label="Date" value={logDate} onChange={event => setLogDate(event.target.value)} InputLabelProps={{ shrink: true }}/>
-          <TextField size="small" type="time" label="Start" value={manualTime} onChange={event => setManualTime(event.target.value)} InputLabelProps={{ shrink: true }}/>
-          <TextField size="small" type="number" label="Minutes" value={manualDuration} onChange={event => setManualDuration(event.target.value)} placeholder="60" InputLabelProps={{ shrink: true }} inputProps={{ min: 1 }}/>
-        </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{isBackdated ? 'This session saves to the date and time above.' : 'Leave as is to log this session live.'}</Typography>
       </Box>
 
       <Box sx={{ mt: 'auto', pt: 4 }}>
