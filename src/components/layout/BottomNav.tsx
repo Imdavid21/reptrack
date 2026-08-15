@@ -20,7 +20,7 @@ export function BottomNav() {
   );
   const requestNavigation = (path: string) => {
     if (path === currentPath) return;
-    const request = new CustomEvent('reptrack-request-leave-session', { cancelable: true });
+    const request = new CustomEvent('reptrack-request-leave-session', { cancelable: true, detail: { path } });
     window.dispatchEvent(request);
     if (!request.defaultPrevented) navigate(path);
   };
