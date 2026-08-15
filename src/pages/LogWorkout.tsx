@@ -28,6 +28,7 @@ import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil, Clock, Dumbbell, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
