@@ -19,6 +19,10 @@ export interface DraftWorkout {
   /** Manually set session duration in minutes (used for back-dated logging). */
   manualDuration?: number;
 
+  /** Stable client id for the eventual workout row, so an interrupted save can
+   *  be retried idempotently after resuming. */
+  saveId?: string;
+
   /** Route to return to when resuming (the screen the session was paused from). */
   resumePath?: string;
 
