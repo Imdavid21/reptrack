@@ -111,9 +111,9 @@ UNCERTAINTY — be honest:
 - Confidence score: 0.9+ = very clear image with confident specific identification, 0.7-0.9 = clear but some variety/cut guesswork, below 0.7 = poor image quality or highly ambiguous items.
 
 MACRO CALCULATION:
-- Always provide protein, carbs, fat, fiber, sugar, and sodium for each item and totals.
+- Always provide protein, carbs, fat, fiber, sugar, sodium, and potassium for each item and totals.
 - Base macros on USDA values for the SPECIFIC variety/cut identified — basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.
-- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams — account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total.`
+- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams — account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total. Potassium is milligrams — fruit, vegetables, legumes, dairy and potatoes carry most of it.`
         },
         {
           role: "user",
