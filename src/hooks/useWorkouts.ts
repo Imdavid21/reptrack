@@ -65,7 +65,7 @@ export interface Workout {
 
 /** Network blips, timeouts and 5xx are worth retrying; validation/permission
  *  errors are not — retrying those just delays an honest error message. */
-function isRetryableError(error: any): boolean {
+export function isRetryableError(error: any): boolean {
   if (!error) return false;
   const message = String(error?.message || '');
   if (/Failed to fetch|NetworkError|timeout|ETIMEDOUT|ERR_INTERNET_DISCONNECTED/i.test(message)) return true;
