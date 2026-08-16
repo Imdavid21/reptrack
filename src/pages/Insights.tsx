@@ -554,6 +554,9 @@ function InsightsContent() {
               <motion.div variants={staggerItem}>
               <MacroChart macro="sodium" />
               </motion.div>
+              <motion.div variants={staggerItem}>
+              <MacroChart macro="potassium" />
+              </motion.div>
             </InsightSection>
 
             <InsightSection label="Recovery & body" count={2} dotClass="bg-recover">
