@@ -120,11 +120,12 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         fat: { type: "number", description: "Fat in grams" },
                         fiber: { type: "number", description: "Dietary fiber in grams" },
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
-                        sodium: { type: "number", description: "Sodium in milligrams" }
+                        sodium: { type: "number", description: "Sodium in milligrams" },
+                      potassium: { type: "number", description: "Potassium in milligrams" }
                       },
                       // Macros are required: left optional, the model routinely
                       // omitted sugar and sodium, so those never got recorded.
-                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
+                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
                     }
                   },
                   total_calories: { type: "number" },
@@ -134,6 +135,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   total_fiber: { type: "number" },
                   total_sugar: { type: "number" },
                   total_sodium: { type: "number" },
+                total_potassium: { type: "number" },
                   description: { type: "string", description: "Brief description of the meal" },
                   food_quality: { 
                     type: "string", 

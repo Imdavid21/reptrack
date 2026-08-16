@@ -151,12 +151,13 @@ MACRO CALCULATION:
                       fat: { type: "number", description: "Fat in grams" },
                       fiber: { type: "number", description: "Dietary fiber in grams" },
                       sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
-                      sodium: { type: "number", description: "Sodium in milligrams" }
+                      sodium: { type: "number", description: "Sodium in milligrams" },
+                      potassium: { type: "number", description: "Potassium in milligrams" }
                     },
                     // Every macro is required: left optional, the model routinely
                     // omitted sugar and sodium entirely, so those columns never
                     // got recorded. Estimate them, never skip them.
-                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"]
+                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
                   }
                 },
                 total_calories: { type: "number" },
@@ -166,6 +167,7 @@ MACRO CALCULATION:
                 total_fiber: { type: "number" },
                 total_sugar: { type: "number" },
                 total_sodium: { type: "number" },
+                total_potassium: { type: "number" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
                 description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
                 food_quality: {

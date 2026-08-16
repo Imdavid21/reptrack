@@ -16,6 +16,7 @@ export interface Meal {
   fiber: number | null;
   sugar: number | null;
   sodium: number | null;
+  potassium: number | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;
@@ -61,6 +62,7 @@ export function useMeals(date?: Date) {
       fiber?: number;
       sugar?: number;
       sodium?: number;
+      potassium?: number;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;
