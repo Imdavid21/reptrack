@@ -84,3 +84,55 @@ export function localDayBounds(date: string, timezone: string) {
   const start = new Date(guess.getTime() - offset);
   return { start: start.toISOString(), end: new Date(start.getTime() + 86400000).toISOString() };
 }
+
+/* ---------- resilience helpers ---------- */
+
+const TRANSIENT = /fetch failed|network|timeout|timed out|socket|connection|502|503|504|ECONNRESET|EOF/i;
+
+export function isTransientDbError(error: unknown): boolean {
+  const e = error as { code?: string; message?: string; status?: number } | null;
+  if (!e) return false;
+  if (e.status && e.status >= 500) return true;
+  if (e.code && ["57014", "08006", "08003", "53300", "XX000", "PGRST002", "PGRST001"].includes(e.code)) return true;
+  return TRANSIENT.test(`${e.message ?? ""}`);
+}
+
+/** Stable, non-sensitive category used for audit rows and client-visible errors. */
+export function categorizeDbError(error: unknown): string {
+  const e = error as { code?: string; message?: string } | null;
+  if (!e) return "DATABASE_READ_FAILED";
+  if (e.code === "42501") return "PERMISSION_DENIED";
+  if (e.code === "PGRST116") return "MULTIPLE_ROWS";
+  if (e.code === "57014") return "QUERY_TIMEOUT";
+  if (isTransientDbError(e)) return "DATABASE_UNAVAILABLE";
+  return e.code ? `DATABASE_READ_FAILED:${e.code}` : "DATABASE_READ_FAILED";
+}
+
+/** Retries transient failures with backoff; deterministic failures fail fast. */
+export async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isTransientDbError(error) || attempt === attempts) break;
+      console.warn(`[mcp] retrying ${label} (attempt ${attempt})`);
+      await new Promise(r => setTimeout(r, 150 * attempt));
+    }
+  }
+  console.error(`[mcp] ${label} failed:`, (lastError as { message?: string })?.message ?? lastError);
+  throw lastError;
+}
+
+/** Guards MCP clients against oversized payloads that break tool responses. */
+export function capPayload<T>(payload: T, maxBytes = 400_000): { payload: T; truncated: boolean } {
+  const size = JSON.stringify(payload)?.length ?? 0;
+  if (size <= maxBytes) return { payload, truncated: false };
+  const any = payload as any;
+  if (any && Array.isArray(any.data)) {
+    const keep = Math.max(1, Math.floor(any.data.length * (maxBytes / size)));
+    return { payload: { ...any, data: any.data.slice(0, keep), metadata: { ...(any.metadata ?? {}), truncated: true, truncated_reason: "payload_size_limit", returned: keep, original_count: any.data.length } }, truncated: true };
+  }
+  return { payload, truncated: true };
+}
