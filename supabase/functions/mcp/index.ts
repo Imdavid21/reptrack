@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.90.0";
 import { McpServer } from "npm:@modelcontextprotocol/sdk@1.30.0/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.30.0/server/webStandardStreamableHttp.js";
 import { z } from "npm:zod@3.25.76";
-import { APPROVED_TOOLS, MCP_MODE, MCP_VERSION, isApprovedTool } from "./core.ts";
+import { APPROVED_TOOLS, MCP_MODE, MCP_VERSION, capPayload, isApprovedTool, withRetry } from "./core.ts";
 import { executeTool } from "./data.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -58,17 +58,27 @@ async function authenticate(req: Request) {
   if (!/^Bearer\s+\S+$/i.test(header)) return null;
   const token = header.replace(/^Bearer\s+/i, "");
   const auth = createClient(SUPABASE_URL, ANON_KEY, { auth:{persistSession:false,autoRefreshToken:false} });
-  const { data, error } = await auth.auth.getUser(token);
-  if (error || !data.user) return null;
+  // Transient auth-service blips must not look like an expired token to the MCP client.
+  let data: any = null, error: any = null;
+  try {
+    ({ data, error } = await withRetry("auth.getUser", async () => {
+      const result = await auth.auth.getUser(token);
+      if (result.error && (result.error as any).status >= 500) throw result.error;
+      return result;
+    }, 2));
+  } catch (e) { console.error("[mcp] auth check failed:", (e as Error).message); return null; }
+  if (error || !data?.user) { console.warn("[mcp] rejected token:", error?.message ?? "no user"); return null; }
   return { user:data.user, token, db:createClient(SUPABASE_URL, ANON_KEY, { global:{headers:{Authorization:`Bearer ${token}`}}, auth:{persistSession:false,autoRefreshToken:false} }) };
 }
 
+// Abuse protection only. A limiter outage must never take the whole integration
+// down, so an unavailable limiter fails OPEN while a real over-limit fails closed.
 async function rateLimitRequest(ctx:{token:string}) {
   try {
-    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`,{method:"POST",headers:{"Content-Type":"application/json",apikey:ANON_KEY,Authorization:`Bearer ${ctx.token}`},body:JSON.stringify({p_bucket:"mcp",p_max:60,p_window_seconds:60})});
-    if(!response.ok)return false;
-    return await response.json() === true;
-  } catch { return false; } // sensitive external API: fail closed
+    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`,{method:"POST",headers:{"Content-Type":"application/json",apikey:ANON_KEY,Authorization:`Bearer ${ctx.token}`},body:JSON.stringify({p_bucket:"mcp",p_max:240,p_window_seconds:60})});
+    if(!response.ok){ console.error("[mcp] rate limiter unavailable:",response.status); return true; }
+    return await response.json() !== false;
+  } catch (e) { console.error("[mcp] rate limiter error:",(e as Error).message); return true; }
 }
 
 async function audit(userId:string, tool:string, started:number, success:boolean, category:string|null) {
@@ -84,10 +94,12 @@ function createServer(ctx:{user:{id:string},db:any}) {
       const started=Date.now();
       try {
         let args=raw;
-        if(name==="get_recent_fitness_data") { const {data:p}=await ctx.db.from("user_preferences").select("*").maybeSingle(); const tz=(p as any)?.timezone||"Asia/Kolkata", end=todayIn(tz); args={start_date:minusDays(end,raw.days??14),end_date:end}; }
-        const result=await executeTool(name,args,ctx.db); await audit(ctx.user.id,name,started,true,null);
+        if(name==="get_recent_fitness_data") { let p:any=null; try { const {data}=await ctx.db.from("user_preferences").select("*").limit(1); p=Array.isArray(data)?data[0]:data; } catch { p=null; } const tz=(p as any)?.timezone||"Asia/Kolkata", end=todayIn(tz); args={start_date:minusDays(end,raw.days??14),end_date:end}; }
+        const raw_result=await executeTool(name,args,ctx.db);
+        const { payload:result } = capPayload(raw_result); // oversized payloads break MCP clients
+        await audit(ctx.user.id,name,started,true,null);
         return { content:[{type:"text",text:JSON.stringify(result)}], structuredContent:result };
-      } catch(e) { const category=e instanceof Error?e.message:"INTERNAL_ERROR"; await audit(ctx.user.id,name,started,false,category); return {isError:true,content:[{type:"text",text:JSON.stringify({error:"Unable to retrieve fitness data",category})}]}; }
+      } catch(e) { const category=e instanceof Error?e.message:"INTERNAL_ERROR"; console.error(`[mcp] tool ${name} failed:`,category); await audit(ctx.user.id,name,started,false,category.slice(0,120)); return {isError:true,content:[{type:"text",text:JSON.stringify({error:"Unable to retrieve fitness data",category,retryable:/UNAVAILABLE|TIMEOUT/.test(category)})}]}; }
     });
   }
   return server;
@@ -113,5 +125,5 @@ Deno.serve(async req => {
     const response=await transport.handleRequest(req);
     const headers=new Headers(response.headers); Object.entries(CORS).forEach(([k,v])=>headers.set(k,v)); headers.set("Cache-Control","no-store");
     return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
-  } catch { return json({error:"MCP request failed"},500); }
+  } catch (e) { console.error("[mcp] transport failure:",(e as Error)?.message ?? e); return json({error:"MCP request failed",detail:(e as Error)?.message ?? "unknown"},500); }
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APPROVED_TOOLS, MCP_MODE, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
+import { APPROVED_TOOLS, MCP_MODE, capPayload, categorizeDbError, withRetry, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
 
 describe('MCP read-only policy', () => {
   it('contains exactly the ten approved retrieval tools', () => {
@@ -54,5 +54,38 @@ describe('MCP calculations and validation', () => {
     expect(classifyMuscle('Cable Lateral Raise')).toBe('side delts');
     expect(classifyMuscle('Hanging Knee Raise')).toBe('abs/core');
     expect(classifyMuscle('Unknown Movement')).toBe('unmapped');
+  });
+});
+
+describe('MCP failsafes', () => {
+  it('retries transient database failures and fails fast on deterministic ones', async () => {
+    let calls = 0;
+    const value = await withRetry('flaky', async () => {
+      calls++;
+      if (calls < 3) throw Object.assign(new Error('fetch failed'), { code: '08006' });
+      return 'ok';
+    });
+    expect(value).toBe('ok');
+    expect(calls).toBe(3);
+
+    let hard = 0;
+    await expect(withRetry('hard', async () => { hard++; throw Object.assign(new Error('denied'), { code: '42501' }); }))
+      .rejects.toThrow('denied');
+    expect(hard).toBe(1);
+  });
+
+  it('categorizes database errors without leaking internals', () => {
+    expect(categorizeDbError({ code: '42501' })).toBe('PERMISSION_DENIED');
+    expect(categorizeDbError({ code: '57014' })).toBe('QUERY_TIMEOUT');
+    expect(categorizeDbError({ message: 'fetch failed' })).toBe('DATABASE_UNAVAILABLE');
+  });
+
+  it('truncates oversized payloads instead of breaking the client', () => {
+    const big = { data: Array.from({ length: 500 }, (_, i) => ({ i, blob: 'x'.repeat(1000) })), metadata: {} };
+    const { payload, truncated } = capPayload(big, 50_000);
+    expect(truncated).toBe(true);
+    expect((payload as any).data.length).toBeLessThan(500);
+    expect((payload as any).metadata.truncated).toBe(true);
+    expect(capPayload({ data: [1, 2, 3] }, 50_000).truncated).toBe(false);
   });
 });
