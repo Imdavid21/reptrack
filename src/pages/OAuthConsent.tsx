@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
 import { ShieldCheck } from 'lucide-react';
@@ -14,6 +14,7 @@ export default function OAuthConsent() {
   const [details, setDetails] = useState<any>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const requested = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -25,7 +26,17 @@ export default function OAuthConsent() {
     if (!authorizationId) { setError('This authorization request is missing or invalid.'); return; }
     const oauth = (supabase.auth as any).oauth;
     if (!oauth?.getAuthorizationDetails) { setError('OAuth authorization is not enabled for this environment.'); return; }
-    oauth.getAuthorizationDetails(authorizationId).then(({ data, error: e }: any) => e ? setError(e.message) : setDetails(data));
+    // The authorization can only be fetched once while pending; StrictMode double
+    // invocation would otherwise consume it and 400 the real request.
+    if (requested.current) return;
+    requested.current = true;
+    oauth.getAuthorizationDetails(authorizationId).then(({ data, error: e }: any) => {
+      if (e) { setError(e.message); return; }
+      // Auto-approved / already-decided requests come back with a redirect target.
+      const target = data?.redirect_url ?? data?.redirect_to;
+      if (target && !data?.client) { window.location.assign(target); return; }
+      setDetails(data);
+    });
   }, [authorizationId, loading, navigate, user]);
 
   const decide = async (approved: boolean) => {
@@ -34,9 +45,12 @@ export default function OAuthConsent() {
       const oauth = (supabase.auth as any).oauth;
       const { data, error: e } = await (approved ? oauth.approveAuthorization(authorizationId) : oauth.denyAuthorization(authorizationId));
       if (e) throw e;
-      window.location.assign(data.redirect_url);
+      const target = data?.redirect_url ?? data?.redirect_to;
+      if (!target) throw new Error('No redirect returned by the authorization server.');
+      window.location.assign(target);
     } catch (e) { setError(e instanceof Error ? e.message : 'Authorization failed.'); setBusy(false); }
   };
+
 
   return <Box sx={{ minHeight:'100dvh', display:'grid', placeItems:'center', bgcolor:'background.default', p:2 }}>
     <Paper variant="outlined" sx={{ width:'100%', maxWidth:460, p:4, borderRadius:4 }}>
