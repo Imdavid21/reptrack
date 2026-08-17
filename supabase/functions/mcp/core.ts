@@ -1,5 +1,5 @@
-export const MCP_MODE = "read_only" as const;
-export const MCP_VERSION = "1.0.0";
+export const MCP_MODE = "read_write" as const;
+export const MCP_VERSION = "1.1.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
@@ -7,9 +7,44 @@ export const APPROVED_TOOLS = [
   "get_sleep", "get_activity", "get_progress_summary", "get_recent_fitness_data",
 ] as const;
 
+/** Writes are limited to food, water, workouts and activities. No deletes exist. */
+export const WRITE_TOOLS = [
+  "log_meal", "update_meal", "log_water",
+  "log_workout", "update_workout",
+  "log_activity", "update_activity",
+] as const;
+
+export const MAX_BACKDATE_DAYS = 30;
+
 export type ToolName = typeof APPROVED_TOOLS[number];
+export type WriteToolName = typeof WRITE_TOOLS[number];
 export const isApprovedTool = (name: string): name is ToolName =>
   (APPROVED_TOOLS as readonly string[]).includes(name);
+export const isWriteTool = (name: string): name is WriteToolName =>
+  (WRITE_TOOLS as readonly string[]).includes(name);
+export const isPermittedTool = (name: string) => isApprovedTool(name) || isWriteTool(name);
+
+/** Writes may only touch today or the last 30 local days, never the future. */
+export function assertWritableDate(date: string, today: string, maxBackDays = MAX_BACKDATE_DAYS) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("INVALID_DATE");
+  const target = Date.parse(`${date}T00:00:00Z`), now = Date.parse(`${today}T00:00:00Z`);
+  if (!Number.isFinite(target)) throw new Error("INVALID_DATE");
+  if (target > now) throw new Error("DATE_IN_FUTURE");
+  if ((now - target) / 86400000 > maxBackDays) throw new Error(`DATE_TOO_OLD_MAX_${maxBackDays}_DAYS`);
+  return date;
+}
+
+/** Rejects impossible values before they reach the database. */
+export function boundedNumber(label: string, value: unknown, min: number, max: number, optional = true): number | null {
+  if (value === undefined || value === null || value === "") {
+    if (optional) return null;
+    throw new Error(`MISSING_${label.toUpperCase()}`);
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) throw new Error(`INVALID_${label.toUpperCase()}`);
+  return n;
+}
+
 
 export function parseNumberList(value: unknown): number[] {
   if (typeof value !== "string") return [];
