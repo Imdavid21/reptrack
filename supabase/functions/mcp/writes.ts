@@ -293,6 +293,7 @@ async function updateActivity(args: Args, db: Client, userId: string, today: str
 export async function executeWriteTool(name: string, args: Args, db: Client, userId: string, timezone: string) {
   const today = todayIn(timezone || "Asia/Kolkata");
   const prefs = await preferences(db);
+  const run = async () => {
   switch (name) {
     case "log_meal": return await logMeal(args, db, userId, today);
     case "update_meal": return await updateMeal(args, db, userId, today);
@@ -303,4 +304,6 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
     case "update_activity": return await updateActivity(args, db, userId, today, prefs);
     default: throw new Error("UNKNOWN_TOOL");
   }
+  };
+  return { ...(await run()), timezone: timezone || "Asia/Kolkata" };
 }
