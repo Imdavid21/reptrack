@@ -3,8 +3,9 @@ import { createClient } from "npm:@supabase/supabase-js@2.90.0";
 import { McpServer } from "npm:@modelcontextprotocol/sdk@1.30.0/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.30.0/server/webStandardStreamableHttp.js";
 import { z } from "npm:zod@3.25.76";
-import { APPROVED_TOOLS, MCP_MODE, MCP_VERSION, capPayload, isApprovedTool, withRetry } from "./core.ts";
+import { APPROVED_TOOLS, MAX_BACKDATE_DAYS, MCP_MODE, MCP_VERSION, WRITE_TOOLS, capPayload, isApprovedTool, isWriteTool, withRetry } from "./core.ts";
 import { executeTool } from "./data.ts";
+import { executeWriteTool } from "./writes.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -42,6 +43,29 @@ const definitions = {
   get_recent_fitness_data: { description: "Retrieve a compact combined recent fitness dataset for prompts reviewing weight, training, nutrition, sleep, and activity together. Accepts 1–90 days and avoids large raw payloads.", schema: { days:z.number().int().min(1).max(90).optional().default(14) } },
 } as const;
 
+const logDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe(`Local calendar date YYYY-MM-DD. Defaults to today; up to ${MAX_BACKDATE_DAYS} days back, never the future.`);
+const macros = {
+  protein: z.number().min(0).max(500).optional(), carbs: z.number().min(0).max(1500).optional(),
+  fat: z.number().min(0).max(500).optional(), fiber: z.number().min(0).max(200).optional(),
+  sugar: z.number().min(0).max(800).optional(), sodium: z.number().min(0).max(20000).optional().describe("Milligrams."),
+  potassium: z.number().min(0).max(20000).optional().describe("Milligrams."),
+};
+const exerciseList = z.array(z.object({
+  name: z.string().min(1).max(120),
+  category: z.enum(["primary","compound","accessory","specialization","core"]).optional(),
+  sets: z.array(z.object({ reps: z.number().min(0).max(1000).optional(), weight: z.number().min(0).max(600).optional().describe("Plate weight in kg, excluding the bar.") })).min(1),
+})).min(1).max(30);
+
+const writeDefinitions = {
+  log_meal: { description: "Log a meal for the authenticated user with estimated calories and macros. Calories are required; macros are optional. Use when the user reports what they ate.", schema: { date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200), calories: z.number().min(0).max(10000), ...macros, notes: z.string().max(500).optional(), client_key: z.string().max(64).optional().describe("Idempotency key; a retry with the same key updates the same meal.") } },
+  update_meal: { description: "Correct a previously logged meal by its id. Only the supplied fields change. Never deletes.", schema: { meal_id: z.string().min(1).max(40), date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200).optional(), calories: z.number().min(0).max(10000).optional(), ...macros, notes: z.string().max(500).optional() } },
+  log_water: { description: "Log water intake for a day. Provide either litres or milliliters.", schema: { date: logDate, litres: z.number().min(0.05).max(10).optional(), milliliters: z.number().min(50).max(10000).optional() } },
+  log_workout: { description: "Log a completed resistance training session with its exercises and sets. Calorie burn is calculated with the app's energy model so Insights and History stay consistent.", schema: { date: logDate, workout_name: z.string().min(1).max(80), duration_minutes: z.number().min(1).max(480).optional().default(45), start_time: z.string().regex(/^\d{2}:\d{2}$/).optional().describe("Local start time HH:MM."), week_number: z.number().int().min(1).max(520).optional(), exercises: exerciseList, client_key: z.string().uuid().optional().describe("Idempotency key; a retry with the same UUID updates the same session.") } },
+  update_workout: { description: "Adjust a logged session's date, name, duration, or replace its exercise list. Recalculates calorie burn. Never deletes the session.", schema: { workout_id: z.string().min(1).max(40), date: logDate, workout_name: z.string().min(1).max(80).optional(), duration_minutes: z.number().min(1).max(480).optional(), exercises: exerciseList.optional() } },
+  log_activity: { description: "Log a walk, run, or cycle with distance and/or duration. Calorie burn is estimated from pace and bodyweight when not supplied.", schema: { date: logDate, activity_type: z.enum(["walking","running","cycling"]), distance_km: z.number().min(0.1).max(500).optional(), duration_minutes: z.number().min(1).max(1440).optional(), calories: z.number().min(0).max(5000).optional() } },
+  update_activity: { description: "Correct a logged activity's distance, duration, or calories for a given day and activity type.", schema: { activity_id: z.string().min(1).max(40).optional(), date: logDate, activity_type: z.enum(["walking","running","cycling"]), distance_km: z.number().min(0.1).max(500).optional(), duration_minutes: z.number().min(1).max(1440).optional(), calories: z.number().min(0).max(5000).optional() } },
+} as const;
+
 function json(body: unknown, status = 200, headers: Record<string,string> = {}) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type":"application/json", "Cache-Control":"no-store", ...headers } });
 }
@@ -73,12 +97,12 @@ async function authenticate(req: Request) {
 
 // Abuse protection only. A limiter outage must never take the whole integration
 // down, so an unavailable limiter fails OPEN while a real over-limit fails closed.
-async function rateLimitRequest(ctx:{token:string}) {
+async function rateLimitRequest(ctx:{token:string}, bucket="mcp", max=240, failOpen=true) {
   try {
-    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`,{method:"POST",headers:{"Content-Type":"application/json",apikey:ANON_KEY,Authorization:`Bearer ${ctx.token}`},body:JSON.stringify({p_bucket:"mcp",p_max:240,p_window_seconds:60})});
-    if(!response.ok){ console.error("[mcp] rate limiter unavailable:",response.status); return true; }
+    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`,{method:"POST",headers:{"Content-Type":"application/json",apikey:ANON_KEY,Authorization:`Bearer ${ctx.token}`},body:JSON.stringify({p_bucket:bucket,p_max:max,p_window_seconds:60})});
+    if(!response.ok){ console.error("[mcp] rate limiter unavailable:",response.status); return failOpen; }
     return await response.json() !== false;
-  } catch (e) { console.error("[mcp] rate limiter error:",(e as Error).message); return true; }
+  } catch (e) { console.error("[mcp] rate limiter error:",(e as Error).message); return failOpen; }
 }
 
 async function audit(userId:string, tool:string, started:number, success:boolean, category:string|null) {
@@ -87,10 +111,23 @@ async function audit(userId:string, tool:string, started:number, success:boolean
 
 function createServer(ctx:{user:{id:string},db:any}) {
   const server = new McpServer({ name:"fitness-mcp", version:MCP_VERSION }, { capabilities:{tools:{}} });
+  const timezone = () => (ctx as any).timezone || "Asia/Kolkata";
+  for (const name of WRITE_TOOLS) {
+    const def = writeDefinitions[name];
+    server.registerTool(name, { title:name.replaceAll("_"," "), description:def.description, inputSchema:def.schema as any, outputSchema, annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false} }, async (raw:any) => {
+      if (MCP_MODE !== "read_write" || !isWriteTool(name)) throw new Error("Tool is not permitted");
+      const started=Date.now();
+      try {
+        const result=await executeWriteTool(name, raw, ctx.db, ctx.user.id, timezone());
+        await audit(ctx.user.id,name,started,true,null);
+        return { content:[{type:"text",text:JSON.stringify(result)}], structuredContent:result };
+      } catch(e) { const category=e instanceof Error?e.message:"INTERNAL_ERROR"; console.error(`[mcp] write tool ${name} failed:`,category); await audit(ctx.user.id,name,started,false,category.slice(0,120)); return {isError:true,content:[{type:"text",text:JSON.stringify({error:"Unable to save fitness data",category,retryable:/UNAVAILABLE|TIMEOUT/.test(category)})}]}; }
+    });
+  }
   for (const name of APPROVED_TOOLS) {
     const def = definitions[name];
     server.registerTool(name, { title:name.replaceAll("_"," "), description:def.description, inputSchema:def.schema as any, outputSchema, annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false} }, async (raw:any) => {
-      if (MCP_MODE !== "read_only" || !isApprovedTool(name)) throw new Error("Tool is not permitted");
+      if (!isApprovedTool(name)) throw new Error("Tool is not permitted");
       const started=Date.now();
       try {
         let args=raw;
