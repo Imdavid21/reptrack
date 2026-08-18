@@ -27,6 +27,15 @@ export default function McpStatus() {
     <MuiCard><Typography variant="overline" color="text.secondary">Endpoint</Typography><Typography variant="body2" sx={{wordBreak:'break-all',fontFamily:'monospace'}}>{endpoint}</Typography><Box sx={{display:'flex',gap:1,mt:2}}><Button size="small" variant="outlined" startIcon={<Clipboard/>} onClick={()=>navigator.clipboard.writeText(endpoint).then(()=>toast.success('MCP URL copied'))}>Copy URL</Button><Button size="small" variant="outlined" startIcon={<RefreshCw/>} onClick={check} disabled={checking}>Test health</Button></Box></MuiCard>
     <MuiCard><Typography fontWeight={600}>Connection</Typography><Typography variant="body2" color="text.secondary" sx={{mt:1}}>Transport: Streamable HTTP<br/>Authentication: Supabase OAuth 2.1 with PKCE<br/>Current user: {user.id}<br/>Mode: read and write (meals, water, workouts, activities)</Typography></MuiCard>
     <MuiCard><Typography fontWeight={600}>Read tools ({tools.length})</Typography><Box sx={{display:'flex',flexWrap:'wrap',gap:1,mt:2}}>{tools.map(t=><Chip key={t} label={t} size="small" variant="outlined"/>)}</Box><Typography fontWeight={600} sx={{mt:3}}>Write tools ({writeTools.length})</Typography><Box sx={{display:'flex',flexWrap:'wrap',gap:1,mt:2}}>{writeTools.map(t=><Chip key={t} label={t} size="small" color="primary" variant="outlined"/>)}</Box></MuiCard>
-    <MuiCard><Typography fontWeight={600}>Recent sanitized activity</Typography>{logs.length?logs.map((l,i)=><Box key={i} sx={{display:'flex',justifyContent:'space-between',gap:2,py:1,borderBottom:i<logs.length-1?'1px solid':'none',borderColor:'divider'}}><Typography variant="body2">{l.tool_name}</Typography><Typography variant="caption" color="text.secondary">{l.success?'Success':l.error_category} · {l.duration_ms}ms</Typography></Box>):<Typography variant="body2" color="text.secondary" sx={{mt:1}}>No MCP requests yet.</Typography>}</MuiCard>
+    <MuiCard>
+      <Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:2}}>
+        <Box><Typography fontWeight={600}>MCP history</Typography><Typography variant="body2" color="text.secondary">Last {logs.length||0} requests (sanitized)</Typography></Box>
+        <Button size="small" variant="outlined" startIcon={<RefreshCw size={16}/>} onClick={loadLogs}>Refresh</Button>
+      </Box>
+      {logs.length?<Box sx={{mt:2,maxHeight:420,overflowY:'auto'}}>{logs.map((l,i)=><Box key={i} sx={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:2,py:1.25,borderBottom:i<logs.length-1?'1px solid':'none',borderColor:'divider'}}>
+        <Box sx={{minWidth:0}}><Typography variant="body2" sx={{fontFamily:'monospace'}} noWrap>{l.tool_name}</Typography><Typography variant="caption" color="text.secondary">{new Date(l.created_at).toLocaleString()}</Typography></Box>
+        <Box sx={{textAlign:'right',flexShrink:0}}><Chip size="small" label={l.success?'Success':(l.error_category||'Failed')} color={l.success?'success':'error'} variant="outlined"/><Typography variant="caption" color="text.secondary" display="block">{l.duration_ms}ms</Typography></Box>
+      </Box>)}</Box>:<Typography variant="body2" color="text.secondary" sx={{mt:1}}>No MCP requests yet.</Typography>}
+    </MuiCard>
   </Box></MainLayout>;
 }
