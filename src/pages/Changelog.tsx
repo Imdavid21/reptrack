@@ -5,6 +5,16 @@ import { APP_VERSION } from '@/lib/version';
 
 const changelogEntries = [
   {
+    date: '2026-08-18',
+    title: 'ChatGPT connection can now log for you',
+    items: [
+      'The ChatGPT connection can now log and edit meals, water, workouts, and walk, run, or cycling activities, alongside the existing read access.',
+      'Written workouts and activities use the same energy model as the app, so burn totals stay consistent across Today, Timeline, and Insights.',
+      'Writes are limited to today and the last 30 days, use idempotency keys to avoid duplicates, and cannot delete records or change goals.',
+      'Removed request rate limits from the connection so long ChatGPT sessions no longer get cut off.',
+    ],
+  },
+  {
     date: '2026-08-13',
     title: 'Adaptive training and personal energy',
     items: [

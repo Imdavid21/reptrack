@@ -991,7 +991,7 @@ export default function Settings() {
                 <Server size={18} />
                 <Box>
                   <Typography variant="h6">ChatGPT data connection</Typography>
-                  <Typography variant="caption" color="text.secondary">Read-only MCP status and setup</Typography>
+                  <Typography variant="caption" color="text.secondary">MCP status, tools, and setup</Typography>
                 </Box>
               </Box>
               <ChevronRight size={18} />
