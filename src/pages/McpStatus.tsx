@@ -17,7 +17,8 @@ export default function McpStatus() {
   const { user, loading } = useAuth();
   const [health,setHealth]=useState<any>(null); const [checking,setChecking]=useState(false); const [logs,setLogs]=useState<any[]>([]);
   const check=async()=>{setChecking(true);try{const r=await fetch(`${endpoint}/health`);setHealth(await r.json());if(!r.ok)throw new Error();}catch{setHealth({status:'unreachable'});}finally{setChecking(false);}};
-  useEffect(()=>{check(); if(user)supabase.from('mcp_audit_logs' as any).select('created_at,tool_name,duration_ms,success,error_category').order('created_at',{ascending:false}).limit(10).then(({data})=>setLogs((data as any[])||[]));},[user]);
+  const loadLogs=()=>{if(user)supabase.from('mcp_audit_logs' as any).select('created_at,tool_name,duration_ms,success,error_category').order('created_at',{ascending:false}).limit(50).then(({data})=>setLogs((data as any[])||[]));};
+  useEffect(()=>{check(); loadLogs();},[user]);
   if(loading)return <Box sx={{display:'grid',placeItems:'center',minHeight:'100dvh'}}><CircularProgress/></Box>;
   if(!user)return <Navigate to={`/signin?redirect=${encodeURIComponent('/app/settings/mcp')}`} replace/>;
   return <MainLayout showBack backTo="/app/settings"><Box sx={{maxWidth:760,mx:'auto',display:'flex',flexDirection:'column',gap:2}}>
