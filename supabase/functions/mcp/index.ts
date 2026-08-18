@@ -95,16 +95,6 @@ async function authenticate(req: Request) {
   return { user:data.user, token, db:createClient(SUPABASE_URL, ANON_KEY, { global:{headers:{Authorization:`Bearer ${token}`}}, auth:{persistSession:false,autoRefreshToken:false} }) };
 }
 
-// Abuse protection only. A limiter outage must never take the whole integration
-// down, so an unavailable limiter fails OPEN while a real over-limit fails closed.
-async function rateLimitRequest(ctx:{token:string}, bucket="mcp", max=240, failOpen=true) {
-  try {
-    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`,{method:"POST",headers:{"Content-Type":"application/json",apikey:ANON_KEY,Authorization:`Bearer ${ctx.token}`},body:JSON.stringify({p_bucket:bucket,p_max:max,p_window_seconds:60})});
-    if(!response.ok){ console.error("[mcp] rate limiter unavailable:",response.status); return failOpen; }
-    return await response.json() !== false;
-  } catch (e) { console.error("[mcp] rate limiter error:",(e as Error).message); return failOpen; }
-}
-
 async function audit(userId:string, tool:string, started:number, success:boolean, category:string|null) {
   try { await createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false}}).from("mcp_audit_logs").insert({user_id:userId,tool_name:tool,duration_ms:Math.max(0,Date.now()-started),success,error_category:category}); } catch { /* audit cannot leak or alter tool output */ }
 }
@@ -154,7 +144,6 @@ Deno.serve(async req => {
   }
   const ctx=await authenticate(req);
   if(!ctx)return json({error:"Authentication required"},401,{"WWW-Authenticate":`Bearer resource_metadata="${RESOURCE_METADATA}"`});
-  if(!(await rateLimitRequest(ctx)))return json({error:"Rate limit exceeded or unavailable"},429);
   if(!["POST","GET","DELETE"].includes(req.method))return json({error:"Method not allowed"},405);
   try {
     const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});

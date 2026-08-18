@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APPROVED_TOOLS, MCP_MODE, capPayload, categorizeDbError, withRetry, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
+import { APPROVED_TOOLS, MCP_MODE, WRITE_TOOLS, isPermittedTool, isWriteTool, assertWritableDate, capPayload, categorizeDbError, withRetry, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
 
-describe('MCP read-only policy', () => {
+describe('MCP tool policy', () => {
   it('contains exactly the ten approved retrieval tools', () => {
-    expect(MCP_MODE).toBe('read_only');
+    expect(MCP_MODE).toBe('read_write');
     expect(APPROVED_TOOLS).toEqual([
       'get_fitness_profile','get_bodyweight_history','get_workouts','get_exercise_history',
       'get_training_summary','get_nutrition','get_sleep','get_activity',
@@ -14,13 +14,35 @@ describe('MCP read-only policy', () => {
     expect(APPROVED_TOOLS.every(name => name.startsWith('get_'))).toBe(true);
   });
 
-  it('does not register mutation or generic execution surfaces', () => {
+  it('limits writes to food, water, workouts and activities', () => {
+    expect(WRITE_TOOLS).toEqual([
+      'log_meal','update_meal','log_water',
+      'log_workout','update_workout',
+      'log_activity','update_activity',
+    ]);
+    expect(WRITE_TOOLS.every(isWriteTool)).toBe(true);
+    expect(isPermittedTool('delete_workout')).toBe(false);
+    expect(isPermittedTool('log_meal')).toBe(true);
+  });
+
+  it('does not register delete or generic execution surfaces', () => {
     const source = readFileSync(resolve('supabase/functions/mcp/index.ts'), 'utf8');
-    for (const forbidden of ['create_workout','update_workout','delete_workout','execute_sql','shell_access','fetch_url']) {
+    for (const forbidden of ['delete_workout','delete_meal','execute_sql','shell_access','fetch_url']) {
       expect(source).not.toContain(`registerTool("${forbidden}`);
     }
-    expect(source).toContain('readOnlyHint:true');
     expect(source).toContain('destructiveHint:false');
+  });
+
+  it('rejects future and stale write dates', () => {
+    expect(assertWritableDate('2026-08-10','2026-08-12')).toBe('2026-08-10');
+    expect(() => assertWritableDate('2026-08-13','2026-08-12')).toThrow('DATE_IN_FUTURE');
+    expect(() => assertWritableDate('2026-01-01','2026-08-12')).toThrow('DATE_TOO_OLD_MAX_30_DAYS');
+  });
+
+  it('applies no request rate limiting', () => {
+    const source = readFileSync(resolve('supabase/functions/mcp/index.ts'), 'utf8');
+    expect(source).not.toContain('check_rate_limit');
+    expect(source).not.toContain('Rate limit exceeded');
   });
 });
 

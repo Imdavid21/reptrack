@@ -57,17 +57,19 @@ export default function OAuthConsent() {
       <ShieldCheck size={32} />
       <Typography variant="h5" fontWeight={700} sx={{ mt:2 }}>Connect your fitness data</Typography>
       <Typography color="text.secondary" sx={{ mt:1 }}>
-        {details?.client?.client_name || 'ChatGPT'} is requesting read-only access to your Reptrack fitness records.
+        {details?.client?.client_name || 'ChatGPT'} is requesting access to your Reptrack fitness records.
       </Typography>
       <Box sx={{ my:3, p:2, bgcolor:'action.hover', borderRadius:2 }}>
         <Typography fontWeight={600}>This connection can read</Typography>
         <Typography variant="body2" color="text.secondary">Workouts, bodyweight, nutrition, sleep, activity, goals, and progress summaries.</Typography>
+        <Typography fontWeight={600} sx={{ mt:2 }}>It can also log and edit</Typography>
+        <Typography variant="body2" color="text.secondary">Meals, water, workouts, and activities (walk, run, cycling) for today or the last 30 days.</Typography>
         <Typography fontWeight={600} sx={{ mt:2 }}>It cannot</Typography>
-        <Typography variant="body2" color="text.secondary">Create, edit, or delete records; change goals; or manage your account.</Typography>
+        <Typography variant="body2" color="text.secondary">Delete records, change goals, or manage your account.</Typography>
       </Box>
       {error && <Typography color="error" variant="body2" sx={{ mb:2 }}>{error}</Typography>}
       {!details && !error ? <Box sx={{display:'flex',justifyContent:'center',py:2}}><CircularProgress size={24}/></Box> :
-        <Box sx={{display:'flex',gap:1.5}}><Button variant="outlined" fullWidth disabled={busy} onClick={()=>decide(false)}>Deny</Button><Button variant="contained" fullWidth disabled={busy||!details} onClick={()=>decide(true)}>Allow read-only access</Button></Box>}
+        <Box sx={{display:'flex',gap:1.5}}><Button variant="outlined" fullWidth disabled={busy} onClick={()=>decide(false)}>Deny</Button><Button variant="contained" fullWidth disabled={busy||!details} onClick={()=>decide(true)}>Allow access</Button></Box>}
       <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:3}}>Signed in as {user?.email}. <Link to="/privacy">Privacy policy</Link></Typography>
     </Paper>
   </Box>;
