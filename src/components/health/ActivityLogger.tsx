@@ -168,6 +168,7 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   const duration = Math.round(estimate.durationMinutes);
   const met = estimate.met;
   const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
+  const canSave = numericValue > 0 || (cfg.unit === 'km' && numericMinutes > 0);
 
   // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
@@ -206,7 +207,7 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   }, [open, logDateStr, kind]);
 
   const handleSave = async () => {
-    if (numericValue <= 0) return;
+    if (!canSave) return;
     setSaving(true);
     try {
       const endedAt = isBackDated ? null : new Date();
@@ -231,7 +232,8 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
       const when = isBackDated ? ` on ${format(logDate, 'MMM d')}` : '';
       const verb = existing ? 'Updated' : 'Logged';
       const unitLabel = cfg.unit === 'min' ? 'min' : 'km';
-      toast.success(`${verb} ${Math.round(numericValue)} ${unitLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
+      const amountLabel = numericValue > 0 ? `${Math.round(numericValue)} ${unitLabel}` : `${Math.round(duration)} min`;
+      toast.success(`${verb} ${amountLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setValue('');
       setMinutes('');
       setOpen(false);
@@ -376,7 +378,7 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
               </button>
               <button
                 onClick={handleSave}
-                disabled={numericValue <= 0 || saving}
+                disabled={!canSave || saving}
                 className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}
