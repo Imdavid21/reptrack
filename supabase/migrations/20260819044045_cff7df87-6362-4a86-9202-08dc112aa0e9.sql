@@ -1,0 +1,1 @@
+ALTER TABLE public.physique_checkins ADD COLUMN IF NOT EXISTS body_fat_percentage numeric;
