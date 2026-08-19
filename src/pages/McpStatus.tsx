@@ -16,7 +16,22 @@ const tools = ['get_fitness_profile','get_bodyweight_history','get_workouts','ge
 export default function McpStatus() {
   const { user, loading } = useAuth();
   const [health,setHealth]=useState<any>(null); const [checking,setChecking]=useState(false); const [logs,setLogs]=useState<any[]>([]);
-  const check=async()=>{setChecking(true);try{const r=await fetch(`${endpoint}/health`);setHealth(await r.json());if(!r.ok)throw new Error();}catch{setHealth({status:'unreachable'});}finally{setChecking(false);}};
+  // The health chip must never invent a status: on any non-ok path it shows the
+  // exact message the server (or the network layer) produced.
+  const check=async()=>{
+    setChecking(true);
+    try{
+      const r=await fetch(`${endpoint}/health`);
+      const body=await r.json().catch(()=>null);
+      if(!r.ok) throw new Error(body?.error||body?.message||`HTTP ${r.status} ${r.statusText}`.trim());
+      setHealth(body);
+    }catch(e:any){
+      setHealth({status:'error',error:e?.message||String(e)});
+    }finally{setChecking(false);}
+  };
+  const healthy=health?.status==='ok';
+  const statusLabel=health===null?(checking?'Checking...':'Not checked'):(health.error||health.status||'Unknown error');
+
   const loadLogs=()=>{if(user)supabase.from('mcp_audit_logs' as any).select('created_at,tool_name,duration_ms,success,error_category').order('created_at',{ascending:false}).limit(50).then(({data})=>setLogs((data as any[])||[]));};
   useEffect(()=>{check(); loadLogs();},[user]);
   if(loading)return <Box sx={{display:'grid',placeItems:'center',minHeight:'100dvh'}}><CircularProgress/></Box>;
