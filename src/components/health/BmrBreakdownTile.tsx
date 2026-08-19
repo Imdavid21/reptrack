@@ -44,11 +44,10 @@ export function BmrBreakdownTile({
 
   useEffect(() => {
     if (!expanded || !isToday) return;
-    // A ~1700 kcal/day BMR only moves ~0.02 kcal/sec - ticking the clock
-    // every second but displaying whole numbers would show the same value
-    // for 50+ seconds at a time and look frozen. 100ms + 2-decimal display
-    // (bmrBurnedSoFarTodayPrecise) actually looks live.
-    const id = setInterval(() => setNow(new Date()), 100);
+    // Whole kcal only: two decimals ticking 10x a second read as noise next
+    // to the calm numbers around it. A ~1700 kcal/day BMR gains 1 kcal every
+    // ~50s, so a 15s refresh keeps it honest without flickering.
+    const id = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(id);
   }, [expanded, isToday]);
 
@@ -91,10 +90,9 @@ export function BmrBreakdownTile({
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
             {maintenance.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal/day</span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Resting {bmr.toLocaleString()} + daily living
-            {isOverride && <span> (override)</span>}
-          </div>
+          {isOverride && (
+            <div className="text-xs text-muted-foreground">Manual override</div>
+          )}
         </div>
         <ChevronRight className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform', expanded && 'rotate-90')} />
       </div>
@@ -119,38 +117,19 @@ export function BmrBreakdownTile({
               </span>
             </div>
           )}
-          <div className="flex items-baseline justify-between border-t border-border pt-2">
-            <span className="text-xs font-semibold text-foreground">Maintenance before exercise</span>
-            <span className="text-sm font-bold tabular-nums text-foreground">{maintenance.toLocaleString()} kcal</span>
-          </div>
-
-          <div className="pt-1">
-            {isToday ? (
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground">Burned at rest so far today</span>
-                <span className="text-sm font-bold tabular-nums text-foreground">{restBurnedSoFar.toFixed(2)} kcal</span>
-              </div>
-            ) : (
-              <div className="text-xs text-muted-foreground">
-                Live "so far today" tracking only applies when viewing today.
-              </div>
-            )}
-          </div>
-          {isToday && totalBurnedToday > 0 && (
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted-foreground">+ Logged activity today</span>
-              <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedToday.toLocaleString()} kcal</span>
-            </div>
-          )}
-          {isToday && totalBurnedToday > 0 && (
+          {isToday && (
             <div className="flex items-baseline justify-between border-t border-border pt-2">
-              <span className="text-xs font-semibold text-foreground">Total burned so far</span>
-              <span className="text-sm font-bold tabular-nums text-foreground">{totalBurnedSoFar.toFixed(2)} kcal</span>
+              <span className="text-xs text-muted-foreground">
+                {totalBurnedToday > 0 ? 'Burned so far today' : 'Burned at rest so far today'}
+              </span>
+              <span className="text-sm font-bold tabular-nums text-foreground">
+                {Math.round(totalBurnedSoFar).toLocaleString()} kcal
+              </span>
             </div>
           )}
 
           <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
-            Workouts, walks, runs and rides are added on top of maintenance, so maintenance itself leaves them out.
+            Exercise burn is counted on top of this.
           </p>
         </div>
       )}
