@@ -1,7 +1,7 @@
 /**
  * PostgREST caps every response at 1000 rows. Any analysis that reads the
  * full `exercises` history (PRs, last-used weights, volume charts) silently
- * lost everything past that ceiling once the account crossed it — which is
+ * lost everything past that ceiling once the account crossed it - which is
  * exactly why new personal records stopped appearing: the newest sets were
  * simply never returned. Always page through instead of issuing one select.
  */

@@ -157,7 +157,7 @@ export function ProgressHeader() {
         {/* Main progress */}
         <div className="space-y-3">
            <div className="flex items-center justify-between">
-             <span className="text-xs text-muted-foreground uppercase tracking-wider">52-WEEK PROGRAM</span>
+             <span className="text-xs text-muted-foreground  tracking-wider">52-WEEK PROGRAM</span>
              <span className="text-xs tabular-nums">
                {workouts.length}/{totalSessions} SESSIONS
              </span>
@@ -178,7 +178,7 @@ export function ProgressHeader() {
               <Calendar className="h-3 w-3" />
             </div>
             <div className="text-xl font-bold tabular-nums">{daysLoggedThisWeek}/7</div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">DAYS LOGGED</div>
+            <div className="text-xs text-muted-foreground  mt-1">Days Logged</div>
           </div>
           
           {/* Sleep Stat - Tappable */}
@@ -197,11 +197,11 @@ export function ProgressHeader() {
               {isLoading ? '...' : (
                 (todaySleep ?? lastLoggedSleep) 
                   ? `${(todaySleep ?? lastLoggedSleep)?.toFixed(1)}h`
-                  : '—'
+                  : '-'
               )}
             </div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">
-              {!todaySleep ? 'TAP TO ADD' : 'SLEEP'}
+            <div className="text-xs text-muted-foreground  mt-1">
+              {!todaySleep ? 'Tap to add' : 'Sleep'}
             </div>
           </button>
           
@@ -220,11 +220,11 @@ export function ProgressHeader() {
               {isLoading ? '...' : (
                 (todayWeight ?? lastLoggedWeight) 
                   ? (todayWeight ?? lastLoggedWeight)?.toFixed(1)
-                  : '—'
+                  : '-'
               )}
             </div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">
-              {!todayWeight && lastLoggedWeight ? 'TAP TO ADD' : 'KG'}
+            <div className="text-xs text-muted-foreground  mt-1">
+              {!todayWeight && lastLoggedWeight ? 'Tap to add' : 'KG'}
             </div>
           </button>
         </div>
@@ -244,7 +244,7 @@ export function ProgressHeader() {
             <div className="grid min-w-0 grid-cols-2 gap-3">
               {/* Hours */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground block text-center">HOURS</span>
+                <span className="text-xs text-muted-foreground block text-center">Hours</span>
                 <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1">
                   <button
                     onClick={() => adjustSleepHours(-1)}
@@ -273,7 +273,7 @@ export function ProgressHeader() {
               
               {/* Minutes */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground block text-center">MINUTES</span>
+                <span className="text-xs text-muted-foreground block text-center">Minutes</span>
                 <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1">
                   <button
                     onClick={() => adjustSleepMinutes(-15)}

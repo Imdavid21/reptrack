@@ -29,7 +29,7 @@ export function DailyVitalsChart() {
 
   const [activeMetric, setActiveMetric] = useState<MetricType>('weight');
 
-  // Resolved as of the selected range's end date, not always "today" — so
+  // Resolved as of the selected range's end date, not always "today" - so
   // viewing an old custom date range compares against the goal that was
   // actually active then, not whatever it's since been changed to.
   const sleepGoal = resolveGoal('sleep_goal', localDateKey(dateRange.to), preferences?.sleep_goal || 7);

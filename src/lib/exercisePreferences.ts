@@ -1,5 +1,5 @@
 /**
- * Per-user exercise preferences — favorites, usage frequency/recency, and the
+ * Per-user exercise preferences - favorites, usage frequency/recency, and the
  * user's preferred variation of a movement. Pure transforms over a plain object
  * so the logic is unit-tested; the React hook handles localStorage + the user
  * key. "Remembering" a user's exercise choices means: surface what they

@@ -56,7 +56,7 @@ describe('bmrBurnedSoFarTodayPrecise', () => {
 });
 
 // Regression: a stored maintenance_calories of 0 (vs. null) was being read
-// with `??`, which only falls back on null/undefined — so 0 was treated as
+// with `??`, which only falls back on null/undefined - so 0 was treated as
 // a deliberate "maintenance is 0 kcal" override, zeroing out NET on the
 // dashboard entirely instead of falling back to the auto-calculation.
 describe('resolveMaintenanceOverride', () => {

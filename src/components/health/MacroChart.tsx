@@ -21,8 +21,8 @@ interface MacroConfig {
   defaultGoal: number;
   colorVar: string;
   icon: LucideIcon;
-  /** 'atLeast' (default) — meeting/exceeding the target is the goal, e.g.
-   *  protein. 'atMost' — staying at/under the target is the goal, e.g. sugar
+  /** 'atLeast' (default) - meeting/exceeding the target is the goal, e.g.
+   *  protein. 'atMost' - staying at/under the target is the goal, e.g. sugar
    *  and sodium, where "hit target" would otherwise mean "ate more of it". */
   direction?: 'atLeast' | 'atMost';
   /** Upper bound for the editable target input. Defaults to 1000 (fits every
@@ -62,7 +62,7 @@ function useMacroHistory(macro: MacroKey) {
         .eq('user_id', user.id)
         .gte('date', startDateStr)
         .lte('date', endDateStr);
-      // Surface failures instead of rendering them as an all-zero chart — a
+      // Surface failures instead of rendering them as an all-zero chart - a
       // missing column (unapplied migration) looked identical to "no data".
       if (error) throw error;
 
@@ -89,7 +89,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   const dailyTarget = (preferences as any)?.[cfg.goalKey] ?? cfg.defaultGoal;
   const isAtMost = cfg.direction === 'atMost';
   // v > 0 guards against an unlogged (zero) day reading as "good" for atMost
-  // macros — 0 is trivially <= any target, which would otherwise paint a day
+  // macros - 0 is trivially <= any target, which would otherwise paint a day
   // with no data logged the same as a deliberately low-sugar/low-sodium day.
   // No-op for atLeast macros: a zero value was never >= a positive target anyway.
   const isGood = (v: number, target: number) => v > 0 && (isAtMost ? v <= target : v >= target);
@@ -105,7 +105,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   };
 
   // Each day gets the target that was actually active on it (via goal_history),
-  // not today's live value — so changing a target doesn't retroactively rewrite
+  // not today's live value - so changing a target doesn't retroactively rewrite
   // whether past days "hit" it. The reference line and editor above still show
   // the current target, since that's what you're aiming for right now.
   const dataWithTargets = useMemo(

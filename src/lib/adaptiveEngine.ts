@@ -1,18 +1,18 @@
 /**
- * Adaptive Mode decision engine — the Infinite Progression (IP) method.
+ * Adaptive Mode decision engine - the Infinite Progression (IP) method.
  *
  * Pure functions only: given a lifecycle's logged sessions and the static
  * roster (adaptiveRoster.ts), decide whether to keep progressing, when to
  * rotate variations, which variation to rotate to, how much strength carries
  * forward, and what today's leading/back-off targets should be. No Supabase
- * or React here — useAdaptiveMode.ts is the thin data-fetching layer that
+ * or React here - useAdaptiveMode.ts is the thin data-fetching layer that
  * feeds these functions real rows and writes their output back.
  */
 
 import { MovementPatternDef, RosterVariation, StrengthCurveProfile, StrengthZone } from './adaptiveRoster';
 
 export interface AdaptiveConfig {
-  /** Hard cap on lifecycle duration in weeks — forces rotation even if progress continues. */
+  /** Hard cap on lifecycle duration in weeks - forces rotation even if progress continues. */
   lifecycleMaxWeeks: number;
   /** Back-off set load as a fraction of the leading set's load. */
   backoffPercent: number;
@@ -118,7 +118,7 @@ export function checkEndTrigger(
   if (weeksElapsed >= config.lifecycleMaxWeeks) {
     return {
       type: 'duration_cap',
-      detail: `This lifecycle has run ${Math.floor(weeksElapsed)} weeks — rotating for novelty even though progress continued.`,
+      detail: `This lifecycle has run ${Math.floor(weeksElapsed)} weeks - rotating for novelty even though progress continued.`,
     };
   }
 
@@ -129,7 +129,7 @@ export function checkEndTrigger(
 
 /**
  * Any zone flagged in 2+ sessions within the lifecycle (not necessarily
- * consecutive) counts as an open weak point — broader than the end-trigger's
+ * consecutive) counts as an open weak point - broader than the end-trigger's
  * "2 consecutive sessions" rule, per spec Section 4. Ties broken by most
  * recent occurrence.
  */
@@ -176,8 +176,8 @@ export function deriveConversionFactor(fromCurve: StrengthCurveProfile, toCurve:
   const magA = Math.sqrt(ZONES.reduce((s, z) => s + fromCurve[z] ** 2, 0));
   const magB = Math.sqrt(ZONES.reduce((s, z) => s + toCurve[z] ** 2, 0));
   const similarity = magA && magB ? dot / (magA * magB) : 1;
-  // Cosine similarity across these curves realistically ranges ~0.5–1.0;
-  // map that onto a 0.6–1.0 conversion factor so even a very different
+  // Cosine similarity across these curves realistically ranges ~0.5-1.0;
+  // map that onto a 0.6-1.0 conversion factor so even a very different
   // variation still carries forward most of the accumulated strength.
   return Math.round(Math.max(0.6, Math.min(1, 0.6 + (similarity - 0.5) * 0.8)) * 100) / 100;
 }
@@ -236,7 +236,7 @@ export function selectNextVariation(
       const chosen = ranked[0];
       return {
         variation: chosen.variation,
-        reason: `Selected because your last lifecycles flagged a ${openWeakPoint} weak point in ${pattern.name} — ${chosen.variation.name} scores ${chosen.variation.curve[openWeakPoint]}/5 there.`,
+        reason: `Selected because your last lifecycles flagged a ${openWeakPoint} weak point in ${pattern.name} - ${chosen.variation.name} scores ${chosen.variation.curve[openWeakPoint]}/5 there.`,
       };
     }
   }
@@ -251,8 +251,8 @@ export function selectNextVariation(
   return {
     variation: chosen.variation,
     reason: chosen.lastActiveEndDate
-      ? `No open weak point — rotating to ${chosen.variation.name} for novelty (last trained ${chosen.lastActiveEndDate}).`
-      : `No open weak point — rotating to ${chosen.variation.name}, which hasn't been trained in this pattern yet.`,
+      ? `No open weak point - rotating to ${chosen.variation.name} for novelty (last trained ${chosen.lastActiveEndDate}).`
+      : `No open weak point - rotating to ${chosen.variation.name}, which hasn't been trained in this pattern yet.`,
   };
 }
 
@@ -268,7 +268,7 @@ export function isResensitised(
     .sort((a, b) => (a.end_date ?? a.start_date).localeCompare(b.end_date ?? b.start_date));
 
   const lastIdxFromEnd = [...closedInPattern].reverse().findIndex(l => l.variation_name === variationName);
-  if (lastIdxFromEnd === -1) return true; // never used — always eligible
+  if (lastIdxFromEnd === -1) return true; // never used - always eligible
   // Lifecycles closed *after* this variation's last run, in any other variation.
   const otherLifecyclesSince = lastIdxFromEnd;
   return otherLifecyclesSince >= config.resensitiseMinOtherLifecycles;

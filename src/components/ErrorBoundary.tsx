@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-center max-w-sm">
             <div className="text-lg font-bold mb-2">Something went wrong</div>
             <p className="text-sm text-muted-foreground mb-6">
-              This screen hit an unexpected error. Your saved data is safe — let's get you back.
+              This screen hit an unexpected error. Your saved data is safe - let's get you back.
             </p>
             <button
               onClick={this.handleReload}

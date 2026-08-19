@@ -16,7 +16,7 @@ function durationDays(l: LifecycleRecord): number {
 /**
  * Per-pattern rotation history: the full variation chain, cumulative
  * carryover_total over time, and lifecycle-duration trend (a proxy for
- * training maturity — are lifecycles taking longer or shorter to exhaust?).
+ * training maturity - are lifecycles taking longer or shorter to exhaust?).
  * Spec Section 6.
  */
 export default function LifecycleTracker() {
@@ -79,7 +79,7 @@ export default function LifecycleTracker() {
                         </div>
                       </div>
                       <div className="text-right shrink-0 tabular-nums">
-                        <div className="font-bold">{l.starting_load ?? '—'}{l.ending_load != null ? ` → ${l.ending_load}` : ''}kg</div>
+                        <div className="font-bold">{l.starting_load ?? '-'}{l.ending_load != null ? ` → ${l.ending_load}` : ''}kg</div>
                         {l.carryover_out != null && (
                           <div className="text-xs text-energy-ink font-semibold">+{l.carryover_out}kg</div>
                         )}
@@ -92,7 +92,7 @@ export default function LifecycleTracker() {
                   <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 text-xs text-muted-foreground">
                     <TrendingUp className={`h-3.5 w-3.5 shrink-0 ${trendingFaster ? 'text-energy-ink' : 'text-fuel-ink rotate-180'}`} />
                     Lifecycles are {trendingFaster ? 'closing faster' : 'running longer'} than when you started this pattern
-                    ({durations[0]}d → {durations.at(-1)}d) — {trendingFaster ? 'a sign of rising training maturity' : 'still building a base here'}.
+                    ({durations[0]}d → {durations.at(-1)}d) - {trendingFaster ? 'a sign of rising training maturity' : 'still building a base here'}.
                   </div>
                 )}
               </motion.div>

@@ -85,7 +85,7 @@ export function useDraftWorkout() {
       try {
         const parsed = JSON.parse(saved) as DraftWorkout;
         // Staleness must be measured from when the draft was last SAVED, not from
-        // parsed.date — parsed.date is the workout's (possibly back-dated) logging
+        // parsed.date - parsed.date is the workout's (possibly back-dated) logging
         // date, so basing staleness on it makes any back-dated session look >24h
         // old the instant it's saved and silently discards the in-progress sets.
         const referenceTime = parsed.lastSavedAt ?? parsed.date;
@@ -106,7 +106,7 @@ export function useDraftWorkout() {
     setLoaded(true);
   }, [user, authLoading, getKey]);
 
-  // Aggressive persistence — save immediately when app is backgrounded, closed, or killed
+  // Aggressive persistence - save immediately when app is backgrounded, closed, or killed
   useEffect(() => {
     const flushDraft = () => {
       if (pendingSaveRef.current) {

@@ -4,7 +4,7 @@
  * Used across workout logging, last-used weight look-ups, PR tracking, and
  * growth tracking to ensure fuzzy name resolution is consistent everywhere.
  *
- * This is the single canonical alias table for exercise identity — it used
+ * This is the single canonical alias table for exercise identity - it used
  * to be two independently-maintained tables (this file's, lowercase-only,
  * matching-purposed; and usePersonalRecords.ts's, Title-Case, PR-purposed)
  * that had drifted apart: 9 aliases existed only in one, 14 only in the
@@ -14,7 +14,7 @@
  */
 
 /**
- * Canonical alias map — resolves common abbreviations and legacy naming
+ * Canonical alias map - resolves common abbreviations and legacy naming
  * variations to their unified, properly-cased canonical name. Keys are
  * lowercase for case-insensitive lookup; values are the display-ready
  * canonical form (used directly in PR badges and growth-tracking labels).
@@ -259,7 +259,7 @@ export function normalizeExerciseName(name: string): string {
   const lower = resolved.toLowerCase();
   // For calf raises, "seated" vs "standing" denote genuinely different lifts
   // loaded very differently, so keep the position token instead of stripping it
-  // — otherwise both collapse to "calfraise" and findBestMatch pre-fills a
+  // - otherwise both collapse to "calfraise" and findBestMatch pre-fills a
   // seated calf raise with standing-calf-raise weights (and vice versa).
   const isCalf = /\bcalf\b/.test(lower);
   return lower
@@ -292,16 +292,16 @@ export function findBestMatch<T>(
 ): T | undefined {
   if (!map) return undefined;
 
-  // 1 – exact
+  // 1 - exact
   if (map[exerciseName]) return map[exerciseName];
 
-  // 2 – normalised equality
+  // 2 - normalised equality
   const target = normalizeExerciseName(exerciseName);
   for (const [key, value] of Object.entries(map)) {
     if (normalizeExerciseName(key) === target) return value;
   }
 
-  // 3 – substring containment (guard against false positives with short strings)
+  // 3 - substring containment (guard against false positives with short strings)
   for (const [key, value] of Object.entries(map)) {
     const keyNorm = normalizeExerciseName(key);
     if (target.length > 6 && keyNorm.length > 6) {

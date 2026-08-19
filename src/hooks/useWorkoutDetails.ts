@@ -7,7 +7,7 @@ import { syncWorkoutEnergy } from '@/lib/workoutEnergySync';
 
 // Editing a set from here (History → "tap any set to edit weight & reps") is
 // the same underlying `exercises` row every PR/volume/progression view reads
-// — but this hook previously only invalidated its own workout-details/
+// - but this hook previously only invalidated its own workout-details/
 // workouts caches, so correcting an already-logged set (e.g. fixing a typo'd
 // weight, or adding the real heaviest set after the fact) left PR badges,
 // muscle-balance volume, and progression charts silently showing stale data
@@ -25,12 +25,12 @@ function invalidateSetDerivedQueries(queryClient: ReturnType<typeof useQueryClie
   queryClient.invalidateQueries({ queryKey: ['muscleBalance'] });
   queryClient.invalidateQueries({ queryKey: ['workoutHistory'] });
   // 'exerciseSets' is the one real query key behind volume charts, exercise
-  // progression, and muscle balance — NOT 'volumeData'/'exerciseProgression',
+  // progression, and muscle balance - NOT 'volumeData'/'exerciseProgression',
   // which read like plausible names but match no actual useQuery anywhere in
   // the app (see the same dead keys in useWorkouts.ts/useOfflineSync.ts).
   queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
   // 'lastUsedWeights' has a 5-minute staleTime and was never invalidated by
-  // anything — editing a set here could leave "last used" prefills and next-
+  // anything - editing a set here could leave "last used" prefills and next-
   // session progression suggestions showing pre-edit numbers for up to 5min.
   queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
 }

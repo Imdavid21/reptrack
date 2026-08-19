@@ -13,7 +13,7 @@ const NotFound = () => {
         <h1 className="text-5xl font-bold tracking-tight">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           The page <span className="font-mono text-foreground break-all">{location.pathname}</span> doesn't exist.
-          Your workouts are safe — let's get you back on track.
+          Your workouts are safe - let's get you back on track.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link to="/app" className="btn-energy px-5 py-2.5 text-sm">

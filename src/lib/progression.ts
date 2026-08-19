@@ -23,7 +23,7 @@ export interface ProgressionSuggestion {
   /** Display rep target, e.g. "6-8" or "8". */
   reps: string;
   sets: number;
-  /** Short rationale, e.g. "+2.5kg — hit 8 reps last time". */
+  /** Short rationale, e.g. "+2.5kg - hit 8 reps last time". */
   note: string;
   trend: 'up' | 'hold' | 'new';
 }
@@ -57,10 +57,10 @@ export function suggestProgression(
 
   if (!lastUsed) {
     return {
-      weight: templateWeight || '—',
+      weight: templateWeight || '-',
       reps: repLabel,
       sets,
-      note: 'First time — find a solid working weight',
+      note: 'First time - find a solid working weight',
       trend: 'new',
     };
   }
@@ -87,7 +87,7 @@ export function suggestProgression(
       weight: `${fmt(next)}kg`,
       reps: repLabel,
       sets,
-      note: `+${fmt(step)}kg — you hit ${lastReps} reps last time`,
+      note: `+${fmt(step)}kg - you hit ${lastReps} reps last time`,
       trend: 'up',
     };
   }
@@ -97,7 +97,7 @@ export function suggestProgression(
     weight: `${fmt(lastWeight)}kg`,
     reps: repLabel,
     sets,
-    note: `Same weight — push for ${high} reps (last: ${lastReps})`,
+    note: `Same weight - push for ${high} reps (last: ${lastReps})`,
     trend: 'hold',
   };
 }

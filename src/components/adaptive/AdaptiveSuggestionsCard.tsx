@@ -18,7 +18,7 @@ function choiceKey(patternKey: string) {
   return `adaptive-choice-${patternKey}-${localDateKey()}`;
 }
 
-/** Local, per-day "which programming am I following" preference — informational only, doesn't touch the regular programming engine. */
+/** Local, per-day "which programming am I following" preference - informational only, doesn't touch the regular programming engine. */
 function useDayChoice(patternKey: string) {
   const key = choiceKey(patternKey);
   const [choice, setChoice] = useState<'regular' | 'adaptive'>(() => (localStorage.getItem(key) as 'regular' | 'adaptive') || 'regular');
@@ -54,7 +54,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
           <div className="min-w-0">
             <div className="text-sm font-semibold">{pattern.name}</div>
             <div className="text-xs text-muted-foreground truncate">
-              {historySeed ? `Suggestion available from your history` : `Not started — key movement: ${pattern.keyMovement}`}
+              {historySeed ? `Suggestion available from your history` : `Not started - key movement: ${pattern.keyMovement}`}
             </div>
           </div>
           <ChevronRight className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform', expanded && 'rotate-90')} />
@@ -169,7 +169,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
                 </div>
               )}
 
-              {/* Regular vs Adaptive — informational choice only; doesn't alter the regular programming engine's output. */}
+              {/* Regular vs Adaptive - informational choice only; doesn't alter the regular programming engine's output. */}
               <div>
                 <div className="type-caption mb-1">Following today</div>
                 <div className="flex rounded-lg bg-muted p-0.5">
@@ -209,7 +209,7 @@ function PatternRow({ state }: { state: AdaptivePatternState }) {
 /**
  * Adaptive Mode's surface on the Today/workout-split screen: per movement
  * pattern, shows the active variation + why, today's leading/back-off
- * targets, and an end-trigger prompt to rotate when one has fired — sitting
+ * targets, and an end-trigger prompt to rotate when one has fired - sitting
  * alongside (not replacing) the regular programmed workout, so the user can
  * compare both and choose which to follow that session.
  */
@@ -225,7 +225,7 @@ export function AdaptiveSuggestionsCard() {
         <div className="text-sm font-bold">Adaptive suggestions</div>
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Infinite Progression rotation, alongside your regular programming — pick which to follow per pattern.
+        Infinite Progression rotation, alongside your regular programming - pick which to follow per pattern.
       </p>
       <div className="space-y-2">
         {patternStates.map(state => (

@@ -118,7 +118,7 @@ export function CalorieTrackerCompact() {
   const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = energy.model?.calorieTarget ?? preferences?.daily_calorie_goal ?? 2000;
   // Maintenance baseline: explicit override, otherwise the body-based
-  // auto-calculation (BMR alone — today's real activity is credited
+  // auto-calculation (BMR alone - today's real activity is credited
   // separately in real time via `+ totalBurned` below, not assumed here),
   // otherwise the old circular fallback for users with no profile data yet.
   const maintenance = energy.model?.personalBaseline ?? (dailyGoal + (deficitMode ? deficitTarget : 0));
@@ -181,7 +181,7 @@ export function CalorieTrackerCompact() {
   );
 
   /** Macro totals for the pending entry, shown before it's confirmed and reused
-   *  as the values actually saved — per-item values when the AI supplied them,
+   *  as the values actually saved - per-item values when the AI supplied them,
    *  otherwise the analysis-level totals. */
   const pendingMacros = useMemo(() => {
     const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
@@ -438,7 +438,7 @@ export function CalorieTrackerCompact() {
   const progressPercent = Math.min((totalCalories / cap) * 100, 100);
   const overCap = totalCalories > cap + totalBurned;
   // netDeficit = maintenance - eaten + burned, so with nothing logged yet
-  // today it equals the FULL maintenance figure — mathematically a "deficit,"
+  // today it equals the FULL maintenance figure - mathematically a "deficit,"
   // but showing that as an already-hit green goal before a single meal is
   // logged rewards not tracking rather than actually hitting the target.
   const hitDeficit = netDeficit >= deficitTarget && meals.length > 0;
@@ -490,7 +490,7 @@ export function CalorieTrackerCompact() {
               <h3 className="text-sm font-semibold tracking-tight">
                 {viewingToday
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
-                  : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'DEFICIT' : 'CALORIES'}`}
+                  : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h3>
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
@@ -660,7 +660,7 @@ export function CalorieTrackerCompact() {
 
           {!deficitMode && meals.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h4 className="text-xs text-muted-foreground">RECENT</h4>
+              <h4 className="text-xs text-muted-foreground">Recent</h4>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
                 <div key={meal.id} className="flex items-center justify-between text-sm gap-2 group">
                   <span className="tabular-nums text-muted-foreground truncate">{mealTime(meal.created_at)}</span>
@@ -720,7 +720,7 @@ export function CalorieTrackerCompact() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
                   <details className="pt-1 text-xs text-muted-foreground">
                     <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
-                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}–{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
+                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
                   </details>
                 </div>
               )}
@@ -851,7 +851,7 @@ export function CalorieTrackerCompact() {
                 {/* Context hint input - shown before analysis starts or while analyzing */}
                 {!isAnalyzing && !analysisError && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">CONTEXT (OPTIONAL)</Label>
+                    <Label className="text-xs text-muted-foreground">Context (optional)</Label>
                     <Input
                       placeholder="e.g., restaurant, home cooked, meal prep"
                       value={contextHint}
@@ -959,7 +959,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS — tap to edit</Label>
+                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS - tap to edit</Label>
                     <span className="text-xs text-muted-foreground">
                       {Math.round(analysis.confidence * 100)}% confidence
                     </span>
@@ -1019,7 +1019,7 @@ export function CalorieTrackerCompact() {
 
                 {/* Macro breakdown, shown before confirming so nothing is saved blind */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">MACRO BREAKDOWN</Label>
+                  <Label className="text-xs text-muted-foreground">Macro Breakdown</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1.5">
                     {([
                       { key: 'protein', label: 'Protein', unit: 'g' },
@@ -1064,7 +1064,7 @@ export function CalorieTrackerCompact() {
             {manualMode && (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">FOOD NAME</Label>
+                  <Label className="text-xs text-muted-foreground">Food Name</Label>
                   <Input
                     placeholder="e.g., Chicken salad"
                     value={manualData.food_name}
@@ -1073,7 +1073,7 @@ export function CalorieTrackerCompact() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">CALORIES</Label>
+                  <Label className="text-xs text-muted-foreground">Calories</Label>
                   <Input
                     type="number"
                     placeholder="e.g., 450"

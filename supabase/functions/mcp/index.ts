@@ -40,7 +40,7 @@ const definitions = {
   get_sleep: { description: "Retrieve stored sleep duration and summary statistics. Use for sleep consistency or recovery context; unavailable sleep fields are explicitly identified.", schema: dateRange },
   get_activity: { description: "Retrieve stored activity, cardio duration, active calories, and distance. Use for activity analysis; BMR and unavailable metrics are never inferred.", schema: dateRange },
   get_progress_summary: { description: "Retrieve a compact cross-domain progress summary covering bodyweight, nutrition, sleep, activity, and training. Use for efficient high-level comparisons without coaching advice.", schema: dateRange },
-  get_recent_fitness_data: { description: "Retrieve a compact combined recent fitness dataset for prompts reviewing weight, training, nutrition, sleep, and activity together. Accepts 1–90 days and avoids large raw payloads.", schema: { days:z.number().int().min(1).max(90).optional().default(14) } },
+  get_recent_fitness_data: { description: "Retrieve a compact combined recent fitness dataset for prompts reviewing weight, training, nutrition, sleep, and activity together. Accepts 1-90 days and avoids large raw payloads.", schema: { days:z.number().int().min(1).max(90).optional().default(14) } },
 } as const;
 
 const logDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe(`Local calendar date YYYY-MM-DD. Defaults to today; up to ${MAX_BACKDATE_DAYS} days back, never the future.`);

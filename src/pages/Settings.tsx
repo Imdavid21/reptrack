@@ -249,7 +249,7 @@ export default function Settings() {
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Box>
-                          <Label className="text-xs text-muted-foreground">NAME</Label>
+                          <Label className="text-xs text-muted-foreground">Name</Label>
                           <Input
                             type="text"
                             placeholder="Your name"
@@ -260,7 +260,7 @@ export default function Settings() {
                         </Box>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">DATE OF BIRTH</Label>
+                            <Label className="text-xs text-muted-foreground">Date of Birth</Label>
                             <Input
                               type="date"
                               value={profile.date_of_birth}
@@ -269,7 +269,7 @@ export default function Settings() {
                             />
                           </Box>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">HEIGHT (CM)</Label>
+                            <Label className="text-xs text-muted-foreground">Height (cm)</Label>
                             <Input
                               type="number"
                               placeholder="175"
@@ -281,7 +281,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">INITIAL MEASURED WEIGHT (KG)</Label>
+                          <Label className="text-xs text-muted-foreground">Initial measured weight (kg)</Label>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -293,7 +293,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">TYPICAL NON-EXERCISE DAY</Label>
+                          <Label className="text-xs text-muted-foreground">Typical Non-exercise Day</Label>
                           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
                             {[
                               ['mostly_seated', 'Mostly seated'],
@@ -318,7 +318,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">GENDER</Label>
+                          <Label className="text-xs text-muted-foreground">Gender</Label>
                           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
                             {['male', 'female', 'other'].map((g) => (
                               <button
@@ -358,7 +358,7 @@ export default function Settings() {
                             className="btn-brutalist btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
                           >
                             {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                            {profileDirty ? 'SAVE PROFILE' : 'DONE'}
+                            {profileDirty ? 'Save profile' : 'Done'}
                           </button>
                         </Box>
                       </Box>
@@ -778,7 +778,7 @@ export default function Settings() {
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated expenditure today</Typography>
                             <Typography variant="body1" fontWeight={700}>{autoMaintenance.predictedTdee.toLocaleString()} kcal</Typography>
                             <Typography variant="caption" color="text.secondary">
-                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}–{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
+                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}-{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               Normal day {autoMaintenance.maintenance.toLocaleString()} | REE {autoMaintenance.bmr.toLocaleString()} | calibration {autoMaintenance.calibrationAdjustment >= 0 ? '+' : ''}{autoMaintenance.calibrationAdjustment}

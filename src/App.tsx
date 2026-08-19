@@ -10,7 +10,7 @@ import { Toaster } from "sonner";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 
-// Core pages — eagerly loaded for instant navigation in the PWA
+// Core pages - eagerly loaded for instant navigation in the PWA
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";

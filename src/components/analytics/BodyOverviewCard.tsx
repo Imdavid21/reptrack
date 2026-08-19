@@ -52,7 +52,7 @@ function ScoreRing({ score }: { score: number | null }) {
         )}
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-3xl font-bold tabular-nums leading-none">{score ?? '—'}</span>
+        <span className="text-3xl font-bold tabular-nums leading-none">{score ?? '-'}</span>
       </div>
     </div>
   );
@@ -93,7 +93,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
         <div className="min-w-0">
           <div className="text-base font-bold leading-tight">{scoreWord(overview.overall)}</div>
           <p className="text-xs text-muted-foreground mt-1">
-            Across training, fuel, recovery and hydration — last {overview.rangeDays} day{overview.rangeDays === 1 ? '' : 's'}.
+            Across training, fuel, recovery and hydration - last {overview.rangeDays} day{overview.rangeDays === 1 ? '' : 's'}.
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export function BodyOverviewCard({ overview, isLoading }: Props) {
               <div className="flex items-center gap-1.5 shrink-0 w-14 justify-end">
                 <TrendIcon trend={p.trend} />
                 <span className="text-xs font-bold tabular-nums w-7 text-right">
-                  {p.score != null ? p.score : '—'}
+                  {p.score != null ? p.score : '-'}
                 </span>
               </div>
             </div>

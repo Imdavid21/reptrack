@@ -91,7 +91,7 @@ export function useBodyOverview(range?: BodyOverviewRange) {
   });
 
   // Resolves what each goal was on a given day via goal_history, falling back
-  // to the live preference (or a hardcoded default) when there's no history —
+  // to the live preference (or a hardcoded default) when there's no history -
   // e.g. a goal never edited since point-in-time tracking shipped. Point-in-
   // time only for the numeric daily/weekly targets; weightGoalType is a
   // direction flag judged by trend, not a per-day number, so it always uses
@@ -104,7 +104,7 @@ export function useBodyOverview(range?: BodyOverviewRange) {
     dailyProtein: preferences?.daily_protein_goal != null
       ? resolveGoal('daily_protein_goal', dateKey, preferences.daily_protein_goal)
       : null,
-    // Normalize both the fallback AND the resolved result — resolveGoal can
+    // Normalize both the fallback AND the resolved result - resolveGoal can
     // return a raw historical goal_history value that predates the ml/liters
     // fix elsewhere (see Insights.tsx) and may still be ml-scale.
     dailyWaterLiters: normalizeWaterGoalLiters(

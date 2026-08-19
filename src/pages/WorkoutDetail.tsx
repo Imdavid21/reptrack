@@ -226,7 +226,7 @@ export default function WorkoutDetail() {
           <div className="flex items-center gap-2">
             <div className="text-right mr-1">
               <span className="text-lg font-bold tabular-nums">{completedCount}/{totalCount}</span>
-              <p className="text-xs text-muted-foreground uppercase">SETS</p>
+              <p className="text-xs text-muted-foreground">Sets</p>
             </div>
             <button
               className={cn(
@@ -307,7 +307,7 @@ export default function WorkoutDetail() {
               {/* Sets table */}
               <div className="space-y-1">
                 {/* Header */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-xs text-muted-foreground uppercase tracking-wider">
+                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-xs text-muted-foreground  tracking-wider">
                   <span className="text-center">#</span>
                   <span className="text-center">Weight</span>
                   <span className="text-center">Reps</span>
@@ -350,7 +350,7 @@ export default function WorkoutDetail() {
                         />
                       ) : (
                         <div className="text-xs text-center tabular-nums">
-                          {set.actual_weight || <span className="text-muted-foreground">{set.target_weight || '—'}</span>}
+                          {set.actual_weight || <span className="text-muted-foreground">{set.target_weight || '-'}</span>}
                         </div>
                       )}
 
@@ -364,7 +364,7 @@ export default function WorkoutDetail() {
                         />
                       ) : (
                         <div className="text-xs text-center tabular-nums">
-                          {set.actual_reps || <span className="text-muted-foreground">{set.target_reps || '—'}</span>}
+                          {set.actual_reps || <span className="text-muted-foreground">{set.target_reps || '-'}</span>}
                         </div>
                       )}
 

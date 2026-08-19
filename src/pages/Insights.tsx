@@ -143,7 +143,7 @@ function ProgressCard() {
   const workoutProgress = summary ? Math.round((summary.workouts / monthlyWorkoutGoal) * 100) : 0;
   const volumeFormatted = summary?.totalVolume
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
-    : '—';
+    : '-';
 
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
     label: string;
@@ -321,15 +321,15 @@ function ProgressCard() {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 1.5 }}>
             <StatItem
-              label="VOLUME"
+              label="Volume"
               thisVal={thisWeek.totalVolume >= 1000 ? `${(thisWeek.totalVolume / 1000).toFixed(1)}k` : thisWeek.totalVolume}
               lastVal={lastWeek?.totalVolume ? (lastWeek.totalVolume >= 1000 ? `${(lastWeek.totalVolume / 1000).toFixed(1)}k` : lastWeek.totalVolume) : 0}
               changeVal={volumeChange}
             />
             <StatItem
-              label="SLEEP"
-              thisVal={thisWeek.avgSleep?.toFixed(1) || '—'}
-              lastVal={lastWeek?.avgSleep?.toFixed(1) || '—'}
+              label="Sleep"
+              thisVal={thisWeek.avgSleep?.toFixed(1) || '-'}
+              lastVal={lastWeek?.avgSleep?.toFixed(1) || '-'}
               suffix="h"
               changeVal={sleepChange}
             />

@@ -29,7 +29,7 @@ const WATER_SIZES = [
 export function WaterTracker() {
   const { logDate, isBackDated } = useLogDate();
   const viewingToday = !isBackDated;
-  // Show (and add to) the shared dashboard date — today by default, or a
+  // Show (and add to) the shared dashboard date - today by default, or a
   // back-dated day so its existing entries are visible and can be added to.
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs(viewingToday ? undefined : logDate);
   const { preferences } = useUserPreferences();
@@ -41,7 +41,7 @@ export function WaterTracker() {
   const prevTotalRef = useRef(totalToday);
 
   // Defends against pre-existing rows saved in ml by an inconsistent editor
-  // elsewhere (see Insights.tsx) — daily_water_goal is meant to be liters.
+  // elsewhere (see Insights.tsx) - daily_water_goal is meant to be liters.
   const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
 
   // Sync edit slider when opening
@@ -97,7 +97,7 @@ export function WaterTracker() {
     <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="section-header mb-0">{viewingToday ? "TODAY'S WATER" : `${format(logDate, 'MMM d').toUpperCase()} WATER`}</h3>
+          <h3 className="section-header mb-0">{viewingToday ? "Today's water" : `${format(logDate, 'MMM d').toUpperCase()} WATER`}</h3>
           <button
             onClick={() => setIsEditingGoal(!isEditingGoal)}
             className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
@@ -139,7 +139,7 @@ export function WaterTracker() {
             className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="h-3 w-3" />
-            {isSaving ? 'SAVING…' : 'SAVE'}
+            {isSaving ? 'SAVING…' : 'Save'}
           </button>
         </div>
       )}
@@ -153,7 +153,7 @@ export function WaterTracker() {
 
       {waterLogs.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h4 className="text-xs text-muted-foreground">RECENT</h4>
+          <h4 className="text-xs text-muted-foreground">Recent</h4>
           {waterLogs.slice(0, 3).map((log) => (
             <div key={log.id} className="flex justify-between text-sm">
               <span className="tabular-nums text-muted-foreground">{format(new Date(log.timestamp), 'HH:mm')}</span>

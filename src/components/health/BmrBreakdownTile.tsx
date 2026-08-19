@@ -9,9 +9,9 @@ interface Props {
   /** Baseline maintenance before deliberate exercise, kcal/day. */
   maintenance: number;
   isOverride: boolean;
-  /** Today's real logged activity/workout burn — only meaningful when viewing today. */
+  /** Today's real logged activity/workout burn - only meaningful when viewing today. */
   totalBurnedToday: number;
-  /** False when viewing a back-dated day — the live "so far" ticker only makes sense for today. */
+  /** False when viewing a back-dated day - the live "so far" ticker only makes sense for today. */
   isToday: boolean;
   /** Personal calibration applied on top of the formula baseline, kcal/day. Absent for days with no model row. */
   calibrationAdjustment?: number | null;
@@ -44,7 +44,7 @@ export function BmrBreakdownTile({
 
   useEffect(() => {
     if (!expanded || !isToday) return;
-    // A ~1700 kcal/day BMR only moves ~0.02 kcal/sec — ticking the clock
+    // A ~1700 kcal/day BMR only moves ~0.02 kcal/sec - ticking the clock
     // every second but displaying whole numbers would show the same value
     // for 50+ seconds at a time and look frozen. 100ms + 2-decimal display
     // (bmrBurnedSoFarTodayPrecise) actually looks live.
@@ -67,7 +67,7 @@ export function BmrBreakdownTile({
 
   // A plain div, not a <button>: this tile lives inside CalorieTrackerCompact's
   // CollapsibleTrigger (itself a button, toggling the whole card's expanded
-  // state) — nesting a real button inside it is invalid HTML and lets clicks
+  // state) - nesting a real button inside it is invalid HTML and lets clicks
   // bubble up to toggle the outer card too. stopPropagation below plus a
   // manual button role/keyboard handler gets the same tappable behavior
   // without nesting interactive elements.
@@ -87,7 +87,7 @@ export function BmrBreakdownTile({
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-xs text-muted-foreground tracking-wider">MAINTENANCE (BEFORE EXERCISE)</div>
+          <div className="text-xs text-muted-foreground tracking-wider">Maintenance (before exercise)</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
             {maintenance.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal/day</span>
           </div>

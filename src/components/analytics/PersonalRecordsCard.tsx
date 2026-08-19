@@ -9,7 +9,7 @@ import { toast } from '@/lib/toast';
 function recordValue(record: PersonalRecord) {
   if (record.prType === 'duration') return record.reps;
   if (record.prType === 'reps') return record.reps;
-  return `${record.maxWeight} kg × ${record.reps || '—'}`;
+  return `${record.maxWeight} kg × ${record.reps || '-'}`;
 }
 
 function sourceLabel(record: PersonalRecord) {

@@ -1,5 +1,5 @@
 /**
- * Body Overview engine — the "north star" synthesis layer.
+ * Body Overview engine - the "north star" synthesis layer.
  *
  * Pure functions that turn raw logs (workouts, meals, water, sleep, weight)
  * into: one overall body score, four pillar scores (Training / Fuel /
@@ -79,7 +79,7 @@ export interface ScorePoint {
  * score computed day by day. Pure: date math happens in the caller.
  *
  * `resolveGoals` is called once per window with that window's end date, so a
- * goal change only affects windows from the date it was actually made —
+ * goal change only affects windows from the date it was actually made -
  * without it, changing e.g. your protein target today would retroactively
  * repaint the whole trend line, including weeks before the change existed.
  */
@@ -341,7 +341,7 @@ function buildNextSteps(o: BodyOverview, input: BodyOverviewInput): NextStep[] {
       id: 'track-meals',
       pillar: 'fuel',
       title: 'Track meals more consistently',
-      detail: `Only ${fuelDays} of the last ${input.rangeDays} days have meals logged — trends need ≥3 days/week.`,
+      detail: `Only ${fuelDays} of the last ${input.rangeDays} days have meals logged - trends need ≥3 days/week.`,
       route: '/app',
       priority: 60,
     });
@@ -357,7 +357,7 @@ function buildNextSteps(o: BodyOverview, input: BodyOverviewInput): NextStep[] {
         id: 'sleep-short',
         pillar: 'recovery',
         title: `Move bedtime ~${gapMin} min earlier`,
-        detail: `Sleep is averaging ${avgSleep.toFixed(1)}h vs your ${g.sleepHours}h goal — recovery limits strength gains.`,
+        detail: `Sleep is averaging ${avgSleep.toFixed(1)}h vs your ${g.sleepHours}h goal - recovery limits strength gains.`,
         priority: 75,
       });
     }
@@ -373,7 +373,7 @@ function buildNextSteps(o: BodyOverview, input: BodyOverviewInput): NextStep[] {
         id: 'water-low',
         pillar: 'hydration',
         title: `Drink ~${gapMl}ml more per day`,
-        detail: `Averaging ${avgLiters.toFixed(1)}L vs your ${g.dailyWaterLiters.toFixed(1)}L goal — that's ${Math.max(1, Math.round(gapMl / 250))} more glasses.`,
+        detail: `Averaging ${avgLiters.toFixed(1)}L vs your ${g.dailyWaterLiters.toFixed(1)}L goal - that's ${Math.max(1, Math.round(gapMl / 250))} more glasses.`,
         route: '/app',
         priority: 55,
       });
@@ -394,7 +394,7 @@ function buildNextSteps(o: BodyOverview, input: BodyOverviewInput): NextStep[] {
         id: 'weight-direction',
         pillar: 'body',
         title: g.weightGoalType === 'lose' ? 'Weight is trending up' : 'Weight is trending down',
-        detail: `${delta > 0 ? '+' : ''}${delta.toFixed(1)}kg over this period vs a "${g.weightGoalType}" goal — review your calorie target.`,
+        detail: `${delta > 0 ? '+' : ''}${delta.toFixed(1)}kg over this period vs a "${g.weightGoalType}" goal - review your calorie target.`,
         route: '/app/insights',
         priority: 70,
       });

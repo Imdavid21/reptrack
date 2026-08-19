@@ -91,7 +91,7 @@ Examples:
 
 Be accurate with portions. When quantities aren't specified, assume reasonable single servings.
 
-Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat — sauces, dressings, and processed or cured items usually dominate the sodium total. Also estimate potassium (milligrams) — fruit, vegetables, legumes, dairy and potatoes carry most of it.`
+Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat - sauces, dressings, and processed or cured items usually dominate the sodium total. Also estimate potassium (milligrams) - fruit, vegetables, legumes, dairy and potatoes carry most of it.`
           },
           {
             role: "user",

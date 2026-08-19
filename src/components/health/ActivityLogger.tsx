@@ -15,7 +15,7 @@ export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 export const ACTIVITY_CONFIG: Record<ActivityKind, {
   label: string;
   // Default/assumed pace: seeds a duration before a real time is entered,
-  // and shown as paceLabel. Doesn't drive the calorie math on its own — see
+  // and shown as paceLabel. Doesn't drive the calorie math on its own - see
   // effectiveMet, which calculates MET from real pace when it's known.
   paceMinPerKm: number;
   icon: typeof Footprints;
@@ -29,14 +29,14 @@ export const ACTIVITY_CONFIG: Record<ActivityKind, {
   boxing:  { label: 'Boxing',  paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
-// Boxing has no distance, so there's no pace to calculate a MET from — it
+// Boxing has no distance, so there's no pace to calculate a MET from - it
 // keeps a fixed intensity estimate. The other three compute MET from actual
 // speed instead (see effectiveMet).
 const BOXING_MET = 6.0;
 
 // Bounds a computed speed to what's physiologically plausible for each
 // activity, so a mistyped distance or time (an extra zero, a unit mix-up)
-// can't imply an impossible pace and produce an absurd calorie estimate —
+// can't imply an impossible pace and produce an absurd calorie estimate -
 // while still letting a genuinely fast or slow real pace move the number.
 const SPEED_CLAMP_KMH: Record<'walking' | 'running' | 'cycling', [min: number, max: number]> = {
   walking: [1, 9],
@@ -63,20 +63,20 @@ function runningMet(speedKmh: number): number {
 // Cycling's energy cost doesn't follow a clean linear formula the way
 // walking/running do (aerodynamic drag dominates at speed), so there's no
 // equivalent ACSM equation. Instead, linearly interpolate between the
-// Compendium of Physical Activities' speed brackets for cycling — a smooth
+// Compendium of Physical Activities' speed brackets for cycling - a smooth
 // curve instead of one flat number or a step at each bracket boundary.
 //
 // The Compendium's own lowest bracket is a single flat value covering
-// everything under 10mph/16.1km/h — used verbatim as-is, that makes
+// everything under 10mph/16.1km/h - used verbatim as-is, that makes
 // cyclingMet() return the exact same MET for a near-stationary 4km/h crawl
 // and a genuine 15km/h cruise, silently flattening most of the realistic
 // speed range right where this feature most needs to be pace-sensitive. The
 // 8.0km/h point below isn't a sourced Compendium bracket (there isn't one
-// this granular) — it's a deliberately conservative estimate that breaks up
+// this granular) - it's a deliberately conservative estimate that breaks up
 // that flat zone so distance actually moves the number below 16.1km/h too,
 // without a hard published bracket boundary to source it from.
 const CYCLING_MET_CURVE: [speedKmh: number, met: number][] = [
-  [8.0, 3.0],   // very slow / barely pedaling — estimated, not a Compendium bracket
+  [8.0, 3.0],   // very slow / barely pedaling - estimated, not a Compendium bracket
   [16.1, 4.0],  // <10 mph, leisure
   [19.3, 6.8],  // 10-11.9 mph, light effort
   [22.5, 8.0],  // 12-13.9 mph, moderate effort
@@ -100,10 +100,10 @@ function cyclingMet(speedKmh: number): number {
 
 /**
  * MET calculated from actual pace (distance ÷ time), not looked up from a
- * fixed per-activity number — running a 5k in 40 minutes is a different
+ * fixed per-activity number - running a 5k in 40 minutes is a different
  * effort than running it in 20, and the estimate should reflect that. When
  * a real time hasn't been entered yet, seeds from the activity's typical
- * pace (paceMinPerKm) so there's still a reasonable number to show — that
+ * pace (paceMinPerKm) so there's still a reasonable number to show - that
  * seed runs through the same formula, it's just the starting point rather
  * than a separate fixed value.
  */
@@ -126,7 +126,7 @@ export function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: nu
  * Net kcal uses (MET - 1) above rest so it can be added to the normal-day
  * baseline without counting resting expenditure twice.
  * For km-based activities, `minutesOverride` (if > 0) replaces the default
- * pace-derived duration — see effectiveMet, which calculates MET from
+ * pace-derived duration - see effectiveMet, which calculates MET from
  * whatever pace that implies rather than a fixed per-activity number.
  */
 export function activityCalories(
@@ -187,12 +187,12 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
         setValue(String(existing.duration_minutes));
         setMinutes('');
       } else if (existing.distance_km != null) {
-        // Real stored distance — show it alongside the time it took.
+        // Real stored distance - show it alongside the time it took.
         setValue(String(existing.distance_km));
         setMinutes(String(existing.duration_minutes));
       } else {
         // Pre-fix entry: the original distance was never stored, only the
-        // resulting duration. Approximate it from the default pace — this
+        // resulting duration. Approximate it from the default pace - this
         // can't recover what was actually logged, just estimate a plausible
         // value so the field isn't blank.
         const km = existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm;
@@ -319,7 +319,7 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
             {cfg.unit === 'km' && (
               <div className="space-y-2">
                 <Label htmlFor="activity-minutes" className="flex items-center justify-between">
-                  <span>Time (min) <span className="text-muted-foreground font-normal">— optional</span></span>
+                  <span>Time (min) <span className="text-muted-foreground font-normal">- optional</span></span>
                   {usingCustomTime && (
                     <span className="text-xs text-muted-foreground">using your time</span>
                   )}
@@ -349,18 +349,18 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
 
             <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Burn</div>
+                <div className="text-xs  tracking-wider text-muted-foreground">Burn</div>
                 <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
+                <div className="text-xs  tracking-wider text-muted-foreground">Duration</div>
                 <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
               </div>
             </div>
 
             {existing && (
               <p className="text-xs text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">
-                Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} — {existing.calories} kcal already logged.
+                Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} - {existing.calories} kcal already logged.
               </p>
             )}
 

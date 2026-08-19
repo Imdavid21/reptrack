@@ -250,7 +250,7 @@ export const exerciseLibrary: Record<string, ExerciseOption[]> = {
 /** Infer exercise type from weight/reps strings when exerciseType is not set */
 export function inferExerciseType(defaultWeight: string, defaultReps?: string): ExerciseType {
   // Timed: reps field ends with 's' explicitly (e.g. "3x45s", "60s")
-  // Must have 's' suffix — "3x12" without 's' is NOT timed
+  // Must have 's' suffix - "3x12" without 's' is NOT timed
   if (defaultReps && /^\d+x\d+s$/.test(defaultReps)) return 'timed';
   if (defaultReps && /^\d+s$/.test(defaultReps)) return 'timed';
   // Weighted bodyweight: "+Xkg" pattern
@@ -266,13 +266,13 @@ export function inferExerciseType(defaultWeight: string, defaultReps?: string): 
  *
  * Canonicalizes the name first so a naming variant not spelled out verbatim
  * in this library (e.g. "Bench Press" for "Barbell Bench Press") still finds
- * the library's real classification instead of silently missing it — that
+ * the library's real classification instead of silently missing it - that
  * gap used to send every unmatched name straight to inferExerciseType with
  * no weight/reps hints, which unconditionally defaults to 'weighted'. Called
  * with no hints (as usePersonalRecords.ts does), a bodyweight or timed
  * exercise that missed the exact-match would get misclassified as weighted,
  * and since its actual_weight is legitimately 0, the PR loop's `weight === 0`
- * guard would silently skip it forever — a PR that can never record.
+ * guard would silently skip it forever - a PR that can never record.
  */
 export function getExerciseType(exerciseName: string, defaultWeight?: string, defaultReps?: string): ExerciseType {
   const canonicalName = getCanonicalName(exerciseName);

@@ -55,13 +55,13 @@ interface SetBySetCardProps {
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
   /** Best comparable lift elsewhere in the same movement family. Shown only
-   *  as progression context when this exact variation has no record yet — it
+   *  as progression context when this exact variation has no record yet - it
    *  never stands in for, or overwrites, the variation's own PR. */
   familyRecord?: FamilyRecord;
   lastUsed?: LastUsedData;
   workoutBias?: 'heavy' | 'volume';
   /** Settings fallback used only when no exercise-specific or bias-derived
-   *  rest duration applies — see getDefaultRest(). Defaults to 90. */
+   *  rest duration applies - see getDefaultRest(). Defaults to 90. */
   defaultRestSeconds?: number;
   /** Whether completing a set should automatically pop the rest timer.
    *  Defaults to true (existing behavior) when not provided. */
@@ -249,7 +249,7 @@ export function SetBySetCard({
 
   const toggleTimer = () => {
     if (isTimerRunning) {
-      // Stop — save the elapsed time
+      // Stop - save the elapsed time
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -309,7 +309,7 @@ export function SetBySetCard({
     onChange(updated);
 
     if (isLastSet) {
-      // Don't auto-advance — stay on this exercise so user can add sets or move on
+      // Don't auto-advance - stay on this exercise so user can add sets or move on
       // The "Next Exercise" / "Finish" button below handles navigation
       return;
     }
@@ -455,7 +455,7 @@ export function SetBySetCard({
 
   return (
     <div className="w-full min-w-0 space-y-4 animate-fade-in">
-      {/* Exercise progress — tappable segments */}
+      {/* Exercise progress - tappable segments */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
           {exerciseIndex + 1}/{totalExercises}
@@ -488,7 +488,7 @@ export function SetBySetCard({
           <div className="flex items-baseline gap-2 flex-wrap">
             <h2 className="text-base font-bold">{exercise.name}</h2>
             {isTimed && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timed</span>
             )}
             {isBodyweight && (
               <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
@@ -606,7 +606,7 @@ export function SetBySetCard({
                 </div>
               )}
               <div className="text-xs text-muted-foreground mt-1">
-                {isTimerRunning ? 'TIMING...' : `TARGET: ${formatTime(baseTime)}`}
+                {isTimerRunning ? 'Timing...' : `TARGET: ${formatTime(baseTime)}`}
               </div>
             </div>
 
@@ -621,13 +621,13 @@ export function SetBySetCard({
               )}
             >
               <Timer className="h-3.5 w-3.5" />
-              {isTimerRunning ? 'STOP TIMER' : 'START TIMER'}
+              {isTimerRunning ? 'Stop timer' : 'Start timer'}
             </button>
 
             {/* Quick time selection (when timer not running) */}
             {!isTimerRunning && (
               <>
-                <div className="text-xs text-muted-foreground text-center uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground text-center  tracking-wider">
                   Or set duration
                 </div>
                 {showTimeInput ? (
@@ -677,7 +677,7 @@ export function SetBySetCard({
         {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
         {showWeight && !isTimed && (
           <div className="mb-4">
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
             </div>
             {showWeightInput ? (
@@ -725,7 +725,7 @@ export function SetBySetCard({
         {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
         {showReps && !isTimed && (
           <div>
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               Reps
             </div>
             {showRepsInput ? (
@@ -770,7 +770,7 @@ export function SetBySetCard({
         )}
       </div>
 
-      {/* Rest Timer — shown between sets */}
+      {/* Rest Timer - shown between sets */}
       {showRestTimer && (
         <RestTimer
           isOpen={showRestTimer}
@@ -803,7 +803,7 @@ export function SetBySetCard({
 
           {/* Main action button */}
           {currentSet.completed && isLastSet ? (
-            // Last set completed — show explicit navigation buttons instead of auto-advance
+            // Last set completed - show explicit navigation buttons instead of auto-advance
             <div className="flex gap-2 flex-1">
               <button
                 onClick={addSet}

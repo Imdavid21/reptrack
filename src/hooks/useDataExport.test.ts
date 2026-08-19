@@ -51,7 +51,7 @@ describe('escapeCSV / parseCSVLine round-trip', () => {
 // areas (every Deficit Mode / Adaptive Mode field, workout check-in fields,
 // calorie_burns.distance_km). This doesn't check against the live DB schema,
 // but it locks in that every column NUMERIC_FIELDS/BOOLEAN_FIELDS know how to
-// parse is actually one this file claims to export — so a future column
+// parse is actually one this file claims to export - so a future column
 // added to one list isn't silently forgotten in the other.
 describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
   const allExportedColumns = new Set(Object.values(TABLE_COLUMNS).flat());

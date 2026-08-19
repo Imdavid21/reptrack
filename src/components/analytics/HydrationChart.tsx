@@ -23,7 +23,7 @@ export function HydrationChart() {
   const { preferences } = useUserPreferences();
   const { resolveGoal } = useGoalHistory();
   // Defends against pre-existing rows saved in ml by an inconsistent editor
-  // elsewhere (see Insights.tsx) — daily_water_goal is meant to be liters.
+  // elsewhere (see Insights.tsx) - daily_water_goal is meant to be liters.
   const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
   const { data, isLoading } = useHydrationData(dateRange);
 
@@ -32,13 +32,13 @@ export function HydrationChart() {
 
 
   // Each day is judged against the goal that was actually active on it (via
-  // goal_history), not today's live value — see MacroChart for the same
+  // goal_history), not today's live value - see MacroChart for the same
   // pattern. The header chip and reference line still show the current goal.
   const chartData = useMemo(() => {
     if (!data?.dailyData) return [];
     return data.dailyData.map(d => {
       // resolveGoal can return a raw historical goal_history value, which
-      // predates the ml/liters fix and may still be ml-scale — normalize it
+      // predates the ml/liters fix and may still be ml-scale - normalize it
       // too, not just the live-preference fallback.
       const target = normalizeWaterGoalLiters(resolveGoal('daily_water_goal', d.date, dailyGoal));
       return { ...d, target, metGoal: d.total >= target };
