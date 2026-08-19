@@ -847,6 +847,7 @@ export type Database = {
       }
       physique_checkins: {
         Row: {
+          body_fat_percentage: number | null
           bodyweight: number | null
           calf_left_cm: number | null
           calf_right_cm: number | null
@@ -861,6 +862,7 @@ export type Database = {
           waist_cm: number | null
         }
         Insert: {
+          body_fat_percentage?: number | null
           bodyweight?: number | null
           calf_left_cm?: number | null
           calf_right_cm?: number | null
@@ -875,6 +877,7 @@ export type Database = {
           waist_cm?: number | null
         }
         Update: {
+          body_fat_percentage?: number | null
           bodyweight?: number | null
           calf_left_cm?: number | null
           calf_right_cm?: number | null
