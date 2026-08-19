@@ -20,6 +20,11 @@ interface PersonalRecord {
   prType?: 'weight' | 'reps' | 'duration';
 }
 
+interface FamilyRecord extends PersonalRecord {
+  exerciseName: string;
+  familyLabel: string;
+}
+
 interface LastUsedSetData {
   weight: number;
   reps: number;
@@ -49,6 +54,10 @@ interface SetBySetCardProps {
   isFirstExercise: boolean;
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
+  /** Best comparable lift elsewhere in the same movement family. Shown only
+   *  as progression context when this exact variation has no record yet — it
+   *  never stands in for, or overwrites, the variation's own PR. */
+  familyRecord?: FamilyRecord;
   lastUsed?: LastUsedData;
   workoutBias?: 'heavy' | 'volume';
   /** Settings fallback used only when no exercise-specific or bias-derived
@@ -86,6 +95,7 @@ export function SetBySetCard({
   isFirstExercise,
   isLastExercise,
   personalRecord,
+  familyRecord,
   lastUsed,
   workoutBias,
   defaultRestSeconds = 90,
@@ -495,6 +505,12 @@ export function SetBySetCard({
                   : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
               </span>
             )}
+            {!personalRecord && familyRecord && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {familyRecord.familyLabel} best: {familyRecord.maxWeight}{weightLabel}
+                <span className="opacity-60"> ({familyRecord.exerciseName})</span>
+              </span>
+            )}
             {isNewPR && (
               <span className="text-xs text-primary font-bold">NEW PR!</span>
             )}
@@ -805,7 +821,7 @@ export function SetBySetCard({
                 className="flex-1 h-10 rounded-full text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-1.5"
               >
                 <Check className="h-3.5 w-3.5" />
-                {isLastExercise ? 'Review & Finish' : 'Next Exercise'}
+                {isLastExercise ? 'Finish workout' : 'Next Exercise'}
               </button>
             </div>
           ) : (

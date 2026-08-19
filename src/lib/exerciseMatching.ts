@@ -62,7 +62,7 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'close grip chest press': 'Close Grip Bench Press',
   'deadlift': 'Conventional Deadlift',
   'deadlifts': 'Conventional Deadlift',
-  'sumo deadlift': 'Conventional Deadlift',
+  'sumo deadlifts': 'Sumo Deadlift',
   'dead hangs': 'Dead Hang',
   'deadlift technique': 'Deadlift Technique Work',
   'db flat bench': 'Dumbbell Bench Press',
@@ -159,7 +159,78 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'lunges': 'Walking Lunges',
   'walking lunge': 'Walking Lunges',
   'wall sits': 'Wall Sit',
+  // --- Naming fragments found in existing history (2026-08 exercise audit) ---
+  'dumbbell skullcrusher': 'Skull Crushers',
+  'dumbbell skullcrushers': 'Skull Crushers',
+  'skullcrusher': 'Skull Crushers',
+  'skull crusher': 'Skull Crushers',
+  'lying tricep extension': 'Skull Crushers',
+  'spider curl': 'Spider Curls',
+  'reverse curl': 'Reverse Curls',
+  'ez reverse curl': 'Reverse Curls',
+  'ez reverse curls': 'Reverse Curls',
+  'ez bar reverse curl': 'Reverse Curls',
+  'reverse barbell curl': 'Reverse Curls',
+  'reverse pec deck': 'Reverse Fly',
+  'reverse pec deck fly': 'Reverse Fly',
+  'rear delt machine': 'Reverse Fly',
+  'tricep extension dumbbell': 'Overhead Tricep Extension',
+  'dumbbell tricep extension': 'Overhead Tricep Extension',
+  'tricep extension': 'Overhead Tricep Extension',
+  'inclined chest press': 'Incline Chest Press',
+  'incline chest press machine': 'Incline Chest Press',
+  'inclined dumbbell press': 'Incline Dumbbell Press',
+  'lat pull down': 'Lat Pulldown',
+  'lat pull downs': 'Lat Pulldown',
+  'stiff leg deadlifts': 'Stiff Leg Deadlift',
+  'stiff legged deadlift': 'Stiff Leg Deadlift',
+  'overhead barbell press': 'Overhead Press',
+  'standing barbell press': 'Overhead Press',
+  'close grip bench': 'Close Grip Bench Press',
+  'leg extension machine': 'Leg Extension',
+  'seated leg extension': 'Leg Extension',
 };
+
+
+/**
+ * Morphological key: lowercase, hyphen/punctuation-insensitive, singularised
+ * per word. "Close-grip Bench Presses", "close grip bench press" and
+ * "Close Grip Bench Press" all collapse to the same key, so a plural or
+ * hyphenated spelling can never fork a second progress history.
+ */
+function morphKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[-_/]/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(word => {
+      if (word.length <= 3) return word;
+      if (word.endsWith('ies')) return `${word.slice(0, -3)}y`;
+      if (/(sh|ch|ss|x)es$/.test(word)) return word.slice(0, -2);
+      if (word.endsWith('ss')) return word;
+      if (word.endsWith('s')) return word.slice(0, -1);
+      return word;
+    })
+    .join(' ');
+}
+
+/**
+ * Alias lookup by morphological key. Includes every canonical target mapped
+ * to itself, so an unseen inflection of a known canonical name still lands on
+ * the canonical spelling instead of becoming a brand-new exercise.
+ */
+const ALIASES_BY_MORPH: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const canonical of new Set(Object.values(EXERCISE_ALIASES))) {
+    map[morphKey(canonical)] = canonical;
+  }
+  for (const [alias, canonical] of Object.entries(EXERCISE_ALIASES)) {
+    map[morphKey(alias)] = canonical;
+  }
+  return map;
+})();
 
 /** Strip the "(Set N)" suffix logged exercises are stored with. */
 function stripSetNumber(name: string): string {
@@ -173,7 +244,7 @@ function stripSetNumber(name: string): string {
  */
 export function getCanonicalName(name: string): string {
   const base = stripSetNumber(name);
-  return EXERCISE_ALIASES[base.toLowerCase()] ?? base;
+  return EXERCISE_ALIASES[base.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(base)] ?? base;
 }
 
 /** Resolve a name through the canonical alias map, lowercased for matching. */

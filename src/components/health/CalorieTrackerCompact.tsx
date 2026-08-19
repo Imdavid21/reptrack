@@ -19,6 +19,10 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from '@/lib/toast';
 import { format, subDays } from 'date-fns';
 import { useLogDate } from '@/contexts/LogDateContext';
@@ -86,6 +90,8 @@ export function CalorieTrackerCompact() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  // Destructive actions go through a confirm step, matching the rest of the app.
+  const [mealPendingDelete, setMealPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [editableFoods, setEditableFoods] = useState<EditableFood[]>([]);
@@ -654,9 +660,19 @@ export function CalorieTrackerCompact() {
             <div className="mt-4 space-y-2">
               <h4 className="text-xs text-muted-foreground">RECENT</h4>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
-                <div key={meal.id} className="flex justify-between text-sm">
-                  <span className="tabular-nums text-muted-foreground">{mealTime(meal.created_at)}</span>
-                  <span className="tabular-nums shrink-0">{meal.calories} cal</span>
+                <div key={meal.id} className="flex items-center justify-between text-sm gap-2 group">
+                  <span className="tabular-nums text-muted-foreground truncate">{mealTime(meal.created_at)}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="tabular-nums">{meal.calories} cal</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMealPendingDelete({ id: meal.id, name: meal.food_name || 'this entry' }); }}
+                      aria-label={`Delete ${meal.food_name || 'meal'}`}
+                      title="Delete"
+                      className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -757,7 +773,7 @@ export function CalorieTrackerCompact() {
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-xs tabular-nums text-muted-foreground">{mealTime(meal.created_at)} · {meal.calories} cal</span>
                           <button
-                            onClick={() => handleDeleteMeal(meal.id)}
+                            onClick={() => setMealPendingDelete({ id: meal.id, name: meal.food_name || 'this entry' })}
                             aria-label={`Delete ${meal.food_name || 'meal'}`}
                             title="Delete"
                             className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
@@ -1136,6 +1152,28 @@ export function CalorieTrackerCompact() {
             </div>
           </div>
       </section>}
+      <AlertDialog open={!!mealPendingDelete} onOpenChange={open => { if (!open) setMealPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {mealPendingDelete?.name} will be removed from your log and today's calories and macros will update immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const target = mealPendingDelete;
+                setMealPendingDelete(null);
+                if (target) await handleDeleteMeal(target.id);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
