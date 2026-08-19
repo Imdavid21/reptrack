@@ -81,6 +81,7 @@ const baseTheme: ThemeOptions = {
     },
     overline: {
       fontSize: '0.6875rem',
+      textTransform: 'none' as const,
       lineHeight: 1.2,
       fontWeight: 700,
       letterSpacing: '0.08em',

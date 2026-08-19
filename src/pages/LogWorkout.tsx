@@ -710,7 +710,7 @@ export default function LogWorkout() {
                     <Dumbbell className="h-5 w-5" />
                   </span>
                   <span className="flex-1">
-                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">RESUME SESSION</span>
+                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">Resume Session</span>
                     <span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span>
                     <span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span>
                   </span>
@@ -809,7 +809,7 @@ export default function LogWorkout() {
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
                     </span>
-                    <p className="text-xs text-muted-foreground">SETS</p>
+                    <p className="text-xs text-muted-foreground">Sets</p>
                   </div>
                   <button
                     onClick={() => setShowTimeDialog(true)}

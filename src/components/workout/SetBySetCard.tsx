@@ -488,7 +488,7 @@ export function SetBySetCard({
           <div className="flex items-baseline gap-2 flex-wrap">
             <h2 className="text-base font-bold">{exercise.name}</h2>
             {isTimed && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timed</span>
             )}
             {isBodyweight && (
               <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>

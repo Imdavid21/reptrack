@@ -153,7 +153,7 @@ export function WaterTracker() {
 
       {waterLogs.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h4 className="text-xs text-muted-foreground">RECENT</h4>
+          <h4 className="text-xs text-muted-foreground">Recent</h4>
           {waterLogs.slice(0, 3).map((log) => (
             <div key={log.id} className="flex justify-between text-sm">
               <span className="tabular-nums text-muted-foreground">{format(new Date(log.timestamp), 'HH:mm')}</span>

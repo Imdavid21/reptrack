@@ -226,7 +226,7 @@ export default function WorkoutDetail() {
           <div className="flex items-center gap-2">
             <div className="text-right mr-1">
               <span className="text-lg font-bold tabular-nums">{completedCount}/{totalCount}</span>
-              <p className="text-xs text-muted-foreground">SETS</p>
+              <p className="text-xs text-muted-foreground">Sets</p>
             </div>
             <button
               className={cn(

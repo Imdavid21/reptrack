@@ -507,7 +507,7 @@ export function ExerciseReview({
       <div className="space-y-4">
         {primaryExercises.length > 0 && (
           <div>
-            <h4 className="section-header mb-2">COMPOUNDS</h4>
+            <h4 className="section-header mb-2">Compounds</h4>
             <div className="space-y-1.5">
               <AnimatePresence mode="popLayout">
                 {primaryExercises.map((ex) => renderExerciseItem(ex))}
@@ -518,7 +518,7 @@ export function ExerciseReview({
 
         {accessoryExercises.length > 0 && (
           <div>
-            <h4 className="section-header mb-2">ACCESSORIES</h4>
+            <h4 className="section-header mb-2">Accessories</h4>
             <div className="space-y-1.5">
               <AnimatePresence mode="popLayout">
                 {accessoryExercises.map((ex) => renderExerciseItem(ex))}

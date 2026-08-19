@@ -660,7 +660,7 @@ export function CalorieTrackerCompact() {
 
           {!deficitMode && meals.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h4 className="text-xs text-muted-foreground">RECENT</h4>
+              <h4 className="text-xs text-muted-foreground">Recent</h4>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
                 <div key={meal.id} className="flex items-center justify-between text-sm gap-2 group">
                   <span className="tabular-nums text-muted-foreground truncate">{mealTime(meal.created_at)}</span>
@@ -1019,7 +1019,7 @@ export function CalorieTrackerCompact() {
 
                 {/* Macro breakdown, shown before confirming so nothing is saved blind */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">MACRO BREAKDOWN</Label>
+                  <Label className="text-xs text-muted-foreground">Macro Breakdown</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1.5">
                     {([
                       { key: 'protein', label: 'Protein', unit: 'g' },
@@ -1064,7 +1064,7 @@ export function CalorieTrackerCompact() {
             {manualMode && (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">FOOD NAME</Label>
+                  <Label className="text-xs text-muted-foreground">Food Name</Label>
                   <Input
                     placeholder="e.g., Chicken salad"
                     value={manualData.food_name}
@@ -1073,7 +1073,7 @@ export function CalorieTrackerCompact() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">CALORIES</Label>
+                  <Label className="text-xs text-muted-foreground">Calories</Label>
                   <Input
                     type="number"
                     placeholder="e.g., 450"

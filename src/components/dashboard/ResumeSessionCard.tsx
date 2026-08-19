@@ -26,7 +26,7 @@ export function ResumeSessionCard() {
         <Dumbbell className="h-5 w-5" />
       </span>
       <span className="flex-1">
-        <span className="block text-xs font-bold tracking-[.16em] opacity-60">RESUME</span>
+        <span className="block text-xs font-bold tracking-[.16em] opacity-60">Resume</span>
         <span className="block text-xl font-bold mt-1">
           {draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}
         </span>
