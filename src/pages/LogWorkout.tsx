@@ -154,7 +154,7 @@ export default function LogWorkout() {
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft, hasProgress: draftHasProgress } = useDraftWorkout();
-  const { getPRForExercise } = usePersonalRecords();
+  const { getPRForExercise, getFamilyPRForExercise } = usePersonalRecords();
   const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
   const { customDays, hasCustomRoutine, isLoading: routineLoading } = useCustomRoutine();
   const { recordUsage, setPreferredVariant, preferredVariants } = useExercisePreferences();
@@ -853,6 +853,7 @@ export default function LogWorkout() {
                     isFirstExercise={currentExerciseIndex === 0}
                     isLastExercise={currentExerciseIndex === exercises.length - 1}
                     personalRecord={getPRForExercise(currentExercise.name)}
+                    familyRecord={getFamilyPRForExercise(currentExercise.name)}
                     lastUsed={getLastUsed(currentExercise.name)}
                     workoutBias={dayData?.bias}
                     defaultRestSeconds={preferences?.default_rest_seconds}
