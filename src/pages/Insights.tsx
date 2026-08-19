@@ -51,14 +51,6 @@ function InsightSection({ label, count, dotClass, initiallyOpen = false, childre
   );
 }
 
-const FITNESS_GOALS = [
-  { value: 'lose_weight', label: 'Lose Weight' },
-  { value: 'build_muscle', label: 'Build Muscle' },
-  { value: 'maintain', label: 'Maintain' },
-  { value: 'improve_health', label: 'Improve Health' },
-  { value: 'increase_strength', label: 'Increase Strength' },
-];
-
 // Unified Progress Card using global date range + inline editing
 function ProgressCard() {
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
@@ -281,41 +273,6 @@ function ProgressCard() {
               />
             </Box>
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                DAILY CALORIES
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                placeholder="2500"
-                value={goals.daily_calorie_goal}
-                onChange={(e) => setGoals(g => ({ ...g, daily_calorie_goal: e.target.value }))}
-                InputProps={{
-                  endAdornment: <Typography variant="caption" color="text.secondary">kcal</Typography>,
-                  sx: { fontSize: '0.875rem' }
-                }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                DAILY WATER
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                placeholder="3000"
-                value={goals.daily_water_goal}
-                onChange={(e) => setGoals(g => ({ ...g, daily_water_goal: e.target.value }))}
-                InputProps={{
-                  endAdornment: <Typography variant="caption" color="text.secondary">ml</Typography>,
-                  sx: { fontSize: '0.875rem' }
-                }}
-              />
-            </Box>
           </Box>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
@@ -353,28 +310,6 @@ function ProgressCard() {
                   </Button>
                 ))}
               </Box>
-            </Box>
-          </Box>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              FITNESS GOAL
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5 }}>
-              {FITNESS_GOALS.map((goal) => (
-                <Button
-                  key={goal.value}
-                  size="small"
-                  variant={goals.fitness_goal === goal.value ? 'contained' : 'outlined'}
-                  onClick={() => setGoals(g => ({ ...g, fitness_goal: goal.value }))}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.7rem',
-                    py: 0.75,
-                  }}
-                >
-                  {goal.label}
-                </Button>
-              ))}
             </Box>
           </Box>
         </Box>
