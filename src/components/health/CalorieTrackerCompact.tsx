@@ -1152,6 +1152,28 @@ export function CalorieTrackerCompact() {
             </div>
           </div>
       </section>}
+      <AlertDialog open={!!mealPendingDelete} onOpenChange={open => { if (!open) setMealPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {mealPendingDelete?.name} will be removed from your log and today's calories and macros will update immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const target = mealPendingDelete;
+                setMealPendingDelete(null);
+                if (target) await handleDeleteMeal(target.id);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
