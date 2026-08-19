@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.90.0";
 import { McpServer } from "npm:@modelcontextprotocol/sdk@1.30.0/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "npm:@modelcontextprotocol/sdk@1.30.0/server/webStandardStreamableHttp.js";
 import { z } from "npm:zod@3.25.76";
-import { APPROVED_TOOLS, MAX_BACKDATE_DAYS, MCP_MODE, MCP_VERSION, WRITE_TOOLS, capPayload, isApprovedTool, isWriteTool, withRetry } from "./core.ts";
+import { APPROVED_TOOLS, MCP_MODE, MCP_VERSION, WRITE_TOOLS, capPayload, isApprovedTool, isWriteTool, withRetry } from "./core.ts";
 import { executeTool } from "./data.ts";
 import { executeWriteTool } from "./writes.ts";
 
@@ -24,7 +24,8 @@ const dateRange = {
   start_date: z.string().describe("Inclusive local calendar date in YYYY-MM-DD format."),
   end_date: z.string().describe("Inclusive local calendar date in YYYY-MM-DD format."),
 };
-const limit = (max: number, fallback: number) => z.number().int().min(1).max(max).optional().default(fallback);
+// No upper bound: callers may request any window. Oversized responses are handled by capPayload.
+const limit = (_max: number, fallback: number) => z.number().int().min(1).optional().default(fallback);
 const outputSchema = z.object({
   start_date: z.string().nullable(), end_date: z.string().nullable(), timezone: z.string(),
   data: z.unknown(), summary: z.unknown(), metadata: z.unknown(),
@@ -33,17 +34,17 @@ const outputSchema = z.object({
 const definitions = {
   get_fitness_profile: { description: "Retrieve the authenticated user's current stored fitness profile, goals, targets, program, timezone, and latest logged bodyweight. Use for baseline context; unstored fields remain null.", schema: {} },
   get_bodyweight_history: { description: "Retrieve bodyweight measurements and calculated change and 7-day moving averages for the authenticated user. Use when evaluating a weight trend over a date range.", schema: { ...dateRange, limit: limit(365,365) } },
-  get_workouts: { description: "Retrieve detailed completed workout and exercise logs for the authenticated user. Use for reviewing sessions, loads, repetitions, or workout duration; results are bounded.", schema: { ...dateRange, workout_type:z.string().max(80).optional(), exercise:z.string().max(120).optional(), limit:limit(50,50) } },
+  get_workouts: { description: "Retrieve detailed completed workout and exercise logs for the authenticated user. Use for reviewing sessions, loads, repetitions, or workout duration.", schema: { ...dateRange, workout_type:z.string().max(80).optional(), exercise:z.string().max(120).optional(), limit:limit(50,50) } },
   get_exercise_history: { description: "Retrieve history for a named exercise, including logged reps/load, calculable volume, and clearly labelled estimated 1RM. Use for evaluating strength progression.", schema: { exercise:z.string().min(1).max(120), ...dateRange, limit:limit(100,100) } },
   get_training_summary: { description: "Retrieve aggregated resistance-training metrics over a date range. Use for consistency, volume, muscle-group sets, duration, or training frequency.", schema: dateRange },
   get_nutrition: { description: "Retrieve logged meals, daily calories, macros, fibre, water, targets, and averages. Use for factual nutrition-log analysis, not medical interpretation.", schema: { ...dateRange, limit:limit(365,365) } },
   get_sleep: { description: "Retrieve stored sleep duration and summary statistics. Use for sleep consistency or recovery context; unavailable sleep fields are explicitly identified.", schema: dateRange },
   get_activity: { description: "Retrieve stored activity, cardio duration, active calories, and distance. Use for activity analysis; BMR and unavailable metrics are never inferred.", schema: dateRange },
   get_progress_summary: { description: "Retrieve a compact cross-domain progress summary covering bodyweight, nutrition, sleep, activity, and training. Use for efficient high-level comparisons without coaching advice.", schema: dateRange },
-  get_recent_fitness_data: { description: "Retrieve a compact combined recent fitness dataset for prompts reviewing weight, training, nutrition, sleep, and activity together. Accepts 1-90 days and avoids large raw payloads.", schema: { days:z.number().int().min(1).max(90).optional().default(14) } },
+  get_recent_fitness_data: { description: "Retrieve a compact combined recent fitness dataset for prompts reviewing weight, training, nutrition, sleep, and activity together. Accepts any number of days back from today.", schema: { days:z.number().int().min(1).optional().default(14) } },
 } as const;
 
-const logDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe(`Local calendar date YYYY-MM-DD. Defaults to today; up to ${MAX_BACKDATE_DAYS} days back, never the future.`);
+const logDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Local calendar date YYYY-MM-DD. Defaults to today; any past date is allowed, never the future.");
 const macros = {
   protein: z.number().min(0).max(500).optional(), carbs: z.number().min(0).max(1500).optional(),
   fat: z.number().min(0).max(500).optional(), fiber: z.number().min(0).max(200).optional(),
