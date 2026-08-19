@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { getExerciseType, type ExerciseType } from '@/lib/exerciseLibrary';
 import { getCanonicalName, resolveCanonicalName, EXERCISE_ALIASES } from '@/lib/exerciseMatching';
+import { fetchAllRows } from '@/lib/supabasePaging';
+import { getExerciseFamily, getFamilyKey } from '@/lib/exerciseFamilies';
 
 export interface PersonalRecord {
   exerciseName: string;
@@ -14,6 +16,13 @@ export interface PersonalRecord {
   sourceTimestamp: string;
   /** The type of PR: 'weight' (heaviest), 'reps' (most reps, for bodyweight), 'duration' (longest hold, for timed) */
   prType?: 'weight' | 'reps' | 'duration';
+  /** Movement family this record belongs to (e.g. 'deadlift'). */
+  familyKey?: string;
+}
+
+export interface FamilyRecord extends PersonalRecord {
+  /** Human label for the family, e.g. "Deadlift". */
+  familyLabel: string;
 }
 
 // Re-exported for usePersonalRecords.test.ts and any other historical
@@ -32,24 +41,33 @@ export function usePersonalRecords() {
     queryFn: async () => {
       if (!user) return [];
 
-      // Fetch all completed exercises (not just those with weight)
-      const { data: exercises, error } = await supabase
-        .from('exercises')
-        .select(`
-          id,
-          workout_id,
-          name,
-          actual_weight,
-          actual_reps,
-          workouts!inner (
-            date,
-            created_at,
-            user_id
-          )
-        `)
-        .eq('workouts.user_id', user.id);
-
-      if (error) throw error;
+      // PostgREST caps a single response at 1000 rows. This account already
+      // holds thousands of set rows, so an unpaged select silently dropped the
+      // most recent history — which is exactly why new PRs stopped appearing.
+      // Page through the whole table instead.
+      const exercises = await fetchAllRows<{
+        id: string; workout_id: string; name: string;
+        actual_weight: string | null; actual_reps: string | null;
+        workouts: unknown;
+      }>((from, to) =>
+        supabase
+          .from('exercises')
+          .select(`
+            id,
+            workout_id,
+            name,
+            actual_weight,
+            actual_reps,
+            workouts!inner (
+              date,
+              created_at,
+              user_id
+            )
+          `)
+          .eq('workouts.user_id', user.id)
+          .order('id', { ascending: true })
+          .range(from, to),
+      );
 
       // Find PRs per exercise — NO whitelist, track ALL exercises.
       //
@@ -89,6 +107,7 @@ export function usePersonalRecords() {
               date: workout.date,
               ...source,
               prType: 'duration',
+              familyKey: getFamilyKey(canonicalName),
             };
           }
         } else if (exType === 'bodyweight') {
@@ -105,6 +124,7 @@ export function usePersonalRecords() {
               date: workout.date,
               ...source,
               prType: 'reps',
+              familyKey: getFamilyKey(canonicalName),
             };
           }
         } else {
@@ -133,6 +153,7 @@ export function usePersonalRecords() {
               date: workout.date,
               ...source,
               prType: 'weight',
+              familyKey: getFamilyKey(canonicalName),
             };
           }
         }
@@ -176,9 +197,30 @@ export function usePersonalRecords() {
     return query.data?.find(pr => resolveCanonicalName(pr.exerciseName) === target);
   };
 
+  /**
+   * Best relevant performance anywhere in the movement family, used purely as
+   * progression *context* when a variation has little or no history of its
+   * own. It never replaces or overwrites the exact-variation PR: pulling
+   * 140 kg conventional informs a Romanian deadlift session without becoming
+   * the Romanian deadlift record.
+   */
+  const getFamilyPRForExercise = (exerciseName: string): FamilyRecord | undefined => {
+    const family = getExerciseFamily(exerciseName);
+    if (!family) return undefined;
+    const target = resolveCanonicalName(exerciseName);
+    const siblings = (query.data || []).filter(pr =>
+      pr.familyKey === family.id &&
+      resolveCanonicalName(pr.exerciseName) !== target &&
+      // Only comparable record types belong in the same context line.
+      pr.prType === 'weight');
+    const best = siblings.sort((a, b) => b.maxWeight - a.maxWeight)[0];
+    return best ? { ...best, familyLabel: family.label } : undefined;
+  };
+
   return {
     ...query,
     getPRForExercise,
+    getFamilyPRForExercise,
     updateRecord: updateRecordMutation.mutateAsync,
     isUpdatingRecord: updateRecordMutation.isPending,
   };
