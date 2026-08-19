@@ -851,7 +851,7 @@ export function CalorieTrackerCompact() {
                 {/* Context hint input - shown before analysis starts or while analyzing */}
                 {!isAnalyzing && !analysisError && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">CONTEXT (OPTIONAL)</Label>
+                    <Label className="text-xs text-muted-foreground">Context (optional)</Label>
                     <Input
                       placeholder="e.g., restaurant, home cooked, meal prep"
                       value={contextHint}

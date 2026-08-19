@@ -87,7 +87,7 @@ export function BmrBreakdownTile({
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="text-xs text-muted-foreground tracking-wider">MAINTENANCE (BEFORE EXERCISE)</div>
+          <div className="text-xs text-muted-foreground tracking-wider">Maintenance (before exercise)</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
             {maintenance.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal/day</span>
           </div>

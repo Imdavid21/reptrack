@@ -269,7 +269,7 @@ export default function Settings() {
                             />
                           </Box>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">HEIGHT (CM)</Label>
+                            <Label className="text-xs text-muted-foreground">Height (cm)</Label>
                             <Input
                               type="number"
                               placeholder="175"
@@ -281,7 +281,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">INITIAL MEASURED WEIGHT (KG)</Label>
+                          <Label className="text-xs text-muted-foreground">Initial measured weight (kg)</Label>
                           <Input
                             type="number"
                             inputMode="decimal"
