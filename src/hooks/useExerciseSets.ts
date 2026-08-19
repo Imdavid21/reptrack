@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, startOfWeek, parseISO } from 'date-fns';
 import { stripSetSuffix, getBodyPart } from '@/lib/exerciseClassification';
+import { fetchAllRows } from '@/lib/supabasePaging';
 
 export interface ExerciseSet {
   id: string;
@@ -117,7 +118,7 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
 
       // Query from the exercises table (where data actually lives)
       // joined with workouts for date and day_name
-      let query = supabase
+      const baseQuery = () => supabase
         .from('exercises')
         .select(`
           id,
@@ -135,17 +136,18 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         .eq('workouts.user_id', user.id)
         .eq('completed', true);
 
-      if (dateRange) {
-        query = query
-          .gte('workouts.date', fromKey!)
-          .lte('workouts.date', toKey!);
-      }
-
-      query = query.order('sort_order', { ascending: true });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      // Paged: a single select is truncated at 1000 rows by PostgREST, which
+      // silently amputated the most recent history from every volume chart
+      // and progression once the account grew past that.
+      const data = await fetchAllRows<any>((from, to) => {
+        let query = baseQuery();
+        if (dateRange) {
+          query = query
+            .gte('workouts.date', fromKey!)
+            .lte('workouts.date', toKey!);
+        }
+        return query.order('id', { ascending: true }).range(from, to);
+      });
 
       // Map exercises to ExerciseSet format, deriving push/pull/legs per exercise
       const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {

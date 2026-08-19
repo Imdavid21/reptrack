@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { findBestMatch } from '@/lib/exerciseMatching';
+import { fetchAllRows } from '@/lib/supabasePaging';
 
 export interface LastUsedSetData {
   weight: number;
@@ -43,20 +44,25 @@ export function useLastUsedWeights() {
       // Every completed set row, joined to its workout for the date.
       // `exercises` has no created_at column, so we order recency by the
       // workout date (and set number within a workout).
-      const { data, error } = await supabase
-        .from('exercises')
-        .select(`
-          name,
-          actual_weight,
-          actual_reps,
-          sort_order,
-          workout_id,
-          workouts!inner (user_id, date)
-        `)
-        .eq('workouts.user_id', user.id)
-        .eq('completed', true);
-
-      if (error) throw error;
+      // Paged — an unpaged select stops at PostgREST's 1000-row ceiling, so on
+      // a long history the newest sets (the ones we actually want to prefill
+      // from) were the first to be dropped.
+      const data = await fetchAllRows<any>((from, to) =>
+        supabase
+          .from('exercises')
+          .select(`
+            name,
+            actual_weight,
+            actual_reps,
+            sort_order,
+            workout_id,
+            workouts!inner (user_id, date)
+          `)
+          .eq('workouts.user_id', user.id)
+          .eq('completed', true)
+          .order('id', { ascending: true })
+          .range(from, to),
+      );
 
       // Flatten rows, stripping the " (Set N)" suffix to get the exercise name
       // and parsing the string weight/reps columns to numbers.
