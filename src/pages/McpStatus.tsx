@@ -23,7 +23,13 @@ export default function McpStatus() {
   if(!user)return <Navigate to={`/signin?redirect=${encodeURIComponent('/app/settings/mcp')}`} replace/>;
   return <MainLayout showBack backTo="/app/settings"><Box sx={{maxWidth:760,mx:'auto',display:'flex',flexDirection:'column',gap:2}}>
     <Box><Typography variant="h5" fontWeight={700}>MCP status</Typography><Typography color="text.secondary">Private ChatGPT integration with read and write access</Typography></Box>
-    <MuiCard><Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:2}}><Box sx={{display:'flex',gap:1.5,alignItems:'center'}}><Server size={22}/><Box><Typography fontWeight={600}>Fitness MCP</Typography><Typography variant="body2" color="text.secondary">{health?.status||'Checking…'} · v{health?.version||'1.0.0'}</Typography></Box></Box><Chip color={health?.status==='ok'?'success':'default'} icon={health?.status==='ok'?<CheckCircle2/>:undefined} label={health?.status||'unknown'}/></Box></MuiCard>
+    <MuiCard><Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:2}}>
+      <Box sx={{display:'flex',gap:1.5,alignItems:'center'}}><Server size={22}/><Typography fontWeight={600}>Fitness MCP</Typography></Box>
+      {healthy
+        ? <Chip icon={<CheckCircle2 size={16}/>} label="Operational" sx={{bgcolor:'rgba(74,222,128,0.16)',color:'#3f9f6a',fontWeight:600,'& .MuiChip-icon':{color:'#3f9f6a'}}}/>
+        : <Chip label={statusLabel} sx={{maxWidth:'60%',bgcolor:'rgba(248,113,113,0.16)',color:'#c9524f',fontWeight:600,'& .MuiChip-label':{whiteSpace:'normal'}}}/>}
+    </Box></MuiCard>
+
     <MuiCard><Typography variant="overline" color="text.secondary">Endpoint</Typography><Typography variant="body2" sx={{wordBreak:'break-all',fontFamily:'monospace'}}>{endpoint}</Typography><Box sx={{display:'flex',gap:1,mt:2}}><Button size="small" variant="outlined" startIcon={<Clipboard/>} onClick={()=>navigator.clipboard.writeText(endpoint).then(()=>toast.success('MCP URL copied'))}>Copy URL</Button><Button size="small" variant="outlined" startIcon={<RefreshCw/>} onClick={check} disabled={checking}>Test health</Button></Box></MuiCard>
     <MuiCard><Typography fontWeight={600}>Connection</Typography><Typography variant="body2" color="text.secondary" sx={{mt:1}}>Transport: Streamable HTTP<br/>Authentication: Supabase OAuth 2.1 with PKCE<br/>Current user: {user.id}<br/>Mode: read and write (meals, water, workouts, activities)</Typography></MuiCard>
     <MuiCard><Typography fontWeight={600}>Read tools ({tools.length})</Typography><Box sx={{display:'flex',flexWrap:'wrap',gap:1,mt:2}}>{tools.map(t=><Chip key={t} label={t} size="small" variant="outlined"/>)}</Box><Typography fontWeight={600} sx={{mt:3}}>Write tools ({writeTools.length})</Typography><Box sx={{display:'flex',flexWrap:'wrap',gap:1,mt:2}}>{writeTools.map(t=><Chip key={t} label={t} size="small" color="primary" variant="outlined"/>)}</Box></MuiCard>
