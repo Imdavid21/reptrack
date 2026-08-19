@@ -17,7 +17,8 @@ async function write<T>(label: string, build: () => any): Promise<T> {
   return await withRetry(label, async () => {
     const { data, error } = await build();
     if (error) {
-      const err = new Error(categorizeDbError(error).replace("READ", "WRITE"));
+      const detail = [(error as any).message, (error as any).details, (error as any).hint].filter(Boolean).join(" | ").slice(0, 200);
+      const err = new Error(`${categorizeDbError(error).replace("READ", "WRITE")}${detail ? `: ${detail}` : ""}`);
       (err as any).code = (error as any).code;
       (err as any).status = (error as any).status;
       throw err;
@@ -126,7 +127,7 @@ async function logWater(args: Args, db: Client, userId: string, today: string) {
   const date = assertWritableDate(args.date || today, today);
   // water_logs is timestamp based; backdated entries land at local midday.
   const timestamp = date === today ? new Date().toISOString() : `${date}T12:00:00.000Z`;
-  const row = await write<any>("water_insert", () => db.from("water_logs").insert({ user_id: userId, amount: litres, method: "mcp", timestamp }).select().single());
+  const row = await write<any>("water_insert", () => db.from("water_logs").insert({ user_id: userId, amount: litres, method: "automation", timestamp }).select().single());
   return ok("water_logged", row, { litres });
 }
 
