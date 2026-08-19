@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, startOfWeek, parseISO } from 'date-fns';
 import { stripSetSuffix, getBodyPart } from '@/lib/exerciseClassification';
+import { getCanonicalName } from '@/lib/exerciseMatching';
 import { fetchAllRows } from '@/lib/supabasePaging';
 
 export interface ExerciseSet {
@@ -152,7 +153,11 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
       // Map exercises to ExerciseSet format, deriving push/pull/legs per exercise
       const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {
         const dayName = ex.workouts?.day_name || '';
-        const exerciseName = stripSetSuffix(ex.name);
+        // Insights/Trends must group the same movement logged under different
+        // spellings ("EZ Reverse Curls" vs "Reverse Curl") the way PR tracking
+        // does - stripping the "(Set 2)" suffix alone isn't enough, so resolve
+        // through the same canonical alias map usePersonalRecords uses.
+        const exerciseName = getCanonicalName(stripSetSuffix(ex.name));
         return {
           id: ex.id,
           workout_id: ex.workout_id,

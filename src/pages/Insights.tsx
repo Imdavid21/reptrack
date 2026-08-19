@@ -272,7 +272,6 @@ function ProgressCard() {
               />
             </Box>
           </Box>
-          </Box>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
               WEIGHT GOAL
