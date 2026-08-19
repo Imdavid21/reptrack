@@ -70,33 +70,23 @@ function ProgressCard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // Calories and water are edited on their own dashboard tiles (which also
+  // lock the adaptive target); fitness goal lives in Settings > Workout.
+  // This panel only owns the goals that have no home elsewhere.
   const [goals, setGoals] = useState({
-    daily_calorie_goal: '',
-    daily_water_goal: '',
     weekly_workout_goal: '',
     sleep_goal: '',
     weight_goal: '',
     weight_goal_type: 'maintain',
-    fitness_goal: '',
   });
 
   useEffect(() => {
     if (preferences) {
       setGoals({
-        daily_calorie_goal: preferences.daily_calorie_goal?.toString() || '',
-        // This field collects/displays ml (see the "ml" adornment below), but
-        // daily_water_goal is stored in LITERS everywhere else in the app
-        // (WaterTracker's slider, HydrationChart, the body-score hydration
-        // pillar) — convert on the way in and out so this is the only place
-        // that ever deals with the ml scale.
-        daily_water_goal: preferences.daily_water_goal
-          ? String(Math.round(normalizeWaterGoalLiters(preferences.daily_water_goal) * 1000))
-          : '',
         weekly_workout_goal: preferences.weekly_workout_goal?.toString() || '4',
         sleep_goal: preferences.sleep_goal?.toString() || '8',
         weight_goal: preferences.weight_goal?.toString() || '',
         weight_goal_type: preferences.weight_goal_type || 'maintain',
-        fitness_goal: preferences.fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -107,37 +97,22 @@ function ProgressCard() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const calorieGoal = goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null;
-      const calorieGoalChanged = calorieGoal != null && calorieGoal !== preferences?.daily_calorie_goal;
-      // Field collects ml; daily_water_goal is stored in liters (see note above).
-      const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) / 1000 : null;
       const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
       const sleepGoalValue = goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8;
 
       await updatePreferences.mutateAsync({
-        daily_calorie_goal: calorieGoal,
-        calorie_target_locked: calorieGoalChanged ? true : preferences?.calorie_target_locked,
-        daily_water_goal: waterGoal,
         weekly_workout_goal: workoutGoalValue,
         sleep_goal: sleepGoalValue,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
         weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
-        fitness_goal: goals.fitness_goal || null,
       });
 
-      // Layer point-in-time tracking on top for the goals judged against
-      // historical data (see useGoalHistory) — weight_goal/fitness_goal
-      // aren't per-day targets, so they don't get a history entry.
-      const historyWrites: Promise<void>[] = [];
-      if (calorieGoal != null) {
-        historyWrites.push(recordGoalHistory('daily_calorie_goal', calorieGoal, preferences?.daily_calorie_goal));
-      }
-      if (waterGoal != null) {
-        historyWrites.push(recordGoalHistory('daily_water_goal', waterGoal, preferences?.daily_water_goal));
-      }
-      historyWrites.push(recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal));
-      historyWrites.push(recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal));
-      await Promise.all(historyWrites);
+      // Point-in-time tracking for the goals judged against historical data
+      // (see useGoalHistory) - weight_goal isn't a per-day target.
+      await Promise.all([
+        recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal),
+        recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal),
+      ]);
 
       toast.success('Goals updated');
       setIsEditing(false);
