@@ -193,16 +193,16 @@ function ExerciseItemCard({
           <div className="font-semibold text-sm flex items-center gap-1.5 min-w-0">
             <span className="truncate">{exercise.name}</span>
             {exercise.mandatory && (
-              <span className="text-xs bg-energy text-energy-foreground px-1 py-0.5 rounded uppercase font-bold shrink-0">must</span>
+              <span className="text-xs bg-energy text-energy-foreground px-1 py-0.5 rounded  font-bold shrink-0">must</span>
             )}
             {exercise.exerciseType === 'timed' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">timed</span>
+              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">timed</span>
             )}
             {exercise.exerciseType === 'bodyweight' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">bw</span>
+              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">bw</span>
             )}
             {exercise.exerciseType === 'weighted_bw' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded uppercase text-muted-foreground shrink-0">bw+</span>
+              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">bw+</span>
             )}
           </div>
           {exercise.progression && (
@@ -234,7 +234,7 @@ function ExerciseItemCard({
                 {(isTimed || isBodyweight || isWeightedBW) && (
                   <>
                     <span className="opacity-40">·</span>
-                    <span className="text-xs uppercase">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
+                    <span className="text-xs">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
                   </>
                 )}
               </>
@@ -244,7 +244,7 @@ function ExerciseItemCard({
 
         {/* Category badge */}
         <span className={cn(
-          'text-xs font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0',
+          'text-xs font-semibold  tracking-wider px-1.5 py-0.5 rounded shrink-0',
           exercise.category === 'primary'
             ? 'bg-primary/10 text-primary'
             : 'bg-muted text-muted-foreground'
@@ -282,7 +282,7 @@ function ExerciseItemCard({
               <div className="flex items-center gap-3">
                 {/* Sets */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Sets</span>
+                  <span className="text-xs text-muted-foreground  tracking-wide">Sets</span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleSetsChange(-1)}
@@ -304,7 +304,7 @@ function ExerciseItemCard({
 
                 {/* Reps or Time */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                  <span className="text-xs text-muted-foreground  tracking-wide">
                     {isTimed ? 'Secs' : 'Reps'}
                   </span>
                   <input
@@ -332,7 +332,7 @@ function ExerciseItemCard({
                   <>
                     <div className="w-px h-8 bg-border/50" />
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                      <span className="text-xs text-muted-foreground  tracking-wide">
                         {isWeightedBW ? '+Weight' : 'Weight'}
                       </span>
                       <input

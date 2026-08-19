@@ -40,7 +40,7 @@ export function SplitSelector({ currentSplit, onChangeSplit, isUpdating }: Split
         )}
       >
         <div className="text-left">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Split</p>
+          <p className="text-xs text-muted-foreground font-medium  tracking-wide">Split</p>
           <p className="text-sm font-bold">{getSplitLabel(currentSplit)}</p>
         </div>
         <ChevronDown

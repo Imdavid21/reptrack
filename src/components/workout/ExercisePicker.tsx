@@ -172,7 +172,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
               <div className="text-xs text-muted-foreground truncate">
                 {option.muscleGroup} | {option.defaultWeight} | {option.defaultReps}
                 {option.exerciseType && option.exerciseType !== 'weighted' && (
-                  <span className="ml-1 text-xs uppercase opacity-60">
+                  <span className="ml-1 text-xs  opacity-60">
                     ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
                   </span>
                 )}

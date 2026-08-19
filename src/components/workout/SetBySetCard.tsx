@@ -627,7 +627,7 @@ export function SetBySetCard({
             {/* Quick time selection (when timer not running) */}
             {!isTimerRunning && (
               <>
-                <div className="text-xs text-muted-foreground text-center uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground text-center  tracking-wider">
                   Or set duration
                 </div>
                 {showTimeInput ? (
@@ -677,7 +677,7 @@ export function SetBySetCard({
         {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
         {showWeight && !isTimed && (
           <div className="mb-4">
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
             </div>
             {showWeightInput ? (
@@ -725,7 +725,7 @@ export function SetBySetCard({
         {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
         {showReps && !isTimed && (
           <div>
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               Reps
             </div>
             {showRepsInput ? (

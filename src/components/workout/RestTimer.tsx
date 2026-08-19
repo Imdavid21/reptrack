@@ -138,7 +138,7 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Timer className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            <span className="text-xs  tracking-wider text-muted-foreground font-medium">
               Rest Timer
             </span>
           </div>

@@ -809,7 +809,7 @@ export default function LogWorkout() {
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
                     </span>
-                    <p className="text-xs text-muted-foreground uppercase">SETS</p>
+                    <p className="text-xs text-muted-foreground">SETS</p>
                   </div>
                   <button
                     onClick={() => setShowTimeDialog(true)}

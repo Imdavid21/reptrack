@@ -157,7 +157,7 @@ export function ProgressHeader() {
         {/* Main progress */}
         <div className="space-y-3">
            <div className="flex items-center justify-between">
-             <span className="text-xs text-muted-foreground uppercase tracking-wider">52-WEEK PROGRAM</span>
+             <span className="text-xs text-muted-foreground  tracking-wider">52-WEEK PROGRAM</span>
              <span className="text-xs tabular-nums">
                {workouts.length}/{totalSessions} SESSIONS
              </span>
@@ -178,7 +178,7 @@ export function ProgressHeader() {
               <Calendar className="h-3 w-3" />
             </div>
             <div className="text-xl font-bold tabular-nums">{daysLoggedThisWeek}/7</div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">DAYS LOGGED</div>
+            <div className="text-xs text-muted-foreground  mt-1">DAYS LOGGED</div>
           </div>
           
           {/* Sleep Stat - Tappable */}
@@ -200,7 +200,7 @@ export function ProgressHeader() {
                   : '-'
               )}
             </div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">
+            <div className="text-xs text-muted-foreground  mt-1">
               {!todaySleep ? 'TAP TO ADD' : 'SLEEP'}
             </div>
           </button>
@@ -223,7 +223,7 @@ export function ProgressHeader() {
                   : '-'
               )}
             </div>
-            <div className="text-xs text-muted-foreground uppercase mt-1">
+            <div className="text-xs text-muted-foreground  mt-1">
               {!todayWeight && lastLoggedWeight ? 'TAP TO ADD' : 'KG'}
             </div>
           </button>

@@ -84,7 +84,6 @@ const baseTheme: ThemeOptions = {
       lineHeight: 1.2,
       fontWeight: 700,
       letterSpacing: '0.08em',
-      textTransform: 'uppercase' as const,
     },
   },
   shape: {

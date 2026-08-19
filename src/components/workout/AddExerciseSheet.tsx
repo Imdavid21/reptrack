@@ -104,7 +104,7 @@ export function AddExerciseSheet({ open, onOpenChange, onAdd }: AddExerciseSheet
 
                     <div className="space-y-2">
                         <Label>Sets</Label>
-                        <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 px-1 text-xs uppercase tracking-wider text-muted-foreground">
+                        <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 px-1 text-xs  tracking-wider text-muted-foreground">
                             <span className="text-center">#</span>
                             <span className="text-center">Weight</span>
                             <span className="text-center">Reps</span>
