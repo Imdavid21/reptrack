@@ -35,7 +35,6 @@ import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
-import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { toast } from '@/lib/toast';
 
 function InsightSection({ label, count, dotClass, initiallyOpen = false, children }: { label: string; count: number; dotClass: string; initiallyOpen?: boolean; children: ReactNode }) {
