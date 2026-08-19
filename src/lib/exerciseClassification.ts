@@ -4,7 +4,7 @@
  * Single source of truth used by both `useBodyPartsProgress` (detailed bodyPart)
  * and `StrengthOverviewChart` (overview muscleGroup).
  *
- * To add a new exercise, add one entry here — nothing else to change.
+ * To add a new exercise, add one entry here - nothing else to change.
  */
 
 import { normalizeExerciseName } from './exerciseMatching';
@@ -110,7 +110,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'smith machine shrugs':       { bodyPart: 'Shoulders', muscleGroup: 'shoulders' },
   'cable shrugs':               { bodyPart: 'Shoulders', muscleGroup: 'shoulders' },
 
-  // ─── ARMS — Triceps ──────────────────────────────────────────────────────
+  // ─── ARMS - Triceps ──────────────────────────────────────────────────────
   'tricep pushdown':            { bodyPart: 'Triceps', muscleGroup: 'arms' },
   'tricep pushdowns':           { bodyPart: 'Triceps', muscleGroup: 'arms' },
   'cable tricep pushdowns':     { bodyPart: 'Triceps', muscleGroup: 'arms' },
@@ -137,7 +137,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'tricep kickbacks':           { bodyPart: 'Triceps', muscleGroup: 'arms' },
   'jm press':                   { bodyPart: 'Triceps', muscleGroup: 'arms' },
 
-  // ─── ARMS — Biceps ───────────────────────────────────────────────────────
+  // ─── ARMS - Biceps ───────────────────────────────────────────────────────
   'barbell curl':               { bodyPart: 'Biceps', muscleGroup: 'arms' },
   'barbell curls':              { bodyPart: 'Biceps', muscleGroup: 'arms' },
   'ez bar curl':                { bodyPart: 'Biceps', muscleGroup: 'arms' },
@@ -189,13 +189,13 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'farmer walk':                { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'farmers walk':               { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'farmers carry':              { bodyPart: 'Forearms', muscleGroup: 'arms' },
-  // Grip-endurance hold — no exact/pattern match existed, so this mandatory
+  // Grip-endurance hold - no exact/pattern match existed, so this mandatory
   // corrective (ppl6/ppl5/full_body3, "do not skip") was silently invisible
   // to growth tracking, contributing zero volume to any muscle bucket.
   'dead hang':                  { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'dead hangs':                 { bodyPart: 'Forearms', muscleGroup: 'arms' },
 
-  // ─── ARMS — Forearms ──────────────────────────────────────────────────────
+  // ─── ARMS - Forearms ──────────────────────────────────────────────────────
   'barbell reverse curls':      { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'barbell reverse curl':       { bodyPart: 'Forearms', muscleGroup: 'arms' },
   'dumbbell reverse curls':     { bodyPart: 'Forearms', muscleGroup: 'arms' },
@@ -268,7 +268,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'lever seated row machine':   { bodyPart: 'Back', muscleGroup: 'back' },
   'lever seated row':           { bodyPart: 'Back', muscleGroup: 'back' },
 
-  // ─── LEGS — Quads ─────────────────────────────────────────────────────────
+  // ─── LEGS - Quads ─────────────────────────────────────────────────────────
   'barbell squat':              { bodyPart: 'Quads', muscleGroup: 'legs' },
   'barbell squats':             { bodyPart: 'Quads', muscleGroup: 'legs' },
   'back squat':                 { bodyPart: 'Quads', muscleGroup: 'legs' },
@@ -308,7 +308,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'pendulum squat':             { bodyPart: 'Quads', muscleGroup: 'legs' },
   'pendulum squats':            { bodyPart: 'Quads', muscleGroup: 'legs' },
 
-  // ─── LEGS — Hamstrings ────────────────────────────────────────────────────
+  // ─── LEGS - Hamstrings ────────────────────────────────────────────────────
   'romanian deadlift':          { bodyPart: 'Hamstrings', muscleGroup: 'legs' },
   'romanian deadlifts':         { bodyPart: 'Hamstrings', muscleGroup: 'legs' },
   'rdl':                        { bodyPart: 'Hamstrings', muscleGroup: 'legs' },
@@ -329,7 +329,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'nordic curl':                { bodyPart: 'Hamstrings', muscleGroup: 'legs' },
   'nordic curls':               { bodyPart: 'Hamstrings', muscleGroup: 'legs' },
 
-  // ─── LEGS — Glutes ────────────────────────────────────────────────────────
+  // ─── LEGS - Glutes ────────────────────────────────────────────────────────
   'hip thrust':                 { bodyPart: 'Glutes', muscleGroup: 'legs' },
   'hip thrusts':                { bodyPart: 'Glutes', muscleGroup: 'legs' },
   'barbell hip thrust':         { bodyPart: 'Glutes', muscleGroup: 'legs' },
@@ -340,7 +340,7 @@ const EXERCISE_CLASSIFICATION: Record<string, Classification> = {
   'donkey kick':                { bodyPart: 'Glutes', muscleGroup: 'legs' },
   'donkey kicks':               { bodyPart: 'Glutes', muscleGroup: 'legs' },
 
-  // ─── LEGS — Calves ────────────────────────────────────────────────────────
+  // ─── LEGS - Calves ────────────────────────────────────────────────────────
   'standing calf raise':        { bodyPart: 'Calves', muscleGroup: 'legs' },
   'standing calf raises':       { bodyPart: 'Calves', muscleGroup: 'legs' },
   'seated calf raise':          { bodyPart: 'Calves', muscleGroup: 'legs' },
@@ -411,7 +411,7 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['kickback',       { bodyPart: 'Triceps',    muscleGroup: 'arms' }],
   ['mountain climb', { bodyPart: 'Core',       muscleGroup: 'core' }],
   ['nordic',         { bodyPart: 'Hamstrings', muscleGroup: 'legs' }],
-  // Presses that are NOT chest — matched before the generic 'press' fallback.
+  // Presses that are NOT chest - matched before the generic 'press' fallback.
   ['pallof',         { bodyPart: 'Core',       muscleGroup: 'core' }],
   ['z press',        { bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
   ['behind the neck',{ bodyPart: 'Shoulders',  muscleGroup: 'shoulders' }],
@@ -422,7 +422,7 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   // matches, so specific/disambiguating tokens MUST precede the generic ones.
   // Otherwise generic 'press'/'push' swallow "Tricep Pushdown" (→ Triceps),
   // "Z Press"/"Behind the Neck Press" (→ Shoulders), "Pallof Press" (→ Core),
-  // etc. and mislabel them all as Chest — inflating chest volume and starving
+  // etc. and mislabel them all as Chest - inflating chest volume and starving
   // shoulders/triceps/core in the muscle-balance analytics.
   ['pulldown', { bodyPart: 'Back',      muscleGroup: 'back' }],
   ['pushdown', { bodyPart: 'Triceps',   muscleGroup: 'arms' }],
@@ -445,7 +445,7 @@ const FALLBACK_PATTERNS: [string, Classification][] = [
   ['plank',    { bodyPart: 'Core',      muscleGroup: 'core' }],
   ['crunch',   { bodyPart: 'Core',      muscleGroup: 'core' }],
   ['ab ',      { bodyPart: 'Core',      muscleGroup: 'core' }],
-  // Generic catch-alls — keep LAST so the specific tokens above win.
+  // Generic catch-alls - keep LAST so the specific tokens above win.
   ['row',      { bodyPart: 'Back',      muscleGroup: 'back' }],
   ['curl',     { bodyPart: 'Biceps',    muscleGroup: 'arms' }],
   ['fly',      { bodyPart: 'Chest',     muscleGroup: 'chest' }],
@@ -468,16 +468,16 @@ const CATEGORY_FALLBACK: Record<string, Classification> = {
 function classify(name: string): Classification | undefined {
   const lower = stripSetSuffix(name).toLowerCase().trim();
 
-  // 1 — exact match
+  // 1 - exact match
   if (EXERCISE_CLASSIFICATION[lower]) return EXERCISE_CLASSIFICATION[lower];
 
-  // 2 — normalized match
+  // 2 - normalized match
   const norm = normalizeExerciseName(name);
   for (const [key, value] of Object.entries(EXERCISE_CLASSIFICATION)) {
     if (normalizeExerciseName(key) === norm) return value;
   }
 
-  // 3 — fallback pattern matching (ordered: multi-word first)
+  // 3 - fallback pattern matching (ordered: multi-word first)
   for (const [pattern, cls] of FALLBACK_PATTERNS) {
     if (lower.includes(pattern)) return cls;
   }
@@ -485,12 +485,12 @@ function classify(name: string): Classification | undefined {
   return undefined;
 }
 
-/** Detailed body-part label — e.g. Quads, Triceps, Hamstrings */
+/** Detailed body-part label - e.g. Quads, Triceps, Hamstrings */
 export function getBodyPart(name: string, fallbackCategory?: string): string {
   const cls = classify(name);
   if (cls) return cls.bodyPart;
 
-  // category fallback — lowercased, since real callers pass Title Case
+  // category fallback - lowercased, since real callers pass Title Case
   // ('Push'/'Pull'/'Legs'/'Core' from AddExerciseSheet's custom-exercise
   // category) and this table's keys are lowercase; the lookup was silently
   // never matching before.
@@ -499,7 +499,7 @@ export function getBodyPart(name: string, fallbackCategory?: string): string {
   return 'Other';
 }
 
-/** Overview muscle-group label — chest, back, shoulders, arms, legs, core */
+/** Overview muscle-group label - chest, back, shoulders, arms, legs, core */
 export function getMuscleGroup(name: string): string {
   const cls = classify(name);
   return cls?.muscleGroup ?? 'other';

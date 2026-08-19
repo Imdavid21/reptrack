@@ -25,7 +25,7 @@ export interface DateRangeFilter {
 }
 
 /**
- * Pure per-day hydration totals — no goal comparison here. "Met goal" is a
+ * Pure per-day hydration totals - no goal comparison here. "Met goal" is a
  * point-in-time judgment (what was the target on that specific day), which
  * needs goal_history to resolve correctly, so callers compute it themselves
  * (see HydrationChart) rather than this hook baking in a single flat goal

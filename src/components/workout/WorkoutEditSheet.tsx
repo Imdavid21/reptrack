@@ -96,7 +96,7 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                         </DrawerHeader>
 
                         <div className="px-4 pb-2 space-y-2">
-                            {/* Edit Vitals — always available */}
+                            {/* Edit Vitals - always available */}
                             {onEditVitals && (
                                 <button
                                     onClick={onEditVitals}

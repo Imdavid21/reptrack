@@ -29,7 +29,7 @@ const WATER_SIZES = [
 export function WaterTracker() {
   const { logDate, isBackDated } = useLogDate();
   const viewingToday = !isBackDated;
-  // Show (and add to) the shared dashboard date — today by default, or a
+  // Show (and add to) the shared dashboard date - today by default, or a
   // back-dated day so its existing entries are visible and can be added to.
   const { waterLogs, totalToday, addWaterLog, isAdding } = useWaterLogs(viewingToday ? undefined : logDate);
   const { preferences } = useUserPreferences();
@@ -41,7 +41,7 @@ export function WaterTracker() {
   const prevTotalRef = useRef(totalToday);
 
   // Defends against pre-existing rows saved in ml by an inconsistent editor
-  // elsewhere (see Insights.tsx) — daily_water_goal is meant to be liters.
+  // elsewhere (see Insights.tsx) - daily_water_goal is meant to be liters.
   const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
 
   // Sync edit slider when opening

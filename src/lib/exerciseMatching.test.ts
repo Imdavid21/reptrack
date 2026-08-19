@@ -30,7 +30,7 @@ describe('getCanonicalName', () => {
 
   // Regression: this file used to be two separately-maintained tables (this
   // one, lowercase-only; usePersonalRecords.ts's, Title-Case) that disagreed
-  // on which direction a couple of singular/plural pairs should resolve —
+  // on which direction a couple of singular/plural pairs should resolve -
   // both aliased the live template's actual spelling to a plural/singular
   // form that never appears anywhere in the app.
   it('aliases the plural form to the live template\'s singular spelling, not the reverse', () => {
@@ -46,7 +46,7 @@ describe('resolveCanonicalName / normalizeExerciseName / findBestMatch', () => {
     expect(resolveCanonicalName('Barbell Bench')).toBe('barbell bench press');
   });
 
-  it('findBestMatch keeps seated and standing calf raises separate — different loading, not aliases', () => {
+  it('findBestMatch keeps seated and standing calf raises separate - different loading, not aliases', () => {
     const map = { 'Seated Calf Raise': 10, 'Standing Calf Raise': 50 };
     expect(findBestMatch('Seated Calf Raise', map)).toBe(10);
     expect(findBestMatch('Standing Calf Raise', map)).toBe(50);
@@ -60,7 +60,7 @@ describe('resolveCanonicalName / normalizeExerciseName / findBestMatch', () => {
 // The whole point of merging the two alias tables: a lift must resolve to
 // the same canonical identity whether it goes through the PR path
 // (getCanonicalName) or the last-used-weight/matching path
-// (resolveCanonicalName / findBestMatch) — that's exactly the gap that let
+// (resolveCanonicalName / findBestMatch) - that's exactly the gap that let
 // the same real-world lift silently split into two different PR lines.
 describe('cross-consumer consistency', () => {
   const pairs: [string, string][] = [
@@ -80,7 +80,7 @@ describe('cross-consumer consistency', () => {
 
 // Locks in what every exercise name currently shipped in a split template
 // resolves to, the same guard usePersonalRecords.test.ts already runs
-// against this same table — duplicated here so this file's own test suite
+// against this same table - duplicated here so this file's own test suite
 // is self-sufficient and catches a regression regardless of which consumer
 // someone happens to be testing.
 describe('EXERCISE_ALIASES coverage of live split templates', () => {

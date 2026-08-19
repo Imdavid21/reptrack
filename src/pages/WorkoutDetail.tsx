@@ -350,7 +350,7 @@ export default function WorkoutDetail() {
                         />
                       ) : (
                         <div className="text-xs text-center tabular-nums">
-                          {set.actual_weight || <span className="text-muted-foreground">{set.target_weight || '—'}</span>}
+                          {set.actual_weight || <span className="text-muted-foreground">{set.target_weight || '-'}</span>}
                         </div>
                       )}
 
@@ -364,7 +364,7 @@ export default function WorkoutDetail() {
                         />
                       ) : (
                         <div className="text-xs text-center tabular-nums">
-                          {set.actual_reps || <span className="text-muted-foreground">{set.target_reps || '—'}</span>}
+                          {set.actual_reps || <span className="text-muted-foreground">{set.target_reps || '-'}</span>}
                         </div>
                       )}
 

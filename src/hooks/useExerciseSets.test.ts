@@ -21,7 +21,7 @@ describe('categorizeByDayName', () => {
 describe('categorizeExercise', () => {
   // Regression: the old categorizeByDayName had no leg detection at all
   // (bare push -> 'push', pull -> 'pull', everything else -> 'legs'), so
-  // every exercise on an Upper day — all push and pull movements — was
+  // every exercise on an Upper day - all push and pull movements - was
   // silently counted as leg volume, and Full Body days fared no better.
   it('classifies push/pull movements correctly even on an Upper day', () => {
     expect(categorizeExercise('Barbell Bench Press', 'Upper A')).toBe('push');

@@ -1,9 +1,9 @@
 /**
- * Programming Engine — derives personalized sets, reps, weight, rest, and RIR
+ * Programming Engine - derives personalized sets, reps, weight, rest, and RIR
  * for a single exercise, based on the day's bias, the user's training focus,
  * exercise category, and their own logged history.
  *
- * This is the ONE place that decides "what should I actually do today" — it
+ * This is the ONE place that decides "what should I actually do today" - it
  * composes two concerns:
  *  1. What's the target rep range / set count / rest for this exercise today
  *     (driven by day bias + training focus + exercise category)?
@@ -27,7 +27,7 @@ export interface ProgrammingResult {
   rir: string;
   /** Suggested weight for this session, e.g. "82.5kg", "BW", "10kg". */
   weight: string;
-  /** Short rationale for the weight/rep suggestion, e.g. "+2.5kg — hit 8 reps last time". */
+  /** Short rationale for the weight/rep suggestion, e.g. "+2.5kg - hit 8 reps last time". */
   note: string;
   trend: ProgressionSuggestion['trend'];
 }
@@ -48,7 +48,7 @@ const VOLUME_DEFAULTS: Record<string, { sets: number; reps: string; rest: number
 // ── Focus-driven tables. Unlike 'mix' (which alternates per the day's own
 // heavy/volume bias, and defers to whatever the template prescribes), picking
 // 'strength' or 'volume' OVERRIDES every exercise's rep range regardless of
-// day bias or the template's own numbers — that's the whole point of the
+// day bias or the template's own numbers - that's the whole point of the
 // setting: "set the sets and reps" for me, consistently, toward one goal. ──
 
 const STRENGTH_TABLE: Record<string, { sets: number; reps: string; rest: number; rir: string }> = {
@@ -73,7 +73,7 @@ function isIsolation(exerciseName: string): boolean {
   return ISOLATION_PATTERNS.some(p => lower.includes(p));
 }
 
-// ── Goal-based adjustments (fitness_goal free text — rest time only) ──────
+// ── Goal-based adjustments (fitness_goal free text - rest time only) ──────
 
 function goalAdjust(
   defaults: { sets: number; reps: string; rest: number; rir: string },
@@ -102,8 +102,8 @@ function goalAdjust(
  * Derive personalised programming for a single exercise.
  *
  * Priority for sets/reps/rest/rir:
- *  1. Training focus table (strength/volume) — always wins when explicitly set.
- *  2. 'mix' (default/unset) — the day's own heavy/volume bias, then the
+ *  1. Training focus table (strength/volume) - always wins when explicitly set.
+ *  2. 'mix' (default/unset) - the day's own heavy/volume bias, then the
  *     template's own explicit "SxR" prescription if it has one (preserves the
  *     original template-authored behavior exactly when no focus is chosen).
  *  3. User's logged set count overlays the result when it's in a sane 2-8
@@ -125,7 +125,7 @@ export function derivePersonalizedProgramming(
   const cat = exercise.category === 'primary' ? 'primary' : 'accessory';
   const focus: TrainingFocus = trainingFocus || 'mix';
 
-  // 1 — Base sets/reps/rest/rir for the chosen focus
+  // 1 - Base sets/reps/rest/rir for the chosen focus
   let raw: { sets: number; reps: string; rest: number; rir: string };
   if (focus === 'strength') {
     raw = { ...STRENGTH_TABLE[cat] };
@@ -136,8 +136,8 @@ export function derivePersonalizedProgramming(
     raw = { ...table[cat] };
   }
 
-  // 2 — For higher-rep isolation work, allow 0-1 RIR on the last set. Skipped
-  // for strength focus — turning heavy accessory work into a 15-20 rep
+  // 2 - For higher-rep isolation work, allow 0-1 RIR on the last set. Skipped
+  // for strength focus - turning heavy accessory work into a 15-20 rep
   // burnout defeats the point of a strength-oriented session.
   const volumeLike = focus === 'volume' || (focus === 'mix' && bias === 'volume');
   if (focus !== 'strength' && volumeLike && cat === 'accessory' && isIsolation(exercise.name)) {
@@ -146,16 +146,16 @@ export function derivePersonalizedProgramming(
     raw.rir = '0-1';
   }
 
-  // 3 — Apply fitness-goal rest adjustment
+  // 3 - Apply fitness-goal rest adjustment
   const adjusted = goalAdjust(raw, fitnessGoal);
 
   let finalSets = adjusted.sets;
   let finalReps = adjusted.reps;
 
-  // 4 — 'mix' only: the template's own explicit "SxR" prescription wins, so a
+  // 4 - 'mix' only: the template's own explicit "SxR" prescription wins, so a
   // user who never touches this setting sees exactly the original,
   // hand-curated per-exercise behavior. Strength/volume focus intentionally
-  // skip this — overriding the template's numbers IS the setting's purpose.
+  // skip this - overriding the template's numbers IS the setting's purpose.
   if (focus === 'mix') {
     const templateMatch = exercise.targetReps.match(/^\d+x(.+)$/);
     if (templateMatch) {
@@ -165,21 +165,21 @@ export function derivePersonalizedProgramming(
     }
   }
 
-  // 5 — Overlay the user's own logged set count, bounded to a sane range so a
+  // 5 - Overlay the user's own logged set count, bounded to a sane range so a
   // session cut short (1 set) or padded (12 sets) doesn't get re-programmed.
   if (lastUsed && lastUsed.sets >= 2 && lastUsed.sets <= 8) {
     finalSets = lastUsed.sets;
   }
 
-  // 6 — Template-level overrides always take final priority
+  // 6 - Template-level overrides always take final priority
   const finalRest = exercise.restSeconds ?? adjusted.rest;
   const finalRir = exercise.rir ?? adjusted.rir;
 
-  // 7 — Weight & displayed reps: evidence-based double progression against the
+  // 7 - Weight & displayed reps: evidence-based double progression against the
   // user's actual last session, targeting the range just derived above. Strip
   // a leading '+' from the template weight (weighted_bw exercises, e.g.
   // "+10kg") before handing it to suggestProgression as the no-history
-  // fallback — the UI re-adds that '+' cosmetically for weighted_bw exercises,
+  // fallback - the UI re-adds that '+' cosmetically for weighted_bw exercises,
   // so leaving it in the stored value would double it up ("++10kg").
   const templateWeight = exercise.targetWeight.replace(/^\+/, '');
   const lastUsedLite = lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : undefined;

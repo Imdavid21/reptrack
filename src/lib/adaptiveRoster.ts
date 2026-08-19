@@ -1,6 +1,6 @@
 /**
- * Adaptive Mode static content — the six movement patterns and their curated
- * exercise-variation rosters, each rated 1–5 across the four strength-curve
+ * Adaptive Mode static content - the six movement patterns and their curated
+ * exercise-variation rosters, each rated 1-5 across the four strength-curve
  * zones the Infinite Progression method rotates around: lock-out, mid-range,
  * bottom-range, stability. This is fixed reference content (like
  * exerciseClassification.ts's exercise table), not per-user data, so it
@@ -28,7 +28,7 @@ export interface StrengthCurveProfile {
 
 export interface RosterVariation {
   name: string;
-  /** Matches this variation to logged sets — see exerciseClassification.ts naming. */
+  /** Matches this variation to logged sets - see exerciseClassification.ts naming. */
   exerciseNameHints: string[];
   curve: StrengthCurveProfile;
 }

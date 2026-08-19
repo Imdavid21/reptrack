@@ -6,7 +6,7 @@ import { analyzeMuscles, InsightActivity, InsightSet, MuscleIntelligence } from 
 
 /**
  * Runs the muscle-intelligence engine over the global date range's sets plus
- * logged activity (walk/run/cycle/box also load muscles — see
+ * logged activity (walk/run/cycle/box also load muscles - see
  * ACTIVITY_MUSCLE_LOAD in muscleInsights.ts). Returns balance / plateaus /
  * PRs / growth-room insights for the UI.
  */

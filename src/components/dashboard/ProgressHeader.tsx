@@ -197,7 +197,7 @@ export function ProgressHeader() {
               {isLoading ? '...' : (
                 (todaySleep ?? lastLoggedSleep) 
                   ? `${(todaySleep ?? lastLoggedSleep)?.toFixed(1)}h`
-                  : '—'
+                  : '-'
               )}
             </div>
             <div className="text-xs text-muted-foreground uppercase mt-1">
@@ -220,7 +220,7 @@ export function ProgressHeader() {
               {isLoading ? '...' : (
                 (todayWeight ?? lastLoggedWeight) 
                   ? (todayWeight ?? lastLoggedWeight)?.toFixed(1)
-                  : '—'
+                  : '-'
               )}
             </div>
             <div className="text-xs text-muted-foreground uppercase mt-1">

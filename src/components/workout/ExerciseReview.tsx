@@ -79,8 +79,8 @@ function ExerciseItemCard({
 
   // Extract max from rep ranges like "10-12" → "12"
   const displayReps = (reps: string | undefined) => {
-    if (!reps) return '—';
-    const match = reps.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (!reps) return '-';
+    const match = reps.match(/(\d+)\s*[--]\s*(\d+)/);
     if (match) return match[2];
     return reps;
   };
@@ -142,7 +142,7 @@ function ExerciseItemCard({
       className="rounded-xl border border-border bg-card overflow-hidden"
     >
       <div className="flex items-center gap-2 p-3">
-        {/* Reorder controls — hidden during active session */}
+        {/* Reorder controls - hidden during active session */}
         {!activeSession && (
           <div className="flex flex-col gap-0.5 shrink-0">
             <button
@@ -178,7 +178,7 @@ function ExerciseItemCard({
           </div>
         )}
 
-        {/* Exercise info — tap to expand editor or select exercise */}
+        {/* Exercise info - tap to expand editor or select exercise */}
         <button
           onClick={() => {
             haptic('light');
@@ -252,7 +252,7 @@ function ExerciseItemCard({
           {exercise.category === 'primary' ? 'MAIN' : 'ACC'}
         </span>
 
-        {/* Remove button — hidden during active session */}
+        {/* Remove button - hidden during active session */}
         {!activeSession && (
           <button
             onClick={onRemove}
@@ -327,7 +327,7 @@ function ExerciseItemCard({
                   />
                 </div>
 
-                {/* Weight — only for weighted and weighted_bw */}
+                {/* Weight - only for weighted and weighted_bw */}
                 {showWeightField && (
                   <>
                     <div className="w-px h-8 bg-border/50" />

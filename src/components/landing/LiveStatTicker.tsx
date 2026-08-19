@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// Honest, factual capability statements — not fabricated "live" user activity.
+// Honest, factual capability statements - not fabricated "live" user activity.
 const highlights = [
-  { lead: 'Set-by-set', rest: 'logging — no spreadsheets' },
+  { lead: 'Set-by-set', rest: 'logging - no spreadsheets' },
   { lead: 'Adaptive', rest: 'next workout from your history' },
   { lead: 'AI calorie', rest: 'tracking from a single photo' },
   { lead: 'Progressive overload,', rest: 'tracked automatically' },

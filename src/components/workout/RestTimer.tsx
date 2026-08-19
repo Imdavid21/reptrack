@@ -31,7 +31,7 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
   const [remaining, setRemaining] = useState(defaultDuration);
   const [totalDuration, setTotalDuration] = useState(defaultDuration);
   const [isRunning, setIsRunning] = useState(false);
-  // Wall-clock end timestamp – survives background throttling
+  // Wall-clock end timestamp - survives background throttling
   const endTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedRef = useRef(false);

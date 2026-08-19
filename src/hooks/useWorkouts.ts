@@ -64,7 +64,7 @@ export interface Workout {
 }
 
 /** Network blips, timeouts and 5xx are worth retrying; validation/permission
- *  errors are not — retrying those just delays an honest error message. */
+ *  errors are not - retrying those just delays an honest error message. */
 export function isRetryableError(error: any): boolean {
   if (!error) return false;
   const message = String(error?.message || '');
@@ -182,7 +182,7 @@ export function useWorkouts() {
 
       try {
         // Try online first. Transient failures (network blip, 5xx, timeout) get
-        // a couple of backed-off retries before we give up — the row id is
+        // a couple of backed-off retries before we give up - the row id is
         // client-generated, so a retry after a request that actually succeeded
         // collides on the primary key and is treated as "already saved".
         let workoutData: any = null;
@@ -214,7 +214,7 @@ export function useWorkouts() {
               .from('exercises')
               .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
             // Sets are the workout. If they cannot be written, don't leave a
-            // hollow session behind — roll back and let the draft survive.
+            // hollow session behind - roll back and let the draft survive.
             if (exercisesError) await rollbackWorkout(workoutData.id, exercisesError);
           }
         }
@@ -345,13 +345,13 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance — the 'volumeData'/
+      // exercise progression, and muscle balance - the 'volumeData'/
       // 'exerciseProgression' names this used to invalidate read like
       // plausible query keys but match no actual useQuery anywhere in the
       // app, so those charts weren't reactively refreshing on a new/deleted
       // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // 5-minute staleTime, never invalidated elsewhere - without this, "last
       // used" prefills and next-session progression suggestions could show
       // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
@@ -445,13 +445,13 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance — the 'volumeData'/
+      // exercise progression, and muscle balance - the 'volumeData'/
       // 'exerciseProgression' names this used to invalidate read like
       // plausible query keys but match no actual useQuery anywhere in the
       // app, so those charts weren't reactively refreshing on a new/deleted
       // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // 5-minute staleTime, never invalidated elsewhere - without this, "last
       // used" prefills and next-session progression suggestions could show
       // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });

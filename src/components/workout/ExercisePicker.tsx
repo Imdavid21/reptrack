@@ -107,7 +107,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
     );
   }, [isSearching, searchLower, allExercises]);
 
-  // "Your exercises" — favorites first, then most-used, resolved to library options.
+  // "Your exercises" - favorites first, then most-used, resolved to library options.
   const quickExercises = useMemo(() => {
     const names = [...favorites, ...topUsed(12).filter(n => !favorites.includes(n))];
     return names
@@ -251,7 +251,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
           </div>
         ) : (
           <>
-            {/* Your exercises — favorites + most used */}
+            {/* Your exercises - favorites + most used */}
             {quickExercises.length > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center gap-1 px-1">

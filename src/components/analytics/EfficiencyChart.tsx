@@ -26,7 +26,7 @@ export function EfficiencyChart() {
   }
 
   // Strength trend uses a running best-so-far (never decreases) so the line
-  // reads as genuine progress over the period, the same way a PR chart would —
+  // reads as genuine progress over the period, the same way a PR chart would -
   // the bar underneath still shows each day's own peak effort.
   let bestSoFar = 0;
   const chartData = data?.history.map(h => {
@@ -88,10 +88,10 @@ export function EfficiencyChart() {
         ) : (
           <>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Peak est. 1RM that day: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.strengthIndex || '—'} kg</strong>
+              Peak est. 1RM that day: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.strengthIndex || '-'} kg</strong>
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Best so far: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.bestSoFar || '—'} kg</strong>
+              Best so far: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.bestSoFar || '-'} kg</strong>
             </Typography>
           </>
         )}
@@ -219,7 +219,7 @@ export function EfficiencyChart() {
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-                {avgDuration || '—'}m
+                {avgDuration || '-'}m
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 AVG DURATION
@@ -228,7 +228,7 @@ export function EfficiencyChart() {
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-                {avgVolume ? `${(avgVolume / 1000).toFixed(1)}k` : '—'}
+                {avgVolume ? `${(avgVolume / 1000).toFixed(1)}k` : '-'}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 AVG VOLUME
@@ -240,7 +240,7 @@ export function EfficiencyChart() {
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <Dumbbell size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-                {peakStrength || '—'}
+                {peakStrength || '-'}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 PEAK EST. 1RM (KG)
@@ -249,7 +249,7 @@ export function EfficiencyChart() {
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
               <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
-                {avgStrength || '—'}
+                {avgStrength || '-'}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 AVG EST. 1RM (KG)

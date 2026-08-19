@@ -118,7 +118,7 @@ export function CalorieTrackerCompact() {
   const deficitTarget = preferences?.daily_deficit_target ?? 500;
   const dailyGoal = energy.model?.calorieTarget ?? preferences?.daily_calorie_goal ?? 2000;
   // Maintenance baseline: explicit override, otherwise the body-based
-  // auto-calculation (BMR alone — today's real activity is credited
+  // auto-calculation (BMR alone - today's real activity is credited
   // separately in real time via `+ totalBurned` below, not assumed here),
   // otherwise the old circular fallback for users with no profile data yet.
   const maintenance = energy.model?.personalBaseline ?? (dailyGoal + (deficitMode ? deficitTarget : 0));
@@ -181,7 +181,7 @@ export function CalorieTrackerCompact() {
   );
 
   /** Macro totals for the pending entry, shown before it's confirmed and reused
-   *  as the values actually saved — per-item values when the AI supplied them,
+   *  as the values actually saved - per-item values when the AI supplied them,
    *  otherwise the analysis-level totals. */
   const pendingMacros = useMemo(() => {
     const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
@@ -438,7 +438,7 @@ export function CalorieTrackerCompact() {
   const progressPercent = Math.min((totalCalories / cap) * 100, 100);
   const overCap = totalCalories > cap + totalBurned;
   // netDeficit = maintenance - eaten + burned, so with nothing logged yet
-  // today it equals the FULL maintenance figure — mathematically a "deficit,"
+  // today it equals the FULL maintenance figure - mathematically a "deficit,"
   // but showing that as an already-hit green goal before a single meal is
   // logged rewards not tracking rather than actually hitting the target.
   const hitDeficit = netDeficit >= deficitTarget && meals.length > 0;
@@ -720,7 +720,7 @@ export function CalorieTrackerCompact() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
                   <details className="pt-1 text-xs text-muted-foreground">
                     <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
-                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}–{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
+                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
                   </details>
                 </div>
               )}
@@ -959,7 +959,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS — tap to edit</Label>
+                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS - tap to edit</Label>
                     <span className="text-xs text-muted-foreground">
                       {Math.round(analysis.confidence * 100)}% confidence
                     </span>

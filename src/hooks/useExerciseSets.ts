@@ -63,7 +63,7 @@ function parseReps(reps: string | number | null): number {
 
 // Chest/Shoulders/Triceps push weight away from the body; Back/Biceps/
 // Forearms pull it toward the body. Core has no clean push/pull/legs home,
-// so it's deliberately excluded — see categorizeExercise's fallback.
+// so it's deliberately excluded - see categorizeExercise's fallback.
 const BODY_PART_TO_PPL: Record<string, 'push' | 'pull' | 'legs'> = {
   Chest: 'push',
   Shoulders: 'push',
@@ -83,12 +83,12 @@ export function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' |
   if (lower.includes('pull')) return 'pull';
   // "Lower" (Upper/Lower split) is a leg day but doesn't contain "leg".
   if (lower.includes('leg') || lower.includes('lower')) return 'legs';
-  return null; // Upper / Full Body / custom — day name alone says nothing
+  return null; // Upper / Full Body / custom - day name alone says nothing
 }
 
 // Bucketing an entire workout into one push/pull/legs category by day name
 // alone is wrong for Upper (push+pull combined) and Full Body (everything)
-// days — every exercise in the workout used to get silently misattributed
+// days - every exercise in the workout used to get silently misattributed
 // to the same guess. Classify each exercise individually by the muscle it
 // actually trains first; only fall back to the day-level guess (and then
 // the historical default of 'legs') for exercises with no clean push/pull/

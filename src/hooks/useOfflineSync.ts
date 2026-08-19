@@ -27,7 +27,7 @@ export function useOfflineSync() {
     };
   }, []);
 
-  // Update pending count — called after queue changes, not on a timer
+  // Update pending count - called after queue changes, not on a timer
   const refreshCount = useCallback(async () => {
     try {
       const count = await getQueueCount();
@@ -148,7 +148,7 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       // 'exerciseSets' is the real key behind volume/progression/muscle-
-      // balance views — 'volumeData'/'exerciseProgression' match no actual
+      // balance views - 'volumeData'/'exerciseProgression' match no actual
       // query anywhere in the app (see the same dead keys in useWorkouts.ts).
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });

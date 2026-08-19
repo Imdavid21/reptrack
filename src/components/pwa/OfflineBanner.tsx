@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 export function OfflineBanner() {
   const { isOnline, pendingCount, isSyncing, processQueue } = useOfflineSync();
 
-  // Fully online with nothing pending — don't show anything
+  // Fully online with nothing pending - don't show anything
   if (isOnline && pendingCount === 0 && !isSyncing) return null;
 
   return (
@@ -22,7 +22,7 @@ export function OfflineBanner() {
       {!isOnline ? (
         <>
           <WifiOff className="h-3.5 w-3.5" />
-          <span>Offline — changes saved locally{pendingCount > 0 ? ` (${pendingCount} pending)` : ''}</span>
+          <span>Offline - changes saved locally{pendingCount > 0 ? ` (${pendingCount} pending)` : ''}</span>
         </>
       ) : isSyncing ? (
         <>

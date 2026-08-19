@@ -41,7 +41,7 @@ export function useExercisePreferences() {
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
-      /* storage full / unavailable — keep in-memory */
+      /* storage full / unavailable - keep in-memory */
     }
   }, [storageKey]);
 

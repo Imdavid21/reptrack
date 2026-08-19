@@ -1,8 +1,8 @@
 /**
- * Muscle-intelligence engine — the data-driven growth layer.
+ * Muscle-intelligence engine - the data-driven growth layer.
  *
  * Pure functions over logged sets (plus logged cardio/activity, which loads
- * muscles too — see ACTIVITY_MUSCLE_LOAD) that answer:
+ * muscles too - see ACTIVITY_MUSCLE_LOAD) that answer:
  *  - Which muscles are undertrained / optimal / overreaching / never trained?
  *  - Where am I plateaued, and which variation should I switch to for fresh stimulus?
  *  - Did I just hit a PR? Where is there room to add volume for more growth?
@@ -72,7 +72,7 @@ export interface MuscleIntelligence {
 
 // Weekly hard-set landmarks per muscle (sets/week). Conservative, evidence-based.
 // Exported so any UI needing the same per-muscle scale (e.g. a volume bar's
-// full-scale value) reads it from here instead of hand-copying the numbers —
+// full-scale value) reads it from here instead of hand-copying the numbers -
 // MuscleBalanceCard.tsx used to keep its own duplicate that would silently
 // drift out of sync with these if one were ever tuned without the other.
 export const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }> = {
@@ -101,7 +101,7 @@ export const LANDMARKS: Record<string, { mev: number; mav: number; mrv: number }
 
 // Equivalent "hard sets" of hypertrophy stimulus per 30 continuous minutes of
 // an activity. Cardio's per-minute stimulus is far below a taxing resistance
-// set, so these are deliberately small relative to LANDMARKS — enough that
+// set, so these are deliberately small relative to LANDMARKS - enough that
 // e.g. a regular runner's Calves/Quads don't read as "not trained at all",
 // not enough to make cardio alone read as sufficient volume. Heuristic, like
 // LANDMARKS above; only muscles with a real, primary role in the movement are

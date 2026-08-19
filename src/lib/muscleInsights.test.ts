@@ -31,7 +31,7 @@ describe('pickVariation', () => {
   });
 });
 
-describe('analyzeMuscles — balance', () => {
+describe('analyzeMuscles - balance', () => {
   it('marks untrained muscles with a suggested movement', () => {
     const res = analyzeMuscles([benchSet('2026-06-01', 60, 5)], 7);
     const legs = res.balance.find(b => b.bodyPart === 'Quads');
@@ -59,7 +59,7 @@ describe('analyzeMuscles — balance', () => {
   });
 });
 
-describe('analyzeMuscles — activity contribution', () => {
+describe('analyzeMuscles - activity contribution', () => {
   function squatSet(date: string, weight: number, reps: number): InsightSet {
     return { exercise_name: 'Barbell Squat', actual_weight: weight, actual_reps: reps, workout_date: date };
   }
@@ -115,7 +115,7 @@ describe('analyzeMuscles — activity contribution', () => {
   });
 });
 
-describe('analyzeMuscles — PRs and plateaus', () => {
+describe('analyzeMuscles - PRs and plateaus', () => {
   it('detects a PR when the most recent session sets a new best', () => {
     const sets = [
       benchSet('2026-06-01', 80, 5),

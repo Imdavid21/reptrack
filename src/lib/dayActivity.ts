@@ -5,7 +5,7 @@
  * Home (useEnergyModel) and History/Insights (useCalorieHistory) used to
  * answer this question differently: the dashboard recomputed every workout
  * and activity with V3 net-of-rest math, while history read the stored
- * `calorie_burns.calories` column verbatim — which for every pre-V3 row is a
+ * `calorie_burns.calories` column verbatim - which for every pre-V3 row is a
  * gross MET figure that includes resting expenditure. The same walk could
  * therefore read 92 kcal on one screen and 130 kcal on another.
  *
@@ -81,7 +81,7 @@ export function workoutNetKcal(workout: any, weightKg: number): number {
 
 /**
  * A workout counts toward the day only once it is genuinely finished and not
- * skipped — an in-progress session has no trustworthy duration yet.
+ * skipped - an in-progress session has no trustworthy duration yet.
  */
 export function isCountableWorkout(workout: any): boolean {
   return !workout.is_skipped && !!workout.completed_at;
@@ -132,7 +132,7 @@ export function estimateDayActivity({
       confidences.push(estimate.confidence);
     } else {
       // Nothing to recompute from (no duration, or a source this engine does
-      // not model) — the stored figure is the only number available.
+      // not model) - the stored figure is the only number available.
       categories.other += Math.max(0, Number(burn.calories) || 0);
       confidences.push('low');
     }

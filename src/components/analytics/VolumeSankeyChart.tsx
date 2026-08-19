@@ -26,7 +26,7 @@ export function VolumeSankeyChart() {
   // A single neutral scale keeps every segment visible in both themes. Includes 'other' so an exercise with no
   // muscle-group match (getMuscleGroup's fallback) still shows up somewhere
   // instead of silently vanishing from the chart while still being counted
-  // in the total volume denominator — which used to pull every visible
+  // in the total volume denominator - which used to pull every visible
   // slice's percentage below its true share.
   const MUSCLE_GROUP_LABELS = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core', 'other'];
 

@@ -26,7 +26,7 @@ export interface FamilyRecord extends PersonalRecord {
 }
 
 // Re-exported for usePersonalRecords.test.ts and any other historical
-// importer — the canonical name resolution itself now lives in
+// importer - the canonical name resolution itself now lives in
 // exerciseMatching.ts, shared with last-used-weight and workout-logging
 // matching so a lift can't unify for one and split into two PR lines for
 // the other.
@@ -43,7 +43,7 @@ export function usePersonalRecords() {
 
       // PostgREST caps a single response at 1000 rows. This account already
       // holds thousands of set rows, so an unpaged select silently dropped the
-      // most recent history — which is exactly why new PRs stopped appearing.
+      // most recent history - which is exactly why new PRs stopped appearing.
       // Page through the whole table instead.
       const exercises = await fetchAllRows<{
         id: string; workout_id: string; name: string;
@@ -69,7 +69,7 @@ export function usePersonalRecords() {
           .range(from, to),
       );
 
-      // Find PRs per exercise — NO whitelist, track ALL exercises.
+      // Find PRs per exercise - NO whitelist, track ALL exercises.
       //
       // Bucketed by resolveCanonicalName (lowercased), NOT getCanonicalName
       // (case-preserved): getCanonicalName only rewrites *known* aliases and
@@ -77,7 +77,7 @@ export function usePersonalRecords() {
       // same lift that differ only in casing/whitespace (e.g. logged once via
       // a split template as "Conventional Deadlift" and once via a swap/AI
       // parse as "conventional deadlift") would silently form two separate
-      // object keys — splitting a lifter's real max across two buckets and
+      // object keys - splitting a lifter's real max across two buckets and
       // showing a lower PR than they've actually hit. The display name still
       // uses the nicely-cased getCanonicalName of whichever entry is winning.
       const prMap: Record<string, PersonalRecord> = {};
@@ -189,7 +189,7 @@ export function usePersonalRecords() {
     },
   });
 
-  // Helper to get PR for a specific exercise — same case-insensitive
+  // Helper to get PR for a specific exercise - same case-insensitive
   // resolution as the aggregation above, so a differently-cased lookup name
   // still finds the bucket its sets were actually grouped into.
   const getPRForExercise = (exerciseName: string): PersonalRecord | undefined => {

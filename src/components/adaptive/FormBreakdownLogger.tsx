@@ -28,7 +28,7 @@ export interface FormBreakdownLoggerProps {
 /**
  * Session logging surface for a lifecycle's key movement: leading set and
  * back-off set logged as distinct numbers (spec Section 5), plus an optional
- * zone tag when form broke down — the only input the weak-point detector and
+ * zone tag when form broke down - the only input the weak-point detector and
  * end-trigger checker (adaptiveEngine.ts) have to work with.
  */
 export function FormBreakdownLogger({
@@ -116,7 +116,7 @@ export function FormBreakdownLogger({
         type="text"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Note (optional) — e.g. grip gave out before lockout"
+        placeholder="Note (optional) - e.g. grip gave out before lockout"
         className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs"
       />
 

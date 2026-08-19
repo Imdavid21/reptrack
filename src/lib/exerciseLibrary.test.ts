@@ -11,7 +11,7 @@ describe('getExerciseType', () => {
   // Regression: called with no weight/reps hints (as usePersonalRecords.ts
   // does for every logged set), a name not spelled out verbatim in the
   // library used to skip straight to inferExerciseType('', undefined), which
-  // unconditionally returns 'weighted' — including for exercises that are
+  // unconditionally returns 'weighted' - including for exercises that are
   // actually bodyweight or timed. Since a bodyweight exercise's actual_weight
   // is legitimately 0, the PR loop's `weight === 0` guard would then silently
   // skip it forever. getExerciseType now canonicalizes the name first, so a

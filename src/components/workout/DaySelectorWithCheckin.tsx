@@ -29,7 +29,7 @@ export function DaySelectorWithCheckin({
   const { preferences } = useUserPreferences();
   // Same resolution splitTemplates.ts's resolveSplitDays uses everywhere else,
   // so this never shows different exercises than the day picker will once
-  // preferences finish loading — it used to fall back to workoutPresets.ts's
+  // preferences finish loading - it used to fall back to workoutPresets.ts's
   // separately-authored phase1Routine, whose Day 1 "Push A" is entirely
   // different exercises/weights than the real ppl6 template's Push A.
   const splitDays = resolveSplitDays(preferences?.training_split, null, false);

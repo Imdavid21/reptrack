@@ -39,7 +39,7 @@ export interface LastExportFile {
 }
 
 // Column mappings for each table. Kept in sync with the actual schema
-// (src/integrations/supabase/types.ts) by hand — this list previously drifted
+// (src/integrations/supabase/types.ts) by hand - this list previously drifted
 // badly behind real columns (e.g. every Deficit Mode and Adaptive Mode field
 // on user_preferences, workout check-in fields, calorie_burns.distance_km),
 // so "export all my data" silently left most of a user's settings and several
@@ -133,7 +133,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
 
 // Tables that link via a foreign key to another exported table's row,
 // instead of (or in addition to) a direct user_id. On import, that FK has to
-// be remapped from the old CSV id to the newly-inserted row's real id — the
+// be remapped from the old CSV id to the newly-inserted row's real id - the
 // DB assigns fresh ids on insert, so the old ids from the export are
 // meaningless afterward. Getting this wrong (dropping the FK column instead
 // of remapping it) silently orphans every imported row: exercises/habits
@@ -169,7 +169,7 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   energy_targets: { column: 'effective_from', ascending: true },
 };
 
-/** Every column that's a genuine number in the DB, across all tables — used to parse CSV strings back to numbers on import. */
+/** Every column that's a genuine number in the DB, across all tables - used to parse CSV strings back to numbers on import. */
 export const NUMERIC_FIELDS = new Set([
   // exercises
   'actual_weight', 'actual_reps', 'target_weight', 'target_reps', 'sort_order',
@@ -209,7 +209,7 @@ export const NUMERIC_FIELDS = new Set([
   'estimated_maintenance', 'target_adjustment',
 ]);
 
-/** Every column that's a genuine boolean in the DB — parsed from the CSV's "true"/"1" text back to a real boolean on import. */
+/** Every column that's a genuine boolean in the DB - parsed from the CSV's "true"/"1" text back to a real boolean on import. */
 export const BOOLEAN_FIELDS = new Set([
   'completed', 'is_confirmed', 'is_skipped', 'auto_rest_timer', 'is_active',
   'onboarding_completed', 'routine_setup_completed', 'deficit_mode_enabled',
@@ -519,7 +519,7 @@ export function useDataExport() {
       }
 
       // Parent tables must be imported before whatever links to them, so the
-      // id map exists by the time a dependent table needs it — regardless of
+      // id map exists by the time a dependent table needs it - regardless of
       // the order they happened to appear in the file.
       const parentTablesNeeded = new Set(
         tablesToProcess
@@ -562,7 +562,7 @@ export function useDataExport() {
                 return;
               }
               if (linked && header === linked.fkColumn) {
-                // Captured, not dropped — remapped below once we know the
+                // Captured, not dropped - remapped below once we know the
                 // new id it should point to. Dropping this outright (as a
                 // previous version of this importer did) silently orphaned
                 // every imported exercise/habit/session log with no parent
@@ -590,10 +590,10 @@ export function useDataExport() {
               const newFk = oldFkValue ? parentMap?.[oldFkValue] : undefined;
               if (!newFk) {
                 // No matching parent row was imported in this same run (e.g.
-                // the export file didn't include it, or it failed above) —
+                // the export file didn't include it, or it failed above) -
                 // inserting would either violate the FK constraint or leave
                 // an orphaned row. Skip it and report instead of guessing.
-                // Deliberately NOT pushed to oldIds — it must stay index-
+                // Deliberately NOT pushed to oldIds - it must stay index-
                 // aligned with `rows` after the filter() below drops this
                 // row, or later batching pairs the wrong old id with the
                 // wrong newly-inserted row.
@@ -622,7 +622,7 @@ export function useDataExport() {
 
           for (let j = 0; j < rows.length; j += batchSize) {
             const batch = rows.slice(j, j + batchSize);
-            // Deliberately NOT filtering out nulls here — this must stay
+            // Deliberately NOT filtering out nulls here - this must stay
             // index-aligned with `batch` and the `data` rows Postgres hands
             // back, or a null earlier in the batch shifts every id pairing
             // after it by one.

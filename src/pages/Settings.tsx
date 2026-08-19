@@ -778,7 +778,7 @@ export default function Settings() {
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated expenditure today</Typography>
                             <Typography variant="body1" fontWeight={700}>{autoMaintenance.predictedTdee.toLocaleString()} kcal</Typography>
                             <Typography variant="caption" color="text.secondary">
-                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}–{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
+                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}-{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               Normal day {autoMaintenance.maintenance.toLocaleString()} | REE {autoMaintenance.bmr.toLocaleString()} | calibration {autoMaintenance.calibrationAdjustment >= 0 ? '+' : ''}{autoMaintenance.calibrationAdjustment}

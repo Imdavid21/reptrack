@@ -98,7 +98,7 @@ function buildExercisesFromTemplate(
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
 
     // Programming engine derives sets/reps/rest/rir for the chosen training
-    // focus AND the actual weight/rep target — evidence-based double
+    // focus AND the actual weight/rep target - evidence-based double
     // progression against the user's own last session, not just a verbatim
     // copy of what they did last time.
     const programming = derivePersonalizedProgramming(
@@ -139,8 +139,8 @@ function buildExercisesFromTemplate(
       restSeconds: programming.restSeconds,
       rir: programming.rir,
       mandatory: templateEx.mandatory,
-      // Prefer the live, personalized rationale ("+2.5kg — hit 8 reps last
-      // time") over the template's generic static hint — it's the same UI
+      // Prefer the live, personalized rationale ("+2.5kg - hit 8 reps last
+      // time") over the template's generic static hint - it's the same UI
       // slot, and the live note is always more useful once there's history.
       progression: programming.note || templateEx.progression,
     } as WorkoutExercise;
@@ -221,7 +221,7 @@ export default function LogWorkout() {
       // ISO timestamp of the (possibly back-dated) session, so honoring it keeps
       // a back-dated in-progress workout attributed to its intended day.
       // BUT: a draft carried over from a previous calendar day that is being
-      // trained *today* (start time or last save is today) must snap to today —
+      // trained *today* (start time or last save is today) must snap to today -
       // otherwise the finished session silently saves onto yesterday's date and
       // looks to the user like the save "glitched" and never happened.
       const draftDate = draft.date ? new Date(draft.date) : new Date();
@@ -297,7 +297,7 @@ export default function LogWorkout() {
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     // Never silently rebuild the exercise list over a session that already has
-    // logged sets — that's how in-progress work used to disappear.
+    // logged sets - that's how in-progress work used to disappear.
     const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
     if (hasCompletedSets) {
       setPendingDaySelect({ day, date, week });
@@ -316,7 +316,7 @@ export default function LogWorkout() {
   // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
   // that day's review, with last-used weights already applied. Skipped if a
   // draft was restored so we never clobber an in-progress session.
-  // NOTE: this hook MUST stay above the early returns below — React requires
+  // NOTE: this hook MUST stay above the early returns below - React requires
   // hooks to run in the same order every render, and gating it behind a
   // loading/`return` guard is what previously crashed this page on a cold
   // load/refresh straight onto /app/log. The prefs-loading check now lives
@@ -354,7 +354,7 @@ export default function LogWorkout() {
     );
   }
 
-  // Start session from review — preserve original start time if already set
+  // Start session from review - preserve original start time if already set
   const handleStartSession = () => {
     setWorkoutStartTime(prev => {
       if (prev) return prev; // Never overwrite an existing start time
@@ -389,7 +389,7 @@ export default function LogWorkout() {
 
   // Final safety net against mis-dated saves: a session that was actually
   // trained today must never land on the draft's stale calendar date. If the
-  // selected date isn't today but the session clock started today, snap it —
+  // selected date isn't today but the session clock started today, snap it -
   // unless the user deliberately picked a date or set a manual session time.
   const resolveSaveDate = (startedAt?: Date | null) => {
     const todayKey = localDateKey(new Date());
@@ -554,7 +554,7 @@ export default function LogWorkout() {
       clearDraft();
       const isToday = localDateKey(saveDate) === localDateKey(new Date());
       if (!navigator.onLine) {
-        toast.success('Workout saved offline — will sync when back online 📴');
+        toast.success('Workout saved offline - will sync when back online 📴');
       } else if (!isToday) {
         // Make back-dated saves explicit so a session never silently lands on
         // the wrong day again.
@@ -574,7 +574,7 @@ export default function LogWorkout() {
 
   const handleBack = () => {
     if (step === 'review') {
-      // An active session must never be dropped by a back tap — offer to pause
+      // An active session must never be dropped by a back tap - offer to pause
       // it (draft stays saved) or discard it explicitly.
       if (hasCompletedProgress || workoutStartTime) {
         setShowExitDialog(true);
@@ -595,11 +595,11 @@ export default function LogWorkout() {
     }
   };
 
-  // Leave the session running in the background — the draft is already saved,
+  // Leave the session running in the background - the draft is already saved,
   // so the Resume card on Today (and here) picks it right back up.
   const handlePauseAndExit = () => {
     setShowExitDialog(false);
-    toast.info('Session saved — resume it anytime');
+    toast.info('Session saved - resume it anytime');
     navigate('/app');
   };
 
@@ -615,11 +615,11 @@ export default function LogWorkout() {
   };
 
 
-  // Switch to a different day from the review screen — preserve any completed progress
+  // Switch to a different day from the review screen - preserve any completed progress
   const handleSwitchDay = (dayKey: string) => {
     const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
     if (hasCompletedSets) {
-      // Don't wipe exercises that have progress — warn the user
+      // Don't wipe exercises that have progress - warn the user
       toast.error('Finish or discard current progress first');
       return;
     }
@@ -640,13 +640,13 @@ export default function LogWorkout() {
       setExercises([]);
       setStep('select-day');
       // A saved draft from the OLD split (e.g. a Push A session started before
-      // switching to Full Body) must not survive the switch — the draft-restore
+      // switching to Full Body) must not survive the switch - the draft-restore
       // effect on mount would otherwise repopulate the exercise list with the
       // previous split's exercises the next time this page loads, even though
       // the day picker correctly shows the new split.
       clearDraft();
     } catch (error) {
-      toast.error('Failed to change split — please try again');
+      toast.error('Failed to change split - please try again');
     }
   };
 
