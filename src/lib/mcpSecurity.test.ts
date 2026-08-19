@@ -36,7 +36,7 @@ describe('MCP tool policy', () => {
   it('rejects future and stale write dates', () => {
     expect(assertWritableDate('2026-08-10','2026-08-12')).toBe('2026-08-10');
     expect(() => assertWritableDate('2026-08-13','2026-08-12')).toThrow('DATE_IN_FUTURE');
-    expect(() => assertWritableDate('2026-01-01','2026-08-12')).toThrow('DATE_TOO_OLD_MAX_30_DAYS');
+    expect(assertWritableDate('2020-01-01','2026-08-12')).toBe('2020-01-01');
   });
 
   it('applies no request rate limiting', () => {
@@ -63,7 +63,7 @@ describe('MCP calculations and validation', () => {
   it('enforces valid bounded date ranges', () => {
     expect(() => assertDateRange('2026-08-01','2026-08-12')).not.toThrow();
     expect(() => assertDateRange('2026-08-12','2026-08-01')).toThrow('INVALID_DATE_RANGE');
-    expect(() => assertDateRange('2020-01-01','2026-08-12',365)).toThrow('DATE_RANGE_TOO_LARGE');
+    expect(() => assertDateRange('2020-01-01','2026-08-12')).not.toThrow();
   });
 
   it('uses local calendar boundaries for Asia/Kolkata', () => {

@@ -14,8 +14,6 @@ export const WRITE_TOOLS = [
   "log_activity", "update_activity",
 ] as const;
 
-export const MAX_BACKDATE_DAYS = 30;
-
 export type ToolName = typeof APPROVED_TOOLS[number];
 export type WriteToolName = typeof WRITE_TOOLS[number];
 export const isApprovedTool = (name: string): name is ToolName =>
@@ -24,13 +22,12 @@ export const isWriteTool = (name: string): name is WriteToolName =>
   (WRITE_TOOLS as readonly string[]).includes(name);
 export const isPermittedTool = (name: string) => isApprovedTool(name) || isWriteTool(name);
 
-/** Writes may only touch today or the last 30 local days, never the future. */
-export function assertWritableDate(date: string, today: string, maxBackDays = MAX_BACKDATE_DAYS) {
+/** Writes may touch any past date or today. There is no backdating limit; future dates stay rejected. */
+export function assertWritableDate(date: string, today: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("INVALID_DATE");
   const target = Date.parse(`${date}T00:00:00Z`), now = Date.parse(`${today}T00:00:00Z`);
   if (!Number.isFinite(target)) throw new Error("INVALID_DATE");
   if (target > now) throw new Error("DATE_IN_FUTURE");
-  if ((now - target) / 86400000 > maxBackDays) throw new Error(`DATE_TOO_OLD_MAX_${maxBackDays}_DAYS`);
   return date;
 }
 
@@ -99,7 +96,7 @@ export function classifyMuscle(name: string): string {
   return "unmapped";
 }
 
-export function assertDateRange(start: string, end: string, maxDays = 366) {
+export function assertDateRange(start: string, end: string, maxDays = Number.POSITIVE_INFINITY) {
   const pattern = /^\d{4}-\d{2}-\d{2}$/;
   if (!pattern.test(start) || !pattern.test(end)) throw new Error("INVALID_DATE");
   const a = Date.parse(`${start}T00:00:00Z`), b = Date.parse(`${end}T00:00:00Z`);
