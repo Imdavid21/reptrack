@@ -460,28 +460,8 @@ export function CalorieTrackerCompact() {
     }
   };
 
-  // Until the energy model resolves, every number below would render from
-  // fallback defaults (2000 kcal goal, derived maintenance) and then jump.
-  // Show a skeleton instead of phantom values.
-  if (energy.isLoading) {
-    return (
-      <div className="rounded-[20px] border border-border bg-card p-4 space-y-3" aria-busy="true" aria-label="Loading nutrition">
-        <div className="flex items-center justify-between">
-          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-          <div className="h-4 w-16 rounded bg-muted animate-pulse" />
-        </div>
-        <div className="h-9 w-40 rounded bg-muted animate-pulse" />
-        <div className="h-2 w-full rounded-full bg-muted animate-pulse" />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-16 rounded-xl bg-muted animate-pulse" />
-          <div className="h-16 rounded-xl bg-muted animate-pulse" />
-        </div>
-        <div className="h-14 rounded-xl bg-muted animate-pulse" />
-      </div>
-    );
-  }
-
   return (
+
 
     <>
       {/* File inputs - outside Dialog so always rendered */}
