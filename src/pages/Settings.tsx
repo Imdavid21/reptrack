@@ -43,6 +43,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
+const FITNESS_GOALS = [
+  { value: 'lose_weight', label: 'Lose Weight' },
+  { value: 'build_muscle', label: 'Build Muscle' },
+  { value: 'maintain', label: 'Maintain' },
+  { value: 'improve_health', label: 'Improve Health' },
+  { value: 'increase_strength', label: 'Increase Strength' },
+];
+
 const settingsCardSx = {
   bgcolor: 'transparent',
   backgroundImage: 'none',
@@ -655,6 +663,34 @@ export default function Settings() {
                         </button>
                       );
                     })}
+                  </Box>
+                </Box>
+
+                {/* Fitness goal - drives rest-time tweaks in the programming
+                    engine and the profile the AI coach reads. Moved here from
+                    Insights so training preferences live in one place. */}
+                <Box sx={settingsPanelSx}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Fitness Goal
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                    Shapes rest times and the coaching advice you get
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {FITNESS_GOALS.map(goal => (
+                      <button
+                        key={goal.value}
+                        onClick={() => updatePreferences.mutate({ fitness_goal: goal.value } as any)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                          preferences?.fitness_goal === goal.value
+                            ? 'bg-foreground text-background'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {goal.label}
+                      </button>
+                    ))}
                   </Box>
                 </Box>
 
