@@ -139,7 +139,7 @@ export function WaterTracker() {
             className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="h-3 w-3" />
-            {isSaving ? 'SAVING…' : 'SAVE'}
+            {isSaving ? 'SAVING…' : 'Save'}
           </button>
         </div>
       )}

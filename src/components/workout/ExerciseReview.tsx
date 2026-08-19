@@ -249,7 +249,7 @@ function ExerciseItemCard({
             ? 'bg-primary/10 text-primary'
             : 'bg-muted text-muted-foreground'
         )}>
-          {exercise.category === 'primary' ? 'MAIN' : 'ACC'}
+          {exercise.category === 'primary' ? 'Main' : 'ACC'}
         </span>
 
         {/* Remove button - hidden during active session */}

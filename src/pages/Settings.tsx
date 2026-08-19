@@ -358,7 +358,7 @@ export default function Settings() {
                             className="btn-brutalist btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
                           >
                             {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                            {profileDirty ? 'SAVE PROFILE' : 'DONE'}
+                            {profileDirty ? 'Save profile' : 'Done'}
                           </button>
                         </Box>
                       </Box>

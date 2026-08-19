@@ -201,7 +201,7 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-xs text-muted-foreground  mt-1">
-              {!todaySleep ? 'TAP TO ADD' : 'SLEEP'}
+              {!todaySleep ? 'Tap to add' : 'Sleep'}
             </div>
           </button>
           
@@ -224,7 +224,7 @@ export function ProgressHeader() {
               )}
             </div>
             <div className="text-xs text-muted-foreground  mt-1">
-              {!todayWeight && lastLoggedWeight ? 'TAP TO ADD' : 'KG'}
+              {!todayWeight && lastLoggedWeight ? 'Tap to add' : 'KG'}
             </div>
           </button>
         </div>

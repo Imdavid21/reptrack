@@ -606,7 +606,7 @@ export function SetBySetCard({
                 </div>
               )}
               <div className="text-xs text-muted-foreground mt-1">
-                {isTimerRunning ? 'TIMING...' : `TARGET: ${formatTime(baseTime)}`}
+                {isTimerRunning ? 'Timing...' : `TARGET: ${formatTime(baseTime)}`}
               </div>
             </div>
 
@@ -621,7 +621,7 @@ export function SetBySetCard({
               )}
             >
               <Timer className="h-3.5 w-3.5" />
-              {isTimerRunning ? 'STOP TIMER' : 'START TIMER'}
+              {isTimerRunning ? 'Stop timer' : 'Start timer'}
             </button>
 
             {/* Quick time selection (when timer not running) */}
