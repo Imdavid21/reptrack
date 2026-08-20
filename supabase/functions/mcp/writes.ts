@@ -266,7 +266,10 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
 /* ----------------------------- activities ----------------------------- */
 
 async function activityPayload(args: Args, db: Client, userId: string, date: string, prefs: Args) {
-  const kind = oneOf("activity_type", args.activity_type, ACTIVITY_KINDS) as ActivityKind;
+  const alias: Record<string, string> = { walk: "walking", run: "running", cycle: "cycling", ride: "cycling", bike: "cycling" };
+  const rawKind = String(args.activity_type ?? "").toLowerCase().trim();
+  const kind = oneOf("activity_type", alias[rawKind] ?? rawKind, ACTIVITY_KINDS) as ActivityKind;
+
   const distance = boundedNumber("distance_km", args.distance_km, 0.1, 500);
   const duration = boundedNumber("duration_minutes", args.duration_minutes, 1, 1440);
   if (distance === null && duration === null) throw new Error("MISSING_DISTANCE_OR_DURATION");
