@@ -430,12 +430,17 @@ export function SetBySetCard({
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
     : currentMaxWeight;
   const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
-  const isNewPR = personalRecord && (
-    (isTimed || isBodyweight)
+  // A first-ever logging of a movement is itself a record. Without this the
+  // "NEW PR!" flag only ever fired for exercises that already had history,
+  // so freshly added or newly swapped-in exercises never showed one.
+  const isNewPR = currentMaxValue > 0 && (
+    !personalRecord ||
+    ((isTimed || isBodyweight)
       ? currentMaxValue > personalRecord.maxWeight
       : currentMaxWeight > personalRecord.maxWeight ||
-        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps)
+        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps))
   );
+
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
