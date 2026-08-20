@@ -187,7 +187,15 @@ async function logWorkout(args: Args, db: Client, userId: string, today: string,
   if (!exercises.length) throw new Error("MISSING_EXERCISES");
   const duration = boundedNumber("duration_minutes", args.duration_minutes ?? 45, 1, 480, false)!;
   const name = requireString("workout_name", args.workout_name || "Workout", 80);
-  const id = typeof args.client_key === "string" && /^[0-9a-f-]{36}$/i.test(args.client_key) ? args.client_key : crypto.randomUUID();
+  // Assistants send human-shaped idempotency keys ("chatgpt-2026-08-20-push"),
+  // not UUIDs, so any string is accepted and folded into a stable UUID scoped
+  // to the user. A retry with the same key updates the same session.
+  const id = typeof args.client_key === "string" && args.client_key.trim()
+    ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim())
+      ? args.client_key.trim()
+      : await stableUuid(`${userId}:${args.client_key.trim()}`))
+    : crypto.randomUUID();
+
 
   const existingRows = await db.from("workouts").select("id").eq("id", id).limit(1);
   const already = Array.isArray(existingRows?.data) ? existingRows.data[0] : null;
