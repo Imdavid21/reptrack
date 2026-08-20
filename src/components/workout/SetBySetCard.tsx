@@ -516,9 +516,13 @@ export function SetBySetCard({
                 <span className="opacity-60"> ({familyRecord.exerciseName})</span>
               </span>
             )}
+            {!personalRecord && !familyRecord && !isNewPR && (
+              <span className="text-xs text-muted-foreground">No PR yet</span>
+            )}
             {isNewPR && (
               <span className="text-xs text-primary font-bold">NEW PR!</span>
             )}
+
           </div>
           <span className="text-xs text-muted-foreground">
             {completedSets}/{exercise.sets.length} sets
