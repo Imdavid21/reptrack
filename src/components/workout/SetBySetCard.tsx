@@ -430,12 +430,17 @@ export function SetBySetCard({
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
     : currentMaxWeight;
   const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
-  const isNewPR = personalRecord && (
-    (isTimed || isBodyweight)
+  // A first-ever logging of a movement is itself a record. Without this the
+  // "NEW PR!" flag only ever fired for exercises that already had history,
+  // so freshly added or newly swapped-in exercises never showed one.
+  const isNewPR = currentMaxValue > 0 && (
+    !personalRecord ||
+    ((isTimed || isBodyweight)
       ? currentMaxValue > personalRecord.maxWeight
       : currentMaxWeight > personalRecord.maxWeight ||
-        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps)
+        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps))
   );
+
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
@@ -511,9 +516,13 @@ export function SetBySetCard({
                 <span className="opacity-60"> ({familyRecord.exerciseName})</span>
               </span>
             )}
+            {!personalRecord && !familyRecord && !isNewPR && (
+              <span className="text-xs text-muted-foreground">No PR yet</span>
+            )}
             {isNewPR && (
               <span className="text-xs text-primary font-bold">NEW PR!</span>
             )}
+
           </div>
           <span className="text-xs text-muted-foreground">
             {completedSets}/{exercise.sets.length} sets
@@ -840,6 +849,20 @@ export function SetBySetCard({
           )}
         </div>
       )}
+
+      {/* Finishing a session must not depend on standing on the last card:
+          reordering or editing the exercise list used to move the only
+          "Finish workout" button around. It's available from any exercise
+          as soon as a set is logged. */}
+      {(completedWorkoutSets ?? 0) > 0 && !(isLastExercise && currentSet.completed && isLastSet) && (
+        <button
+          onClick={() => { haptic('medium'); onComplete(); }}
+          className="w-full h-9 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Finish workout
+        </button>
+      )}
     </div>
+
   );
 }
