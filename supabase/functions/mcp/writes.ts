@@ -65,6 +65,17 @@ function oneOf<T extends readonly string[]>(label: string, value: unknown, allow
 const ok = (action: string, record: unknown, extra: Args = {}) =>
   ({ start_date: null, end_date: null, timezone: "", data: record, summary: { action, ...extra }, metadata: { written: true, model_version: ENERGY_MODEL_VERSION } });
 
+/** Deterministic UUID (v4-shaped) derived from an arbitrary idempotency key. */
+async function stableUuid(seed: string): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(seed)));
+  const bytes = digest.slice(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+
 /* ------------------------------- meals ------------------------------- */
 
 function macroPayload(args: Args) {
@@ -187,7 +198,15 @@ async function logWorkout(args: Args, db: Client, userId: string, today: string,
   if (!exercises.length) throw new Error("MISSING_EXERCISES");
   const duration = boundedNumber("duration_minutes", args.duration_minutes ?? 45, 1, 480, false)!;
   const name = requireString("workout_name", args.workout_name || "Workout", 80);
-  const id = typeof args.client_key === "string" && /^[0-9a-f-]{36}$/i.test(args.client_key) ? args.client_key : crypto.randomUUID();
+  // Assistants send human-shaped idempotency keys ("chatgpt-2026-08-20-push"),
+  // not UUIDs, so any string is accepted and folded into a stable UUID scoped
+  // to the user. A retry with the same key updates the same session.
+  const id = typeof args.client_key === "string" && args.client_key.trim()
+    ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim())
+      ? args.client_key.trim()
+      : await stableUuid(`${userId}:${args.client_key.trim()}`))
+    : crypto.randomUUID();
+
 
   const existingRows = await db.from("workouts").select("id").eq("id", id).limit(1);
   const already = Array.isArray(existingRows?.data) ? existingRows.data[0] : null;
@@ -247,7 +266,10 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
 /* ----------------------------- activities ----------------------------- */
 
 async function activityPayload(args: Args, db: Client, userId: string, date: string, prefs: Args) {
-  const kind = oneOf("activity_type", args.activity_type, ACTIVITY_KINDS) as ActivityKind;
+  const alias: Record<string, string> = { walk: "walking", run: "running", cycle: "cycling", ride: "cycling", bike: "cycling" };
+  const rawKind = String(args.activity_type ?? "").toLowerCase().trim();
+  const kind = oneOf("activity_type", alias[rawKind] ?? rawKind, ACTIVITY_KINDS) as ActivityKind;
+
   const distance = boundedNumber("distance_km", args.distance_km, 0.1, 500);
   const duration = boundedNumber("duration_minutes", args.duration_minutes, 1, 1440);
   if (distance === null && duration === null) throw new Error("MISSING_DISTANCE_OR_DURATION");
