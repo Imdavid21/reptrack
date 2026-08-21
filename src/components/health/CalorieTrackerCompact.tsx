@@ -487,11 +487,11 @@ export function CalorieTrackerCompact() {
         <div className="rounded-[20px] border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-tight">
+              <h2 className="text-sm font-semibold tracking-tight">
                 {viewingToday
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'Deficit' : 'Calories'}`}
-              </h3>
+              </h2>
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
                 className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
@@ -541,8 +541,8 @@ export function CalorieTrackerCompact() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="py-3 pr-3"><div className="text-xs text-muted-foreground">Food in</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
-                  <div className="py-3 pl-3"><div className="text-xs text-muted-foreground">Activity out</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
+                  <div className="py-3 pr-3"><h3 className="text-xs text-muted-foreground">Food in</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
+                  <div className="py-3 pl-3"><h3 className="text-xs text-muted-foreground">Activity out</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                 </div>
                 {displayedBmr && displayedMaintenance ? (
                   <div className="py-3">
@@ -565,7 +565,7 @@ export function CalorieTrackerCompact() {
                   className="w-full py-3 text-left transition-colors hover:bg-muted/30"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold">Protein</div>
+                    <h3 className="text-sm font-semibold">Protein</h3>
                     <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
                   </div>
                   <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
@@ -660,7 +660,7 @@ export function CalorieTrackerCompact() {
 
           {!deficitMode && meals.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h4 className="text-xs text-muted-foreground">Recent</h4>
+              <h3 className="text-xs text-muted-foreground">Recent</h3>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
                 <div key={meal.id} className="flex items-center justify-between text-sm gap-2 group">
                   <span className="tabular-nums text-muted-foreground truncate">{mealTime(meal.created_at)}</span>
@@ -1108,7 +1108,7 @@ export function CalorieTrackerCompact() {
 
       {/* Protein details stay in the Today flow instead of opening a second sheet. */}
       {isProteinOpen && <section className="mt-3 space-y-4 rounded-[20px] border border-border bg-card p-4">
-          <div className="flex items-center justify-between"><div className="text-sm font-semibold">Protein{mealDateSuffix}</div><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Hide</button></div>
+          <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Protein{mealDateSuffix}</h3><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Hide</button></div>
 
           <div className="min-w-0 space-y-4">
 
