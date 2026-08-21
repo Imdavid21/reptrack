@@ -127,6 +127,14 @@ export function CalorieTrackerCompact() {
   // In deficit mode the cap is maintenance minus target; otherwise the plain calorie goal
   const cap = energy.model?.calorieTarget ?? (deficitMode ? Math.max(maintenance - deficitTarget, 800) : dailyGoal);
   const proteinGoal = energy.model?.proteinTarget ?? preferences?.daily_protein_goal ?? 180;
+  const macroTargets = {
+    carbs: Number(preferences?.daily_carbs_goal ?? 250),
+    fat: Number(preferences?.daily_fat_goal ?? 70),
+    fiber: Number(preferences?.daily_fiber_goal ?? 30),
+    sugar: Number(preferences?.daily_sugar_goal ?? 50),
+    sodium: Number(preferences?.daily_sodium_goal ?? 2300),
+    potassium: Number(preferences?.daily_potassium_goal ?? 3400),
+  };
   const fallbackBmr = useMemo(() => {
     if (!preferences) return null;
     const latestWeight = [...(recentMetrics?.dataPoints || [])]
@@ -538,12 +546,12 @@ export function CalorieTrackerCompact() {
       />
 
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
-        <div className="rounded-[20px] border border-border bg-card p-4">
+        <div className="surface-standard p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="type-component-title">
                 {viewingToday
-                  ? (deficitMode ? 'Calorie Balance' : "Today's calories")
+                  ? (deficitMode ? 'Calorie balance' : "Today's calories")
                   : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
               <button
@@ -776,7 +784,7 @@ export function CalorieTrackerCompact() {
         </div>
       </Collapsible>
 
-      <section className="mt-3 rounded-[20px] border border-border bg-card p-4">
+      <section className="surface-standard mt-3 p-4">
         <button
           type="button"
           onClick={() => setIsProteinOpen(open => !open)}
@@ -830,22 +838,25 @@ export function CalorieTrackerCompact() {
 
         <Collapsible open={isOtherMacrosOpen} onOpenChange={setIsOtherMacrosOpen}>
           <CollapsibleTrigger className="mt-3 flex w-full items-center justify-between border-t border-border py-3 text-left">
-            <span className="text-sm font-medium">Other macros</span>
+            <span className="type-action">Other macros</span>
             {isOtherMacrosOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </CollapsibleTrigger>
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
             <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border">
               {([
-                { key: 'carbs', label: 'Carbs', unit: 'g' },
-                { key: 'fat', label: 'Fat', unit: 'g' },
-                { key: 'fiber', label: 'Fiber', unit: 'g' },
-                { key: 'sugar', label: 'Sugar', unit: 'g' },
-                { key: 'sodium', label: 'Sodium', unit: 'mg' },
-                { key: 'potassium', label: 'Potassium', unit: 'mg' },
+                { key: 'carbs', label: 'Carbs', unit: 'g', target: macroTargets.carbs, ceiling: false },
+                { key: 'fat', label: 'Fat', unit: 'g', target: macroTargets.fat, ceiling: false },
+                { key: 'fiber', label: 'Fiber', unit: 'g', target: macroTargets.fiber, ceiling: false },
+                { key: 'sugar', label: 'Sugar', unit: 'g', target: macroTargets.sugar, ceiling: true },
+                { key: 'sodium', label: 'Sodium', unit: 'mg', target: macroTargets.sodium, ceiling: true },
+                { key: 'potassium', label: 'Potassium', unit: 'mg', target: macroTargets.potassium, ceiling: false },
               ] as const).map(m => (
                 <div key={m.key} className="min-w-0 p-3 text-center">
-                  <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
-                  <div className="type-caption">{m.label}</div>
+                  <div className="whitespace-nowrap text-sm tabular-nums">
+                    <strong>{Math.round(dayMacros[m.key])}</strong>
+                    <span className="font-medium text-muted-foreground"> / {m.ceiling ? '≤' : ''}{Math.round(m.target)} {m.unit}</span>
+                  </div>
+                  <div className="type-caption mt-0.5">{m.label}</div>
                 </div>
               ))}
             </div>
@@ -941,7 +952,7 @@ export function CalorieTrackerCompact() {
                         className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm"
                       >
                         <Pencil className="h-4 w-4" />
-                        ENTER MANUALLY
+                        Enter manually
                       </button>
                       <button
                         onClick={() => { if (lastFiles.length) runAnalysis(lastFiles, contextHint || undefined); }}
@@ -949,7 +960,7 @@ export function CalorieTrackerCompact() {
                         className="btn-brutalist flex items-center justify-center gap-2 text-sm"
                       >
                         <Camera className="h-4 w-4" />
-                        RETRY
+                        Retry
                       </button>
                     </div>
                   </div>
@@ -960,7 +971,7 @@ export function CalorieTrackerCompact() {
             {textMode && !analysis && (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">WHAT DID YOU EAT?</Label>
+                  <Label className="text-xs text-muted-foreground">What did you eat?</Label>
                   <textarea
                     placeholder="e.g., 2 eggs, toast with butter, and a glass of orange juice"
                     value={textInput}
@@ -978,7 +989,7 @@ export function CalorieTrackerCompact() {
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
-                    CANCEL
+                    Cancel
                   </button>
                   <button
                     onClick={handleTextAnalyze}
@@ -986,7 +997,7 @@ export function CalorieTrackerCompact() {
                     className="btn-brutalist flex items-center justify-center gap-2"
                   >
                     {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    ESTIMATE CALORIES
+                    Estimate calories
                   </button>
                 </div>
 
@@ -1019,7 +1030,7 @@ export function CalorieTrackerCompact() {
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">DETECTED ITEMS - tap to edit</Label>
+                    <Label className="text-xs text-muted-foreground">Detected items · tap to edit</Label>
                     <span className="text-xs text-muted-foreground">
                       {Math.round(analysis.confidence * 100)}% confidence
                     </span>
@@ -1067,7 +1078,7 @@ export function CalorieTrackerCompact() {
                       className="w-full p-2.5 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:bg-muted transition-colors"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      ADD ITEM
+                      Add item
                     </button>
                   </div>
 
@@ -1079,7 +1090,7 @@ export function CalorieTrackerCompact() {
 
                 {/* Macro breakdown, shown before confirming so nothing is saved blind */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">Macro Breakdown</Label>
+                  <Label className="text-xs text-muted-foreground">Macro breakdown</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1.5">
                     {([
                       { key: 'protein', label: 'Protein', unit: 'g' },
@@ -1107,7 +1118,7 @@ export function CalorieTrackerCompact() {
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors text-sm"
                   >
                     <X className="h-4 w-4" />
-                    RETRY
+                    Retry
                   </button>
                   <button
                     onClick={handleConfirmAnalysis}
@@ -1115,7 +1126,7 @@ export function CalorieTrackerCompact() {
                     className="btn-brutalist flex items-center justify-center gap-2 text-sm"
                   >
                     {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    LOG {editableTotal} CAL
+                    Log {editableTotal} cal
                   </button>
                 </div>
               </div>
@@ -1124,7 +1135,7 @@ export function CalorieTrackerCompact() {
             {manualMode && (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Food Name</Label>
+                  <Label className="text-xs text-muted-foreground">Food name</Label>
                   <Input
                     placeholder="e.g., Chicken salad"
                     value={manualData.food_name}
@@ -1149,7 +1160,7 @@ export function CalorieTrackerCompact() {
                     className="border border-border p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-muted transition-colors"
                   >
                     <X className="h-4 w-4" />
-                    CANCEL
+                    Cancel
                   </button>
                   <button
                     onClick={handleManualSave}
@@ -1157,7 +1168,7 @@ export function CalorieTrackerCompact() {
                     className="btn-brutalist flex items-center justify-center gap-2"
                   >
                     {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    SAVE
+                    Save
                   </button>
                 </div>
               </div>
