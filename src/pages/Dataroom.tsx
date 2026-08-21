@@ -1,6 +1,5 @@
 import { AlertCircle } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { PagePeerSwitch } from '@/components/analytics/PagePeerSwitch';
 import { ArachnidRead, ChangesNext, DataroomDeepDives, TrajectoryConsole } from '@/components/dataroom/DataRoomVisuals';
 import { TemporalDecisionMatrix } from '@/components/dataroom/TemporalDecisionMatrix';
 import { useDataroomData } from '@/hooks/useDataroomData';
@@ -21,12 +20,9 @@ export default function Dataroom() {
   return (
     <MainLayout>
       <div className="pb-6">
-        <header className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="type-eyebrow">Analysis</p>
-            <h1 className="type-page-title">Data Room</h1>
-          </div>
-          <PagePeerSwitch />
+        <header className="mb-5">
+          <p className="type-eyebrow">Decision intelligence</p>
+          <h1 className="type-page-title">Data Room</h1>
         </header>
 
         {isLoading && <LoadingState />}
