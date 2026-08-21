@@ -850,18 +850,6 @@ export function SetBySetCard({
         </div>
       )}
 
-      {/* Finishing a session must not depend on standing on the last card:
-          reordering or editing the exercise list used to move the only
-          "Finish workout" button around. It's available from any exercise
-          as soon as a set is logged. */}
-      {(completedWorkoutSets ?? 0) > 0 && !(isLastExercise && currentSet.completed && isLastSet) && (
-        <button
-          onClick={() => { haptic('medium'); onComplete(); }}
-          className="w-full h-9 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Finish workout
-        </button>
-      )}
     </div>
 
   );
