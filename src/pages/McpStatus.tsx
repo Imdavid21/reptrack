@@ -41,8 +41,8 @@ export default function McpStatus() {
     <MuiCard><Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:2}}>
       <Box sx={{display:'flex',gap:1.5,alignItems:'center'}}><Server size={22}/><Typography fontWeight={600}>Fitness MCP</Typography></Box>
       {healthy
-        ? <Chip icon={<CheckCircle2 size={16}/>} label="Operational" sx={{bgcolor:'rgba(74,222,128,0.16)',color:'#3f9f6a',fontWeight:600,'& .MuiChip-icon':{color:'#3f9f6a'}}}/>
-        : <Chip label={statusLabel} sx={{maxWidth:'60%',bgcolor:'rgba(248,113,113,0.16)',color:'#c9524f',fontWeight:600,'& .MuiChip-label':{whiteSpace:'normal'}}}/>}
+        ? <Chip icon={<CheckCircle2 size={16}/>} label="Operational" color="success" variant="outlined" sx={{fontWeight:600}}/>
+        : <Chip label={statusLabel} color="error" variant="outlined" sx={{maxWidth:'60%',fontWeight:600,'& .MuiChip-label':{whiteSpace:'normal'}}}/>}
     </Box></MuiCard>
 
     <MuiCard><Typography variant="overline" color="text.secondary">Endpoint</Typography><Typography variant="body2" sx={{wordBreak:'break-all',fontFamily:'monospace'}}>{endpoint}</Typography><Box sx={{display:'flex',gap:1,mt:2}}><Button size="small" variant="outlined" startIcon={<Clipboard/>} onClick={()=>navigator.clipboard.writeText(endpoint).then(()=>toast.success('MCP URL copied'))}>Copy URL</Button><Button size="small" variant="outlined" startIcon={<RefreshCw/>} onClick={check} disabled={checking}>Test health</Button></Box></MuiCard>
