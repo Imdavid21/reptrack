@@ -160,7 +160,7 @@ export function CalorieTrackerCompact() {
   );
   const dayMacros = useMemo(() => {
     const sum = (key: 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium') =>
-      meals.reduce((s, m) => s + Number((m as any)[key] || 0), 0);
+      meals.reduce((s, m) => s + Number(m[key] || 0), 0);
     return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium'), potassium: sum('potassium') };
   }, [meals]);
   const netDeficit = energy.model ? -energy.model.energyBalance : maintenance - totalCalories + totalBurned; // positive = under maintenance
@@ -662,62 +662,6 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          <div className="mt-3 border-t border-border pt-3">
-            <h3 className="type-component-title">Nutrition</h3>
-            <button
-              type="button"
-              onClick={() => setIsProteinOpen(open => !open)}
-              className="mt-2 w-full rounded-xl text-left transition-colors hover:bg-muted/30"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="type-component-title">Protein</h4>
-                <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
-              </div>
-              <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-                <div className="min-w-0">
-                  <div className="text-2xl font-semibold tracking-tight tabular-nums">
-                    {Math.round(proteinTotal)} <span className="metric-unit">g</span> <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal} g</span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-foreground transition-[width] duration-300"
-                      style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
-                  {proteinTotal >= proteinGoal
-                    ? `+${Math.round(proteinTotal - proteinGoal)} g over`
-                    : `${Math.round(proteinGoal - proteinTotal)} g left`}
-                </div>
-              </div>
-            </button>
-            <Collapsible open={isOtherMacrosOpen} onOpenChange={setIsOtherMacrosOpen}>
-              <CollapsibleTrigger className="mt-3 flex w-full items-center justify-between border-t border-border py-3 text-left">
-                <span className="text-sm font-medium">Other macros</span>
-                {isOtherMacrosOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-              </CollapsibleTrigger>
-              <CollapsibleContent className="animate-accordion-down overflow-hidden">
-                <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border">
-                  {([
-                    { key: 'carbs', label: 'Carbs', unit: 'g' },
-                    { key: 'fat', label: 'Fat', unit: 'g' },
-                    { key: 'fiber', label: 'Fiber', unit: 'g' },
-                    { key: 'sugar', label: 'Sugar', unit: 'g' },
-                    { key: 'sodium', label: 'Sodium', unit: 'mg' },
-                    { key: 'potassium', label: 'Potassium', unit: 'mg' },
-                  ] as const).map(m => (
-                    <div key={m.key} className="min-w-0 p-3 text-center">
-                      <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
-                      <div className="type-caption">{m.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-
           {!deficitMode && (
             <div className="progress-bar mt-4">
               <div
@@ -751,32 +695,6 @@ export function CalorieTrackerCompact() {
               ))}
             </div>
           )}
-
-          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-            <button
-              onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }}
-              aria-label="Choose a food photo from your library"
-              title="Choose photo"
-              className="h-11 w-11 border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }}
-              aria-label="Describe a meal"
-              title="Describe meal"
-              className="h-11 w-11 border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              <Utensils className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleCameraClick(); }}
-              className="h-11 rounded-xl bg-foreground text-background flex-1 flex items-center justify-center gap-2 text-sm font-semibold active:scale-[0.98] transition-transform"
-            >
-              <Camera className="h-4 w-4" />
-              Add food photo
-            </button>
-          </div>
 
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
             <div className="mt-4 pt-4 border-t border-border space-y-4 overflow-hidden">
@@ -859,6 +777,89 @@ export function CalorieTrackerCompact() {
 
         </div>
       </Collapsible>
+
+      <section className="mt-3 rounded-[20px] border border-border bg-card p-4">
+        <button
+          type="button"
+          onClick={() => setIsProteinOpen(open => !open)}
+          className="w-full rounded-xl text-left transition-colors hover:bg-muted/30"
+          aria-expanded={isProteinOpen}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="type-component-title">Protein</h2>
+            <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
+          </div>
+          <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl font-semibold tracking-tight tabular-nums">
+                {Math.round(proteinTotal)} <span className="metric-unit">g</span> <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal} g</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-foreground transition-[width] duration-300"
+                  style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
+                />
+              </div>
+            </div>
+            <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
+              {proteinTotal >= proteinGoal
+                ? `+${Math.round(proteinTotal - proteinGoal)} g over`
+                : `${Math.round(proteinGoal - proteinTotal)} g left`}
+            </div>
+          </div>
+        </button>
+
+        {isProteinOpen && (
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="type-caption">By meal</div>
+            {proteinRows.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">No meals logged yet.</p>
+            ) : (
+              <div className="mt-1.5 min-w-0 divide-y divide-border">
+                {proteinRows.map(row => (
+                  <div key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
+                    <div className="min-w-0">
+                      <div className="break-words text-sm leading-snug">{row.name}</div>
+                      <div className="text-xs text-muted-foreground">{row.type} · {Math.round(row.calories)} cal</div>
+                    </div>
+                    <div className="shrink-0 text-sm font-bold tabular-nums">{Math.round(row.protein)}g</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <Collapsible open={isOtherMacrosOpen} onOpenChange={setIsOtherMacrosOpen}>
+          <CollapsibleTrigger className="mt-3 flex w-full items-center justify-between border-t border-border py-3 text-left">
+            <span className="text-sm font-medium">Other macros</span>
+            {isOtherMacrosOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="animate-accordion-down overflow-hidden">
+            <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border">
+              {([
+                { key: 'carbs', label: 'Carbs', unit: 'g' },
+                { key: 'fat', label: 'Fat', unit: 'g' },
+                { key: 'fiber', label: 'Fiber', unit: 'g' },
+                { key: 'sugar', label: 'Sugar', unit: 'g' },
+                { key: 'sodium', label: 'Sodium', unit: 'mg' },
+                { key: 'potassium', label: 'Potassium', unit: 'mg' },
+              ] as const).map(m => (
+                <div key={m.key} className="min-w-0 p-3 text-center">
+                  <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
+                  <div className="type-caption">{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="mt-3 flex gap-2 border-t border-border pt-3">
+          <button onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }} aria-label="Choose a food photo from your library" title="Choose photo" className="flex h-11 w-11 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Plus className="h-4 w-4" /></button>
+          <button onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }} aria-label="Describe a meal" title="Describe meal" className="flex h-11 w-11 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Utensils className="h-4 w-4" /></button>
+          <button onClick={(e) => { e.stopPropagation(); handleCameraClick(); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Add food photo</button>
+        </div>
+      </section>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-border bg-background max-h-[90vh] overflow-y-auto">
@@ -1167,36 +1168,6 @@ export function CalorieTrackerCompact() {
         </DialogContent>
       </Dialog>
 
-      {/* Protein details stay in the Today flow instead of opening a second sheet. */}
-      {isProteinOpen && <section className="mt-3 space-y-4 rounded-[20px] border border-border bg-card p-4">
-          <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Protein{mealDateSuffix}</h3><button onClick={() => setIsProteinOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Hide</button></div>
-
-          <div className="min-w-0 space-y-4">
-
-
-            <div>
-              <Label className="text-xs text-muted-foreground">By meal</Label>
-              {proteinRows.length === 0 ? (
-                <p className="text-xs text-muted-foreground mt-2">No meals logged yet.</p>
-              ) : (
-                <div className="min-w-0 divide-y divide-border mt-1.5">
-                  {proteinRows.map(row => (
-                    <div key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="break-words text-sm leading-snug">{row.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {row.type} · {Math.round(row.calories)} cal
-                        </div>
-                      </div>
-                      <div className="text-sm font-bold tabular-nums shrink-0">{Math.round(row.protein)}g</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-          </div>
-      </section>}
       <AlertDialog open={!!mealPendingDelete} onOpenChange={open => { if (!open) setMealPendingDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
