@@ -1,0 +1,42 @@
+/* Cross-surface normalization for RepTrack's semantic design roles.
+   These classes intentionally mirror DESIGN_LANGUAGE.md and are loaded after
+   index.css so Data Room, History, Home, and Workout share the same hierarchy. */
+
+.type-action {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.type-meta {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.surface-standard {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-card);
+  background: hsl(var(--card));
+  box-shadow: var(--elevation-card);
+}
+
+.control-standard {
+  min-height: var(--control-md);
+  border-radius: var(--radius-control);
+}
+
+.control-large {
+  min-height: var(--control-lg);
+  border-radius: var(--radius-control);
+}
