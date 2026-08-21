@@ -31,7 +31,6 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
   const [remaining, setRemaining] = useState(defaultDuration);
   const [totalDuration, setTotalDuration] = useState(defaultDuration);
   const [isRunning, setIsRunning] = useState(false);
-  // Wall-clock end timestamp - survives background throttling
   const endTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedRef = useRef(false);
@@ -56,7 +55,6 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
     }
   }, [onComplete, clearTimer]);
 
-  // Start a new countdown anchored to wall-clock
   const startCountdown = useCallback((seconds: number) => {
     clearTimer();
     completedRef.current = false;
@@ -75,10 +73,9 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
         haptic('success');
         onComplete();
       }
-    }, 250); // tick faster for snappy UI after resume
+    }, 250);
   }, [clearTimer, onComplete]);
 
-  // Auto-start when opened
   useEffect(() => {
     if (isOpen) {
       setTotalDuration(defaultDuration);
@@ -90,18 +87,14 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
     }
   }, [isOpen, defaultDuration, startCountdown, clearTimer]);
 
-  // Recalculate on visibility change (PWA resume from background)
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        recalculate();
-      }
+      if (document.visibilityState === 'visible') recalculate();
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [recalculate]);
 
-  // Cleanup on unmount
   useEffect(() => clearTimer, [clearTimer]);
 
   const handlePresetSelect = useCallback((seconds: number) => {
@@ -130,87 +123,47 @@ export function RestTimer({ isOpen, defaultDuration, onDismiss, onComplete }: Re
 
   return (
     <div className="animate-fade-in">
-      <div className={cn(
-        'rounded-xl border p-4 transition-all duration-300',
-        isComplete ? 'border-primary/50 bg-primary/5' : 'border-border bg-muted/30'
-      )}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+      <section className={cn('surface-standard p-4 transition-colors', isComplete && 'border-energy-border bg-energy-soft')} aria-label="Rest timer">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Timer className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="type-caption">
-              Rest Timer
-            </span>
+            <Timer className="h-4 w-4 text-muted-foreground" />
+            <span className="type-component-title">Rest timer</span>
           </div>
-          <button
-            onClick={handleSkip}
-            aria-label="Skip rest timer"
-            title="Skip rest"
-            className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <X className="h-3 w-3" />
+          <button onClick={handleSkip} aria-label="Skip rest timer" title="Skip rest" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Timer display */}
-        <div className="text-center mb-3">
-          <div className={cn(
-            'text-3xl font-bold tabular-nums transition-colors',
-            isComplete ? 'text-primary' : remaining <= 10 && isRunning ? 'text-destructive animate-pulse' : ''
-          )}>
-            {isComplete ? 'GO!' : formatCountdown(remaining)}
+        <div className="mb-4 text-center">
+          <div className={cn('metric-hero tabular-nums transition-colors', isComplete ? 'text-energy-ink' : remaining <= 10 && isRunning ? 'text-destructive' : '')} aria-live="polite">
+            {isComplete ? 'Go' : formatCountdown(remaining)}
           </div>
+          <div className="mt-1 type-meta">{isComplete ? 'Rest complete' : 'Remaining'}</div>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-1 bg-muted rounded-full overflow-hidden mb-3">
-          <div
-            className={cn(
-              'h-full rounded-full transition-all duration-1000 ease-linear',
-              isComplete ? 'bg-primary' : 'bg-foreground/40'
-            )}
-            style={{ width: `${progress}%` }}
-          />
+        <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={totalDuration} aria-valuenow={Math.max(0, totalDuration - remaining)}>
+          <div className={cn('h-full rounded-full transition-[width] duration-1000 ease-linear', isComplete ? 'bg-energy' : 'bg-foreground/50')} style={{ width: `${progress}%` }} />
         </div>
 
-        {/* Presets + actions */}
-        <div className="flex items-center gap-1.5 justify-center flex-wrap">
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
           {REST_PRESETS.map((preset) => (
             <button
               key={preset}
               onClick={() => handlePresetSelect(preset)}
-              className={cn(
-                'h-7 px-2.5 rounded-full text-xs font-medium transition-all',
-                totalDuration === preset && isRunning
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              )}
+              className={cn('h-9 min-w-11 rounded-full px-3 type-meta tabular-nums transition-colors', totalDuration === preset && isRunning ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}
             >
               {presetLabel(preset)}
             </button>
           ))}
-          <button
-            onClick={handleReset}
-            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="Reset"
-          >
-            <RotateCcw className="h-3 w-3" />
+          <button onClick={handleReset} aria-label="Reset rest timer" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" title="Reset">
+            <RotateCcw className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Skip / Done button */}
-        <button
-          onClick={handleSkip}
-          className={cn(
-            'w-full h-9 rounded-full text-xs font-bold mt-3 transition-all',
-            isComplete
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          {isComplete ? 'Continue to Next Set' : 'Skip Rest'}
+        <button onClick={handleSkip} className={cn('control-standard mt-4 w-full rounded-xl type-action transition-colors', isComplete ? 'bg-energy text-energy-foreground' : 'border border-border text-muted-foreground hover:bg-muted hover:text-foreground')}>
+          {isComplete ? 'Continue to next set' : 'Skip rest'}
         </button>
-      </div>
+      </section>
     </div>
   );
 }
