@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkoutExercise } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, Minus, Info, RefreshCw } from 'lucide-react';
+import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, RefreshCw } from 'lucide-react';
 import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
@@ -68,7 +68,6 @@ interface SetBySetCardProps {
   autoRestTimer?: boolean;
 }
 
-// Format seconds as Mm Ss
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -110,8 +109,6 @@ export function SetBySetCard({
   const [showTimeInput, setShowTimeInput] = useState(false);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [restDuration, setRestDuration] = useState(90);
-
-  // Timer state for timed exercises
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -123,14 +120,8 @@ export function SetBySetCard({
   const showWeight = exType === 'weighted' || exType === 'weighted_bw';
   const showReps = exType === 'weighted' || exType === 'bodyweight' || exType === 'weighted_bw';
 
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  // Reset timer when switching sets/exercises
   useEffect(() => {
     setIsTimerRunning(false);
     setTimerSeconds(0);
@@ -141,7 +132,6 @@ export function SetBySetCard({
     }
   }, [currentSetIndex, exerciseIndex]);
 
-  // Priority for base values: prev completed set -> per-set last used -> aggregate last used -> current target
   const completedPrev = prevSet?.completed ? prevSet : null;
   const lastUsedForSet = lastUsed?.perSet?.[currentSetIndex];
 
@@ -165,7 +155,6 @@ export function SetBySetCard({
     if (currentSet.actualTime) return currentSet.actualTime;
     if (completedPrev?.actualTime) return completedPrev.actualTime;
     if (currentSet.targetTime) return currentSet.targetTime;
-    // Parse from targetReps for backwards compat (e.g. "45" meaning 45 seconds)
     const parsed = parseInt(currentSet.targetReps);
     return !isNaN(parsed) ? parsed : 30;
   };
@@ -174,7 +163,6 @@ export function SetBySetCard({
   const baseReps = getBaseReps();
   const baseTime = getBaseTime();
 
-  // Generate weight options: wide scrollable range
   const generateWeightOptions = (): number[] => {
     const options = new Set<number>();
     const increments = isWeightedBW
@@ -187,7 +175,6 @@ export function SetBySetCard({
     return Array.from(options).sort((a, b) => a - b);
   };
 
-  // Generate rep options: wider scrollable range
   const generateRepOptions = (): number[] => {
     const options = new Set<number>();
     const range = isBodyweight
@@ -200,7 +187,6 @@ export function SetBySetCard({
     return Array.from(options).sort((a, b) => a - b);
   };
 
-  // Generate time options for timed exercises (in seconds)
   const generateTimeOptions = (): number[] => {
     const options = new Set<number>();
     [-30, -15, -10, -5, 0, 5, 10, 15, 30].forEach(delta => {
@@ -216,40 +202,27 @@ export function SetBySetCard({
 
   const handleWeightSelect = (weight: number) => {
     haptic('light');
-    const updated = { ...exercise };
-    updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = {
-      ...updated.sets[currentSetIndex],
-      actualWeight: weight.toString()
-    };
+    const updated = { ...exercise, sets: [...exercise.sets] };
+    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualWeight: weight.toString() };
     onChange(updated);
   };
 
   const handleRepsSelect = (reps: number) => {
     haptic('light');
-    const updated = { ...exercise };
-    updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = {
-      ...updated.sets[currentSetIndex],
-      actualReps: reps.toString()
-    };
+    const updated = { ...exercise, sets: [...exercise.sets] };
+    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualReps: reps.toString() };
     onChange(updated);
   };
 
   const handleTimeSelect = (seconds: number) => {
     haptic('light');
-    const updated = { ...exercise };
-    updated.sets = [...updated.sets];
-    updated.sets[currentSetIndex] = {
-      ...updated.sets[currentSetIndex],
-      actualTime: seconds,
-    };
+    const updated = { ...exercise, sets: [...exercise.sets] };
+    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualTime: seconds };
     onChange(updated);
   };
 
   const toggleTimer = () => {
     if (isTimerRunning) {
-      // Stop - save the elapsed time
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -257,16 +230,12 @@ export function SetBySetCard({
       setIsTimerRunning(false);
       handleTimeSelect(timerSeconds);
     } else {
-      // Start counting up
       setTimerSeconds(0);
       setIsTimerRunning(true);
-      timerRef.current = setInterval(() => {
-        setTimerSeconds(prev => prev + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setTimerSeconds(prev => prev + 1), 1000);
     }
   };
 
-  // Smart rest duration: exercise-level > workout bias > category fallback
   const getDefaultRest = (): number => {
     if (exercise.restSeconds) return exercise.restSeconds;
     if (workoutBias === 'heavy') return 180;
@@ -278,12 +247,10 @@ export function SetBySetCard({
 
   const completeSet = () => {
     haptic('success');
-    const updated = { ...exercise };
-    updated.sets = [...updated.sets];
+    const updated = { ...exercise, sets: [...exercise.sets] };
 
     if (isTimed) {
       const finalTime = currentSet.actualTime || (isTimerRunning ? timerSeconds : baseTime);
-      // Stop timer if running
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -308,13 +275,8 @@ export function SetBySetCard({
     }
     onChange(updated);
 
-    if (isLastSet) {
-      // Don't auto-advance - stay on this exercise so user can add sets or move on
-      // The "Next Exercise" / "Finish" button below handles navigation
-      return;
-    }
+    if (isLastSet) return;
 
-    // Pre-fill next set with current values
     const nextSetIndex = currentSetIndex + 1;
     if (isTimed) {
       updated.sets[nextSetIndex] = {
@@ -332,7 +294,6 @@ export function SetBySetCard({
     }
     onChange(updated);
 
-    // Show rest timer between sets, unless the user has turned auto-start off
     if (autoRestTimer) {
       setRestDuration(getDefaultRest());
       setShowRestTimer(true);
@@ -343,18 +304,12 @@ export function SetBySetCard({
 
   const handleRestDismiss = useCallback(() => {
     setShowRestTimer(false);
-    // Advance to next set
-    if (!isLastSet) {
-      onSetIndexChange(currentSetIndex + 1);
-    }
+    if (!isLastSet) onSetIndexChange(currentSetIndex + 1);
   }, [isLastSet, currentSetIndex, onSetIndexChange]);
 
   const handleRestComplete = useCallback(() => {
     setShowRestTimer(false);
-    // Advance to next set
-    if (!isLastSet) {
-      onSetIndexChange(currentSetIndex + 1);
-    }
+    if (!isLastSet) onSetIndexChange(currentSetIndex + 1);
   }, [isLastSet, currentSetIndex, onSetIndexChange]);
 
   const skipSet = () => {
@@ -376,7 +331,6 @@ export function SetBySetCard({
   const addSet = () => {
     haptic('light');
     const updated = { ...exercise };
-    // Find the last completed set for smart pre-fill, fall back to last set's targets
     const lastCompleted = [...updated.sets].reverse().find(s => s.completed);
     const lastSet = updated.sets[updated.sets.length - 1];
     updated.sets = [
@@ -399,12 +353,7 @@ export function SetBySetCard({
     haptic('medium');
     const updated = { ...exercise };
     updated.name = variantName;
-    if (defaultWeight) {
-      updated.sets = updated.sets.map(set => ({
-        ...set,
-        targetWeight: defaultWeight,
-      }));
-    }
+    if (defaultWeight) updated.sets = updated.sets.map(set => ({ ...set, targetWeight: defaultWeight }));
     onChange(updated);
   };
 
@@ -414,10 +363,8 @@ export function SetBySetCard({
   const equipmentType = getEquipmentType(exercise.name);
   const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipmentType);
 
-  // PR comparison depends on exercise type
   const completedWeightSets = exercise.sets.filter(s => s.completed && s.actualWeight);
   const currentMaxWeight = Math.max(...completedWeightSets.map(s => parseFloat(s.actualWeight) || 0), 0);
-  // Best reps among sets at the current max weight (for same-weight-more-reps PRs)
   const currentMaxWeightBestReps = Math.max(
     ...completedWeightSets
       .filter(s => (parseFloat(s.actualWeight) || 0) === currentMaxWeight)
@@ -427,12 +374,9 @@ export function SetBySetCard({
   const currentMaxValue = isTimed
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualTime).map(s => s.actualTime || 0), 0)
     : isBodyweight
-    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
-    : currentMaxWeight;
+      ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
+      : currentMaxWeight;
   const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
-  // A first-ever logging of a movement is itself a record. Without this the
-  // "NEW PR!" flag only ever fired for exercises that already had history,
-  // so freshly added or newly swapped-in exercises never showed one.
   const isNewPR = currentMaxValue > 0 && (
     !personalRecord ||
     ((isTimed || isBodyweight)
@@ -441,15 +385,13 @@ export function SetBySetCard({
         (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps))
   );
 
-
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
   const selectedTime = currentSet.actualTime || baseTime;
 
-  // Build the log button label based on exercise type
   const getLogLabel = () => {
     if (isTimed) {
-      if (isTimerRunning) return `Stop & Log ${formatTime(timerSeconds)}`;
+      if (isTimerRunning) return `Stop & log ${formatTime(timerSeconds)}`;
       return `Log ${formatTime(selectedTime)}`;
     }
     if (isBodyweight) return `Log ${selectedReps} reps`;
@@ -457,106 +399,76 @@ export function SetBySetCard({
     return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
   };
 
-
   return (
     <div className="w-full min-w-0 space-y-4 animate-fade-in">
-      {/* Exercise progress - tappable segments */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-          {exerciseIndex + 1}/{totalExercises}
-        </span>
-        <div className="flex gap-0.5 flex-1">
+        <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
+        <div className="flex flex-1 gap-0.5">
           {Array.from({ length: totalExercises }).map((_, i) => (
             <button
               key={i}
               onClick={() => onJumpToExercise?.(i)}
+              aria-label={`Go to exercise ${i + 1}`}
               className={cn(
                 'h-2 flex-1 rounded-full transition-all duration-300',
-                i < exerciseIndex ? 'bg-primary' :
-                i === exerciseIndex ? 'bg-primary/50' : 'bg-muted',
+                i < exerciseIndex ? 'bg-energy' : i === exerciseIndex ? 'bg-energy/50' : 'bg-muted',
                 onJumpToExercise && 'cursor-pointer hover:opacity-80 active:scale-95'
               )}
-              title={`Exercise ${i + 1}`}
             />
           ))}
         </div>
         {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && (
-          <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">
-            {completedWorkoutSets}/{totalWorkoutSets} sets
-          </span>
+          <span className="type-meta whitespace-nowrap tabular-nums">{completedWorkoutSets}/{totalWorkoutSets} sets</span>
         )}
       </div>
 
-      {/* Exercise name with PR / type badge */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h2 className="text-base font-bold">{exercise.name}</h2>
-            {isTimed && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timed</span>
-            )}
-            {isBodyweight && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
-            )}
-            {isWeightedBW && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW+</span>
-            )}
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h2 className="type-card-title">{exercise.name}</h2>
+            {isTimed && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">Timed</span>}
+            {isBodyweight && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">BW</span>}
+            {isWeightedBW && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">BW+</span>}
             {personalRecord && !isNewPR && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                PR: {personalRecord.prType === 'duration'
+              <span className="type-meta tabular-nums">
+                PR · {personalRecord.prType === 'duration'
                   ? formatTime(personalRecord.maxWeight)
                   : personalRecord.prType === 'reps'
-                  ? `${personalRecord.maxWeight} reps`
-                  : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
+                    ? `${personalRecord.maxWeight} reps`
+                    : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
               </span>
             )}
             {!personalRecord && familyRecord && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {familyRecord.familyLabel} best: {familyRecord.maxWeight}{weightLabel}
-                <span className="opacity-60"> ({familyRecord.exerciseName})</span>
+              <span className="type-meta tabular-nums">
+                {familyRecord.familyLabel} best · {familyRecord.maxWeight}{weightLabel} ({familyRecord.exerciseName})
               </span>
             )}
-            {!personalRecord && !familyRecord && !isNewPR && (
-              <span className="text-xs text-muted-foreground">No PR yet</span>
-            )}
-            {isNewPR && (
-              <span className="text-xs text-primary font-bold">NEW PR!</span>
-            )}
-
+            {!personalRecord && !familyRecord && !isNewPR && <span className="type-meta">No PR yet</span>}
+            {isNewPR && <span className="inline-flex items-center gap-1 rounded-full bg-energy-soft px-2 py-0.5 type-meta text-energy-ink"><Check className="h-3 w-3" />New PR</span>}
           </div>
-          <span className="text-xs text-muted-foreground">
-            {completedSets}/{exercise.sets.length} sets
-            {exercise.rir && (
-              <span className="ml-1.5 text-primary/70">@ {exercise.rir} RIR</span>
-            )}
-          </span>
+          <div className="mt-1 type-meta">
+            <span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>
+            {exercise.rir && <span className="ml-2 text-foreground">@ {exercise.rir} RIR</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {onSwapExercise && (
-            <button
-              onClick={onSwapExercise}
-              className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-              title="Replace exercise"
-            >
-              <RefreshCw className="h-3 w-3" />
+            <button onClick={onSwapExercise} aria-label="Replace exercise" className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <RefreshCw className="h-4 w-4" />
             </button>
           )}
           {showVariantSwitch && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeftRight className="h-3 w-3" />
+                <button aria-label="Switch exercise variation" className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border-border z-50">
+              <DropdownMenuContent align="end" className="z-50 border-border bg-background">
                 {variants.map((variant) => (
-                  <DropdownMenuItem
-                    key={variant.name}
-                    onClick={() => switchVariant(variant.name, variant.defaultWeight)}
-                    className={cn('cursor-pointer text-xs', variant.name === exercise.name && 'bg-primary/10')}
-                  >
+                  <DropdownMenuItem key={variant.name} onClick={() => switchVariant(variant.name, variant.defaultWeight)} className={cn('cursor-pointer text-sm', variant.name === exercise.name && 'bg-energy-soft')}>
                     {variant.name}
-                    {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
+                    {variant.name === exercise.name && <Check className="ml-auto h-3.5 w-3.5" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -565,80 +477,53 @@ export function SetBySetCard({
         </div>
       </div>
 
-      {/* Set pills */}
-      <div className="flex gap-1.5 justify-center">
+      <div className="flex justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
         {exercise.sets.map((set, idx) => (
           <button
             key={idx}
             onClick={() => onSetIndexChange(idx)}
+            aria-label={`Go to set ${idx + 1}`}
             className={cn(
-              'h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200',
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-full type-meta transition-all duration-150',
               idx === currentSetIndex
-                ? 'bg-primary text-primary-foreground scale-110 shadow-sm'
+                ? 'bg-foreground text-background'
                 : set.completed
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-energy-soft text-energy-ink'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
             )}
           >
-            {set.completed ? <Check className="h-3 w-3" /> : idx + 1}
+            {set.completed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
           </button>
         ))}
-        <button
-          onClick={addSet}
-          className="h-7 w-7 rounded-full border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Plus className="h-3 w-3" />
+        <button onClick={addSet} aria-label="Add set" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:text-foreground">
+          <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* Current set card */}
-      <div className={cn(
-        'p-4 rounded-xl border transition-all duration-300',
-        currentSet.completed ? 'bg-primary/5 border-primary/30' : 'border-border'
-      )}>
-        <div className="text-center text-xs text-muted-foreground mb-4">
-          SET {currentSetIndex + 1}
-        </div>
+      <div className={cn('surface-standard p-4 transition-colors', currentSet.completed && 'border-energy-border bg-energy-soft')}>
+        <div className="mb-4 text-center type-eyebrow">Set {currentSetIndex + 1}</div>
 
-        {/* ===== TIMED EXERCISE UI ===== */}
         {isTimed && (
           <div className="space-y-4">
-            {/* Timer display */}
             <div className="text-center">
-              {isTimerRunning ? (
-                <div className="text-4xl font-bold tabular-nums text-primary animate-pulse">
-                  {formatTime(timerSeconds)}
-                </div>
-              ) : (
-                <div className="text-4xl font-bold tabular-nums">
-                  {formatTime(selectedTime)}
-                </div>
-              )}
-              <div className="text-xs text-muted-foreground mt-1">
-                {isTimerRunning ? 'Timing...' : `TARGET: ${formatTime(baseTime)}`}
-              </div>
+              <div className={cn('metric-hero tabular-nums', isTimerRunning && 'text-energy-ink')}>{formatTime(isTimerRunning ? timerSeconds : selectedTime)}</div>
+              <div className="mt-1 type-meta">{isTimerRunning ? 'Timing' : `Target · ${formatTime(baseTime)}`}</div>
             </div>
 
-            {/* Start/stop timer button */}
             <button
               onClick={toggleTimer}
               className={cn(
-                'w-full h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2',
-                isTimerRunning
-                  ? 'bg-destructive text-destructive-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
+                'control-standard flex w-full items-center justify-center gap-2 rounded-xl type-action transition-colors',
+                isTimerRunning ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-foreground'
               )}
             >
-              <Timer className="h-3.5 w-3.5" />
+              <Timer className="h-4 w-4" />
               {isTimerRunning ? 'Stop timer' : 'Start timer'}
             </button>
 
-            {/* Quick time selection (when timer not running) */}
             {!isTimerRunning && (
               <>
-                <div className="type-caption text-center">
-                  Or set duration
-                </div>
+                <div className="type-caption text-center">Set duration</div>
                 {showTimeInput ? (
                   <div className="flex justify-center">
                     <Input
@@ -649,33 +534,19 @@ export function SetBySetCard({
                       onChange={(e) => handleTimeSelect(parseInt(e.target.value) || 0)}
                       onBlur={() => setShowTimeInput(false)}
                       onKeyDown={(e) => e.key === 'Enter' && setShowTimeInput(false)}
-                      className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
+                      className="h-9 w-24 rounded-xl border-border bg-muted text-center text-sm"
                       placeholder={baseTime.toString()}
                     />
-                    <span className="text-xs text-muted-foreground ml-2 self-center">sec</span>
+                    <span className="ml-2 self-center type-meta">sec</span>
                   </div>
                 ) : (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x justify-center">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                     {timeOptions.map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => handleTimeSelect(t)}
-                        className={cn(
-                          'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
-                          selectedTime === t
-                            ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                        )}
-                      >
+                      <button key={t} onClick={() => handleTimeSelect(t)} className={cn('h-9 min-w-[3rem] shrink-0 snap-center rounded-full px-2.5 type-meta transition-colors', selectedTime === t ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
                         {formatTime(t)}
                       </button>
                     ))}
-                    <button
-                      onClick={() => setShowTimeInput(true)}
-                      className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
-                    >
-                      ···
-                    </button>
+                    <button onClick={() => setShowTimeInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
                   </div>
                 )}
               </>
@@ -683,12 +554,9 @@ export function SetBySetCard({
           </div>
         )}
 
-        {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
         {showWeight && !isTimed && (
           <div className="mb-4">
-            <div className="type-caption text-center mb-2">
-              {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
-            </div>
+            <div className="mb-2 type-caption text-center">{isWeightedBW ? 'Added weight (+kg)' : `Weight (${weightLabel})`}</div>
             {showWeightInput ? (
               <div className="flex justify-center">
                 <Input
@@ -699,44 +567,26 @@ export function SetBySetCard({
                   onChange={(e) => handleWeightSelect(parseFloat(e.target.value) || 0)}
                   onBlur={() => setShowWeightInput(false)}
                   onKeyDown={(e) => e.key === 'Enter' && setShowWeightInput(false)}
-                  className="w-24 h-9 text-center text-xs rounded-full border-border bg-muted"
+                  className="h-9 w-24 rounded-xl border-border bg-muted text-center text-sm"
                   placeholder={baseWeight.toString()}
                 />
               </div>
             ) : (
               <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                 {weightOptions.map((w) => (
-                  <button
-                    key={w}
-                    onClick={() => handleWeightSelect(w)}
-                    className={cn(
-                      'h-9 min-w-[3rem] px-2.5 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
-                      selectedWeight === w
-                        ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    )}
-                  >
-                    {isWeightedBW && '+'}
-                    {w % 1 === 0 ? w : w.toFixed(1)}
+                  <button key={w} onClick={() => handleWeightSelect(w)} className={cn('h-9 min-w-[3rem] shrink-0 snap-center rounded-full px-2.5 type-meta tabular-nums transition-colors', selectedWeight === w ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
+                    {isWeightedBW && '+'}{w % 1 === 0 ? w : w.toFixed(1)}
                   </button>
                 ))}
-                <button
-                  onClick={() => setShowWeightInput(true)}
-                  className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
-                >
-                  ···
-                </button>
+                <button onClick={() => setShowWeightInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
               </div>
             )}
           </div>
         )}
 
-        {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
         {showReps && !isTimed && (
           <div>
-            <div className="type-caption text-center mb-2">
-              Reps
-            </div>
+            <div className="mb-2 type-caption text-center">Reps</div>
             {showRepsInput ? (
               <div className="flex justify-center">
                 <Input
@@ -747,79 +597,48 @@ export function SetBySetCard({
                   onChange={(e) => handleRepsSelect(parseInt(e.target.value) || 0)}
                   onBlur={() => setShowRepsInput(false)}
                   onKeyDown={(e) => e.key === 'Enter' && setShowRepsInput(false)}
-                  className="w-20 h-9 text-center text-xs rounded-full border-border bg-muted"
+                  className="h-9 w-20 rounded-xl border-border bg-muted text-center text-sm"
                   placeholder={baseReps.toString()}
                 />
               </div>
             ) : (
               <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
                 {repOptions.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleRepsSelect(r)}
-                    className={cn(
-                      'h-9 w-9 rounded-full text-xs font-medium transition-all duration-200 shrink-0 snap-center',
-                      selectedReps === r
-                        ? 'bg-primary text-primary-foreground scale-105 shadow-sm'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    )}
-                  >
+                  <button key={r} onClick={() => handleRepsSelect(r)} className={cn('h-9 w-9 shrink-0 snap-center rounded-full type-meta tabular-nums transition-colors', selectedReps === r ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
                     {r}
                   </button>
                 ))}
-                <button
-                  onClick={() => setShowRepsInput(true)}
-                  className="h-9 px-2 rounded-full text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0"
-                >
-                  ···
-                </button>
+                <button onClick={() => setShowRepsInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Rest Timer - shown between sets */}
       {showRestTimer && (
-        <RestTimer
-          isOpen={showRestTimer}
-          defaultDuration={restDuration}
-          onDismiss={handleRestDismiss}
-          onComplete={handleRestComplete}
-        />
+        <RestTimer isOpen={showRestTimer} defaultDuration={restDuration} onDismiss={handleRestDismiss} onComplete={handleRestComplete} />
       )}
 
-      {/* Actions */}
       {!showRestTimer && (
         <div className="flex gap-2">
           {(!isFirstSet || !isFirstExercise) && (
-            <button
-              onClick={goToPrevSet}
-              className="h-10 w-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
-            >
+            <button onClick={goToPrevSet} aria-label="Previous set or exercise" className="control-large flex w-[52px] shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <ChevronLeft className="h-4 w-4" />
             </button>
           )}
 
           {!currentSet.completed && (
-            <button
-              onClick={skipSet}
-              className="h-10 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <SkipForward className="h-3 w-3" />
+            <button onClick={skipSet} aria-label="Skip current set" className="control-large flex items-center gap-1.5 rounded-xl px-3 type-action text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <SkipForward className="h-4 w-4" />
+              Skip
             </button>
           )}
 
-          {/* Main action button */}
           {currentSet.completed && isLastSet ? (
-            // Last set completed - show explicit navigation buttons instead of auto-advance
-            <div className="flex gap-2 flex-1">
-              <button
-                onClick={addSet}
-                className="h-10 px-3 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              >
-                <Plus className="h-3 w-3" />
-                Add Set
+            <div className="flex flex-1 gap-2">
+              <button onClick={addSet} className="control-large flex items-center gap-1.5 rounded-xl border border-border px-3 type-action text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <Plus className="h-4 w-4" />
+                Add set
               </button>
               <button
                 onClick={() => {
@@ -827,30 +646,26 @@ export function SetBySetCard({
                   if (isLastExercise) onComplete();
                   else onNextExercise();
                 }}
-                className="flex-1 h-10 rounded-full text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-1.5"
+                className="control-large flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-foreground px-4 type-action text-background transition-opacity hover:opacity-90"
               >
-                <Check className="h-3.5 w-3.5" />
-                {isLastExercise ? 'Finish workout' : 'Next Exercise'}
+                <Check className="h-4 w-4" />
+                {isLastExercise ? 'Finish workout' : 'Next exercise'}
               </button>
             </div>
           ) : (
             <button
               onClick={completeSet}
               className={cn(
-                "flex-1 h-10 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5",
-                currentSet.completed
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+                'control-large flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 type-action transition-colors',
+                currentSet.completed ? 'border border-energy-border bg-energy-soft text-energy-ink' : 'bg-foreground text-background hover:opacity-90'
               )}
             >
-              <Check className="h-3.5 w-3.5" />
-              {currentSet.completed ? 'Next Set' : getLogLabel()}
+              <Check className="h-4 w-4" />
+              {currentSet.completed ? 'Next set' : getLogLabel()}
             </button>
           )}
         </div>
       )}
-
     </div>
-
   );
 }
