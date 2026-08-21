@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronRight, Dumbbell, Moon, Scale, Utensils, Activity } from 'lucide-react';
 import type { TemporalAnalysis, TemporalHorizon, TemporalMetric, TemporalTone } from '@/lib/dataroom/temporal';
 import { cn } from '@/lib/utils';
 
 const toneClass: Record<TemporalTone, string> = {
-  positive: 'text-energy-ink bg-energy-soft border-energy/20',
+  positive: 'text-energy-ink bg-energy-soft border-energy-border',
   neutral: 'text-foreground bg-muted/35 border-border',
-  watch: 'text-recover-ink bg-recover-soft border-recover/20',
+  watch: 'text-recover-ink bg-recover-soft border-recover-border',
   insufficient: 'text-muted-foreground bg-muted/20 border-border',
 };
 
@@ -52,17 +52,36 @@ function HorizonPill({ label, active, onClick }: { label: string; active: boolea
     <button
       type="button"
       onClick={onClick}
-      className={cn('flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-colors', active ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}
+      className={cn('min-h-9 flex-1 rounded-xl px-2 text-xs font-semibold transition-colors', active ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
     >
       {label}
     </button>
   );
 }
 
+function rangeLabel(title: string) {
+  if (/2 years/i.test(title)) return '2y';
+  const days = title.match(/(\d+) days/i)?.[1];
+  return days ? `${days}d` : 'Range';
+}
+
 export function TemporalDecisionMatrix({ analysis }: { analysis: TemporalAnalysis }) {
   const [active, setActive] = useState<TemporalHorizon>('week');
-  const panel = analysis[active];
-  const labels: Record<TemporalHorizon, string> = { today: 'Today', week: '7 days', month: '28 days' };
+  const available = useMemo(() => {
+    const items: Array<{ horizon: TemporalHorizon; label: string }> = [
+      { horizon: 'today', label: 'Today' },
+      { horizon: 'week', label: '7d' },
+    ];
+    if (analysis.month) items.push({ horizon: 'month', label: '28d' });
+    if (analysis.range) items.push({ horizon: 'range', label: rangeLabel(analysis.range.title) });
+    return items;
+  }, [analysis.month, analysis.range]);
+
+  useEffect(() => {
+    if (!available.some(item => item.horizon === active)) setActive('week');
+  }, [available, active]);
+
+  const panel = analysis[active] ?? analysis.week;
   const compactMetrics = useMemo(() => panel.metrics.slice(0, active === 'today' ? 4 : 5), [panel.metrics, active]);
 
   return (
@@ -71,13 +90,13 @@ export function TemporalDecisionMatrix({ analysis }: { analysis: TemporalAnalysi
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 type-eyebrow"><CalendarDays className="h-3.5 w-3.5" />Decision horizon</div>
-            <h2 id="temporal-title" className="mt-1 type-section-title">Today, week, month</h2>
-            <p className="mt-1 max-w-xl type-supporting">Execution belongs to today. Programme changes need repeated week-to-week or month-to-month evidence.</p>
+            <h2 id="temporal-title" className="mt-1 type-section-title">Today, week, month, range</h2>
+            <p className="mt-1 max-w-xl type-supporting">Short-term decisions stay comparable. Longer selections add a range-specific view instead of stretching the same rule across every horizon.</p>
           </div>
           <span className={cn('mt-0.5 h-2.5 w-2.5 rounded-full', dotClass[panel.decisionTone])} aria-hidden />
         </div>
-        <div className="mt-4 flex rounded-full border border-border bg-muted/30 p-1">
-          {(['today', 'week', 'month'] as TemporalHorizon[]).map(horizon => <HorizonPill key={horizon} label={labels[horizon]} active={active === horizon} onClick={() => setActive(horizon)} />)}
+        <div className="mt-4 flex rounded-xl border border-border bg-muted/30 p-1">
+          {available.map(item => <HorizonPill key={item.horizon} label={item.label} active={active === item.horizon} onClick={() => setActive(item.horizon)} />)}
         </div>
       </div>
 
