@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays, format, startOfDay, subDays } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useDailyMetrics } from './useDailyMetrics';
 import { useExerciseSets } from './useExerciseSets';
 import { useWorkouts } from './useWorkouts';
 import { useUserPreferences } from './useUserPreferences';
 import { buildTemporalAnalysis } from '@/lib/dataroom/temporal';
+import { fetchMealRows } from '@/lib/fetchMealRows';
 import type { MealDay } from '@/lib/dataroom/types';
 import type { DateRange } from '@/contexts/DateRangeContext';
 
@@ -34,15 +34,9 @@ export function useDataroomComparisons(dateRange: DateRange) {
     enabled: !!user,
     queryFn: async (): Promise<MealDay[]> => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('meals')
-        .select('date,calories,protein,carbs,fat,fiber,sugar,sodium,potassium')
-        .eq('user_id', user.id)
-        .gte('date', startDate)
-        .lte('date', endDate);
-      if (error) throw error;
+      const rows = await fetchMealRows(user.id, startDate, endDate);
       const byDay = new Map<string, MealDay>();
-      for (const row of data ?? []) {
+      for (const row of rows) {
         const day = byDay.get(row.date) ?? { date: row.date, calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0, potassium: 0 };
         day.calories += Number(row.calories) || 0;
         day.protein += Number(row.protein) || 0;
