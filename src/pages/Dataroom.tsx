@@ -1,6 +1,6 @@
 import { AlertCircle } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { DateRangeProvider } from '@/contexts/DateRangeContext';
+import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { ArachnidRead, ChangesNext, DataroomDeepDives, TrajectoryConsole } from '@/components/dataroom/DataRoomVisuals';
 import { TemporalDecisionMatrix } from '@/components/dataroom/TemporalDecisionMatrix';
@@ -8,7 +8,7 @@ import { useDataroomData } from '@/hooks/useDataroomData';
 import { useDataroomComparisons } from '@/hooks/useDataroomComparisons';
 
 function LoadingState() {
-  return <div className="space-y-5" aria-label="Loading Data Room"><div className="h-9 w-44 animate-pulse rounded-full bg-muted" /><div className="h-72 animate-pulse border-y border-border bg-card" /><div className="h-64 animate-pulse rounded-2xl bg-muted" /><div className="h-48 animate-pulse rounded-2xl bg-muted" /></div>;
+  return <div className="space-y-5" aria-label="Loading Data Room"><div className="h-9 w-44 animate-pulse rounded-xl bg-muted" /><div className="h-72 animate-pulse border-y border-border bg-card" /><div className="h-64 animate-pulse rounded-2xl bg-muted" /><div className="h-48 animate-pulse rounded-2xl bg-muted" /></div>;
 }
 
 function TemporalLoadingState() {
@@ -16,8 +16,9 @@ function TemporalLoadingState() {
 }
 
 function DataroomContent() {
-  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData();
-  const temporal = useDataroomComparisons();
+  const { dateRange } = useDateRange();
+  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData(dateRange);
+  const temporal = useDataroomComparisons(dateRange);
 
   return (
     <div className="pb-6">
@@ -49,7 +50,7 @@ function DataroomContent() {
       )}
 
       {!isLoading && !error && analysis && (
-        <div className="space-y-9">
+        <div className="space-y-8">
           <TrajectoryConsole analysis={analysis} proteinGoal={preferences?.daily_protein_goal || 165} />
 
           {temporal.isLoading && <TemporalLoadingState />}
@@ -57,7 +58,7 @@ function DataroomContent() {
           {!temporal.isLoading && temporal.error && (
             <div className="border-y border-border py-4" role="status">
               <p className="type-action">Temporal comparison unavailable</p>
-              <p className="mt-1 type-supporting">The core Data Room analysis is still valid. Week-to-week and month-to-month comparisons could not be loaded.</p>
+              <p className="mt-1 type-supporting">The selected-range analysis is still valid. Temporal comparisons could not be loaded.</p>
             </div>
           )}
 
@@ -93,7 +94,7 @@ function DataroomContent() {
 export default function Dataroom() {
   return (
     <MainLayout>
-      <DateRangeProvider>
+      <DateRangeProvider storageKey="dataroom-date-range-preset" defaultPreset="30d">
         <DataroomContent />
       </DateRangeProvider>
     </MainLayout>
