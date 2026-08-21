@@ -1,4 +1,20 @@
 import { describe, it, expect } from 'vitest';
+
+// The exported module imports the Supabase client, which expects localStorage.
+// These tests only exercise pure CSV helpers, so a minimal storage stub is enough.
+if (typeof localStorage === 'undefined') {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 import { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS, DataTable } from './useDataExport';
 
 describe('escapeCSV / parseCSVLine round-trip', () => {
