@@ -30,6 +30,12 @@ export interface UserPreferences {
   daily_water_goal: number;
   daily_calorie_goal: number;
   daily_protein_goal: number;
+  daily_carbs_goal?: number | null;
+  daily_fat_goal?: number | null;
+  daily_fiber_goal?: number | null;
+  daily_sugar_goal?: number | null;
+  daily_sodium_goal?: number | null;
+  daily_potassium_goal?: number | null;
   calorie_target_locked?: boolean;
   protein_target_locked?: boolean;
   weekly_workout_goal: number;
