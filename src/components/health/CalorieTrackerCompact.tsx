@@ -545,17 +545,15 @@ export function CalorieTrackerCompact() {
                   <div className="py-3 pl-3"><h3 className="text-xs text-muted-foreground">Activity out</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                 </div>
                 {displayedBmr && displayedMaintenance ? (
-                  <div className="py-3">
-                    <BmrBreakdownTile
-                      bmr={displayedBmr}
-                      maintenance={displayedMaintenance}
-                      isOverride={false}
-                      totalBurnedToday={viewingToday ? totalBurned : 0}
-                      isToday={viewingToday}
-                      calibrationAdjustment={energy.model?.calibrationAdjustment}
-                      formulaBaseline={energy.model?.formulaBaseline}
-                    />
-                  </div>
+                  <BmrBreakdownTile
+                    bmr={displayedBmr}
+                    maintenance={displayedMaintenance}
+                    isOverride={false}
+                    totalBurnedToday={viewingToday ? totalBurned : 0}
+                    isToday={viewingToday}
+                    calibrationAdjustment={energy.model?.calibrationAdjustment}
+                    formulaBaseline={energy.model?.formulaBaseline}
+                  />
                 ) : (
                   <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
                 )}
