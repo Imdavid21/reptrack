@@ -16,6 +16,7 @@ const surfaces = [
   'src/components/health/CalorieTrackerCompact.tsx',
   'src/components/workout/SetBySetCard.tsx',
   'src/components/workout/ExerciseReview.tsx',
+  'src/components/workout/RestTimer.tsx',
   'src/components/analytics/DateRangeSelector.tsx',
   'src/components/common/LogDateChip.tsx',
   'src/components/dataroom/DataRoomVisuals.tsx',
