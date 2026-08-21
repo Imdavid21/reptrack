@@ -67,8 +67,6 @@ export function BmrBreakdownTile({
     calibrationAdjustment !== 0 &&
     typeof formulaBaseline === 'number' &&
     formulaBaseline > 0;
-  const dailyLiving = Math.round((hasCalibration ? formulaBaseline! : maintenance) - bmr);
-
   return (
     <div className="w-full text-left">
       <div
@@ -107,34 +105,21 @@ export function BmrBreakdownTile({
             <span className="text-sm font-bold tabular-nums text-foreground">{bmr.toLocaleString()} kcal/day</span>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-muted-foreground">Daily living (non-exercise)</span>
+            <span className="text-xs text-muted-foreground">Daily living{hasCalibration ? ' + calibration' : ''}</span>
             <span className="text-sm font-bold tabular-nums text-foreground">
-              {dailyLiving >= 0 ? '+' : '-'}{Math.abs(dailyLiving).toLocaleString()} kcal
+              {maintenance - bmr >= 0 ? '+' : '-'}{Math.abs(Math.round(maintenance - bmr)).toLocaleString()} kcal
             </span>
           </div>
-          {hasCalibration && (
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted-foreground">Personal calibration</span>
-              <span className="text-sm font-bold tabular-nums text-foreground">
-                {calibrationAdjustment! >= 0 ? '+' : '-'}{Math.abs(Math.round(calibrationAdjustment!)).toLocaleString()} kcal
-              </span>
-            </div>
-          )}
           {isToday && (
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <span className="text-xs text-muted-foreground">
-                {totalBurnedToday > 0 ? 'Burned so far today' : 'Burned at rest so far today'}
+                Burned so far
               </span>
               <span className="text-sm font-bold tabular-nums text-foreground">
                 {Math.round(totalBurnedSoFar).toLocaleString()} kcal
               </span>
             </div>
           )}
-
-          <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
-            Exercise burn is counted on top of this.
-          </p>
-
           {children && <div className="border-t border-border pt-3">{children}</div>}
         </div>
       )}
