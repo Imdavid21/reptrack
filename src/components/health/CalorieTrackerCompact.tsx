@@ -607,7 +607,7 @@ export function CalorieTrackerCompact() {
           )}
 
           {!deficitMode && displayedBmr && displayedMaintenance && (
-            <div className="mt-3">
+            <div className="mt-3 pt-3 border-t border-border">
               <BmrBreakdownTile
                 bmr={displayedBmr}
                 maintenance={displayedMaintenance}
