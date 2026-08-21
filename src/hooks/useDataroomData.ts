@@ -57,7 +57,7 @@ export function useDataroomData() {
   });
 
   const analysis = useMemo(() => {
-    if (!metrics.data || !exerciseSets.data || !calorieHistory.data || !meals.data || !workouts.data || !preferences) return null;
+    if (!metrics.data || !exerciseSets.data || !calorieHistory.data || !meals.data) return null;
     const loggedDates = new Set(meals.data.map(day => day.date));
     const energy: EnergyDay[] = calorieHistory.data.map(day => ({
       date: day.date,
@@ -71,14 +71,14 @@ export function useDataroomData() {
       metrics: metrics.data.dataPoints.map(day => ({ date: day.date, bodyweight: day.bodyweight, sleep: day.sleep_hours })),
       meals: meals.data,
       sets: exerciseSets.data.sets.map(set => ({ exercise: set.exercise_name, date: set.workout_date || '', weight: set.actual_weight || 0, reps: set.actual_reps || 0 })),
-      workouts: workouts.data.map(workout => ({ date: workout.date, duration: workout.workout_duration_minutes })),
+      workouts: workouts.workouts.map(workout => ({ date: workout.date, duration: workout.workout_duration_minutes })),
       energy,
-      goal: preferences.weight_goal_type,
-      sleepGoal: preferences.sleep_goal || 8,
-      proteinGoal: preferences.daily_protein_goal || 165,
+      goal: preferences?.weight_goal_type ?? null,
+      sleepGoal: preferences?.sleep_goal || 8,
+      proteinGoal: preferences?.daily_protein_goal || 165,
       endDate,
     });
-  }, [metrics.data, exerciseSets.data, calorieHistory.data, meals.data, workouts.data, preferences, endDate]);
+  }, [metrics.data, exerciseSets.data, calorieHistory.data, meals.data, workouts.workouts, preferences, endDate]);
 
   return {
     analysis,
@@ -90,4 +90,3 @@ export function useDataroomData() {
     error: metrics.error || exerciseSets.error || calorieHistory.error || meals.error || workouts.error || hydration.error,
   };
 }
-
