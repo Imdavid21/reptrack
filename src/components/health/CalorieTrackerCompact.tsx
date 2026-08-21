@@ -479,6 +479,43 @@ export function CalorieTrackerCompact() {
     }
   };
 
+  const calorieGoalEditor = isEditingGoal ? (
+    <div className="mt-3 space-y-3 border-t border-border pt-3 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Daily calorie goal</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-sm tabular-nums text-muted-foreground">{dailyGoal.toLocaleString()} kcal</span>
+          <button
+            type="button"
+            onClick={() => setIsEditingGoal(false)}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Hide
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">New goal</span>
+        <span className="font-bold">{editGoal.toLocaleString()} cal</span>
+      </div>
+      <Slider
+        value={[editGoal]}
+        onValueChange={([v]) => setEditGoal(v)}
+        min={1200}
+        max={4000}
+        step={50}
+        className="w-full"
+      />
+      <button
+        onClick={handleSaveCalorieGoal}
+        className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
+      >
+        <Check className="h-3 w-3" />
+        Save
+      </button>
+    </div>
+  ) : null;
+
   return (
 
 
@@ -511,6 +548,18 @@ export function CalorieTrackerCompact() {
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
+              <button
+                type="button"
+                onClick={() => setIsEditingGoal(open => !open)}
+                aria-label={isEditingGoal ? 'Close calorie goal editor' : 'Edit calorie goal'}
+                title={isEditingGoal ? 'Close calorie goal editor' : 'Edit calorie goal'}
+                className={cn(
+                  'rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                  isEditingGoal && 'bg-muted text-foreground'
+                )}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
             </div>
 
               <Utensils className="h-4 w-4 text-muted-foreground/70" />
@@ -553,6 +602,7 @@ export function CalorieTrackerCompact() {
                     <span>Target -{deficitTarget} kcal</span>
                   </div>
                 </div>
+                {calorieGoalEditor}
                 <div className="grid grid-cols-2 divide-x divide-border">
                   <div className="py-3 pr-3"><h3 className="text-xs text-muted-foreground">Food in</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                   <div className="py-3 pl-3"><h3 className="text-xs text-muted-foreground">Activity out</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
@@ -594,6 +644,8 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
+          {!deficitMode && calorieGoalEditor}
+
           {!deficitMode && displayedBmr && displayedMaintenance && (
             <div className="mt-3 pt-3 border-t border-border">
               <BmrBreakdownTile
@@ -609,45 +661,6 @@ export function CalorieTrackerCompact() {
               </BmrBreakdownTile>
             </div>
           )}
-
-          <div className="mt-3 border-t border-border pt-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Daily calorie goal</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm tabular-nums text-muted-foreground">{dailyGoal.toLocaleString()} kcal</span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingGoal(!isEditingGoal)}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {isEditingGoal ? 'Hide' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            {isEditingGoal && (
-              <div className="mt-3 space-y-3 animate-fade-in">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">New goal</span>
-                  <span className="font-bold">{editGoal.toLocaleString()} cal</span>
-                </div>
-                <Slider
-                  value={[editGoal]}
-                  onValueChange={([v]) => setEditGoal(v)}
-                  min={1200}
-                  max={4000}
-                  step={50}
-                  className="w-full"
-                />
-                <button
-                  onClick={handleSaveCalorieGoal}
-                  className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
-                >
-                  <Check className="h-3 w-3" />
-                  Save
-                </button>
-              </div>
-            )}
-          </div>
 
           <div className="mt-3 border-t border-border pt-3">
             <h3 className="text-sm font-semibold">Nutrition</h3>
