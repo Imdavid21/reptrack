@@ -81,3 +81,13 @@
 .MuiInputBase-sizeSmall {
   min-height: var(--control-sm);
 }
+
+/* The Home macro matrix carries both current and target values. At phone
+   widths, two columns preserve the x / y read without shrinking type or
+   clipping sodium/potassium values; the original three-column density returns
+   as soon as there is enough room. */
+@media (max-width: 419px) {
+  .surface-standard .grid.grid-cols-3.divide-x.divide-y.divide-border {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
