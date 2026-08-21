@@ -557,35 +557,8 @@ export function CalorieTrackerCompact() {
                 ) : (
                   <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setIsProteinOpen(open => !open)}
-                  className="w-full py-3 text-left transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Protein</h3>
-                    <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
-                  </div>
-                  <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-                    <div className="min-w-0">
-                      <div className="text-2xl font-semibold tracking-tight tabular-nums">
-                        {Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-foreground transition-[width] duration-300"
-                          style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
-                      {proteinTotal >= proteinGoal
-                        ? `+${Math.round(proteinTotal - proteinGoal)}g over`
-                        : `${Math.round(proteinGoal - proteinTotal)}g left`}
-                    </div>
-                  </div>
 
-                </button>
+
               </div>
 
               <CollapsibleTrigger className="pt-2 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
