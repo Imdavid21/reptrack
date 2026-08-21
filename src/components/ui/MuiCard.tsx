@@ -26,21 +26,22 @@ export function MuiCard({
         bgcolor: 'background.paper',
         border: 1,
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: 'var(--radius-card)',
+        boxShadow: 'var(--elevation-card)',
         ...sx,
       }}
       {...props}
     >
       <CardContent sx={{ p: noPadding ? 0 : 2, '&:last-child': { pb: noPadding ? 0 : 2 } }}>
         {(title || action) && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, minHeight: 32 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               {icon && (
                 <Box sx={{ 
-                  p: 1, 
-                  borderRadius: 2, 
-                  bgcolor: 'success.light',
-                  color: 'text.primary',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '10px',
+                  color: 'text.secondary',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -50,7 +51,7 @@ export function MuiCard({
               )}
               <Box>
                 {title && (
-                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                  <Typography variant="h6" sx={{ color: 'text.primary' }}>
                     {title}
                   </Typography>
                 )}

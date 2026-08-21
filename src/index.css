@@ -71,6 +71,17 @@
 
     /* Radius - Modern rounded */
     --radius: 12px;
+    --radius-control: 12px;
+    --radius-card: 16px;
+    --radius-sheet: 24px;
+    --control-sm: 36px;
+    --control-md: 44px;
+    --control-lg: 52px;
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --ease-interface: cubic-bezier(0.2, 0, 0, 1);
+    --elevation-card: 0 1px 2px hsl(0 0% 0% / 0.035);
+    --elevation-overlay: 0 18px 48px hsl(0 0% 0% / 0.16);
 
     /* Heatmap intensity levels - soft warm spectrum */
     --heat-0: 0 0% 93%;
@@ -107,15 +118,19 @@
        The base value is for FILLS (bars, badges with dark text). The -ink value
        is contrast-safe for TEXT/ICONS on cards and soft tints. */
     --energy-ink: 130 40% 36%;
+    --energy-border: 130 32% 72%;
     --water: 200 70% 55%;
     --water-ink: 200 72% 38%;
     --water-soft: 200 64% 90%;
+    --water-border: 200 52% 76%;
     --fuel: 40 80% 62%;
     --fuel-ink: 35 78% 36%;
     --fuel-soft: 40 80% 90%;
+    --fuel-border: 40 58% 72%;
     --recover: 256 52% 62%;
     --recover-ink: 256 46% 50%;
     --recover-soft: 256 56% 92%;
+    --recover-border: 256 38% 78%;
   }
 
   .dark {
@@ -186,15 +201,19 @@
 
     /* Pillar palette - softened for the dark base; ink = bright text-safe */
     --energy-ink: 130 40% 70%;
+    --energy-border: 130 28% 34%;
     --water: 200 70% 62%;
     --water-ink: 200 72% 70%;
     --water-soft: 200 60% 18%;
+    --water-border: 200 40% 34%;
     --fuel: 40 80% 68%;
     --fuel-ink: 40 80% 75%;
     --fuel-soft: 40 70% 18%;
+    --fuel-border: 40 42% 34%;
     --recover: 256 52% 68%;
     --recover-ink: 256 60% 75%;
     --recover-soft: 256 45% 20%;
+    --recover-border: 256 32% 38%;
   }
 }
 
@@ -227,6 +246,30 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "liga" 1, "calt" 1;
     overflow-x: hidden;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   /* iOS safe area support */
@@ -292,6 +335,70 @@
 
   .type-eyebrow {
     @apply text-xs font-bold  tracking-[0.08em] leading-4 text-muted-foreground;
+  }
+
+  .metric-hero {
+    @apply text-4xl font-bold tracking-tight leading-none tabular-nums;
+  }
+
+  .metric-unit {
+    @apply text-sm font-medium leading-5 text-muted-foreground;
+  }
+
+  .metric-supporting {
+    @apply text-sm font-medium leading-5 tabular-nums;
+  }
+
+  .metric-context {
+    @apply text-xs font-normal leading-4 text-muted-foreground;
+  }
+
+  .surface-card {
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-card);
+    background: hsl(var(--card));
+    box-shadow: var(--elevation-card);
+  }
+
+  .interactive-surface {
+    transition: background-color var(--duration-fast) var(--ease-interface),
+      border-color var(--duration-fast) var(--ease-interface),
+      color var(--duration-fast) var(--ease-interface),
+      transform var(--duration-fast) var(--ease-interface);
+  }
+
+  .interactive-surface:hover {
+    background: hsl(var(--accent));
+  }
+
+  .interactive-surface:active {
+    transform: scale(0.985);
+  }
+
+  /* Recharts should read like RepTrack data, not library defaults. */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: hsl(var(--border));
+    stroke-opacity: 0.62;
+  }
+
+  .recharts-cartesian-axis-tick-value {
+    fill: hsl(var(--muted-foreground));
+    font-family: inherit;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .recharts-tooltip-wrapper {
+    outline: none;
+  }
+
+  .recharts-default-tooltip {
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius-control) !important;
+    background: hsl(var(--popover)) !important;
+    color: hsl(var(--popover-foreground)) !important;
+    box-shadow: var(--elevation-overlay) !important;
   }
 
   /* Brutalist button - high contrast, obvious clickable */

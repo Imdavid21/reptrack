@@ -67,21 +67,25 @@ export default {
           foreground: "hsl(var(--energy-foreground))",
           soft: "hsl(var(--energy-soft))",
           ink: "hsl(var(--energy-ink))",
+          border: "hsl(var(--energy-border))",
         },
         water: {
           DEFAULT: "hsl(var(--water))",
           soft: "hsl(var(--water-soft))",
           ink: "hsl(var(--water-ink))",
+          border: "hsl(var(--water-border))",
         },
         fuel: {
           DEFAULT: "hsl(var(--fuel))",
           soft: "hsl(var(--fuel-soft))",
           ink: "hsl(var(--fuel-ink))",
+          border: "hsl(var(--fuel-border))",
         },
         recover: {
           DEFAULT: "hsl(var(--recover))",
           soft: "hsl(var(--recover-soft))",
           ink: "hsl(var(--recover-ink))",
+          border: "hsl(var(--recover-border))",
         },
         heat: {
           0: "hsl(var(--heat-0))",

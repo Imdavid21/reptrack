@@ -40,6 +40,7 @@ export function BottomNav() {
         borderRadius: '0 !important',
         bgcolor: 'background.paper',
         overflow: 'hidden',
+        pb: 'env(safe-area-inset-bottom)',
       }} 
       elevation={0}
     >
@@ -51,12 +52,12 @@ export function BottomNav() {
         }}
         sx={{
           bgcolor: 'background.paper',
-          height: 58,
-          minHeight: 58,
+          height: 60,
+          minHeight: 60,
           '& .MuiBottomNavigationAction-root': {
             minWidth: 48,
             py: 0.5,
-            transform: 'translateY(3px)',
+            minHeight: 56,
             color: 'text.secondary',
             '&.Mui-selected': {
               color: 'hsl(var(--foreground))',
@@ -67,12 +68,12 @@ export function BottomNav() {
             },
           },
           '& .MuiBottomNavigationAction-label': {
-            fontSize: '0.625rem',
+            fontSize: '0.75rem',
             fontFamily: 'inherit',
             letterSpacing: '0.02em',
             mt: 0.25,
             '&.Mui-selected': {
-              fontSize: '0.625rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
             },
           },
@@ -92,7 +93,7 @@ export function BottomNav() {
                     className="nav-dot"
                     sx={{
                       position: 'absolute',
-                      top: -4,
+                      top: -5,
                       width: 4,
                       height: 4,
                       borderRadius: '50%',
@@ -101,7 +102,7 @@ export function BottomNav() {
                       transition: 'opacity 0.15s ease',
                     }}
                   />
-                  <item.icon size={19} />
+                  <item.icon size={20} strokeWidth={selected ? 2.25 : 1.75} />
                 </Box>
               }
             />

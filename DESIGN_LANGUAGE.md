@@ -44,6 +44,64 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 - Use `h4` for card titles, `body2` for explanation, and `caption` for metadata. Do not compensate for unclear hierarchy with more bold text.
 - Interactive labels must meet the body/small-label scale; icon buttons require an accessible label.
 
+## Product signature
+
+RepTrack is recognisable through three recurring patterns:
+
+1. **Metric first:** the changing number is dominant, the unit is quiet, and context sits on the following line.
+2. **Weight × reps:** training performance always uses `weight kg × reps` with tabular numerals and a true multiplication sign.
+3. **Restrained state:** active and completed states combine a semantic accent with a non-colour marker such as a check, label, or progress position.
+
+Use `.metric-hero`, `.metric-unit`, `.metric-supporting`, and `.metric-context` rather than creating local metric typography.
+
+## Layout tokens
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Space scale | 4, 8, 12, 16, 20, 24, 32, 40 px | All gaps, padding, and section rhythm |
+| Control radius | 12 px | Inputs and rectangular controls |
+| Card radius | 16 px | Cards and grouped surfaces |
+| Sheet radius | 24 px | Dialogs and bottom sheets |
+| Small control | 36 px | Compact desktop-only controls |
+| Standard control | 44 px | Default inputs, buttons, and icon targets |
+| Large control | 52 px | Primary workout and logging actions |
+| Icon scale | 16, 20, 24 px | Inline, standard, and prominent icons |
+
+Cards use a one-pixel semantic border and near-flat elevation. Sheets use the stronger overlay elevation. Do not introduce isolated radii, shadows, or arbitrary opacity values.
+
+## Semantic colour anatomy
+
+Each health domain has four roles: `foreground`, `surface`, `border`, and `strong`. Use the role matching the component anatomy rather than applying opacity to the base colour.
+
+- Training: `energy`, `energy-ink`, `energy-soft`, `energy-border`
+- Hydration: `water`, `water-ink`, `water-soft`, `water-border`
+- Nutrition: `fuel`, `fuel-ink`, `fuel-soft`, `fuel-border`
+- Recovery: `recover`, `recover-ink`, `recover-soft`, `recover-border`
+
+Domain colour identifies subject matter. Completion, generic success, PRs, and improvement must also include text or iconography and must not be represented as interchangeable green states.
+
+## Interaction states
+
+- **Default:** neutral surface and readable border.
+- **Hover:** one surface step stronger; never colour alone.
+- **Pressed:** `0.98` scale for controls and `0.985` for interactive surfaces.
+- **Selected/active:** semantic border or foreground plus a visible marker.
+- **Completed:** checkmark or completion label plus restrained training colour where applicable.
+- **Disabled:** muted surface and text; no press transform.
+- **Focus:** two-pixel visible ring with three-pixel clearance.
+- **Loading:** preserve control dimensions and label the action state.
+- **Error:** destructive foreground/surface plus actionable text.
+
+Transitions are 120–180 ms with an ease-out physical response. Respect `prefers-reduced-motion` globally.
+
+## Density
+
+- Dashboard: spacious, 16–24 px internal padding.
+- Workout logging: compact, 8–16 px rhythm with 44–52 px controls.
+- Exercise history: dense rows with 12–16 px padding.
+- Settings: standard 16 px rhythm.
+- Charts and analysis: 20–24 px breathing room around the primary data area.
+
 ## Review gate
 
 Before shipping a UI change, check:

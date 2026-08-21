@@ -23,7 +23,7 @@ export function MainLayout({ children, showBack, backTo, hideNav = false }: Main
   };
 
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : '58px' }}>
+    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : 'calc(60px + env(safe-area-inset-bottom))' }}>
       {showBack && (
         <Box
           component="header"
@@ -37,7 +37,8 @@ export function MainLayout({ children, showBack, backTo, hideNav = false }: Main
         >
           <button
             onClick={handleBack}
-            className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+            className="flex h-11 w-11 -ml-3 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
             <ChevronLeft size={20} />
           </button>

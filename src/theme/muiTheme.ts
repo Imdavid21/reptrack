@@ -80,7 +80,7 @@ const baseTheme: ThemeOptions = {
       lineHeight: 1.35,
     },
     overline: {
-      fontSize: '0.6875rem',
+      fontSize: '0.75rem',
       textTransform: 'none' as const,
       lineHeight: 1.2,
       fontWeight: 700,
@@ -92,18 +92,25 @@ const baseTheme: ThemeOptions = {
   },
   components: {
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',
           fontWeight: 600,
           fontSize: '0.875rem',
           lineHeight: 1.25,
-          borderRadius: 10,
-          padding: '10px 20px',
+          borderRadius: 12,
+          minHeight: 44,
+          padding: '10px 16px',
           boxShadow: 'none',
+          transition: 'background-color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1), color 120ms cubic-bezier(0.2, 0, 0, 1), transform 120ms cubic-bezier(0.2, 0, 0, 1)',
           '&:hover': {
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            boxShadow: 'none',
           },
+          '&:active': { transform: 'scale(0.98)' },
+          '&.Mui-disabled': { transform: 'none' },
         },
       },
     },
@@ -111,7 +118,7 @@ const baseTheme: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 16,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.035)',
         },
       },
     },
@@ -122,14 +129,30 @@ const baseTheme: ThemeOptions = {
         },
       },
     },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          width: 44,
+          height: 44,
+          transition: 'background-color 120ms cubic-bezier(0.2, 0, 0, 1), color 120ms cubic-bezier(0.2, 0, 0, 1), transform 120ms cubic-bezier(0.2, 0, 0, 1)',
+          '&:active': { transform: 'scale(0.96)' },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: { minHeight: 44 },
+        input: { fontVariantNumeric: 'tabular-nums' },
+      },
+    },
     MuiTab: {
       styleOverrides: {
         root: {
           textTransform: 'none',
           fontWeight: 500,
           borderRadius: 10,
-          minHeight: 36,
-          fontSize: '0.75rem',
+          minHeight: 44,
+          fontSize: '0.875rem',
         },
       },
     },
@@ -144,7 +167,8 @@ const baseTheme: ThemeOptions = {
       styleOverrides: {
         root: {
           fontWeight: 500,
-          borderRadius: 8,
+          borderRadius: 999,
+          minHeight: 32,
         },
       },
     },
