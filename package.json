@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run check:design && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "check:typography": "node scripts/check-typography.mjs",
