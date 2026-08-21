@@ -69,27 +69,22 @@ export function BmrBreakdownTile({
     formulaBaseline > 0;
   const dailyLiving = Math.round((hasCalibration ? formulaBaseline! : maintenance) - bmr);
 
-  // A plain div, not a <button>: this tile lives inside CalorieTrackerCompact's
-  // CollapsibleTrigger (itself a button, toggling the whole card's expanded
-  // state) - nesting a real button inside it is invalid HTML and lets clicks
-  // bubble up to toggle the outer card too. stopPropagation below plus a
-  // manual button role/keyboard handler gets the same tappable behavior
-  // without nesting interactive elements.
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded(x => !x);
-        }
-      }}
-      className="w-full py-3 text-left transition-colors hover:bg-muted/30 cursor-pointer"
-    >
-      <div className="flex items-center justify-between gap-3">
+    <div className="w-full text-left">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded(x => !x);
+          }
+        }}
+        className="flex cursor-pointer items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/30"
+      >
         <div>
           <div className="text-xs text-muted-foreground tracking-wider">Maintenance (before exercise)</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
@@ -140,7 +135,7 @@ export function BmrBreakdownTile({
             Exercise burn is counted on top of this.
           </p>
 
-          {children}
+          {children && <div className="border-t border-border pt-3">{children}</div>}
         </div>
       )}
 

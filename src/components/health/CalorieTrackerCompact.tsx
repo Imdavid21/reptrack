@@ -108,6 +108,7 @@ export function CalorieTrackerCompact() {
   const [analysisProgressText, setAnalysisProgressText] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isProteinOpen, setIsProteinOpen] = useState(false);
+  const [isOtherMacrosOpen, setIsOtherMacrosOpen] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [editGoal, setEditGoal] = useState(2000);
@@ -449,6 +450,24 @@ export function CalorieTrackerCompact() {
   const hasPersistedWorkoutBurn = burns.some(b => b.source === 'workout');
   const showCalculatedWorkout = !hasPersistedWorkoutBurn && !!todayWorkout && todayWorkout.calculatedCalories > 0;
 
+  const dailySummary = energy.model ? (
+    <div className="space-y-2 text-sm">
+      <h3 className="text-sm font-semibold">Daily summary</h3>
+      <div className="flex justify-between"><span className="text-muted-foreground">Normal day</span><span className="tabular-nums">~{energy.breakdown.normalDay.toLocaleString()} kcal</span></div>
+      {energy.breakdown.workout > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Workout</span><span className="tabular-nums">~{energy.breakdown.workout} kcal</span></div>}
+      {energy.breakdown.walking > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Walking</span><span className="tabular-nums">~{energy.breakdown.walking} kcal</span></div>}
+      {energy.breakdown.running > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Running</span><span className="tabular-nums">~{energy.breakdown.running} kcal</span></div>}
+      {energy.breakdown.cycling > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cycling</span><span className="tabular-nums">~{energy.breakdown.cycling} kcal</span></div>}
+      {energy.breakdown.boxing + energy.breakdown.other > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Other activity</span><span className="tabular-nums">~{energy.breakdown.boxing + energy.breakdown.other} kcal</span></div>}
+      <div className="flex justify-between border-t border-border pt-2 font-semibold"><span>Estimated expenditure</span><span className="tabular-nums">~{energy.breakdown.expenditure.toLocaleString()} kcal</span></div>
+      <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
+      <details className="pt-1 text-xs text-muted-foreground">
+        <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
+        <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
+      </details>
+    </div>
+  ) : null;
+
   const handleSaveCalorieGoal = async () => {
     try {
       await setGoal('daily_calorie_goal', editGoal, dailyGoal);
@@ -547,7 +566,9 @@ export function CalorieTrackerCompact() {
                     isToday={viewingToday}
                     calibrationAdjustment={energy.model?.calibrationAdjustment}
                     formulaBaseline={energy.model?.formulaBaseline}
-                  />
+                  >
+                    {dailySummary}
+                  </BmrBreakdownTile>
                 ) : (
                   <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
                 )}
@@ -583,7 +604,9 @@ export function CalorieTrackerCompact() {
                 isToday={viewingToday}
                 calibrationAdjustment={energy.model?.calibrationAdjustment}
                 formulaBaseline={energy.model?.formulaBaseline}
-              />
+              >
+                {dailySummary}
+              </BmrBreakdownTile>
             </div>
           )}
 
@@ -626,24 +649,6 @@ export function CalorieTrackerCompact() {
             )}
           </div>
 
-          {energy.model && (
-            <div className="mt-3 border-t border-border pt-3 space-y-2 text-sm">
-              <h3 className="text-sm font-semibold">Daily summary</h3>
-              <div className="flex justify-between"><span className="text-muted-foreground">Normal day</span><span className="tabular-nums">~{energy.breakdown.normalDay.toLocaleString()} kcal</span></div>
-              {energy.breakdown.workout > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Workout</span><span className="tabular-nums">~{energy.breakdown.workout} kcal</span></div>}
-              {energy.breakdown.walking > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Walking</span><span className="tabular-nums">~{energy.breakdown.walking} kcal</span></div>}
-              {energy.breakdown.running > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Running</span><span className="tabular-nums">~{energy.breakdown.running} kcal</span></div>}
-              {energy.breakdown.cycling > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cycling</span><span className="tabular-nums">~{energy.breakdown.cycling} kcal</span></div>}
-              {energy.breakdown.boxing + energy.breakdown.other > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Other activity</span><span className="tabular-nums">~{energy.breakdown.boxing + energy.breakdown.other} kcal</span></div>}
-              <div className="flex justify-between border-t border-border pt-2 font-semibold"><span>Estimated expenditure</span><span className="tabular-nums">~{energy.breakdown.expenditure.toLocaleString()} kcal</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
-              <details className="pt-1 text-xs text-muted-foreground">
-                <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
-                <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
-              </details>
-            </div>
-          )}
-
           <div className="mt-3 border-t border-border pt-3">
             <h3 className="text-sm font-semibold">Nutrition</h3>
             <button
@@ -674,6 +679,29 @@ export function CalorieTrackerCompact() {
                 </div>
               </div>
             </button>
+            <Collapsible open={isOtherMacrosOpen} onOpenChange={setIsOtherMacrosOpen}>
+              <CollapsibleTrigger className="mt-3 flex w-full items-center justify-between border-t border-border py-3 text-left">
+                <span className="text-sm font-medium">Other macros</span>
+                {isOtherMacrosOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-accordion-down overflow-hidden">
+                <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border">
+                  {([
+                    { key: 'carbs', label: 'Carbs', unit: 'g' },
+                    { key: 'fat', label: 'Fat', unit: 'g' },
+                    { key: 'fiber', label: 'Fiber', unit: 'g' },
+                    { key: 'sugar', label: 'Sugar', unit: 'g' },
+                    { key: 'sodium', label: 'Sodium', unit: 'mg' },
+                    { key: 'potassium', label: 'Potassium', unit: 'mg' },
+                  ] as const).map(m => (
+                    <div key={m.key} className="min-w-0 p-3 text-center">
+                      <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
+                      <div className="text-xs text-muted-foreground">{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
 
@@ -1154,24 +1182,6 @@ export function CalorieTrackerCompact() {
               )}
             </div>
 
-            <div>
-              <Label className="text-xs text-muted-foreground">Other macros</Label>
-              <div className="grid min-w-0 grid-cols-3 divide-x divide-y divide-border border border-border rounded-xl overflow-hidden mt-1.5">
-                {([
-                  { key: 'carbs', label: 'Carbs', unit: 'g' },
-                  { key: 'fat', label: 'Fat', unit: 'g' },
-                  { key: 'fiber', label: 'Fiber', unit: 'g' },
-                  { key: 'sugar', label: 'Sugar', unit: 'g' },
-                  { key: 'sodium', label: 'Sodium', unit: 'mg' },
-                  { key: 'potassium', label: 'Potassium', unit: 'mg' },
-                ] as const).map(m => (
-                  <div key={m.key} className="min-w-0 p-3 text-center">
-                    <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
-                    <div className="text-xs text-muted-foreground">{m.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
       </section>}
       <AlertDialog open={!!mealPendingDelete} onOpenChange={open => { if (!open) setMealPendingDelete(null); }}>
