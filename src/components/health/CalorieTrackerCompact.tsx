@@ -490,7 +490,7 @@ export function CalorieTrackerCompact() {
               <h2 className="text-sm font-semibold tracking-tight">
                 {viewingToday
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
-                  : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'Deficit' : 'Calories'}`}
+                  : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
