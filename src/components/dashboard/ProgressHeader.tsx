@@ -157,7 +157,7 @@ export function ProgressHeader() {
         {/* Main progress */}
         <div className="space-y-3">
            <div className="flex items-center justify-between">
-             <span className="text-xs text-muted-foreground  tracking-wider">52-WEEK PROGRAM</span>
+             <span className="type-caption">52-week program</span>
              <span className="text-xs tabular-nums">
                {workouts.length}/{totalSessions} SESSIONS
              </span>
@@ -235,7 +235,7 @@ export function ProgressHeader() {
         <DialogContent className="border-border bg-background max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              ADD SLEEP{dateSuffix.toUpperCase()}
+              Add sleep{dateSuffix}
             </DialogTitle>
           </DialogHeader>
 
@@ -325,7 +325,7 @@ export function ProgressHeader() {
         <DialogContent className="border-border bg-background max-w-xs">
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
-              ADD WEIGHT{dateSuffix.toUpperCase()}
+              Add weight{dateSuffix}
             </DialogTitle>
           </DialogHeader>
 

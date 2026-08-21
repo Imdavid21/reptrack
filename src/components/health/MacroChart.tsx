@@ -216,14 +216,14 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
               dataKey="shortDate"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               interval="preserveStartEnd"
             />
             <YAxis
               domain={[0, Math.ceil(maxValue * 1.1)]}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               tickFormatter={(v) => `${v}${cfg.unit}`}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />

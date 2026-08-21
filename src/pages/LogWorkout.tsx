@@ -668,15 +668,15 @@ export default function LogWorkout() {
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
+                className="flex min-h-11 items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors self-start"
               >
                 <ChevronLeft size={16} />
-                Select Split
+                Select split
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowTimeDialog(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex min-h-11 items-center gap-1.5 px-3 rounded-full border border-border text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                   aria-label="Set session start time and duration"
                 >
                   <Clock size={13} />
@@ -710,7 +710,7 @@ export default function LogWorkout() {
                     <Dumbbell className="h-5 w-5" />
                   </span>
                   <span className="flex-1">
-                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">Resume Session</span>
+                    <span className="block type-eyebrow text-primary-foreground/70">Resume workout</span>
                     <span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span>
                     <span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span>
                   </span>
@@ -756,7 +756,7 @@ export default function LogWorkout() {
           {step === 'review' && (
             <ExerciseReview
               exercises={exercises}
-              dayName={selectedDay === 'custom' ? 'Freestyle Workout' : (dayData?.name || 'Workout')}
+              dayName={selectedDay === 'custom' ? 'Freestyle workout' : (dayData?.name || 'Workout')}
               dayFocus={selectedDay === 'custom' ? 'Build your own session' : (dayData?.focus || '')}
               dayType={dayType}
               onChange={(updated) => {
@@ -798,10 +798,10 @@ export default function LogWorkout() {
                 <div className="flex items-center gap-3">
                   <WorkoutTimer startTime={workoutStartTime} />
                   <div>
-                    <h3 className="text-sm font-semibold leading-tight">
+                    <h3 className="type-component-title">
                       {selectedDay === 'custom' ? 'Freestyle' : (dayData?.name || 'Workout')}
                     </h3>
-                    <p className="text-xs text-muted-foreground">{selectedDay === 'custom' ? 'Custom Session' : (dayData?.focus || '')}</p>
+                    <p className="type-caption">{selectedDay === 'custom' ? 'Custom session' : (dayData?.focus || '')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -813,7 +813,7 @@ export default function LogWorkout() {
                   </div>
                   <button
                     onClick={() => setShowTimeDialog(true)}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                    className="h-11 w-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     title="Set session time"
                     aria-label="Set session start time and duration"
                   >
@@ -821,7 +821,7 @@ export default function LogWorkout() {
                   </button>
                   <button
                     onClick={handleEditExercises}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                    className="h-11 w-11 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     title="Edit exercises"
                   >
                     <Pencil size={14} />

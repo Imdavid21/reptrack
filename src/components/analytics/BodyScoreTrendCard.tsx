@@ -73,8 +73,8 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
               </linearGradient>
             </defs>
             <ReferenceLine y={70} stroke={mutedColor} strokeDasharray="3 3" strokeOpacity={0.5} />
-            <XAxis dataKey="label" tick={{ fill: mutedColor, fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={28} />
-            <YAxis domain={[0, 100]} ticks={[0, 50, 100]} tick={{ fill: mutedColor, fontSize: 9 }} axisLine={false} tickLine={false} width={36} />
+            <XAxis dataKey="label" tick={{ fill: mutedColor, fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={28} />
+            <YAxis domain={[0, 100]} ticks={[0, 50, 100]} tick={{ fill: mutedColor, fontSize: 12 }} axisLine={false} tickLine={false} width={36} />
             <Tooltip
               cursor={{ stroke: mutedColor, strokeWidth: 1 }}
               contentStyle={{
@@ -85,7 +85,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
                 fontSize: 12,
                 padding: '6px 10px',
               }}
-              labelStyle={{ color: mutedColor, fontSize: 10 }}
+              labelStyle={{ color: mutedColor, fontSize: 12 }}
               formatter={(v: number | null) => [v == null ? '-' : v, 'Score']}
             />
             <Area

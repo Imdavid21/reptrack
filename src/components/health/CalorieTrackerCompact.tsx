@@ -543,7 +543,7 @@ export function CalorieTrackerCompact() {
         <div className="rounded-[20px] border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold tracking-tight">
+              <h2 className="type-component-title">
                 {viewingToday
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
@@ -604,8 +604,8 @@ export function CalorieTrackerCompact() {
                 </div>
                 {calorieGoalEditor}
                 <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="py-3 pr-3"><h3 className="text-xs text-muted-foreground">Food in</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
-                  <div className="py-3 pl-3"><h3 className="text-xs text-muted-foreground">Activity out</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
+                  <div className="py-3 pr-3"><div className="type-caption">Food in</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalCalories.toLocaleString()} <span className="metric-unit">kcal</span></div></div>
+                  <div className="py-3 pl-3"><div className="type-caption">Activity out</div><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="metric-unit">kcal</span></div></div>
                 </div>
                 {displayedBmr && displayedMaintenance ? (
                   <BmrBreakdownTile
@@ -663,20 +663,20 @@ export function CalorieTrackerCompact() {
           )}
 
           <div className="mt-3 border-t border-border pt-3">
-            <h3 className="text-sm font-semibold">Nutrition</h3>
+            <h3 className="type-component-title">Nutrition</h3>
             <button
               type="button"
               onClick={() => setIsProteinOpen(open => !open)}
               className="mt-2 w-full rounded-xl text-left transition-colors hover:bg-muted/30"
             >
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Protein</h4>
+                <h4 className="type-component-title">Protein</h4>
                 <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
               </div>
               <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
                 <div className="min-w-0">
                   <div className="text-2xl font-semibold tracking-tight tabular-nums">
-                    {Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span>
+                    {Math.round(proteinTotal)} <span className="metric-unit">g</span> <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal} g</span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div
@@ -687,8 +687,8 @@ export function CalorieTrackerCompact() {
                 </div>
                 <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
                   {proteinTotal >= proteinGoal
-                    ? `+${Math.round(proteinTotal - proteinGoal)}g over`
-                    : `${Math.round(proteinGoal - proteinTotal)}g left`}
+                    ? `+${Math.round(proteinTotal - proteinGoal)} g over`
+                    : `${Math.round(proteinGoal - proteinTotal)} g left`}
                 </div>
               </div>
             </button>
@@ -708,8 +708,8 @@ export function CalorieTrackerCompact() {
                     { key: 'potassium', label: 'Potassium', unit: 'mg' },
                   ] as const).map(m => (
                     <div key={m.key} className="min-w-0 p-3 text-center">
-                      <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}{m.unit}</div>
-                      <div className="text-xs text-muted-foreground">{m.label}</div>
+                      <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
+                      <div className="type-caption">{m.label}</div>
                     </div>
                   ))}
                 </div>
@@ -732,7 +732,7 @@ export function CalorieTrackerCompact() {
 
           {!deficitMode && meals.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h3 className="text-xs text-muted-foreground">Recent</h3>
+              <div className="type-caption">Recent</div>
               {[...meals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3).map((meal) => (
                 <div key={meal.id} className="flex items-center justify-between text-sm gap-2 group">
                   <span className="tabular-nums text-muted-foreground truncate">{mealTime(meal.created_at)}</span>
@@ -781,7 +781,7 @@ export function CalorieTrackerCompact() {
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
             <div className="mt-4 pt-4 border-t border-border space-y-4 overflow-hidden">
               <div className="space-y-3 overflow-hidden">
-                <h3 className="text-xs font-semibold text-muted-foreground">Food log</h3>
+                <h3 className="type-component-title">Food log</h3>
                 {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
                   const Icon = MEAL_ICONS[type];
                   const mealsOfType = mealsByType[type];
@@ -827,7 +827,7 @@ export function CalorieTrackerCompact() {
 
               {(burns.length > 0 || showCalculatedWorkout) && (
                 <div className="space-y-1 overflow-hidden border-t border-border pt-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground">Activity</h3>
+                  <h3 className="type-component-title">Activity</h3>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2 min-w-0">
                       <Flame className="h-3 w-3 shrink-0" />
@@ -863,7 +863,7 @@ export function CalorieTrackerCompact() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-border bg-background max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm font-medium">ADD MEAL{mealDateSuffix.toUpperCase()}</DialogTitle>
+            <DialogTitle>Add meal{mealDateSuffix}</DialogTitle>
           </DialogHeader>
 
           {/* Meal type selector - always visible */}
@@ -1095,7 +1095,7 @@ export function CalorieTrackerCompact() {
                         <div className="text-sm font-bold tabular-nums">
                           {Math.round(pendingMacros[m.key])}{m.unit}
                         </div>
-                        <div className="text-xs text-muted-foreground tracking-wide">{m.label}</div>
+                        <div className="type-caption">{m.label}</div>
                       </div>
                     ))}
                   </div>

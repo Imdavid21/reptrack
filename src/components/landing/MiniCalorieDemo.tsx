@@ -31,7 +31,7 @@ export default function MiniCalorieDemo() {
     <div className="bg-card border border-border rounded-2xl p-5 max-w-xs mx-auto h-full flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <Camera className="w-4 h-4 text-muted-foreground" />
-        <span className="text-xs font-semibold text-muted-foreground  tracking-wide">Snap to Log</span>
+        <span className="type-caption font-semibold">Snap to log</span>
       </div>
 
       <div className="relative h-28 bg-secondary rounded-xl flex items-center justify-center overflow-hidden mb-3">

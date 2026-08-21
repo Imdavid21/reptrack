@@ -82,7 +82,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
               <div className="w-10 shrink-0 text-right text-xs font-bold tabular-nums">
                 {m.status === 'untrained' ? '-' : m.weeklySets}
               </div>
-              <div className={`w-24 shrink-0 text-right text-xs font-semibold  tracking-wide ${meta.text}`}>
+              <div className={`w-24 shrink-0 text-right text-xs font-semibold ${meta.text}`}>
                 {meta.label}
               </div>
             </div>

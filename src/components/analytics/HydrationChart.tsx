@@ -134,7 +134,7 @@ export function HydrationChart() {
           label={`${dailyGoal}L/day`}
           sx={{
             height: 24,
-            fontSize: '0.7rem',
+            fontSize: '0.75rem',
             fontWeight: 600,
             bgcolor: 'action.hover',
             '& .MuiChip-icon': { color: 'inherit' },
@@ -147,7 +147,7 @@ export function HydrationChart() {
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="displayDate"
-              tick={{ fill: mutedColor, fontSize: 9 }}
+              tick={{ fill: mutedColor, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
@@ -155,7 +155,7 @@ export function HydrationChart() {
             <YAxis
               domain={[0, yMax]}
               ticks={yTicks}
-              tick={{ fill: mutedColor, fontSize: 10 }}
+              tick={{ fill: mutedColor, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />

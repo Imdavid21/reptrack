@@ -222,7 +222,7 @@ export default function Auth() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-2xl font-bold tracking-widest animate-pulse">
+        <div className="text-2xl font-bold tracking-tight animate-pulse">
           REPTRACK<span className="text-muted-foreground"> </span>FITNESS
         </div>
       </div>
@@ -260,7 +260,7 @@ export default function Auth() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center space-y-2">
-          <Link to="/" className="text-2xl font-bold tracking-widest inline-block hover:opacity-80 transition-opacity">
+          <Link to="/" className="text-2xl font-bold tracking-tight inline-block hover:opacity-80 transition-opacity">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </Link>
           <p className="type-caption">
@@ -290,7 +290,7 @@ export default function Auth() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading}
-                  className="w-full h-14 rounded-2xl border-2 border-border bg-background text-foreground hover:bg-accent/50 flex items-center justify-center gap-3 text-sm font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full h-14 rounded-2xl border border-border bg-background text-foreground hover:bg-accent flex items-center justify-center gap-3 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {googleLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -328,7 +328,7 @@ export default function Auth() {
                     }
                   }}
                   disabled={appleLoading}
-                  className="w-full h-14 rounded-2xl border-2 border-border bg-background text-foreground hover:bg-accent/50 flex items-center justify-center gap-3 text-sm font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full h-14 rounded-2xl border border-border bg-background text-foreground hover:bg-accent flex items-center justify-center gap-3 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {appleLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -374,7 +374,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold tracking-wide hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? 'Checking...' : 'Continue with Email'}
@@ -450,7 +450,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold tracking-wide hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading
@@ -492,7 +492,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold tracking-wide hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? 'Sending...' : 'Send Reset Link'}
@@ -557,7 +557,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold tracking-wide hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-2xl bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? 'Updating...' : 'Update Password'}

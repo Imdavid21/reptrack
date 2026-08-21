@@ -327,7 +327,7 @@ export function VolumeSankeyChart() {
                           variant="caption"
                           sx={{
                             flex: 1,
-                            fontSize: '0.65rem',
+                            fontSize: '0.75rem',
                             color: 'text.primary',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -339,7 +339,7 @@ export function VolumeSankeyChart() {
                         <Typography
                           variant="caption"
                           sx={{
-                            fontSize: '0.6rem',
+                            fontSize: '0.75rem',
                             color: 'text.secondary',
                             flexShrink: 0,
                           }}
@@ -352,7 +352,7 @@ export function VolumeSankeyChart() {
                       <Typography
                         variant="caption"
                         sx={{
-                          fontSize: '0.55rem',
+                          fontSize: '0.75rem',
                           color: 'text.disabled',
                           textAlign: 'center',
                           pt: 0.5,
@@ -372,7 +372,7 @@ export function VolumeSankeyChart() {
               variant="caption"
               sx={{
                 color: 'text.disabled',
-                fontSize: '0.6rem',
+                fontSize: '0.75rem',
                 display: 'block',
               }}
             >

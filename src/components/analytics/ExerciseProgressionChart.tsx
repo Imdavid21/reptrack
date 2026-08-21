@@ -98,12 +98,12 @@ function ExerciseCard({ progression }: { progression: ExerciseProgression }) {
               </defs>
               <XAxis
                 dataKey="weekLabel"
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
                 domain={['dataMin - 5', 'dataMax + 5']}
@@ -223,7 +223,7 @@ export function ExerciseProgressionChart() {
         <Chip
           label={progressions.length}
           size="small"
-          sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
+          sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600 }}
         />
       </Box>
 
@@ -245,7 +245,7 @@ export function ExerciseProgressionChart() {
             variant={activeFilter === 'all' ? 'filled' : 'outlined'}
             sx={{
               height: 24,
-              fontSize: '0.65rem',
+              fontSize: '0.75rem',
               fontWeight: activeFilter === 'all' ? 600 : 400,
               flexShrink: 0,
               opacity: activeFilter === 'all' ? 1 : 0.6,
@@ -262,7 +262,7 @@ export function ExerciseProgressionChart() {
               variant={activeFilter === group ? 'filled' : 'outlined'}
               sx={{
                 height: 24,
-                fontSize: '0.65rem',
+                fontSize: '0.75rem',
                 fontWeight: activeFilter === group ? 600 : 400,
                 flexShrink: 0,
                 opacity: activeFilter === group ? 1 : 0.6,

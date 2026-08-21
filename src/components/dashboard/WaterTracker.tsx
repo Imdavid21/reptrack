@@ -97,7 +97,7 @@ export function WaterTracker() {
     <div className="card-brutalist h-full flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="section-header mb-0">{viewingToday ? "Today's water" : `${format(logDate, 'MMM d').toUpperCase()} WATER`}</h2>
+          <h2 className="section-header mb-0">{viewingToday ? "Today's water" : `${format(logDate, 'MMM d')} water`}</h2>
           <button
             onClick={() => setIsEditingGoal(!isEditingGoal)}
             className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
@@ -153,7 +153,7 @@ export function WaterTracker() {
 
       {waterLogs.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h3 className="text-xs text-muted-foreground">Recent</h3>
+          <div className="type-caption">Recent</div>
           {waterLogs.slice(0, 3).map((log) => (
             <div key={log.id} className="flex justify-between text-sm">
               <span className="tabular-nums text-muted-foreground">{format(new Date(log.timestamp), 'HH:mm')}</span>
@@ -194,7 +194,7 @@ export function WaterTracker() {
           )}
         >
           <Plus className="h-4 w-4" />
-          ADD {selectedSize.label.toUpperCase()}
+          Add {selectedSize.label}
         </button>
       </div>
     </div>

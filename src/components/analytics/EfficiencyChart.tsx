@@ -159,9 +159,9 @@ export function EfficiencyChart() {
         <Box sx={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: mutedColor }} axisLine={false} tickLine={false} hide />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} hide />
               <Tooltip content={renderTooltip} />
               {isVolume ? (
                 <>

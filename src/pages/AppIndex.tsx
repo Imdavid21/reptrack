@@ -25,7 +25,7 @@ export default function AppIndex() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-2xl font-bold tracking-widest animate-pulse">
+          <div className="text-2xl font-bold tracking-tight animate-pulse">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </div>
         </div>
@@ -38,7 +38,7 @@ export default function AppIndex() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="text-2xl font-bold tracking-widest animate-pulse">
+          <div className="text-2xl font-bold tracking-tight animate-pulse">
             REPTRACK<span className="text-muted-foreground"> </span>FITNESS
           </div>
         </div>

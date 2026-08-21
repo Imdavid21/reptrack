@@ -86,7 +86,7 @@ export function BmrBreakdownTile({
         className="flex cursor-pointer items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/30"
       >
         <div>
-          <div className="text-xs text-muted-foreground tracking-wider">Maintenance (before exercise)</div>
+          <div className="type-caption">Maintenance before exercise</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
             {maintenance.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal/day</span>
           </div>

@@ -244,7 +244,7 @@ function ExerciseItemCard({
 
         {/* Category badge */}
         <span className={cn(
-          'text-xs font-semibold  tracking-wider px-1.5 py-0.5 rounded shrink-0',
+          'text-xs font-semibold px-1.5 py-0.5 rounded shrink-0',
           exercise.category === 'primary'
             ? 'bg-primary/10 text-primary'
             : 'bg-muted text-muted-foreground'
@@ -282,7 +282,7 @@ function ExerciseItemCard({
               <div className="flex items-center gap-3">
                 {/* Sets */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs text-muted-foreground  tracking-wide">Sets</span>
+                  <span className="type-caption">Sets</span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleSetsChange(-1)}
@@ -304,7 +304,7 @@ function ExerciseItemCard({
 
                 {/* Reps or Time */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs text-muted-foreground  tracking-wide">
+                  <span className="type-caption">
                     {isTimed ? 'Secs' : 'Reps'}
                   </span>
                   <input
@@ -332,7 +332,7 @@ function ExerciseItemCard({
                   <>
                     <div className="w-px h-8 bg-border/50" />
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-xs text-muted-foreground  tracking-wide">
+                      <span className="type-caption">
                         {isWeightedBW ? '+Weight' : 'Weight'}
                       </span>
                       <input

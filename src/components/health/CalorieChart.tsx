@@ -143,14 +143,14 @@ export function CalorieChart() {
               dataKey="shortDate"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               interval="preserveStartEnd"
             />
             <YAxis
               domain={yDomain}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               tickFormatter={(v) => {
                 const abs = Math.abs(v);
                 return abs >= 1000 ? `${(abs / 1000).toFixed(1)}k` : abs.toString();

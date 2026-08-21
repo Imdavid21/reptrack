@@ -307,7 +307,7 @@ export default function WorkoutDetail() {
               {/* Sets table */}
               <div className="space-y-1">
                 {/* Header */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 text-xs text-muted-foreground  tracking-wider">
+                <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-1.5 px-1 type-caption">
                   <span className="text-center">#</span>
                   <span className="text-center">Weight</span>
                   <span className="text-center">Reps</span>

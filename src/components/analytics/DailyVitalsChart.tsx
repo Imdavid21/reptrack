@@ -192,7 +192,7 @@ export function DailyVitalsChart() {
             '& .MuiToggleButton-root': {
               px: 1.5,
               py: 0.5,
-              fontSize: '0.65rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               borderColor: 'divider',
               '&.Mui-selected': {
@@ -224,14 +224,14 @@ export function DailyVitalsChart() {
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: mutedColor, fontSize: 10 }}
+                  tick={{ fill: mutedColor, fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   domain={getYDomain()}
-                  tick={{ fill: mutedColor, fontSize: 10 }}
+                  tick={{ fill: mutedColor, fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -266,13 +266,13 @@ export function DailyVitalsChart() {
                   <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
                     {weightStats.firstWeight} kg
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Start</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Start</Typography>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'center' }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
                     {weightStats.lastWeight} kg
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Current</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Current</Typography>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
@@ -281,7 +281,7 @@ export function DailyVitalsChart() {
                       {weightStats.change >= 0 ? '+' : ''}{weightStats.change.toFixed(1)} kg
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Change</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Change</Typography>
                 </Box>
               </>
             ) : sleepStats ? (
@@ -290,13 +290,13 @@ export function DailyVitalsChart() {
                   <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
                     {sleepStats.avgSleep.toFixed(1)}h
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Average</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Average</Typography>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'center' }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
                     {sleepGoal}h
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Goal</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Goal</Typography>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'center' }}>
                   <Typography 
@@ -309,7 +309,7 @@ export function DailyVitalsChart() {
                   >
                     {sleepStats.avgSleep >= sleepGoal ? '✓' : `${(sleepGoal - sleepStats.avgSleep).toFixed(1)}h short`}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>Status</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Status</Typography>
                 </Box>
               </>
             ) : null}

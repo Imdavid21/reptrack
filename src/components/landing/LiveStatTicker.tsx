@@ -47,7 +47,7 @@ export default function LiveStatTicker() {
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="text-xs text-muted-foreground tracking-wide"
+            className="type-caption"
           >
             <span className="font-medium text-foreground">{current.lead}</span>{' '}
             {current.rest}

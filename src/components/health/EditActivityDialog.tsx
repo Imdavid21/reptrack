@@ -204,11 +204,11 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
 
               <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
                 <div>
-                  <div className="text-xs  tracking-wider text-muted-foreground">Burn</div>
+                  <div className="type-caption">Burn</div>
                   <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
                 </div>
                 <div>
-                  <div className="text-xs  tracking-wider text-muted-foreground">Duration</div>
+                  <div className="type-caption">Duration</div>
                   <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
                 </div>
               </div>

@@ -163,7 +163,7 @@ function ProgressCard() {
         border: 1,
         borderColor: 'divider',
       }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>
           {label}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -175,16 +175,16 @@ function ProgressCard() {
               display: 'flex',
               alignItems: 'center',
               gap: 0.25,
-              color: isPositive ? 'success.main' : isNegative ? 'error.main' : 'text.secondary',
+              color: isPositive ? 'text.primary' : isNegative ? 'error.main' : 'text.secondary',
             }}>
               {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
                 {isPositive ? '+' : ''}{Math.round(changeVal)}%
               </Typography>
             </Box>
           )}
         </Box>
-        <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.55rem' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
           vs {lastVal}{suffix} last week
         </Typography>
       </Box>
@@ -197,8 +197,8 @@ function ProgressCard() {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Target size={14} />
-          <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: 'text.secondary' }}>
-            GOALS & PROGRESS
+          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+            Goals and progress
           </Typography>
         </Box>
         {!isEditing ? (
@@ -239,8 +239,8 @@ function ProgressCard() {
         }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                WEEKLY WORKOUTS
+              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>
+                Weekly workouts
               </Typography>
               <TextField
                 fullWidth
@@ -255,8 +255,8 @@ function ProgressCard() {
               />
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                SLEEP GOAL
+              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>
+                Sleep goal
               </Typography>
               <TextField
                 fullWidth
@@ -273,8 +273,8 @@ function ProgressCard() {
             </Box>
           </Box>
           <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              WEIGHT GOAL
+            <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>
+              Weight goal
             </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <TextField
@@ -301,7 +301,7 @@ function ProgressCard() {
                       minWidth: 'auto',
                       px: 1,
                       textTransform: 'capitalize',
-                      fontSize: '0.6rem',
+                      fontSize: '0.75rem',
                     }}
                   >
                     {type}
@@ -316,8 +316,8 @@ function ProgressCard() {
       {/* Week vs Week comparison - just volume and sleep to avoid overlap with monthly workouts */}
       {thisWeek && (
         <>
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.55rem', mb: 1, display: 'block' }}>
-            THIS WEEK VS LAST WEEK
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
+            This week vs last week
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 1.5 }}>
             <StatItem
@@ -347,13 +347,13 @@ function ProgressCard() {
           borderColor: 'divider',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
-              WORKOUTS THIS MONTH
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Workouts this month
 
             </Typography>
             <Typography variant="caption" sx={{
               fontWeight: 600,
-              fontSize: '0.6rem',
+              fontSize: '0.75rem',
               color: workoutProgress >= 100 ? 'success.main' : workoutProgress >= 75 ? 'text.primary' : 'warning.main',
             }}>
               {Math.min(workoutProgress, 100)}%
