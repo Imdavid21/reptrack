@@ -17,7 +17,10 @@ interface Props {
   calibrationAdjustment?: number | null;
   /** Formula baseline (BMR x non-exercise factor) before calibration, kcal/day. */
   formulaBaseline?: number | null;
+  /** Extra content rendered inside the expanded breakdown (e.g. daily calorie summary). */
+  children?: React.ReactNode;
 }
+
 
 /**
  * Tappable maintenance tile.
