@@ -139,8 +139,11 @@ export function BmrBreakdownTile({
           <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
             Exercise burn is counted on top of this.
           </p>
+
+          {children}
         </div>
       )}
+
     </div>
   );
 }
