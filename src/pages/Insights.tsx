@@ -30,7 +30,6 @@ import { NextStepsCard } from '@/components/analytics/NextStepsCard';
 import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
 import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
 import { PersonalRecordsCard } from '@/components/analytics/PersonalRecordsCard';
-import { PagePeerSwitch } from '@/components/analytics/PagePeerSwitch';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
@@ -51,20 +50,14 @@ function InsightSection({ label, count, dotClass, initiallyOpen = false, childre
   );
 }
 
-// Unified Progress Card using global date range + inline editing
 function ProgressCard() {
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
   const { recordGoalHistory } = useGoalHistory();
   const { dateRange } = useDateRange();
-
-  // Use the global date range for data
   const { data, isLoading } = useCorrelationAnalysis(dateRange);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  // Calories and water are edited on their own dashboard tiles (which also
-  // lock the adaptive target); fitness goal lives in Settings > Workout.
-  // This panel only owns the goals that have no home elsewhere.
   const [goals, setGoals] = useState({
     weekly_workout_goal: '',
     sleep_goal: '',
@@ -99,8 +92,6 @@ function ProgressCard() {
         weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
       });
 
-      // Point-in-time tracking for the goals judged against historical data
-      // (see useGoalHistory) - weight_goal isn't a per-day target.
       await Promise.all([
         recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal),
         recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal),
@@ -133,7 +124,6 @@ function ProgressCard() {
     );
   }
 
-  // Week-over-week changes (only volume and sleep, not sessions to avoid overlap)
   const volumeChange = lastWeek?.totalVolume && lastWeek.totalVolume > 0
     ? ((thisWeek!.totalVolume - lastWeek.totalVolume) / lastWeek.totalVolume) * 100
     : 0;
@@ -142,9 +132,6 @@ function ProgressCard() {
     : 0;
 
   const workoutProgress = summary ? Math.round((summary.workouts / monthlyWorkoutGoal) * 100) : 0;
-  const volumeFormatted = summary?.totalVolume
-    ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
-    : '-';
 
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
     label: string;
@@ -194,7 +181,6 @@ function ProgressCard() {
 
   return (
     <MuiCard>
-      {/* Header with title and edit button */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Target size={14} />
@@ -227,7 +213,6 @@ function ProgressCard() {
         )}
       </Box>
 
-      {/* Goals editing inline */}
       <Collapse in={isEditing}>
         <Box sx={{
           p: 1.5,
@@ -314,7 +299,6 @@ function ProgressCard() {
         </Box>
       </Collapse>
 
-      {/* Week vs Week comparison - just volume and sleep to avoid overlap with monthly workouts */}
       {thisWeek && (
         <>
           <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
@@ -338,7 +322,6 @@ function ProgressCard() {
         </>
       )}
 
-      {/* Monthly progress bar */}
       {summary && (
         <Box sx={{
           p: 1.5,
@@ -350,7 +333,6 @@ function ProgressCard() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               Workouts this month
-
             </Typography>
             <Typography variant="caption" sx={{
               fontWeight: 600,
@@ -394,18 +376,13 @@ function InsightsContent() {
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 2, pb: .5 }}>
-          <Box>
-            <Typography variant="h1">Insights</Typography>
-          </Box>
-          <PagePeerSwitch />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, pb: .5 }}>
+          <Typography variant="h1">Insights</Typography>
+          <DateRangeSelector />
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}><DateRangeSelector /></Box>
 
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-
-            {/* North star: composite body overview + trend + what to do about it */}
             <motion.div variants={staggerItem}>
               <BodyOverviewCard overview={overview} isLoading={overviewLoading} />
             </motion.div>
@@ -416,68 +393,66 @@ function InsightsContent() {
               <NextStepsCard overview={overview} isLoading={overviewLoading} />
             </motion.div>
 
-            {/* Goals editor + week-over-week summary */}
             <motion.div variants={staggerItem}>
               <ProgressCard />
             </motion.div>
 
             <InsightSection label="Training" count={6} dotClass="bg-energy" initiallyOpen>
               <motion.div variants={staggerItem}>
-              <PersonalRecordsCard />
+                <PersonalRecordsCard />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
+                <GrowthInsightsCard data={muscleData} isLoading={muscleLoading} />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MuscleBalanceCard data={muscleData} isLoading={muscleLoading} />
+                <MuscleBalanceCard data={muscleData} isLoading={muscleLoading} />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <EfficiencyChart />
+                <EfficiencyChart />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <VolumeSankeyChart />
+                <VolumeSankeyChart />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <ExerciseProgressionChart />
+                <ExerciseProgressionChart />
               </motion.div>
             </InsightSection>
 
             <InsightSection label="Fuel" count={7} dotClass="bg-fuel">
               <motion.div variants={staggerItem}>
-              <CalorieChart />
+                <CalorieChart />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="protein" />
+                <MacroChart macro="protein" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="carbs" />
+                <MacroChart macro="carbs" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="fat" />
+                <MacroChart macro="fat" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="fiber" />
+                <MacroChart macro="fiber" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="sugar" />
+                <MacroChart macro="sugar" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="sodium" />
+                <MacroChart macro="sodium" />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <MacroChart macro="potassium" />
+                <MacroChart macro="potassium" />
               </motion.div>
             </InsightSection>
 
             <InsightSection label="Recovery & body" count={2} dotClass="bg-recover">
               <motion.div variants={staggerItem}>
-              <DailyVitalsChart />
+                <DailyVitalsChart />
               </motion.div>
               <motion.div variants={staggerItem}>
-              <HydrationChart />
+                <HydrationChart />
               </motion.div>
             </InsightSection>
-
           </Box>
         </motion.div>
       </Box>
