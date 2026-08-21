@@ -30,6 +30,7 @@ import { NextStepsCard } from '@/components/analytics/NextStepsCard';
 import { MuscleBalanceCard } from '@/components/analytics/MuscleBalanceCard';
 import { GrowthInsightsCard } from '@/components/analytics/GrowthInsightsCard';
 import { PersonalRecordsCard } from '@/components/analytics/PersonalRecordsCard';
+import { PagePeerSwitch } from '@/components/analytics/PagePeerSwitch';
 import { useBodyOverview } from '@/hooks/useBodyOverview';
 import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
@@ -393,12 +394,13 @@ function InsightsContent() {
   return (
     <AnimatedPage>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, pb: .5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 2, pb: .5 }}>
           <Box>
             <Typography variant="h1">Insights</Typography>
           </Box>
-          <DateRangeSelector />
+          <PagePeerSwitch />
         </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}><DateRangeSelector /></Box>
 
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

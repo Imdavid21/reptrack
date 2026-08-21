@@ -14,7 +14,7 @@ export function BottomNav() {
   ];
 
   const currentPath = location.pathname;
-  const currentValue = navItems.findIndex(item =>
+  const currentValue = currentPath === '/app/dataroom' ? 3 : navItems.findIndex(item =>
     item.path === currentPath ||
     (item.path !== '/app' && currentPath.startsWith(item.path))
   );

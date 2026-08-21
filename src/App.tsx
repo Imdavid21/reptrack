@@ -19,6 +19,7 @@ import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
 import AdaptiveWorkout from "./pages/AdaptiveWorkout";
 import Insights from "./pages/Insights";
+import Dataroom from "./pages/Dataroom";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import LifecycleTracker from "./pages/LifecycleTracker";
@@ -67,6 +68,7 @@ function AppRoutes() {
         <Route path="/app" element={<AppIndex />} />
         <Route path="/app/log" element={<AdaptiveWorkout />} />
         <Route path="/app/insights" element={<Insights />} />
+        <Route path="/app/dataroom" element={<Dataroom />} />
         <Route path="/app/history" element={<History />} />
         <Route path="/app/history/:workoutId" element={<WorkoutDetail />} />
         <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
@@ -78,6 +80,7 @@ function AppRoutes() {
         <Route path="/log" element={<Navigate to="/app/log" replace />} />
         <Route path="/create" element={<Navigate to="/app/log" replace />} />
         <Route path="/insights" element={<Navigate to="/app/insights" replace />} />
+        <Route path="/dataroom" element={<Navigate to="/app/dataroom" replace />} />
         <Route path="/analytics" element={<Navigate to="/app/insights" replace />} />
         <Route path="/health" element={<Navigate to="/app/insights?tab=vitals" replace />} />
         <Route path="/history" element={<Navigate to="/app/history" replace />} />
