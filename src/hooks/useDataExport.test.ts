@@ -15,7 +15,8 @@ if (typeof localStorage === 'undefined') {
   });
 }
 
-import { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS, DataTable } from './useDataExport';
+const { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS } = await import('./useDataExport');
+import type { DataTable } from './useDataExport';
 
 describe('escapeCSV / parseCSVLine round-trip', () => {
   it('round-trips a plain value unchanged', () => {
