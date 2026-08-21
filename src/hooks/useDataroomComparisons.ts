@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { endOfDay, format, startOfDay, subDays } from 'date-fns';
+import { differenceInCalendarDays, format, startOfDay, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useDailyMetrics } from './useDailyMetrics';
@@ -9,20 +9,28 @@ import { useWorkouts } from './useWorkouts';
 import { useUserPreferences } from './useUserPreferences';
 import { buildTemporalAnalysis } from '@/lib/dataroom/temporal';
 import type { MealDay } from '@/lib/dataroom/types';
+import type { DateRange } from '@/contexts/DateRangeContext';
 
-export function useDataroomComparisons() {
+export function useDataroomComparisons(dateRange: DateRange) {
   const { user } = useAuth();
-  const now = useMemo(() => new Date(), []);
-  const endDate = format(now, 'yyyy-MM-dd');
-  const range = useMemo(() => ({ from: startOfDay(subDays(now, 89)), to: endOfDay(now) }), [now]);
+  const endDate = format(dateRange.to, 'yyyy-MM-dd');
+  const selectedDays = Math.max(1, differenceInCalendarDays(dateRange.to, dateRange.from) + 1);
+  const comparisonRange = useMemo(() => {
+    const baselineStart = startOfDay(subDays(dateRange.to, 55));
+    return {
+      from: dateRange.from < baselineStart ? dateRange.from : baselineStart,
+      to: dateRange.to,
+    };
+  }, [dateRange.from, dateRange.to]);
+  const startDate = format(comparisonRange.from, 'yyyy-MM-dd');
 
-  const metrics = useDailyMetrics(range);
-  const exerciseSets = useExerciseSets(range);
+  const metrics = useDailyMetrics(comparisonRange);
+  const exerciseSets = useExerciseSets(comparisonRange);
   const workouts = useWorkouts();
   const { preferences, isLoading: preferencesLoading } = useUserPreferences();
 
   const meals = useQuery({
-    queryKey: ['dataroom-temporal-meals', user?.id, format(range.from, 'yyyy-MM-dd'), endDate],
+    queryKey: ['dataroom-temporal-meals', user?.id, startDate, endDate],
     enabled: !!user,
     queryFn: async (): Promise<MealDay[]> => {
       if (!user) return [];
@@ -30,7 +38,7 @@ export function useDataroomComparisons() {
         .from('meals')
         .select('date,calories,protein,carbs,fat,fiber,sugar,sodium,potassium')
         .eq('user_id', user.id)
-        .gte('date', format(range.from, 'yyyy-MM-dd'))
+        .gte('date', startDate)
         .lte('date', endDate);
       if (error) throw error;
       const byDay = new Map<string, MealDay>();
@@ -50,21 +58,27 @@ export function useDataroomComparisons() {
     },
   });
 
+  const comparisonWorkouts = useMemo(
+    () => workouts.workouts.filter(workout => workout.date >= startDate && workout.date <= endDate),
+    [workouts.workouts, startDate, endDate],
+  );
+
   const analysis = useMemo(() => {
     if (!metrics.data || !exerciseSets.data || !meals.data) return null;
     return buildTemporalAnalysis({
       metrics: metrics.data.dataPoints.map(day => ({ date: day.date, bodyweight: day.bodyweight, sleep: day.sleep_hours })),
       meals: meals.data,
       sets: exerciseSets.data.sets.map(set => ({ exercise: set.exercise_name, date: set.workout_date || '', weight: set.actual_weight || 0, reps: set.actual_reps || 0 })),
-      workouts: workouts.workouts.map(workout => ({ date: workout.date, duration: workout.workout_duration_minutes })),
+      workouts: comparisonWorkouts.map(workout => ({ date: workout.date, duration: workout.workout_duration_minutes })),
       proteinGoal: preferences?.daily_protein_goal || 165,
       sleepGoal: preferences?.sleep_goal || 8,
       endDate,
-    });
-  }, [metrics.data, exerciseSets.data, meals.data, workouts.workouts, preferences, endDate]);
+    }, selectedDays);
+  }, [metrics.data, exerciseSets.data, meals.data, comparisonWorkouts, preferences, endDate, selectedDays]);
 
   return {
     analysis,
+    selectedDays,
     isLoading: metrics.isLoading || exerciseSets.isLoading || meals.isLoading || workouts.isLoading || preferencesLoading,
     error: metrics.error || exerciseSets.error || meals.error || workouts.error,
   };
