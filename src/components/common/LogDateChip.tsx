@@ -29,10 +29,10 @@ export function LogDateChip({ date, onChange, align = 'end', className }: Props)
           type="button"
           aria-label={`Log date: ${label}. Tap to change.`}
           className={
-            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ' +
+            'inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors ' +
             (today
-              ? 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
-              : 'border-energy/40 bg-energy-soft text-energy-ink') +
+              ? 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+              : 'border-energy-border bg-energy-soft text-energy-ink') +
             (className ? ' ' + className : '')
           }
         >

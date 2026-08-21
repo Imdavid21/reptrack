@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run check:design && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "check:typography": "node scripts/check-typography.mjs",
     "check:colors": "node scripts/check-colors.mjs",
+    "check:design": "node scripts/check-design-consistency.mjs",
     "test": "vitest run",
     "preview": "vite preview"
   },

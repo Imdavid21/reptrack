@@ -12,7 +12,7 @@ export function DateRangeSelector() {
 
   return (
     <Select value={preset} onValueChange={setPreset}>
-      <SelectTrigger className="w-[140px] h-8 text-xs">
+      <SelectTrigger className="h-9 w-[140px] rounded-xl text-xs">
         <SelectValue placeholder="Select range" />
       </SelectTrigger>
       <SelectContent>

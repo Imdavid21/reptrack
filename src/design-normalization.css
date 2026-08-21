@@ -1,0 +1,93 @@
+/* Cross-surface normalization for RepTrack's semantic design roles.
+   These classes intentionally mirror DESIGN_LANGUAGE.md and are loaded after
+   index.css so Data Room, History, Home, and Workout share the same hierarchy. */
+
+.type-action {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.type-meta {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.surface-standard {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-card);
+  background: hsl(var(--card));
+  box-shadow: var(--elevation-card);
+}
+
+.control-standard {
+  min-height: var(--control-md);
+  border-radius: var(--radius-control);
+}
+
+.control-large {
+  min-height: var(--control-lg);
+  border-radius: var(--radius-control);
+}
+
+/* MUI-backed workout and legacy analysis surfaces must use the same token
+   geometry as Tailwind/shadcn surfaces. The important declarations are
+   intentional: local sx values from older screens should not create a second
+   radius/control system. */
+.MuiDialog-paper {
+  border-radius: var(--radius-sheet) !important;
+}
+
+.MuiCard-root {
+  border-radius: var(--radius-card) !important;
+}
+
+.MuiButton-root {
+  border-radius: var(--radius-control) !important;
+  text-transform: none;
+}
+
+.MuiButton-contained.MuiButton-sizeSmall,
+.MuiButton-outlined.MuiButton-sizeSmall {
+  min-height: var(--control-sm);
+}
+
+.MuiButton-contained.MuiButton-sizeMedium,
+.MuiButton-outlined.MuiButton-sizeMedium {
+  min-height: var(--control-md);
+}
+
+.MuiButton-contained.MuiButton-sizeLarge,
+.MuiButton-outlined.MuiButton-sizeLarge {
+  min-height: var(--control-lg);
+}
+
+.MuiOutlinedInput-root,
+.MuiInputBase-root {
+  border-radius: var(--radius-control);
+}
+
+.MuiInputBase-sizeSmall {
+  min-height: var(--control-sm);
+}
+
+/* The Home macro matrix carries both current and target values. At phone
+   widths, two columns preserve the x / y read without shrinking type or
+   clipping sodium/potassium values; the original three-column density returns
+   as soon as there is enough room. */
+@media (max-width: 419px) {
+  .surface-standard .grid.grid-cols-3.divide-x.divide-y.divide-border {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

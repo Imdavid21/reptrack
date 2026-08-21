@@ -32,12 +32,25 @@ const round = (value: number, places = 1) => {
   return Math.round(value * scale) / scale;
 };
 
+const exposureCountForRange = (rangeDays: number) => {
+  if (rangeDays <= 14) return 4;
+  if (rangeDays <= 30) return 6;
+  if (rangeDays <= 60) return 8;
+  if (rangeDays <= 90) return 10;
+  return 12;
+};
+
 export function confidenceDots(confidence: Confidence): number {
   return confidence === 'high' ? 3 : confidence === 'moderate' ? 2 : confidence === 'low' ? 1 : 0;
 }
 
-export function analyzeBodyweight(metrics: MetricObservation[], goal: 'lose' | 'gain' | 'maintain' | null, endDate: string): BodyweightAnalysis {
-  const start = subDays(parseISO(endDate), DATAROOM_WINDOWS.bodyweightDays - 1);
+export function analyzeBodyweight(
+  metrics: MetricObservation[],
+  goal: 'lose' | 'gain' | 'maintain' | null,
+  endDate: string,
+  windowDays = DATAROOM_WINDOWS.bodyweightDays,
+): BodyweightAnalysis {
+  const start = subDays(parseISO(endDate), Math.max(1, windowDays) - 1);
   const observations = metrics
     .filter(m => m.bodyweight != null && Number(m.bodyweight) > 0 && parseISO(m.date) >= start && m.date <= endDate)
     .map(m => ({ date: m.date, kg: Number(m.bodyweight) }))
@@ -72,11 +85,12 @@ export function analyzeBodyweight(metrics: MetricObservation[], goal: 'lose' | '
     confidence,
     observations: observations.length,
     spanDays,
+    windowDays,
     points,
   };
 }
 
-export function analyzeExerciseProgression(sets: TrainingSet[]): ExerciseTrend[] {
+export function analyzeExerciseProgression(sets: TrainingSet[], exposureCount = DATAROOM_WINDOWS.exerciseExposureCount): ExerciseTrend[] {
   const grouped = new Map<string, Map<string, ExerciseExposure>>();
   for (const set of sets) {
     if (!set.exercise || !set.date || set.reps <= 0) continue;
@@ -87,7 +101,7 @@ export function analyzeExerciseProgression(sets: TrainingSet[]): ExerciseTrend[]
     grouped.set(set.exercise, byDate);
   }
   return [...grouped.entries()].map(([exercise, byDate]) => {
-    const exposures = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-DATAROOM_WINDOWS.exerciseExposureCount);
+    const exposures = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-Math.max(2, exposureCount));
     const confidence: Confidence = exposures.length >= 4 ? 'high' : exposures.length >= 2 ? 'moderate' : exposures.length === 1 ? 'low' : 'insufficient';
     if (exposures.length < 2) return { exercise, state: 'unclear' as const, confidence, exposures, deltaPercent: null, progressionType: 'unclear' as const };
     const first = exposures[0];
@@ -148,8 +162,16 @@ export function analyzeNutrition(meals: MealDay[], energy: EnergyDay[], weight: 
   };
 }
 
-export function analyzeRecovery(metrics: MetricObservation[], workouts: WorkoutObservation[], exerciseTrends: ExerciseTrend[], sleepGoal: number, endDate: string): RecoveryAnalysis {
-  const start = subDays(parseISO(endDate), DATAROOM_WINDOWS.immediateRecoveryDays - 1);
+export function analyzeRecovery(
+  metrics: MetricObservation[],
+  workouts: WorkoutObservation[],
+  exerciseTrends: ExerciseTrend[],
+  sleepGoal: number,
+  endDate: string,
+  windowDays = DATAROOM_WINDOWS.immediateRecoveryDays,
+): RecoveryAnalysis {
+  const effectiveWindow = Math.max(1, Math.min(windowDays, DATAROOM_WINDOWS.immediateRecoveryDays));
+  const start = subDays(parseISO(endDate), effectiveWindow - 1);
   const sleeps = metrics.filter(m => m.sleep != null && Number(m.sleep) > 0 && parseISO(m.date) >= start && m.date <= endDate).map(m => Number(m.sleep));
   const recentWorkouts = workouts.filter(w => parseISO(w.date) >= start && w.date <= endDate);
   const workoutDates = [...new Set(recentWorkouts.map(w => w.date))].sort();
@@ -163,15 +185,26 @@ export function analyzeRecovery(metrics: MetricObservation[], workouts: WorkoutO
   }
   const averageSleep = sleeps.length ? sleeps.reduce((sum, value) => sum + value, 0) / sleeps.length : null;
   const decliningLifts = exerciseTrends.filter(trend => trend.state === 'declining' && trend.confidence !== 'low').length;
-  const confidence: Confidence = sleeps.length >= 8 ? 'high' : sleeps.length >= 4 ? 'moderate' : sleeps.length >= 2 ? 'low' : 'insufficient';
+  const highSleepCoverage = Math.min(8, Math.ceil(effectiveWindow * 0.6));
+  const moderateSleepCoverage = Math.min(4, Math.ceil(effectiveWindow * 0.35));
+  const confidence: Confidence = sleeps.length >= highSleepCoverage ? 'high' : sleeps.length >= moderateSleepCoverage ? 'moderate' : sleeps.length >= 2 ? 'low' : 'insufficient';
   const strained = averageSleep != null && averageSleep < sleepGoal - 0.75 && (consecutiveTrainingDays >= 3 || decliningLifts >= 2);
   const improving = averageSleep != null && averageSleep >= sleepGoal && exerciseTrends.filter(t => t.state === 'progressing').length >= 2;
   const state: RecoveryAnalysis['state'] = confidence === 'insufficient' ? 'insufficient' : strained ? 'strained' : improving ? 'improving' : 'normal';
   const reason = state === 'strained' ? `${round(averageSleep!, 1)}h sleep, ${consecutiveTrainingDays} consecutive training days, ${decliningLifts} lifts trending down`
     : state === 'improving' ? `${round(averageSleep!, 1)}h sleep with performance progressing`
       : state === 'normal' ? `${averageSleep == null ? 'Sleep unavailable' : `${round(averageSleep, 1)}h sleep`}; no repeated performance decline`
-        : `Only ${sleeps.length} sleep ${sleeps.length === 1 ? 'entry' : 'entries'} in 14 days`;
-  return { state, confidence, averageSleep: averageSleep == null ? null : round(averageSleep, 1), sleepNights: sleeps.length, consecutiveTrainingDays, recentTrainingDays: workoutDates.length, reason };
+        : `Only ${sleeps.length} sleep ${sleeps.length === 1 ? 'entry' : 'entries'} in ${effectiveWindow} days`;
+  return {
+    state,
+    confidence,
+    averageSleep: averageSleep == null ? null : round(averageSleep, 1),
+    sleepNights: sleeps.length,
+    consecutiveTrainingDays,
+    recentTrainingDays: workoutDates.length,
+    windowDays: effectiveWindow,
+    reason,
+  };
 }
 
 function rankFindings(candidates: DataroomFinding[]): DataroomFinding[] {
@@ -185,25 +218,26 @@ function rankFindings(candidates: DataroomFinding[]): DataroomFinding[] {
 
 export function buildDataroomAnalysis(input: {
   metrics: MetricObservation[]; meals: MealDay[]; sets: TrainingSet[]; workouts: WorkoutObservation[];
-  energy: EnergyDay[]; goal: 'lose' | 'gain' | 'maintain' | null; sleepGoal: number; proteinGoal: number; endDate: string;
+  energy: EnergyDay[]; goal: 'lose' | 'gain' | 'maintain' | null; sleepGoal: number; proteinGoal: number; endDate: string; rangeDays?: number;
 }): DataroomAnalysis {
-  const weight = analyzeBodyweight(input.metrics, input.goal, input.endDate);
-  const exercises = analyzeExerciseProgression(input.sets);
-  const muscles = analyzeMuscleExposure(input.sets, exercises);
-  const nutrition = analyzeNutrition(input.meals, input.energy, weight);
-  const recovery = analyzeRecovery(input.metrics, input.workouts, exercises, input.sleepGoal, input.endDate);
+  const rangeDays = Math.max(1, input.rangeDays ?? DATAROOM_WINDOWS.bodyweightDays);
+  const weight = analyzeBodyweight(input.metrics, input.goal, input.endDate, rangeDays);
+  const exercises = analyzeExerciseProgression(input.sets, exposureCountForRange(rangeDays));
+  const muscles = analyzeMuscleExposure(input.sets, exercises, rangeDays);
+  const nutrition = analyzeNutrition(input.meals, input.energy, weight, rangeDays);
+  const recovery = analyzeRecovery(input.metrics, input.workouts, exercises, input.sleepGoal, input.endDate, rangeDays);
   const progressing = exercises.filter(item => item.state === 'progressing');
   const declining = exercises.filter(item => item.state === 'declining');
   const candidates: DataroomFinding[] = [];
 
   if (weight.aligned && progressing.length + exercises.filter(e => e.state === 'stable').length >= 2) candidates.push({
     id: 'trajectory-aligned', domain: 'bodyweight', title: input.goal === 'lose' ? 'Cut progressing while performance holds' : 'Bodyweight trajectory matches the plan',
-    signal: `${weight.direction} at ${Math.abs(weight.percentPerWeek ?? 0).toFixed(2)}% per week`, evidence: [`${weight.observations} weigh-ins across ${weight.spanDays} days`, `${progressing.length} key lifts progressing; ${declining.length} repeatedly declining`],
+    signal: `${weight.direction} at ${Math.abs(weight.percentPerWeek ?? 0).toFixed(2)}% per week`, evidence: [`${weight.observations} weigh-ins across ${weight.spanDays} days`, `${progressing.length} key lifts progressing; ${declining.length} repeatedly declining`, `Selected analysis range: ${rangeDays} days`],
     interpretation: 'Observed bodyweight and comparable training exposures support the current direction.', action: 'Keep calories and training unchanged.', actionKind: 'keep', confidence: weight.confidence, priority: 95,
   });
   if (nutrition.confidence === 'insufficient' || nutrition.confidence === 'low') candidates.push({
     id: 'nutrition-coverage', domain: 'nutrition', title: 'Energy data is incomplete', signal: `Meals logged on ${nutrition.loggedDays} of ${nutrition.windowDays} days`,
-    evidence: [`${nutrition.coverage}% meal-log coverage`, 'Unlogged days are excluded, not treated as zero calories'], interpretation: 'The period deficit cannot be estimated reliably.',
+    evidence: [`${nutrition.coverage}% meal-log coverage`, 'Unlogged days are excluded, not treated as zero calories'], interpretation: 'The selected-range deficit cannot be estimated reliably.',
     action: 'Log more intake days before changing calories.', actionKind: 'log', confidence: 'high', priority: 90,
   }); else if (nutrition.modelDisagreesWithWeight) candidates.push({
     id: 'energy-disagreement', domain: 'nutrition', title: 'Energy model and scale trend disagree', signal: `Modeled balance ${nutrition.energyBalance! < 0 ? 'predicts loss' : 'predicts gain'}, while trend is ${weight.direction}`,
@@ -215,8 +249,8 @@ export function buildDataroomAnalysis(input: {
     evidence: [`${nutrition.loggedDays}/${nutrition.windowDays} days contain intake logs`, `Observed gap: ${Math.round(input.proteinGoal - nutrition.averageProtein)}g/day`], interpretation: 'Protein is a decision-relevant nutrition gap with adequate coverage to act conservatively.',
     action: `Add roughly ${Math.round(input.proteinGoal - nutrition.averageProtein)}g protein on logged days.`, actionKind: 'change', confidence: nutrition.confidence, priority: 84,
   });
-  if (recovery.state === 'strained') candidates.push({ id: 'recovery-strained', domain: 'recovery', title: 'Recovery context is strained', signal: recovery.reason, evidence: [`${recovery.sleepNights}/14 nights logged`, `${recovery.recentTrainingDays} training days in 14 days`], interpretation: 'Short sleep and repeated workload/performance signals make additional training stress hard to justify.', action: 'Hold volume and prioritize recovery.', actionKind: 'change', confidence: recovery.confidence, priority: 94 });
-  else candidates.push({ id: 'recovery-normal', domain: 'recovery', title: recovery.state === 'insufficient' ? 'Recovery evidence is limited' : 'Recovery context supports the current plan', signal: recovery.reason, evidence: [`${recovery.sleepNights}/14 nights logged`, `${recovery.recentTrainingDays} training days in 14 days`], interpretation: recovery.state === 'insufficient' ? 'There is not enough evidence to prescribe a recovery change.' : 'No repeated cross-domain recovery problem is visible.', action: recovery.state === 'insufficient' ? 'Log sleep; make no recovery change yet.' : 'Keep the current recovery approach.', actionKind: recovery.state === 'insufficient' ? 'log' : 'keep', confidence: recovery.confidence, priority: 55 });
+  if (recovery.state === 'strained') candidates.push({ id: 'recovery-strained', domain: 'recovery', title: 'Recovery context is strained', signal: recovery.reason, evidence: [`${recovery.sleepNights}/${recovery.windowDays} nights logged`, `${recovery.recentTrainingDays} training days in ${recovery.windowDays} days`], interpretation: 'Short sleep and repeated workload/performance signals make additional training stress hard to justify.', action: 'Hold volume and prioritize recovery.', actionKind: 'change', confidence: recovery.confidence, priority: 94 });
+  else candidates.push({ id: 'recovery-normal', domain: 'recovery', title: recovery.state === 'insufficient' ? 'Recovery evidence is limited' : 'Recovery context supports the current plan', signal: recovery.reason, evidence: [`${recovery.sleepNights}/${recovery.windowDays} nights logged`, `${recovery.recentTrainingDays} training days in ${recovery.windowDays} days`], interpretation: recovery.state === 'insufficient' ? 'There is not enough evidence to prescribe a recovery change.' : 'No repeated cross-domain recovery problem is visible.', action: recovery.state === 'insufficient' ? 'Log sleep; make no recovery change yet.' : 'Keep the current recovery approach.', actionKind: recovery.state === 'insufficient' ? 'log' : 'keep', confidence: recovery.confidence, priority: 55 });
   if (declining.length >= 2) candidates.push({ id: 'training-softening', domain: 'training', title: 'Several lifts may be softening', signal: `${declining.length} exercises declined across repeated comparable exposures`, evidence: declining.slice(0, 3).map(item => `${item.exercise}: ${item.deltaPercent}% estimated-strength change`), interpretation: 'The pattern is broader than one poor session and deserves review alongside recovery and energy context.', action: 'Review; do not replace exercises automatically.', actionKind: 'watch', confidence: 'moderate', priority: 88 });
   else if (progressing.length) candidates.push({ id: 'training-working', domain: 'training', title: 'Current training is producing progression', signal: `${progressing.length} exercises improved across comparable exposures`, evidence: progressing.slice(0, 3).map(item => `${item.exercise}: ${item.progressionType.replace('-', ' ')}`), interpretation: 'A working prescription should not be changed without stronger contrary evidence.', action: 'Keep the current exercise selection and volume.', actionKind: 'keep', confidence: progressing.some(item => item.confidence === 'high') ? 'high' : 'moderate', priority: 82 });
   else {
@@ -231,5 +265,5 @@ export function buildDataroomAnalysis(input: {
   const findings = rankFindings(candidates);
   const headline = findings[0]?.title ?? 'No change is currently justified by the available data';
   const confidence = findings[0]?.confidence ?? 'insufficient';
-  return { headline, confidence, weight, exercises, muscles, nutrition, recovery, findings };
+  return { headline, confidence, rangeDays, weight, exercises, muscles, nutrition, recovery, findings };
 }

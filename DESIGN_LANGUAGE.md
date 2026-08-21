@@ -15,7 +15,7 @@ This is the source of truth for product copy and typography. It applies to every
 | Body (`body1`) | 16 px | 400 | Primary reading and form copy |
 | Supporting (`body2`) | 14 px | 400 | Descriptions and secondary content |
 | Metadata (`caption`) | 12 px | 500 | Timestamps, units, and quiet status |
-| Eyebrow (`overline`) | 11 px | 700 | Short category labels only |
+| Eyebrow (`overline`) | 12 px | 700 | Short category labels only |
 
 Use tabular numerals for measurements, timers, calories, and sets. Never use less than 12 px for interface copy. The only exceptions are non-interactive chart ticks, compact badges, and bottom-navigation labels, which may use 10–11 px.
 
@@ -33,6 +33,7 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 - Lead with the user's action or result. Buttons start with a verb.
 - Name the object: `Save workout`, not `Save`; `Cancel workout`, not `Cancel` when the consequence matters.
 - Do not narrate what is already visible. Prefer `Protein 27 / 165 g` over a paragraph explaining it.
+- For tracked values with an active goal or limit, use `current / target` directly where space permits: `130 / 250 g`, `141 / ≤2300 mg`.
 - Use a middle dot (`·`) for compact, related metadata. Use a vertical divider (`|`) only in dense tabular-style summaries. Do not use decorative dots as separators.
 - Use an em dash only for a deliberate interruption or contrast; otherwise write a separate sentence.
 - Errors say what failed and what the user can do next. Success feedback is short and factual.
@@ -43,6 +44,7 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 - One eyebrow maximum per card; it must label a group, not repeat its title.
 - Use `h4` for card titles, `body2` for explanation, and `caption` for metadata. Do not compensate for unclear hierarchy with more bold text.
 - Interactive labels must meet the body/small-label scale; icon buttons require an accessible label.
+- Primary app sections use one shared header grammar: optional eyebrow, one page title, then a compact contextual control or action aligned to that hierarchy. Task-specific pages may move the contextual control below the title on narrow screens, but should keep the same typography and vertical rhythm.
 
 ## Product signature
 
@@ -62,7 +64,7 @@ Use `.metric-hero`, `.metric-unit`, `.metric-supporting`, and `.metric-context` 
 | Control radius | 12 px | Inputs and rectangular controls |
 | Card radius | 16 px | Cards and grouped surfaces |
 | Sheet radius | 24 px | Dialogs and bottom sheets |
-| Small control | 36 px | Compact desktop-only controls |
+| Small control | 36 px | Compact controls and dense secondary actions |
 | Standard control | 44 px | Default inputs, buttons, and icon targets |
 | Large control | 52 px | Primary workout and logging actions |
 | Icon scale | 16, 20, 24 px | Inline, standard, and prominent icons |
@@ -97,7 +99,7 @@ Transitions are 120–180 ms with an ease-out physical response. Respect `prefer
 ## Density
 
 - Dashboard: spacious, 16–24 px internal padding.
-- Workout logging: compact, 8–16 px rhythm with 44–52 px controls.
+- Workout logging: compact, 8–16 px rhythm with 44–52 px primary controls; 36 px may be used for dense secondary selectors where the full target remains easy to tap.
 - Exercise history: dense rows with 12–16 px padding.
 - Settings: standard 16 px rhythm.
 - Charts and analysis: 20–24 px breathing room around the primary data area.
@@ -111,3 +113,5 @@ Before shipping a UI change, check:
 3. Is interface text at least 12 px, apart from approved compact exceptions?
 4. Does the component use a defined role rather than an arbitrary font size?
 5. Is every sentence necessary to complete, understand, or recover from an action?
+6. Do cards, controls, sheets, and spacing use the documented tokens rather than one-off values?
+7. If a target exists, can the user see the current value and target without opening another view?

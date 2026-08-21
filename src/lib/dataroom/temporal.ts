@@ -2,7 +2,7 @@ import { format, parseISO, subDays } from 'date-fns';
 import { estimateOneRepMax } from '@/lib/muscleInsights';
 import type { Confidence, MetricObservation, MealDay, TrainingSet, WorkoutObservation } from './types';
 
-export type TemporalHorizon = 'today' | 'week' | 'month';
+export type TemporalHorizon = 'today' | 'week' | 'month' | 'range';
 export type TemporalTone = 'positive' | 'neutral' | 'watch' | 'insufficient';
 
 export interface TemporalMetric {
@@ -29,7 +29,8 @@ export interface TemporalPanel {
 export interface TemporalAnalysis {
   today: TemporalPanel;
   week: TemporalPanel;
-  month: TemporalPanel;
+  month?: TemporalPanel;
+  range?: TemporalPanel;
 }
 
 type Input = {
@@ -60,7 +61,7 @@ function average(values: number[]) {
 
 function periodData(input: Input, days: number, offsetDays = 0) {
   const end = subDays(parseISO(input.endDate), offsetDays);
-  const start = subDays(end, days - 1);
+  const start = subDays(end, Math.max(days, 1) - 1);
   const endKey = format(end, 'yyyy-MM-dd');
   const metrics = input.metrics.filter(item => between(item.date, start, endKey));
   const meals = input.meals.filter(item => between(item.date, start, endKey));
@@ -118,28 +119,30 @@ function directionalTone(delta: number | null, positiveThreshold = 2, negativeTh
   return 'neutral';
 }
 
-function makeComparisonPanel(input: Input, horizon: 'week' | 'month', days: number): TemporalPanel {
-  const current = periodSummary(input, days, 0);
-  const previous = periodSummary(input, days, days);
-  const currentStart = subDays(parseISO(input.endDate), days - 1);
-  const previousEnd = subDays(parseISO(input.endDate), days);
-  const previousStart = subDays(previousEnd, days - 1);
+function comparisonMetrics(input: Input, currentDays: number, previousDays: number, currentOffset = 0, previousOffset = currentDays) {
+  const current = periodSummary(input, currentDays, currentOffset);
+  const previous = periodSummary(input, previousDays, previousOffset);
+  const currentEnd = subDays(parseISO(input.endDate), currentOffset);
+  const currentStart = subDays(currentEnd, currentDays - 1);
+  const previousEnd = subDays(parseISO(input.endDate), previousOffset);
+  const previousStart = subDays(previousEnd, previousDays - 1);
+  const currentEndKey = format(currentEnd, 'yyyy-MM-dd');
   const previousEndKey = format(previousEnd, 'yyyy-MM-dd');
-  const strength = strengthIndex(input.sets, currentStart, input.endDate, previousStart, previousEndKey);
+  const strength = strengthIndex(input.sets, currentStart, currentEndKey, previousStart, previousEndKey);
 
   const weightDelta = current.avgWeight != null && previous.avgWeight != null ? current.avgWeight - previous.avgWeight : null;
   const workoutDelta = pct(current.workouts, previous.workouts);
   const sleepDelta = current.avgSleep != null && previous.avgSleep != null ? current.avgSleep - previous.avgSleep : null;
   const proteinDelta = current.avgProtein != null && previous.avgProtein != null ? current.avgProtein - previous.avgProtein : null;
 
-  const metrics: TemporalMetric[] = [
+  return [
     {
       key: 'bodyweight', label: 'Bodyweight',
       value: current.avgWeight == null ? 'No trend' : `${n(current.avgWeight)} kg`,
       previous: previous.avgWeight == null ? undefined : `${n(previous.avgWeight)} kg`,
       delta: weightDelta == null ? undefined : `${weightDelta > 0 ? '+' : ''}${n(weightDelta, 2)} kg`,
-      tone: 'neutral', confidence: confidenceFromCoverage(current.weightN, Math.min(days, 7)),
-      detail: `${current.weightN} weigh-ins in current ${days}-day window`,
+      tone: 'neutral', confidence: confidenceFromCoverage(current.weightN, Math.min(currentDays, 7)),
+      detail: `${current.weightN} weigh-ins in current ${currentDays}-day segment`,
     },
     {
       key: 'training', label: 'Training', value: `${current.workouts} sessions`, previous: `${previous.workouts} sessions`,
@@ -151,37 +154,61 @@ function makeComparisonPanel(input: Input, horizon: 'week' | 'month', days: numb
       key: 'strength', label: 'Comparable strength', value: strength.delta == null ? 'No comparison' : `${strength.delta > 0 ? '+' : ''}${strength.delta}%`,
       delta: strength.delta == null ? undefined : `${strength.exercises} exercises`, tone: directionalTone(strength.delta, 2, -5),
       confidence: strength.exercises >= 4 ? 'high' : strength.exercises >= 2 ? 'moderate' : strength.exercises === 1 ? 'low' : 'insufficient',
-      detail: strength.exercises ? `Median best-e1RM change across ${strength.exercises} exercises present in both windows` : 'Comparable exercises are required',
+      detail: strength.exercises ? `Median best-e1RM change across ${strength.exercises} exercises present in both segments` : 'Comparable exercises are required',
     },
     {
       key: 'sleep', label: 'Sleep', value: current.avgSleep == null ? 'No data' : `${n(current.avgSleep)}h`, previous: previous.avgSleep == null ? undefined : `${n(previous.avgSleep)}h`,
       delta: sleepDelta == null ? undefined : `${sleepDelta > 0 ? '+' : ''}${n(sleepDelta, 1)}h`,
       tone: current.avgSleep == null ? 'insufficient' : current.avgSleep < input.sleepGoal - 0.75 ? 'watch' : 'neutral',
-      confidence: confidenceFromCoverage(current.sleepN, days), detail: `${current.sleepN}/${days} nights logged · ${input.sleepGoal}h goal`,
+      confidence: confidenceFromCoverage(current.sleepN, currentDays), detail: `${current.sleepN}/${currentDays} nights logged · ${input.sleepGoal}h goal`,
     },
     {
       key: 'protein', label: 'Protein', value: current.avgProtein == null ? 'No data' : `${Math.round(current.avgProtein)}g`, previous: previous.avgProtein == null ? undefined : `${Math.round(previous.avgProtein)}g`,
       delta: proteinDelta == null ? undefined : `${proteinDelta > 0 ? '+' : ''}${Math.round(proteinDelta)}g`,
       tone: current.avgProtein == null ? 'insufficient' : current.avgProtein < input.proteinGoal * 0.8 ? 'watch' : current.avgProtein >= input.proteinGoal ? 'positive' : 'neutral',
-      confidence: confidenceFromCoverage(current.proteinN, days), detail: `${current.proteinN}/${days} intake days · ${input.proteinGoal}g target`,
+      confidence: confidenceFromCoverage(current.proteinN, currentDays), detail: `${current.proteinN}/${currentDays} intake days · ${input.proteinGoal}g target`,
     },
-  ];
+  ] satisfies TemporalMetric[];
+}
 
+function decisionFor(metrics: TemporalMetric[], label: string) {
   const actionable = metrics.filter(metric => metric.tone === 'watch' && metric.confidence !== 'low' && metric.confidence !== 'insufficient');
   const positive = metrics.filter(metric => metric.tone === 'positive' && metric.confidence !== 'low' && metric.confidence !== 'insufficient');
   const decision = actionable.length
     ? `Review ${actionable.map(item => item.label.toLowerCase()).slice(0, 2).join(' and ')} before changing the plan.`
     : positive.length
-      ? `The ${days}-day comparison supports keeping the current plan unless another high-confidence signal conflicts.`
-      : `No ${days}-day change is strong enough to justify an automatic intervention.`;
+      ? `The ${label} comparison supports keeping the current plan unless another high-confidence signal conflicts.`
+      : `No ${label} change is strong enough to justify an automatic intervention.`;
+  return { decision, decisionTone: actionable.length ? 'watch' as const : positive.length ? 'positive' as const : 'neutral' as const };
+}
 
+function makeComparisonPanel(input: Input, horizon: 'week' | 'month', days: number): TemporalPanel {
+  const metrics = comparisonMetrics(input, days, days);
+  const { decision, decisionTone } = decisionFor(metrics, `${days}-day`);
   return {
     horizon,
     eyebrow: horizon === 'week' ? 'Week to week' : 'Month to month',
     title: horizon === 'week' ? 'Rolling 7 days' : 'Rolling 28 days',
     subtitle: `Compared with the previous ${days} days`,
     decision,
-    decisionTone: actionable.length ? 'watch' : positive.length ? 'positive' : 'neutral',
+    decisionTone,
+    metrics,
+  };
+}
+
+function makeRangePanel(input: Input, selectedDays: number): TemporalPanel {
+  const currentDays = Math.ceil(selectedDays / 2);
+  const previousDays = Math.max(1, selectedDays - currentDays);
+  const metrics = comparisonMetrics(input, currentDays, previousDays, 0, currentDays);
+  const label = selectedDays >= 700 ? '2-year' : `${selectedDays}-day`;
+  const { decision, decisionTone } = decisionFor(metrics, label);
+  return {
+    horizon: 'range',
+    eyebrow: 'Selected range',
+    title: selectedDays >= 700 ? 'Last 2 years' : `Last ${selectedDays} days`,
+    subtitle: `Latest ${currentDays} days vs previous ${previousDays}`,
+    decision,
+    decisionTone,
     metrics,
   };
 }
@@ -206,16 +233,18 @@ function makeTodayPanel(input: Input): TemporalPanel {
   ];
   return {
     horizon: 'today', eyebrow: 'Day to day', title: 'Today', subtitle: 'Live execution state',
-    decision: 'Use today to execute and observe. Reserve programme and calorie changes for repeated week-to-week or month-to-month signals.',
+    decision: 'Use today to execute and observe. Reserve programme and calorie changes for repeated week-to-week or longer-range signals.',
     decisionTone: metrics.some(metric => metric.key === 'sleep' && metric.tone === 'watch') ? 'watch' : 'neutral',
     metrics,
   };
 }
 
-export function buildTemporalAnalysis(input: Input): TemporalAnalysis {
+export function buildTemporalAnalysis(input: Input, selectedDays = 30): TemporalAnalysis {
+  const normalizedDays = Math.max(1, selectedDays);
   return {
     today: makeTodayPanel(input),
     week: makeComparisonPanel(input, 'week', 7),
-    month: makeComparisonPanel(input, 'month', 28),
+    month: normalizedDays >= 28 ? makeComparisonPanel(input, 'month', 28) : undefined,
+    range: normalizedDays !== 7 && normalizedDays !== 28 ? makeRangePanel(input, normalizedDays) : undefined,
   };
 }

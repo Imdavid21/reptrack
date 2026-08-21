@@ -32,7 +32,6 @@ interface ExerciseReviewProps {
   onSkipExercises?: () => void;
   lastUsedNames?: Set<string>;
   isResuming?: boolean;
-  // Active session mode (mid-workout overview)
   activeSession?: boolean;
   onSelectExercise?: (index: number) => void;
   onFinish?: () => void;
@@ -77,7 +76,6 @@ function ExerciseItemCard({
   const isWeightedBW = exType === 'weighted_bw';
   const showWeightField = exType === 'weighted' || exType === 'weighted_bw';
 
-  // Extract max from rep ranges like "10-12" → "12"
   const displayReps = (reps: string | undefined) => {
     if (!reps) return '-';
     const match = reps.match(/(\d+)\s*[--]\s*(\d+)/);
@@ -85,7 +83,6 @@ function ExerciseItemCard({
     return reps;
   };
 
-  // Format seconds for timed display
   const formatTimeSummary = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -138,233 +135,141 @@ function ExerciseItemCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className="rounded-xl border border-border bg-card overflow-hidden"
+      transition={{ duration: 0.15 }}
+      className="surface-standard overflow-hidden"
     >
       <div className="flex items-center gap-2 p-3">
-        {/* Reorder controls - hidden during active session */}
         {!activeSession && (
-          <div className="flex flex-col gap-0.5 shrink-0">
+          <div className="flex shrink-0 flex-col gap-1">
             <button
               onClick={onMoveUp}
               disabled={globalIndex === 0}
-              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label={`Move ${exercise.name} up`}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
             >
-              <ChevronUp className="h-3 w-3" />
+              <ChevronUp className="h-4 w-4" />
             </button>
             <button
               onClick={onMoveDown}
               disabled={globalIndex === totalExercises - 1}
-              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label={`Move ${exercise.name} down`}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
             >
-              <ChevronDown className="h-3 w-3" />
+              <ChevronDown className="h-4 w-4" />
             </button>
           </div>
         )}
 
-        {/* Status icon for active session */}
         {activeSession && (
           <div className={cn(
-            'h-8 w-8 rounded-full flex items-center justify-center shrink-0',
-            allComplete ? 'bg-primary text-primary-foreground' :
-            hasProgress ? 'bg-warning/20 text-warning' :
-            'bg-muted text-muted-foreground'
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
+            allComplete ? 'bg-energy text-energy-foreground' : hasProgress ? 'bg-energy-soft text-energy-ink' : 'bg-muted text-muted-foreground'
           )}>
-            {allComplete ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <span className="text-sm font-bold">{globalIndex + 1}</span>
-            )}
+            {allComplete ? <Check className="h-4 w-4" /> : <span className="type-action tabular-nums">{globalIndex + 1}</span>}
           </div>
         )}
 
-        {/* Exercise info - tap to expand editor or select exercise */}
         <button
           onClick={() => {
             haptic('light');
-            if (activeSession && onSelect) {
-              onSelect();
-            } else {
-              onToggleEdit();
-            }
+            if (activeSession && onSelect) onSelect();
+            else onToggleEdit();
           }}
-          className="flex-1 min-w-0 text-left"
+          className="min-w-0 flex-1 text-left"
         >
-          <div className="font-semibold text-sm flex items-center gap-1.5 min-w-0">
-            <span className="truncate">{exercise.name}</span>
-            {exercise.mandatory && (
-              <span className="text-xs bg-energy text-energy-foreground px-1 py-0.5 rounded  font-bold shrink-0">must</span>
-            )}
-            {exercise.exerciseType === 'timed' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">timed</span>
-            )}
-            {exercise.exerciseType === 'bodyweight' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">bw</span>
-            )}
-            {exercise.exerciseType === 'weighted_bw' && (
-              <span className="text-xs bg-muted px-1 py-0.5 rounded  text-muted-foreground shrink-0">bw+</span>
-            )}
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="truncate type-action">{exercise.name}</span>
+            {exercise.mandatory && <span className="shrink-0 rounded-full bg-energy-soft px-2 py-0.5 type-meta text-energy-ink">Must</span>}
+            {exercise.exerciseType === 'timed' && <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 type-meta">Timed</span>}
+            {exercise.exerciseType === 'bodyweight' && <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 type-meta">BW</span>}
+            {exercise.exerciseType === 'weighted_bw' && <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 type-meta">BW+</span>}
           </div>
-          {exercise.progression && (
-            <div className="text-xs text-muted-foreground/80 italic truncate mt-0.5">{exercise.progression}</div>
-          )}
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-            {isFromHistory && !activeSession && (
-              <>
-                <History className="h-2.5 w-2.5 opacity-50" />
-              </>
-            )}
+          {exercise.progression && <div className="mt-0.5 truncate type-meta">{exercise.progression}</div>}
+          <div className="mt-1 flex items-center gap-1.5 type-meta">
+            {isFromHistory && !activeSession && <History className="h-3 w-3 opacity-60" />}
             {activeSession ? (
-              <span>{completedSetsCount}/{exercise.sets.length} sets logged</span>
+              <span className="tabular-nums">{completedSetsCount}/{exercise.sets.length} sets logged</span>
             ) : (
               <>
                 <span>{totalSets} sets</span>
-                <span className="opacity-40">·</span>
-                {isTimed ? (
-                  <span>{formatTimeSummary(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)}</span>
-                ) : (
-                  <span>{displayReps(targetInfo?.targetReps)}{isBodyweight ? ' reps' : ''}</span>
-                )}
-                {showWeightField && targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && (
-                  <>
-                    <span className="opacity-40">·</span>
-                    <span>{isWeightedBW ? '+' : ''}{targetInfo.targetWeight}</span>
-                  </>
-                )}
-                {(isTimed || isBodyweight || isWeightedBW) && (
-                  <>
-                    <span className="opacity-40">·</span>
-                    <span className="text-xs">{isTimed ? 'timed' : isWeightedBW ? 'bw+' : 'bw'}</span>
-                  </>
-                )}
+                <span>·</span>
+                {isTimed ? <span>{formatTimeSummary(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)}</span> : <span>{displayReps(targetInfo?.targetReps)}{isBodyweight ? ' reps' : ''}</span>}
+                {showWeightField && targetInfo?.targetWeight && targetInfo.targetWeight !== 'BW' && <><span>·</span><span>{isWeightedBW ? '+' : ''}{targetInfo.targetWeight}</span></>}
               </>
             )}
           </div>
         </button>
 
-        {/* Category badge */}
-        <span className={cn(
-          'text-xs font-semibold px-1.5 py-0.5 rounded shrink-0',
-          exercise.category === 'primary'
-            ? 'bg-primary/10 text-primary'
-            : 'bg-muted text-muted-foreground'
-        )}>
-          {exercise.category === 'primary' ? 'Main' : 'ACC'}
+        <span className={cn('shrink-0 rounded-full px-2 py-1 type-meta', exercise.category === 'primary' ? 'bg-energy-soft text-energy-ink' : 'bg-muted')}>
+          {exercise.category === 'primary' ? 'Main' : 'Accessory'}
         </span>
 
-        {/* Remove button - hidden during active session */}
         {!activeSession && (
-          <button
-            onClick={onRemove}
-            className="h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-          >
-            <X className="h-3.5 w-3.5" />
+          <button onClick={onRemove} aria-label={`Remove ${exercise.name}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive">
+            <X className="h-4 w-4" />
           </button>
         )}
 
-        {/* Chevron for active session */}
-        {activeSession && (
-          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 -rotate-90" />
-        )}
+        {activeSession && <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 text-muted-foreground" />}
       </div>
 
-      {/* Inline editor */}
       <AnimatePresence>
         {isEditing && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 pt-1 border-t border-border/50 space-y-2">
-              <div className="flex items-center gap-3">
-                {/* Sets */}
-                <div className="flex flex-col items-center gap-0.5">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+            <div className="border-t border-border px-3 pb-3 pt-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
                   <span className="type-caption">Sets</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleSetsChange(-1)}
-                      className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="text-sm font-bold w-5 text-center tabular-nums">{totalSets}</span>
-                    <button
-                      onClick={() => handleSetsChange(1)}
-                      className="h-6 w-6 flex items-center justify-center rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
+                  <div className="mt-1 flex items-center gap-1">
+                    <button onClick={() => handleSetsChange(-1)} aria-label="Remove one set" className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors hover:text-foreground"><Minus className="h-4 w-4" /></button>
+                    <span className="w-7 text-center type-action tabular-nums">{totalSets}</span>
+                    <button onClick={() => handleSetsChange(1)} aria-label="Add one set" className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors hover:text-foreground"><Plus className="h-4 w-4" /></button>
                   </div>
                 </div>
 
-                <div className="w-px h-8 bg-border/50" />
-
-                {/* Reps or Time */}
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="type-caption">
-                    {isTimed ? 'Secs' : 'Reps'}
-                  </span>
+                <div>
+                  <span className="type-caption">{isTimed ? 'Seconds' : 'Reps'}</span>
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={isTimed
-                      ? String(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30)
-                      : displayReps(targetInfo?.targetReps)
-                    }
+                    value={isTimed ? String(targetInfo?.targetTime || parseInt(targetInfo?.targetReps) || 30) : displayReps(targetInfo?.targetReps)}
                     onChange={(e) => {
                       if (isTimed) {
                         const secs = parseInt(e.target.value) || 0;
                         const newSets = exercise.sets.map(s => ({ ...s, targetTime: secs, targetReps: String(secs) }));
                         onUpdate({ ...exercise, sets: newSets });
-                      } else {
-                        handleRepsChange(e.target.value);
-                      }
+                      } else handleRepsChange(e.target.value);
                     }}
-                    className="h-6 w-14 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
+                    className="mt-1 h-9 w-16 rounded-xl border border-border bg-muted px-2 text-center type-action tabular-nums outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
-                {/* Weight - only for weighted and weighted_bw */}
                 {showWeightField && (
-                  <>
-                    <div className="w-px h-8 bg-border/50" />
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="type-caption">
-                        {isWeightedBW ? '+Weight' : 'Weight'}
-                      </span>
-                      <input
-                        type="text"
-                        value={targetInfo?.targetWeight || ''}
-                        onChange={(e) => handleWeightChange(e.target.value)}
-                        className="h-6 w-16 text-center text-sm font-bold bg-muted rounded-md border-none outline-none focus:ring-1 focus:ring-foreground/20"
-                      />
-                    </div>
-                  </>
+                  <div>
+                    <span className="type-caption">{isWeightedBW ? '+Weight' : 'Weight'}</span>
+                    <input
+                      type="text"
+                      value={targetInfo?.targetWeight || ''}
+                      onChange={(e) => handleWeightChange(e.target.value)}
+                      className="mt-1 h-9 w-20 rounded-xl border border-border bg-muted px-2 text-center type-action tabular-nums outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
                 )}
 
-                {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Swap variant button */}
                 {hasVariants(exercise.name) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-7 w-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                        <ArrowLeftRight className="h-3 w-3" />
+                      <button aria-label="Switch exercise variation" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                        <ArrowLeftRight className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-background border-border z-50">
+                    <DropdownMenuContent align="end" className="z-50 border-border bg-background">
                       {getExerciseVariants(exercise.name).map((variant) => (
-                        <DropdownMenuItem
-                          key={variant.name}
-                          onClick={() => onSwap(variant.name, variant.defaultWeight)}
-                          className="flex items-center justify-between gap-4"
-                        >
+                        <DropdownMenuItem key={variant.name} onClick={() => onSwap(variant.name, variant.defaultWeight)} className="flex items-center justify-between gap-4">
                           {variant.name}
-                          {variant.name === exercise.name && <Check className="h-3 w-3 ml-auto" />}
+                          {variant.name === exercise.name && <Check className="ml-auto h-3.5 w-3.5" />}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -459,9 +364,7 @@ export function ExerciseReview({
         onSwap={(variantName, defaultWeight) => {
           haptic('medium');
           const updated = { ...exercise, name: variantName };
-          if (defaultWeight) {
-            updated.sets = updated.sets.map(s => ({ ...s, targetWeight: defaultWeight }));
-          }
+          if (defaultWeight) updated.sets = updated.sets.map(s => ({ ...s, targetWeight: defaultWeight }));
           handleUpdateExercise(globalIndex, updated);
         }}
         activeSession={activeSession}
@@ -472,10 +375,9 @@ export function ExerciseReview({
 
   return (
     <div className="space-y-5">
-      {/* Day switcher + header */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {availableDays && availableDays.length > 1 && onSwitchDay && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-hide">
             {availableDays.map((day) => (
               <button
                 key={day.key}
@@ -485,12 +387,7 @@ export function ExerciseReview({
                     onSwitchDay(day.key);
                   }
                 }}
-                className={cn(
-                  'shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors',
-                  day.key === selectedDayKey
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
-                )}
+                className={cn('h-9 shrink-0 rounded-xl px-3 type-action transition-colors', day.key === selectedDayKey ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}
               >
                 {day.name}
               </button>
@@ -498,137 +395,85 @@ export function ExerciseReview({
           </div>
         )}
         <div>
-          <h2 className="text-lg font-bold">{dayName}</h2>
-          <p className="text-sm text-muted-foreground">{dayFocus}</p>
+          <h2 className="type-card-title">{dayName}</h2>
+          <p className="mt-1 type-supporting">{dayFocus}</p>
         </div>
       </div>
 
-      {/* Exercise list */}
       <div className="space-y-4">
         {primaryExercises.length > 0 && (
-          <div>
-            <h4 className="section-header mb-2">Compounds</h4>
-            <div className="space-y-1.5">
-              <AnimatePresence mode="popLayout">
-                {primaryExercises.map((ex) => renderExerciseItem(ex))}
-              </AnimatePresence>
-            </div>
-          </div>
+          <section>
+            <h3 className="mb-2 type-component-title">Compounds</h3>
+            <div className="space-y-2"><AnimatePresence mode="popLayout">{primaryExercises.map(ex => renderExerciseItem(ex))}</AnimatePresence></div>
+          </section>
         )}
 
         {accessoryExercises.length > 0 && (
-          <div>
-            <h4 className="section-header mb-2">Accessories</h4>
-            <div className="space-y-1.5">
-              <AnimatePresence mode="popLayout">
-                {accessoryExercises.map((ex) => renderExerciseItem(ex))}
-              </AnimatePresence>
-            </div>
-          </div>
+          <section>
+            <h3 className="mb-2 type-component-title">Accessories</h3>
+            <div className="space-y-2"><AnimatePresence mode="popLayout">{accessoryExercises.map(ex => renderExerciseItem(ex))}</AnimatePresence></div>
+          </section>
         )}
 
         {exercises.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">No exercises yet</p>
-            <p className="text-xs mt-1">Add an exercise to get started</p>
+          <div className="py-8 text-center">
+            <p className="type-action">No exercises yet</p>
+            <p className="mt-1 type-meta">Add an exercise to get started.</p>
           </div>
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="space-y-2.5 flex flex-col items-center w-full">
-      {activeSession ? (
-          /* Active session: Resume / Finish buttons */
+      <div className="flex w-full flex-col items-center space-y-3">
+        {activeSession ? (
           (() => {
-            const allDone = exercises.length > 0 && exercises.every(ex =>
-              ex.sets.every(s => s.completed)
-            );
+            const allDone = exercises.length > 0 && exercises.every(ex => ex.sets.every(s => s.completed));
             if (allDone) {
               return (
-                <button
-                  onClick={onFinish}
-                  disabled={isFinishing}
-                  className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isFinishing ? 'Saving…' : 'Finish Workout'}
+                <button onClick={onFinish} disabled={isFinishing} className="control-large w-full rounded-xl bg-foreground px-5 type-action text-background disabled:opacity-50">
+                  {isFinishing ? 'Saving…' : 'Finish workout'}
                 </button>
               );
             }
-            const resumeIndex = exercises.findIndex(ex =>
-              ex.sets.some(s => !s.completed)
-            );
+            const resumeIndex = exercises.findIndex(ex => ex.sets.some(s => !s.completed));
             return (
               <>
-                <button
-                  onClick={() => onSelectExercise?.(resumeIndex >= 0 ? resumeIndex : 0)}
-                  className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold flex items-center justify-center gap-2"
-                >
+                <button onClick={() => onSelectExercise?.(resumeIndex >= 0 ? resumeIndex : 0)} className="control-large flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 type-action text-background">
                   <Play className="h-4 w-4" />
-                  Resume Workout
+                  Resume workout
                 </button>
-                <button
-                  onClick={onFinish}
-                  disabled={isFinishing}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-                >
-                  {isFinishing ? 'Saving…' : 'Finish Early'}
+                <button onClick={onFinish} disabled={isFinishing} className="control-standard px-3 type-action text-muted-foreground transition-colors hover:text-foreground">
+                  {isFinishing ? 'Saving…' : 'Finish early'}
                 </button>
               </>
             );
           })()
         ) : (
           <>
-            {/* Add exercise */}
-            <div className="flex gap-2 justify-center">
-              {showPicker && (
-                <ExercisePicker
-                  existingExercises={exercises}
-                  onAddExercise={handleAddExercise}
-                  dayType={dayType}
-                  autoOpen
-                  onClose={() => setShowPicker(false)}
-                />
-              )}
+            <div className="flex justify-center gap-2">
+              {showPicker && <ExercisePicker existingExercises={exercises} onAddExercise={handleAddExercise} dayType={dayType} autoOpen onClose={() => setShowPicker(false)} />}
               {!showPicker && (
-                <button
-                  onClick={() => setShowPicker(true)}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-                >
+                <button onClick={() => setShowPicker(true)} className="control-standard flex items-center justify-center gap-2 rounded-xl border border-dashed border-border px-5 type-action text-muted-foreground transition-colors hover:border-foreground hover:text-foreground">
                   <Plus className="h-4 w-4" />
-                  Add Exercise
+                  Add exercise
                 </button>
               )}
             </div>
 
-            {/* Start workout */}
-            <button
-              onClick={onStart}
-              disabled={exercises.length === 0}
-              className="btn-brutalist btn-primary self-stretch py-4 text-base font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-            >
+            <button onClick={onStart} disabled={exercises.length === 0} className="control-large flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 type-action text-background disabled:opacity-40">
               <Play className="h-4 w-4" />
-              {startLabel || (isResuming ? 'Resume Workout' : `Start Workout (${exercises.length} exercises)`)}
+              {startLabel || (isResuming ? 'Resume workout' : `Start workout · ${exercises.length} exercises`)}
             </button>
 
-            {/* Skip exercises */}
             {onSkipExercises && (
-              <button
-                onClick={onSkipExercises}
-                className="mx-auto block py-2 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-              >
-                Skip exercises →
+              <button onClick={onSkipExercises} className="control-standard px-3 type-action text-muted-foreground transition-colors hover:text-foreground">
+                Skip exercises
               </button>
             )}
           </>
         )}
       </div>
 
-      {/* Info text */}
-      {!activeSession && (
-        <p className="text-xs text-muted-foreground text-center">
-          Tap any exercise to adjust sets, reps, weight, or duration
-        </p>
-      )}
+      {!activeSession && <p className="type-meta text-center">Tap an exercise to adjust sets, reps, weight, or duration.</p>}
     </div>
   );
 }
