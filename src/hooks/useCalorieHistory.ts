@@ -8,6 +8,7 @@ import { DateRange } from '@/contexts/DateRangeContext';
 import { resolveBodyweightKg } from '@/lib/workoutCalories';
 import { estimateDayActivity } from '@/lib/dayActivity';
 import { ageOnDate, calculateRee, effectiveWeightAt, nonexerciseBaselineFactor } from '@/lib/energyEngineV3';
+import { fetchMealRows } from '@/lib/fetchMealRows';
 
 interface CalorieDataPoint {
   date: string;
@@ -29,7 +30,6 @@ export function useCalorieHistory(dateRange: DateRange) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
 
-  // Fetch a wider bodyweight history for per-date lookup (with fallback)
   const { data: metricsData } = useDailyMetrics({
     from: subDays(dateRange.from, 30),
     to: dateRange.to,
@@ -45,14 +45,8 @@ export function useCalorieHistory(dateRange: DateRange) {
     queryFn: async (): Promise<CalorieDataPoint[]> => {
       if (!user) return [];
 
-      // Fetch meals (intake), manual burns, workouts, and bodyweight history in parallel
-      const [mealsRes, burnsRes, workoutsRes, weightsRes, statesRes] = await Promise.all([
-        supabase
-          .from('meals')
-          .select('date, calories')
-          .eq('user_id', user.id)
-          .gte('date', startDateStr)
-          .lte('date', endDateStr),
+      const [mealRows, burnsRes, workoutsRes, weightsRes, statesRes] = await Promise.all([
+        fetchMealRows(user.id, startDateStr, endDateStr),
         supabase
           .from('calorie_burns')
           .select('date, calories, source, activity_type, duration_minutes, distance_km')
@@ -88,10 +82,11 @@ export function useCalorieHistory(dateRange: DateRange) {
           .lte('effective_date', endDateStr)
           .order('effective_date', { ascending: true }),
       ]);
+      if (burnsRes.error) throw burnsRes.error;
+      if (workoutsRes.error) throw workoutsRes.error;
+      if (weightsRes.error) throw weightsRes.error;
       if (statesRes.error && !/schema cache|does not exist/i.test(statesRes.error.message || '')) throw statesRes.error;
 
-      // Build a historical, recency-weighted bodyweight map. Goal weight is
-      // never used as if it were measured physiology.
       const weightByDate: Record<string, number> = {};
       const sortedWeights = (weightsRes.data || []) as { date: string; bodyweight: number }[];
       const observations = sortedWeights.map(w => ({ date: w.date, kg: Number(w.bodyweight) }));
@@ -101,16 +96,11 @@ export function useCalorieHistory(dateRange: DateRange) {
         weightByDate[ds] = effectiveWeightAt(observations, ds, preferences?.initial_weight_kg).kg;
       });
 
-      // Group intake by date
       const intakeByDate: Record<string, number> = {};
-      (mealsRes.data || []).forEach((meal: any) => {
-        intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (meal.calories || 0);
+      mealRows.forEach(meal => {
+        intakeByDate[meal.date] = (intakeByDate[meal.date] || 0) + (Number(meal.calories) || 0);
       });
 
-      // Recompute every day's deliberate activity with the same V3 engine the
-      // dashboard uses. Stored `calories` is deliberately not trusted here:
-      // pre-V3 rows hold gross MET figures that include resting expenditure,
-      // which made History read 35-40% higher than Home for the same day.
       const activityHistory = (burnsRes.data || [])
         .filter((burn: any) => burn.source === 'manual')
         .map((burn: any) => ({ date: burn.date, activityType: burn.activity_type, distanceKm: burn.distance_km, durationMinutes: burn.duration_minutes }));
@@ -141,11 +131,9 @@ export function useCalorieHistory(dateRange: DateRange) {
         manualBurnByDate[ds] = Math.round(total - categories.workout);
       });
 
-
-      // Generate array for all days in range
       const allDays = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
       const modelStates = statesRes.error ? [] : (statesRes.data || []);
-      
+
       return allDays.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd');
         const intake = intakeByDate[dateStr] || 0;
