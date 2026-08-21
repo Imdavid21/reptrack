@@ -17,7 +17,10 @@ interface Props {
   calibrationAdjustment?: number | null;
   /** Formula baseline (BMR x non-exercise factor) before calibration, kcal/day. */
   formulaBaseline?: number | null;
+  /** Extra content rendered inside the expanded breakdown (e.g. daily calorie summary). */
+  children?: React.ReactNode;
 }
+
 
 /**
  * Tappable maintenance tile.
@@ -38,7 +41,9 @@ export function BmrBreakdownTile({
   isToday,
   calibrationAdjustment,
   formulaBaseline,
+  children,
 }: Props) {
+
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -134,8 +139,11 @@ export function BmrBreakdownTile({
           <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
             Exercise burn is counted on top of this.
           </p>
+
+          {children}
         </div>
       )}
+
     </div>
   );
 }
