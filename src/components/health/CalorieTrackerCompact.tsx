@@ -492,14 +492,8 @@ export function CalorieTrackerCompact() {
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
-              <button
-                onClick={() => setIsEditingGoal(!isEditingGoal)}
-                className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
-                title="Edit goal"
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
             </div>
+
               <Utensils className="h-4 w-4 text-muted-foreground/70" />
           </div>
 
@@ -557,35 +551,8 @@ export function CalorieTrackerCompact() {
                 ) : (
                   <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setIsProteinOpen(open => !open)}
-                  className="w-full py-3 text-left transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Protein</h3>
-                    <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
-                  </div>
-                  <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-                    <div className="min-w-0">
-                      <div className="text-2xl font-semibold tracking-tight tabular-nums">
-                        {Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-foreground transition-[width] duration-300"
-                          style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
-                      {proteinTotal >= proteinGoal
-                        ? `+${Math.round(proteinTotal - proteinGoal)}g over`
-                        : `${Math.round(proteinGoal - proteinTotal)}g left`}
-                    </div>
-                  </div>
 
-                </button>
+
               </div>
 
               <CollapsibleTrigger className="pt-2 flex w-full justify-center" aria-label={isExpanded ? 'Hide details' : 'Show details'}>
@@ -620,29 +587,95 @@ export function CalorieTrackerCompact() {
             </div>
           )}
 
-          {isEditingGoal && (
-            <div className="mt-3 p-3 border border-border rounded-xl bg-muted/30 space-y-3 animate-fade-in">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Daily goal</span>
-                <span className="font-bold">{editGoal.toLocaleString()} cal</span>
+          <div className="mt-3 border-t border-border pt-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Daily calorie goal</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm tabular-nums text-muted-foreground">{dailyGoal.toLocaleString()} kcal</span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingGoal(!isEditingGoal)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {isEditingGoal ? 'Hide' : 'Edit'}
+                </button>
               </div>
-              <Slider
-                value={[editGoal]}
-                onValueChange={([v]) => setEditGoal(v)}
-                min={1200}
-                max={4000}
-                step={50}
-                className="w-full"
-              />
-              <button
-                onClick={handleSaveCalorieGoal}
-                className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
-              >
-                <Check className="h-3 w-3" />
-                Save
-              </button>
+            </div>
+            {isEditingGoal && (
+              <div className="mt-3 space-y-3 animate-fade-in">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">New goal</span>
+                  <span className="font-bold">{editGoal.toLocaleString()} cal</span>
+                </div>
+                <Slider
+                  value={[editGoal]}
+                  onValueChange={([v]) => setEditGoal(v)}
+                  min={1200}
+                  max={4000}
+                  step={50}
+                  className="w-full"
+                />
+                <button
+                  onClick={handleSaveCalorieGoal}
+                  className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
+                >
+                  <Check className="h-3 w-3" />
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
+
+          {energy.model && (
+            <div className="mt-3 border-t border-border pt-3 space-y-2 text-sm">
+              <h3 className="text-sm font-semibold">Daily summary</h3>
+              <div className="flex justify-between"><span className="text-muted-foreground">Normal day</span><span className="tabular-nums">~{energy.breakdown.normalDay.toLocaleString()} kcal</span></div>
+              {energy.breakdown.workout > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Workout</span><span className="tabular-nums">~{energy.breakdown.workout} kcal</span></div>}
+              {energy.breakdown.walking > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Walking</span><span className="tabular-nums">~{energy.breakdown.walking} kcal</span></div>}
+              {energy.breakdown.running > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Running</span><span className="tabular-nums">~{energy.breakdown.running} kcal</span></div>}
+              {energy.breakdown.cycling > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cycling</span><span className="tabular-nums">~{energy.breakdown.cycling} kcal</span></div>}
+              {energy.breakdown.boxing + energy.breakdown.other > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Other activity</span><span className="tabular-nums">~{energy.breakdown.boxing + energy.breakdown.other} kcal</span></div>}
+              <div className="flex justify-between border-t border-border pt-2 font-semibold"><span>Estimated expenditure</span><span className="tabular-nums">~{energy.breakdown.expenditure.toLocaleString()} kcal</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
+              <details className="pt-1 text-xs text-muted-foreground">
+                <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
+                <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
+              </details>
             </div>
           )}
+
+          <div className="mt-3 border-t border-border pt-3">
+            <h3 className="text-sm font-semibold">Nutrition</h3>
+            <button
+              type="button"
+              onClick={() => setIsProteinOpen(open => !open)}
+              className="mt-2 w-full rounded-xl text-left transition-colors hover:bg-muted/30"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">Protein</h4>
+                <span className="text-xs text-muted-foreground">{isProteinOpen ? 'Hide' : 'View details'}</span>
+              </div>
+              <div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+                <div className="min-w-0">
+                  <div className="text-2xl font-semibold tracking-tight tabular-nums">
+                    {Math.round(proteinTotal)}g <span className="text-sm font-normal text-muted-foreground">/ {proteinGoal}g</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-foreground transition-[width] duration-300"
+                      style={{ width: `${Math.min(100, Math.round((proteinTotal / Math.max(1, proteinGoal)) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="max-w-[8rem] text-right text-sm leading-snug text-muted-foreground tabular-nums">
+                  {proteinTotal >= proteinGoal
+                    ? `+${Math.round(proteinTotal - proteinGoal)}g over`
+                    : `${Math.round(proteinGoal - proteinTotal)}g left`}
+                </div>
+              </div>
+            </button>
+          </div>
+
 
           {!deficitMode && (
             <div className="progress-bar mt-4">
@@ -705,25 +738,55 @@ export function CalorieTrackerCompact() {
           </div>
 
           <CollapsibleContent className="animate-accordion-down overflow-hidden">
-            <div className="mt-4 pt-4 border-t border-border space-y-3 overflow-hidden">
-              {energy.model && (
-                <div className="rounded-xl bg-muted/25 p-3 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Normal day</span><span className="tabular-nums">~{energy.breakdown.normalDay.toLocaleString()} kcal</span></div>
-                  {energy.breakdown.workout > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Workout</span><span className="tabular-nums">~{energy.breakdown.workout} kcal</span></div>}
-                  {energy.breakdown.walking > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Walking</span><span className="tabular-nums">~{energy.breakdown.walking} kcal</span></div>}
-                  {energy.breakdown.running > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Running</span><span className="tabular-nums">~{energy.breakdown.running} kcal</span></div>}
-                  {energy.breakdown.cycling > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cycling</span><span className="tabular-nums">~{energy.breakdown.cycling} kcal</span></div>}
-                  {energy.breakdown.boxing + energy.breakdown.other > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Other activity</span><span className="tabular-nums">~{energy.breakdown.boxing + energy.breakdown.other} kcal</span></div>}
-                  <div className="flex justify-between border-t border-border pt-2 font-semibold"><span>Estimated expenditure</span><span className="tabular-nums">~{energy.breakdown.expenditure.toLocaleString()} kcal</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Estimated balance</span><span className="tabular-nums">{energy.breakdown.balance <= 0 ? `~${Math.abs(energy.breakdown.balance)} kcal deficit` : `~${energy.breakdown.balance} kcal surplus`}</span></div>
-                  <details className="pt-1 text-xs text-muted-foreground">
-                    <summary className="cursor-pointer text-foreground">How is this calculated?</summary>
-                    <p className="mt-2 leading-relaxed">Uses your weight near this date, resting expenditure, normal non-exercise baseline, and net logged activity above rest. Current likely expenditure range: ~{energy.model.likelyRange[0].toLocaleString()}-{energy.model.likelyRange[1].toLocaleString()} kcal · {energy.model.confidence} confidence · model v{energy.model.modelVersion}.</p>
-                  </details>
-                </div>
-              )}
+            <div className="mt-4 pt-4 border-t border-border space-y-4 overflow-hidden">
+              <div className="space-y-3 overflow-hidden">
+                <h3 className="text-xs font-semibold text-muted-foreground">Food log</h3>
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
+                  const Icon = MEAL_ICONS[type];
+                  const mealsOfType = mealsByType[type];
+                  const typeCalories = mealsOfType.reduce((sum, m) => sum + (m.calories || 0), 0);
+
+                  if (mealsOfType.length === 0) return null;
+
+                  return (
+                    <div key={type} className="space-y-1 overflow-hidden">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{MEAL_LABELS[type]}</span>
+                        </div>
+                        <span className="tabular-nums shrink-0">{typeCalories} cal</span>
+                      </div>
+                      {mealsOfType.map((meal) => (
+                        <div key={meal.id} className="flex items-start justify-between text-sm pl-5 group min-w-0 gap-2">
+                          <span className="break-words min-w-0 flex-1 leading-snug">{meal.food_name || 'Unnamed'}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs tabular-nums text-muted-foreground">{mealTime(meal.created_at)} · {meal.calories} cal</span>
+                            <button
+                              onClick={() => setMealPendingDelete({ id: meal.id, name: meal.food_name || 'this entry' })}
+                              aria-label={`Delete ${meal.food_name || 'meal'}`}
+                              title="Delete"
+                              className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+
+                {meals.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No meals yet. Tap the camera to snap your food.
+                  </p>
+                )}
+              </div>
+
               {(burns.length > 0 || showCalculatedWorkout) && (
-                <div className="space-y-1 overflow-hidden">
+                <div className="space-y-1 overflow-hidden border-t border-border pt-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground">Activity</h3>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2 min-w-0">
                       <Flame className="h-3 w-3 shrink-0" />
@@ -750,50 +813,9 @@ export function CalorieTrackerCompact() {
                   ))}
                 </div>
               )}
-
-              {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
-                const Icon = MEAL_ICONS[type];
-                const mealsOfType = mealsByType[type];
-                const typeCalories = mealsOfType.reduce((sum, m) => sum + (m.calories || 0), 0);
-
-                if (mealsOfType.length === 0) return null;
-
-                return (
-                  <div key={type} className="space-y-1 overflow-hidden">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Icon className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{MEAL_LABELS[type]}</span>
-                      </div>
-                      <span className="tabular-nums shrink-0">{typeCalories} cal</span>
-                    </div>
-                    {mealsOfType.map((meal) => (
-                      <div key={meal.id} className="flex items-start justify-between text-sm pl-5 group min-w-0 gap-2">
-                        <span className="break-words min-w-0 flex-1 leading-snug">{meal.food_name || 'Unnamed'}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs tabular-nums text-muted-foreground">{mealTime(meal.created_at)} · {meal.calories} cal</span>
-                          <button
-                            onClick={() => setMealPendingDelete({ id: meal.id, name: meal.food_name || 'this entry' })}
-                            aria-label={`Delete ${meal.food_name || 'meal'}`}
-                            title="Delete"
-                            className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-0.5 hover:text-destructive transition-all"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-
-              {meals.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No meals yet. Tap the camera to snap your food.
-                </p>
-              )}
             </div>
           </CollapsibleContent>
+
         </div>
       </Collapsible>
 
