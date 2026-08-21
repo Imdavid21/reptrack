@@ -639,7 +639,7 @@ export function CalorieTrackerCompact() {
                 className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
               >
                 <Check className="h-3 w-3" />
-                SAVE
+                Save
               </button>
             </div>
           )}
