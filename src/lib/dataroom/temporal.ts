@@ -1,4 +1,4 @@
-import { parseISO, subDays } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import { estimateOneRepMax } from '@/lib/muscleInsights';
 import type { Confidence, MetricObservation, MealDay, TrainingSet, WorkoutObservation } from './types';
 
@@ -61,7 +61,7 @@ function average(values: number[]) {
 function periodData(input: Input, days: number, offsetDays = 0) {
   const end = subDays(parseISO(input.endDate), offsetDays);
   const start = subDays(end, days - 1);
-  const endKey = end.toISOString().slice(0, 10);
+  const endKey = format(end, 'yyyy-MM-dd');
   const metrics = input.metrics.filter(item => between(item.date, start, endKey));
   const meals = input.meals.filter(item => between(item.date, start, endKey));
   const sets = input.sets.filter(item => between(item.date, start, endKey));
@@ -124,9 +124,8 @@ function makeComparisonPanel(input: Input, horizon: 'week' | 'month', days: numb
   const currentStart = subDays(parseISO(input.endDate), days - 1);
   const previousEnd = subDays(parseISO(input.endDate), days);
   const previousStart = subDays(previousEnd, days - 1);
-  const previousEndKey = previousEnd.toISOString().slice(0, 10);
-  const allSets = input.sets;
-  const strength = strengthIndex(allSets, currentStart, input.endDate, previousStart, previousEndKey);
+  const previousEndKey = format(previousEnd, 'yyyy-MM-dd');
+  const strength = strengthIndex(input.sets, currentStart, input.endDate, previousStart, previousEndKey);
 
   const weightDelta = current.avgWeight != null && previous.avgWeight != null ? current.avgWeight - previous.avgWeight : null;
   const workoutDelta = pct(current.workouts, previous.workouts);
