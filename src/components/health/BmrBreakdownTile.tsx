@@ -41,7 +41,9 @@ export function BmrBreakdownTile({
   isToday,
   calibrationAdjustment,
   formulaBaseline,
+  children,
 }: Props) {
+
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
