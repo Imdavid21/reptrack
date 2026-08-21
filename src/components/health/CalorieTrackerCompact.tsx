@@ -490,7 +490,7 @@ export function CalorieTrackerCompact() {
               <h2 className="text-sm font-semibold tracking-tight">
                 {viewingToday
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
-                  : `${format(logDate, 'MMM d').toUpperCase()} · ${deficitMode ? 'Deficit' : 'Calories'}`}
+                  : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
               <button
                 onClick={() => setIsEditingGoal(!isEditingGoal)}
@@ -545,17 +545,15 @@ export function CalorieTrackerCompact() {
                   <div className="py-3 pl-3"><h3 className="text-xs text-muted-foreground">Activity out</h3><div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{totalBurned.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
                 </div>
                 {displayedBmr && displayedMaintenance ? (
-                  <div className="py-3">
-                    <BmrBreakdownTile
-                      bmr={displayedBmr}
-                      maintenance={displayedMaintenance}
-                      isOverride={false}
-                      totalBurnedToday={viewingToday ? totalBurned : 0}
-                      isToday={viewingToday}
-                      calibrationAdjustment={energy.model?.calibrationAdjustment}
-                      formulaBaseline={energy.model?.formulaBaseline}
-                    />
-                  </div>
+                  <BmrBreakdownTile
+                    bmr={displayedBmr}
+                    maintenance={displayedMaintenance}
+                    isOverride={false}
+                    totalBurnedToday={viewingToday ? totalBurned : 0}
+                    isToday={viewingToday}
+                    calibrationAdjustment={energy.model?.calibrationAdjustment}
+                    formulaBaseline={energy.model?.formulaBaseline}
+                  />
                 ) : (
                   <div className="py-3 text-sm text-muted-foreground">BMR unavailable · add height, gender, age, and bodyweight in Account</div>
                 )}
@@ -609,7 +607,7 @@ export function CalorieTrackerCompact() {
           )}
 
           {!deficitMode && displayedBmr && displayedMaintenance && (
-            <div className="mt-3">
+            <div className="mt-3 pt-3 border-t border-border">
               <BmrBreakdownTile
                 bmr={displayedBmr}
                 maintenance={displayedMaintenance}
@@ -641,7 +639,7 @@ export function CalorieTrackerCompact() {
                 className="w-full btn-brutalist flex items-center justify-center gap-2 py-2 text-sm"
               >
                 <Check className="h-3 w-3" />
-                SAVE
+                Save
               </button>
             </div>
           )}
