@@ -492,14 +492,8 @@ export function CalorieTrackerCompact() {
                   ? (deficitMode ? 'Calorie Balance' : "Today's calories")
                   : `${format(logDate, 'MMM d')} · ${deficitMode ? 'Deficit' : 'Calories'}`}
               </h2>
-              <button
-                onClick={() => setIsEditingGoal(!isEditingGoal)}
-                className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
-                title="Edit goal"
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
             </div>
+
               <Utensils className="h-4 w-4 text-muted-foreground/70" />
           </div>
 
