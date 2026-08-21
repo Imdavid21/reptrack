@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { bmrBurnedSoFarTodayPrecise } from '@/lib/metabolism';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,8 @@ interface Props {
   calibrationAdjustment?: number | null;
   /** Formula baseline (BMR x non-exercise factor) before calibration, kcal/day. */
   formulaBaseline?: number | null;
+  /** Additional expenditure details shown only when this tile is expanded. */
+  children?: ReactNode;
 }
 
 /**
@@ -38,6 +40,7 @@ export function BmrBreakdownTile({
   isToday,
   calibrationAdjustment,
   formulaBaseline,
+  children,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -65,27 +68,22 @@ export function BmrBreakdownTile({
     formulaBaseline > 0;
   const dailyLiving = Math.round((hasCalibration ? formulaBaseline! : maintenance) - bmr);
 
-  // A plain div, not a <button>: this tile lives inside CalorieTrackerCompact's
-  // CollapsibleTrigger (itself a button, toggling the whole card's expanded
-  // state) — nesting a real button inside it is invalid HTML and lets clicks
-  // bubble up to toggle the outer card too. stopPropagation below plus a
-  // manual button role/keyboard handler gets the same tappable behavior
-  // without nesting interactive elements.
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          setExpanded(x => !x);
-        }
-      }}
-      className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20 text-left transition-colors hover:bg-muted/30 cursor-pointer"
-    >
-      <div className="flex items-center justify-between gap-2">
+    <div className="col-span-2 rounded-xl border border-border bg-muted/20 text-left transition-colors">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded(x => !x);
+          }
+        }}
+        className="flex cursor-pointer items-center justify-between gap-2 rounded-xl p-2.5 hover:bg-muted/30"
+      >
         <div>
           <div className="text-xs text-muted-foreground tracking-wider">MAINTENANCE (BEFORE EXERCISE)</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
@@ -100,7 +98,7 @@ export function BmrBreakdownTile({
       </div>
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
+        <div className="mx-2.5 mb-2.5 border-t border-border pt-3 space-y-2.5" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-baseline justify-between">
             <span className="text-xs text-muted-foreground">Resting burn (BMR)</span>
             <span className="text-sm font-bold tabular-nums text-foreground">{bmr.toLocaleString()} kcal/day</span>
@@ -152,6 +150,7 @@ export function BmrBreakdownTile({
           <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
             Workouts, walks, runs and rides are added on top of maintenance, so maintenance itself leaves them out.
           </p>
+          {children && <div className="border-t border-border pt-3">{children}</div>}
         </div>
       )}
     </div>
