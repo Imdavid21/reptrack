@@ -14,6 +14,7 @@ const surfaces = [
   'src/pages/Dataroom.tsx',
   'src/components/dashboard/TodaySnapshot.tsx',
   'src/components/health/CalorieTrackerCompact.tsx',
+  'src/components/workout/SetBySetCard.tsx',
   'src/components/analytics/DateRangeSelector.tsx',
   'src/components/common/LogDateChip.tsx',
   'src/components/dataroom/DataRoomVisuals.tsx',
