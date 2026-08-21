@@ -82,9 +82,9 @@ export function BmrBreakdownTile({
           setExpanded(x => !x);
         }
       }}
-      className="col-span-2 p-2.5 rounded-xl border border-border bg-muted/20 text-left transition-colors hover:bg-muted/30 cursor-pointer"
+      className="w-full py-3 text-left transition-colors hover:bg-muted/30 cursor-pointer"
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-xs text-muted-foreground tracking-wider">Maintenance (before exercise)</div>
           <div className="text-xl font-bold tabular-nums leading-tight text-foreground">
@@ -94,7 +94,10 @@ export function BmrBreakdownTile({
             <div className="text-xs text-muted-foreground">Manual override</div>
           )}
         </div>
-        <ChevronRight className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform', expanded && 'rotate-90')} />
+        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+          <span>{expanded ? 'Hide' : 'View details'}</span>
+          <ChevronRight className={cn('h-4 w-4 transition-transform', expanded && 'rotate-90')} />
+        </div>
       </div>
 
       {expanded && (
