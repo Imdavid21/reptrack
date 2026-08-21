@@ -23,7 +23,7 @@ export class FoodAnalysisError extends Error {
 }
 
 export interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number; sugar?: number; sodium?: number }[];
+  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number; sugar?: number; sodium?: number; potassium?: number }[];
   total_calories: number;
   total_protein?: number;
   total_carbs?: number;
@@ -31,6 +31,7 @@ export interface FoodAnalysis {
   total_fiber?: number;
   total_sugar?: number;
   total_sodium?: number;
+  total_potassium?: number;
   confidence: number;
   description: string;
   food_quality?: string;
@@ -49,7 +50,7 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
 // The analyze-food model reasons over the image before answering (more detail =
 // more accurate identification), which runs meaningfully slower than a plain
-// vision call — give the pipeline enough headroom that a legitimate slow
+// vision call - give the pipeline enough headroom that a legitimate slow
 // analysis doesn't get cut off mid-flight.
 const OVERALL_TIMEOUT_MS = 75_000;
 

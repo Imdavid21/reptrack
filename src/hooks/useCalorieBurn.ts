@@ -151,7 +151,7 @@ export function useCalorieBurn(date?: Date) {
   const calculateWorkoutCalories = (durationMinutes: number) =>
     estimateWorkoutCalories({ exercises: [] }, weightKg, durationMinutes);
 
-  // Category derivation also lives in lib/workoutCalories.ts — see that file
+  // Category derivation also lives in lib/workoutCalories.ts - see that file
   // for why day_name is checked before exercise.category.
 
   // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)
@@ -161,7 +161,7 @@ export function useCalorieBurn(date?: Date) {
     return Math.round(steps * caloriesPerStep);
   };
 
-  // BMR calculation (Mifflin-St Jeor) — see src/lib/metabolism.ts, the shared
+  // BMR calculation (Mifflin-St Jeor) - see src/lib/metabolism.ts, the shared
   // source of truth (also used by useAutoMaintenanceCalories and onboarding).
   const calculateBMR = (age: number, heightCm: number, gender: 'male' | 'female') =>
     sharedCalculateBMR(weightKg, heightCm, age, gender);
@@ -285,7 +285,7 @@ export function useManualBurns(days: number = 30) {
   });
 
   // Updates a specific row by id rather than upserting on (user_id, date,
-  // source, activity_type) — the edit dialog lets the activity_type itself
+  // source, activity_type) - the edit dialog lets the activity_type itself
   // change, and re-targeting the natural key mid-edit would leave the old
   // row behind instead of replacing it.
   const updateBurn = useMutation({
@@ -326,7 +326,7 @@ export interface ManualActivityEntry {
 /**
  * Manual activities within an explicit [from, to] range. Unlike useManualBurns
  * (always "last N days through today"), this respects an arbitrary selected
- * range — needed so muscle-balance analysis matches whatever range the user
+ * range - needed so muscle-balance analysis matches whatever range the user
  * has picked on Insights, not just the last N days from right now.
  */
 export function useManualActivitiesInRange(from: Date, to: Date) {

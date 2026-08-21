@@ -35,7 +35,7 @@ export function GrowthInsightsCard({ data, isLoading }: Props) {
               New PR · {pr.exercise}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              {pr.weight}kg × {pr.reps} — estimated 1RM {pr.e1rm}kg
+              {pr.weight}kg × {pr.reps} - estimated 1RM {pr.e1rm}kg
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function GrowthInsightsCard({ data, isLoading }: Props) {
             <div className="text-sm font-semibold leading-tight">Room to grow</div>
             <div className="text-xs text-muted-foreground mt-0.5">
               {data.growthRoom.slice(0, 4).join(', ')} {data.growthRoom.length === 1 ? 'has' : 'have'} room
-              for 1–2 more weekly sets before hitting peak productive volume.
+              for 1-2 more weekly sets before hitting peak productive volume.
             </div>
           </div>
         </div>

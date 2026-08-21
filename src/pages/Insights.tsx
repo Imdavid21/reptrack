@@ -35,7 +35,6 @@ import { useMuscleIntelligence } from '@/hooks/useMuscleIntelligence';
 import { useCorrelationAnalysis } from '@/hooks/useCorrelationAnalysis';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
-import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { toast } from '@/lib/toast';
 
 function InsightSection({ label, count, dotClass, initiallyOpen = false, children }: { label: string; count: number; dotClass: string; initiallyOpen?: boolean; children: ReactNode }) {
@@ -51,14 +50,6 @@ function InsightSection({ label, count, dotClass, initiallyOpen = false, childre
   );
 }
 
-const FITNESS_GOALS = [
-  { value: 'lose_weight', label: 'Lose Weight' },
-  { value: 'build_muscle', label: 'Build Muscle' },
-  { value: 'maintain', label: 'Maintain' },
-  { value: 'improve_health', label: 'Improve Health' },
-  { value: 'increase_strength', label: 'Increase Strength' },
-];
-
 // Unified Progress Card using global date range + inline editing
 function ProgressCard() {
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
@@ -70,33 +61,23 @@ function ProgressCard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // Calories and water are edited on their own dashboard tiles (which also
+  // lock the adaptive target); fitness goal lives in Settings > Workout.
+  // This panel only owns the goals that have no home elsewhere.
   const [goals, setGoals] = useState({
-    daily_calorie_goal: '',
-    daily_water_goal: '',
     weekly_workout_goal: '',
     sleep_goal: '',
     weight_goal: '',
     weight_goal_type: 'maintain',
-    fitness_goal: '',
   });
 
   useEffect(() => {
     if (preferences) {
       setGoals({
-        daily_calorie_goal: preferences.daily_calorie_goal?.toString() || '',
-        // This field collects/displays ml (see the "ml" adornment below), but
-        // daily_water_goal is stored in LITERS everywhere else in the app
-        // (WaterTracker's slider, HydrationChart, the body-score hydration
-        // pillar) — convert on the way in and out so this is the only place
-        // that ever deals with the ml scale.
-        daily_water_goal: preferences.daily_water_goal
-          ? String(Math.round(normalizeWaterGoalLiters(preferences.daily_water_goal) * 1000))
-          : '',
         weekly_workout_goal: preferences.weekly_workout_goal?.toString() || '4',
         sleep_goal: preferences.sleep_goal?.toString() || '8',
         weight_goal: preferences.weight_goal?.toString() || '',
         weight_goal_type: preferences.weight_goal_type || 'maintain',
-        fitness_goal: preferences.fitness_goal || '',
       });
     }
   }, [preferences]);
@@ -107,37 +88,22 @@ function ProgressCard() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const calorieGoal = goals.daily_calorie_goal ? parseInt(goals.daily_calorie_goal) : null;
-      const calorieGoalChanged = calorieGoal != null && calorieGoal !== preferences?.daily_calorie_goal;
-      // Field collects ml; daily_water_goal is stored in liters (see note above).
-      const waterGoal = goals.daily_water_goal ? parseInt(goals.daily_water_goal) / 1000 : null;
       const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
       const sleepGoalValue = goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8;
 
       await updatePreferences.mutateAsync({
-        daily_calorie_goal: calorieGoal,
-        calorie_target_locked: calorieGoalChanged ? true : preferences?.calorie_target_locked,
-        daily_water_goal: waterGoal,
         weekly_workout_goal: workoutGoalValue,
         sleep_goal: sleepGoalValue,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
         weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
-        fitness_goal: goals.fitness_goal || null,
       });
 
-      // Layer point-in-time tracking on top for the goals judged against
-      // historical data (see useGoalHistory) — weight_goal/fitness_goal
-      // aren't per-day targets, so they don't get a history entry.
-      const historyWrites: Promise<void>[] = [];
-      if (calorieGoal != null) {
-        historyWrites.push(recordGoalHistory('daily_calorie_goal', calorieGoal, preferences?.daily_calorie_goal));
-      }
-      if (waterGoal != null) {
-        historyWrites.push(recordGoalHistory('daily_water_goal', waterGoal, preferences?.daily_water_goal));
-      }
-      historyWrites.push(recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal));
-      historyWrites.push(recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal));
-      await Promise.all(historyWrites);
+      // Point-in-time tracking for the goals judged against historical data
+      // (see useGoalHistory) - weight_goal isn't a per-day target.
+      await Promise.all([
+        recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal),
+        recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal),
+      ]);
 
       toast.success('Goals updated');
       setIsEditing(false);
@@ -177,7 +143,7 @@ function ProgressCard() {
   const workoutProgress = summary ? Math.round((summary.workouts / monthlyWorkoutGoal) * 100) : 0;
   const volumeFormatted = summary?.totalVolume
     ? (summary.totalVolume >= 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : summary.totalVolume)
-    : '—';
+    : '-';
 
   const StatItem = ({ label, thisVal, lastVal, suffix = '', changeVal }: {
     label: string;
@@ -306,42 +272,6 @@ function ProgressCard() {
               />
             </Box>
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                DAILY CALORIES
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                placeholder="2500"
-                value={goals.daily_calorie_goal}
-                onChange={(e) => setGoals(g => ({ ...g, daily_calorie_goal: e.target.value }))}
-                InputProps={{
-                  endAdornment: <Typography variant="caption" color="text.secondary">kcal</Typography>,
-                  sx: { fontSize: '0.875rem' }
-                }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-                DAILY WATER
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                type="number"
-                placeholder="3000"
-                value={goals.daily_water_goal}
-                onChange={(e) => setGoals(g => ({ ...g, daily_water_goal: e.target.value }))}
-                InputProps={{
-                  endAdornment: <Typography variant="caption" color="text.secondary">ml</Typography>,
-                  sx: { fontSize: '0.875rem' }
-                }}
-              />
-            </Box>
-          </Box>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
               WEIGHT GOAL
@@ -380,28 +310,6 @@ function ProgressCard() {
               </Box>
             </Box>
           </Box>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', mb: 0.5, display: 'block' }}>
-              FITNESS GOAL
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5 }}>
-              {FITNESS_GOALS.map((goal) => (
-                <Button
-                  key={goal.value}
-                  size="small"
-                  variant={goals.fitness_goal === goal.value ? 'contained' : 'outlined'}
-                  onClick={() => setGoals(g => ({ ...g, fitness_goal: goal.value }))}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.7rem',
-                    py: 0.75,
-                  }}
-                >
-                  {goal.label}
-                </Button>
-              ))}
-            </Box>
-          </Box>
         </Box>
       </Collapse>
 
@@ -413,15 +321,15 @@ function ProgressCard() {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, mb: 1.5 }}>
             <StatItem
-              label="VOLUME"
+              label="Volume"
               thisVal={thisWeek.totalVolume >= 1000 ? `${(thisWeek.totalVolume / 1000).toFixed(1)}k` : thisWeek.totalVolume}
               lastVal={lastWeek?.totalVolume ? (lastWeek.totalVolume >= 1000 ? `${(lastWeek.totalVolume / 1000).toFixed(1)}k` : lastWeek.totalVolume) : 0}
               changeVal={volumeChange}
             />
             <StatItem
-              label="SLEEP"
-              thisVal={thisWeek.avgSleep?.toFixed(1) || '—'}
-              lastVal={lastWeek?.avgSleep?.toFixed(1) || '—'}
+              label="Sleep"
+              thisVal={thisWeek.avgSleep?.toFixed(1) || '-'}
+              lastVal={lastWeek?.avgSleep?.toFixed(1) || '-'}
               suffix="h"
               changeVal={sleepChange}
             />
@@ -553,6 +461,9 @@ function InsightsContent() {
               </motion.div>
               <motion.div variants={staggerItem}>
               <MacroChart macro="sodium" />
+              </motion.div>
+              <motion.div variants={staggerItem}>
+              <MacroChart macro="potassium" />
               </motion.div>
             </InsightSection>
 

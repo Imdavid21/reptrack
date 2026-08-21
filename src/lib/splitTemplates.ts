@@ -38,7 +38,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Barbell Row', category: 'primary', targetWeight: '60kg', targetReps: '4x10', progression: 'Reps before weight' },
           { name: 'Lat Pulldown', category: 'accessory', targetWeight: '55kg', targetReps: '3x15', progression: 'Add reps' },
           { name: 'Barbell Curl', category: 'accessory', targetWeight: '25kg', targetReps: '3x10', progression: 'Add reps' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '20kg', targetReps: '4x20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '20kg', targetReps: '4x20', mandatory: true, progression: 'Rear delts + external rotators - do not skip' },
         ],
       },
       'Day 3': {
@@ -74,8 +74,8 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Single Arm Dumbbell Row', category: 'primary', targetWeight: '30kg', targetReps: '3x12 each', progression: 'Reps before weight' },
           { name: 'Straight Arm Pulldown', category: 'accessory', targetWeight: '25kg', targetReps: '3x15', progression: 'Add reps' },
           { name: 'EZ Bar Preacher Curls', category: 'accessory', targetWeight: '25kg', targetReps: '3x10', progression: 'Add reps' },
-          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression — do not skip' },
-          { name: 'Farmer Walks', category: 'accessory', targetWeight: '30kg', targetReps: '4x40', mandatory: true, progression: 'Grip, traps, core under load — do not skip' },
+          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression - do not skip' },
+          { name: 'Farmer Walks', category: 'accessory', targetWeight: '30kg', targetReps: '4x40', mandatory: true, progression: 'Grip, traps, core under load - do not skip' },
         ],
       },
       'Day 6': {
@@ -120,7 +120,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Barbell Row', category: 'primary', targetWeight: '50kg', targetReps: '4x6-8' },
           { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '3x8-12' },
           { name: 'Seated Cable Row', category: 'primary', targetWeight: '45kg', targetReps: '3x10-12' },
-          { name: 'Face Pull', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Face Pull', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators - do not skip' },
           { name: 'Barbell Curl', category: 'accessory', targetWeight: '20kg', targetReps: '3x10-12' },
           { name: 'Hammer Curl', category: 'accessory', targetWeight: '10kg', targetReps: '3x12-15' },
         ],
@@ -162,7 +162,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Face Pull', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20' },
           { name: 'EZ Bar Curl', category: 'accessory', targetWeight: '25kg', targetReps: '3x10-12' },
           { name: 'Reverse Fly', category: 'accessory', targetWeight: '6kg', targetReps: '3x12-15' },
-          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression — do not skip' },
+          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression - do not skip' },
         ],
       },
     },
@@ -171,12 +171,12 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
   upper_lower4: {
     id: 'upper_lower4',
     name: 'Upper/Lower (4-day)',
-    description: 'Each muscle trained twice a week from a different angle — horizontal press/pull up top on A, vertical press/pull on B; squat pattern on Lower A, hip-hinge pattern on Lower B. Heaviest compound first, isolation next, mandatory correctives last.',
+    description: 'Each muscle trained twice a week from a different angle - horizontal press/pull up top on A, vertical press/pull on B; squat pattern on Lower A, hip-hinge pattern on Lower B. Heaviest compound first, isolation next, mandatory correctives last.',
     daysPerWeek: 4,
     days: {
       'Day 1': {
         name: 'Upper A',
-        focus: 'Horizontal press/pull — chest, mid-back, front/side delts',
+        focus: 'Horizontal press/pull - chest, mid-back, front/side delts',
         bias: 'heavy',
         exercises: [
           { name: 'Barbell Bench Press', category: 'primary', targetWeight: '60kg', targetReps: '4x6-8', progression: 'Reps before weight, then +2.5kg once all 4x8' },
@@ -185,12 +185,12 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Lateral Raises', category: 'accessory', targetWeight: '8kg', targetReps: '3x12-15', progression: 'Add reps' },
           { name: 'Barbell Curl', category: 'accessory', targetWeight: '20kg', targetReps: '3x10-12', progression: 'Add reps' },
           { name: 'Tricep Pushdown', category: 'accessory', targetWeight: '20kg', targetReps: '3x12-15', progression: 'Add reps' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x15-20', mandatory: true, progression: 'Rear delts + external rotators - do not skip' },
         ],
       },
       'Day 2': {
         name: 'Lower A',
-        focus: 'Squat pattern — quads, glutes, hamstrings',
+        focus: 'Squat pattern - quads, glutes, hamstrings',
         bias: 'heavy',
         exercises: [
           { name: 'Barbell Squat', category: 'primary', targetWeight: '80kg', targetReps: '4x6-8', progression: 'Reps before weight, then +2.5kg once all 4x8' },
@@ -198,12 +198,12 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Leg Press', category: 'primary', targetWeight: '120kg', targetReps: '3x10-12', progression: 'Add reps, then weight' },
           { name: 'Leg Curl', category: 'accessory', targetWeight: '30kg', targetReps: '3x12-15', progression: 'Add reps' },
           { name: 'Standing Calf Raise', category: 'accessory', targetWeight: '40kg', targetReps: '4x12-15', progression: 'Add reps' },
-          { name: 'Hanging Knee Raises', category: 'accessory', targetWeight: 'BW', targetReps: '3x12', mandatory: true, progression: 'Core control under fatigue — do not skip' },
+          { name: 'Hanging Knee Raises', category: 'accessory', targetWeight: 'BW', targetReps: '3x12', mandatory: true, progression: 'Core control under fatigue - do not skip' },
         ],
       },
       'Day 3': {
         name: 'Upper B',
-        focus: 'Vertical press/pull — back width, upper chest, arms',
+        focus: 'Vertical press/pull - back width, upper chest, arms',
         bias: 'volume',
         exercises: [
           { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '4x8-10', progression: 'Add reps toward 4x10-12, then start adding weight' },
@@ -211,12 +211,12 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Seated Cable Row', category: 'primary', targetWeight: '45kg', targetReps: '3x10-12', progression: 'Add reps' },
           { name: 'Lateral Raises', category: 'accessory', targetWeight: '7kg', targetReps: '3x15-20', progression: 'Add reps' },
           { name: 'Dumbbell Curl', category: 'accessory', targetWeight: '12kg', targetReps: '3x12-15', progression: 'Add reps' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '4x20', mandatory: true, progression: 'Rear delts + external rotators - do not skip' },
         ],
       },
       'Day 4': {
         name: 'Lower B',
-        focus: 'Hip hinge — glutes, hamstrings, calves',
+        focus: 'Hip hinge - glutes, hamstrings, calves',
         bias: 'volume',
         exercises: [
           { name: 'Hip Thrust', category: 'primary', targetWeight: '80kg', targetReps: '4x10-15', progression: 'Add reps' },
@@ -224,7 +224,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Leg Curl', category: 'primary', targetWeight: '35kg', targetReps: '4x10-12', progression: 'Add reps' },
           { name: 'Leg Extension', category: 'accessory', targetWeight: '40kg', targetReps: '3x12-15', progression: 'Add reps' },
           { name: 'Seated Calf Raise', category: 'accessory', targetWeight: '25kg', targetReps: '4x15-20', progression: 'Add reps' },
-          { name: 'Farmer Walks', category: 'accessory', targetWeight: '30kg', targetReps: '4x40', mandatory: true, progression: 'Grip, traps, core under load — do not skip' },
+          { name: 'Farmer Walks', category: 'accessory', targetWeight: '30kg', targetReps: '4x40', mandatory: true, progression: 'Grip, traps, core under load - do not skip' },
         ],
       },
     },
@@ -258,7 +258,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Pull-ups', category: 'primary', targetWeight: 'BW', targetReps: '4x8-12' },
           { name: 'Dumbbell Lunges', category: 'accessory', targetWeight: '12kg', targetReps: '3x10-12' },
           { name: 'Tricep Dips', category: 'accessory', targetWeight: 'BW', targetReps: '3x10-12' },
-          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators — do not skip' },
+          { name: 'Face Pulls', category: 'accessory', targetWeight: '15kg', targetReps: '3x15-20', mandatory: true, progression: 'Rear delts + external rotators - do not skip' },
         ],
       },
       'Day 3': {
@@ -271,7 +271,7 @@ export const SPLIT_TEMPLATES: Record<TrainingSplit, SplitTemplate> = {
           { name: 'Cable Rows', category: 'primary', targetWeight: '45kg', targetReps: '4x10-12' },
           { name: 'Romanian Deadlift', category: 'accessory', targetWeight: '50kg', targetReps: '3x10-12' },
           { name: 'Lateral Raises', category: 'accessory', targetWeight: '6kg', targetReps: '3x12-15' },
-          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression — do not skip' },
+          { name: 'Dead Hang', category: 'accessory', targetWeight: 'BW', targetReps: '3x45', mandatory: true, progression: 'Grip + shoulder decompression - do not skip' },
         ],
       },
     },
@@ -300,7 +300,7 @@ export function getSplitDays(split: TrainingSplit): Record<string, WorkoutDay> {
  * A stored custom routine ONLY wins when the user's split is explicitly
  * 'custom'. For every real split (Full Body, Upper/Lower, PPL…) the template is
  * the single source of truth. This is the one place that decision lives, so the
- * day picker, the review flow, and the next-workout suggestion can't disagree —
+ * day picker, the review flow, and the next-workout suggestion can't disagree -
  * previously a leftover active custom routine silently overrode the chosen split
  * in the review flow only, so picking Full Body still showed Push/Pull/Legs.
  */

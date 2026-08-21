@@ -27,7 +27,7 @@ export function useOfflineSync() {
     };
   }, []);
 
-  // Update pending count — called after queue changes, not on a timer
+  // Update pending count - called after queue changes, not on a timer
   const refreshCount = useCallback(async () => {
     try {
       const count = await getQueueCount();
@@ -65,7 +65,14 @@ export function useOfflineSync() {
         if (error) throw error;
       }
       return true;
-    } catch (err) {
+    } catch (err: any) {
+      // A duplicate key means the row already landed (e.g. the original request
+      // succeeded but the response never arrived). Replaying it is a no-op, so
+      // treat it as done instead of retrying it five more times.
+      if (err?.code === '23505') {
+        console.warn(`[OfflineSync] Item ${item.id} already present server-side, dropping`);
+        return true;
+      }
       console.error(`[OfflineSync] Failed to process item ${item.id}:`, err);
       return false;
     }
@@ -104,6 +111,7 @@ export function useOfflineSync() {
       // Process ungrouped items
       for (const item of ungrouped) {
         if (item.retries >= MAX_RETRIES) {
+          console.error('[OfflineSync] Giving up on queued item after max retries', item.table, item.payload);
           await removeItem(item.id);
           continue;
         }
@@ -140,7 +148,7 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       // 'exerciseSets' is the real key behind volume/progression/muscle-
-      // balance views — 'volumeData'/'exerciseProgression' match no actual
+      // balance views - 'volumeData'/'exerciseProgression' match no actual
       // query anywhere in the app (see the same dead keys in useWorkouts.ts).
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });

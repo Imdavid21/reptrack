@@ -11,7 +11,7 @@ interface Props {
 }
 
 /**
- * Body score as a trend line — each point is the headline score over its
+ * Body score as a trend line - each point is the headline score over its
  * trailing 7 days, so the user can see whether their overall trajectory is
  * climbing, holding, or slipping across the selected range.
  */
@@ -47,7 +47,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="type-component-title">Body score trend</div>
-          {/* No standalone "current" score here on purpose — it's a trailing-7-day
+          {/* No standalone "current" score here on purpose - it's a trailing-7-day
               figure that can genuinely diverge a lot from the headline card's
               longer-range average, and showing two different score-shaped numbers
               side by side reads as a bug even when both are correct. The line
@@ -86,7 +86,7 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
                 padding: '6px 10px',
               }}
               labelStyle={{ color: mutedColor, fontSize: 10 }}
-              formatter={(v: number | null) => [v == null ? '—' : v, 'Score']}
+              formatter={(v: number | null) => [v == null ? '-' : v, 'Score']}
             />
             <Area
               type="monotone"

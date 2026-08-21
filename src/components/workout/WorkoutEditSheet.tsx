@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/drawer';
 import { useWorkouts, Workout } from '@/hooks/useWorkouts';
 import { toast } from '@/lib/toast';
-import { Edit, Trash2, Moon } from 'lucide-react';
+import { Edit, Trash2, Moon, Clock } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { parseDateKey } from '@/lib/dateKey';
+import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 
 interface WorkoutEditSheetProps {
     workout: Workout | null;
@@ -35,8 +36,25 @@ interface WorkoutEditSheetProps {
 
 export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, dateStr }: WorkoutEditSheetProps) {
     const navigate = useNavigate();
-    const { deleteWorkout } = useWorkouts();
+    const { deleteWorkout, updateWorkout } = useWorkouts();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [showTimeDialog, setShowTimeDialog] = useState(false);
+
+    const handleSaveTime = async (start: Date, mins: number) => {
+        if (!workout) return;
+        try {
+            await updateWorkout({
+                id: workout.id,
+                started_at: start.toISOString(),
+                completed_at: new Date(start.getTime() + mins * 60000).toISOString(),
+                workout_duration_minutes: mins,
+            });
+            toast.success('Session time updated');
+            onOpenChange(false);
+        } catch (e) {
+            toast.error('Failed to update session time');
+        }
+    };
 
     const handleEdit = () => {
         if (workout) {
@@ -78,7 +96,7 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                         </DrawerHeader>
 
                         <div className="px-4 pb-2 space-y-2">
-                            {/* Edit Vitals — always available */}
+                            {/* Edit Vitals - always available */}
                             {onEditVitals && (
                                 <button
                                     onClick={onEditVitals}
@@ -99,6 +117,19 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                                         <Edit className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm font-medium">Edit Exercises</span>
                                     </button>
+
+                                    <button
+                                        onClick={() => setShowTimeDialog(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                                    >
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Edit Time & Duration</span>
+                                        {workout.workout_duration_minutes ? (
+                                            <span className="ml-auto text-xs text-muted-foreground tabular-nums">{workout.workout_duration_minutes}m</span>
+                                        ) : null}
+                                    </button>
+
+
 
                                     <button
                                         onClick={() => setShowDeleteAlert(true)}
@@ -138,6 +169,17 @@ export function WorkoutEditSheet({ workout, open, onOpenChange, onEditVitals, da
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {workout && (
+                <SessionTimeDialog
+                    open={showTimeDialog}
+                    onOpenChange={setShowTimeDialog}
+                    startTime={workout.started_at ? new Date(workout.started_at) : null}
+                    durationMinutes={workout.workout_duration_minutes ?? null}
+                    date={parseDateKey(workout.date)}
+                    onSave={handleSaveTime}
+                />
+            )}
         </>
     );
 }

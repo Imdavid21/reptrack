@@ -60,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Require a valid Supabase JWT — prevents anonymous email-spam abuse
+    // Require a valid Supabase JWT - prevents anonymous email-spam abuse
     const authUser = await verifyJwtUser(req.headers.get("authorization"));
     if (!authUser) {
       return new Response(

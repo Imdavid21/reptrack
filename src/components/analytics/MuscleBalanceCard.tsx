@@ -80,9 +80,9 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
                 )}
               </div>
               <div className="w-10 shrink-0 text-right text-xs font-bold tabular-nums">
-                {m.status === 'untrained' ? '—' : m.weeklySets}
+                {m.status === 'untrained' ? '-' : m.weeklySets}
               </div>
-              <div className={`w-24 shrink-0 text-right text-xs font-semibold uppercase tracking-wide ${meta.text}`}>
+              <div className={`w-24 shrink-0 text-right text-xs font-semibold  tracking-wide ${meta.text}`}>
                 {meta.label}
               </div>
             </div>
@@ -110,7 +110,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
               <Plus className="h-3.5 w-3.5 text-energy-ink shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{b.bodyPart}</span> is below its growth
-                threshold ({b.weeklySets}/wk) — try adding{' '}
+                threshold ({b.weeklySets}/wk) - try adding{' '}
                 <span className="font-semibold text-foreground">{b.suggestion}</span>.
               </p>
             </div>

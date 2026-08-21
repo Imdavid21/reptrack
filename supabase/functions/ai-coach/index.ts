@@ -72,12 +72,12 @@ serve(async (req) => {
       summary.exerciseProgress = summary.exerciseProgress.slice(0, 50);
     }
 
-    // Bound individual free-text string fields too — the array cap above doesn't
+    // Bound individual free-text string fields too - the array cap above doesn't
     // stop a single oversized field (e.g. fitness_goal or an exercise name) from
     // inflating token spend or widening the prompt-injection surface.
     const clip = (s: unknown, n: number): string => (typeof s === "string" ? s.slice(0, n) : "");
 
-    const systemPrompt = `You are a brutally honest, data-driven strength & conditioning coach. You analyze a user's complete fitness picture – training, nutrition, hydration, sleep, and body composition – and deliver 4-6 specific, actionable insights.
+    const systemPrompt = `You are a brutally honest, data-driven strength & conditioning coach. You analyze a user's complete fitness picture - training, nutrition, hydration, sleep, and body composition - and deliver 4-6 specific, actionable insights.
 
 RULES:
 - Each insight MUST be 1-2 sentences max, direct and specific

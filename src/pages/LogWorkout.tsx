@@ -28,6 +28,7 @@ import { toast } from '@/lib/toast';
 import { haptic } from '@/lib/haptics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus, Pencil, Clock, Dumbbell, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { WorkoutTimer } from '@/components/workout/WorkoutTimer';
 import { SessionTimeDialog } from '@/components/workout/SessionTimeDialog';
 import { AdaptiveSuggestionsCard } from '@/components/adaptive/AdaptiveSuggestionsCard';
@@ -97,7 +98,7 @@ function buildExercisesFromTemplate(
     const lastUsed = findLastUsed(ex.name, lastUsedMap);
 
     // Programming engine derives sets/reps/rest/rir for the chosen training
-    // focus AND the actual weight/rep target — evidence-based double
+    // focus AND the actual weight/rep target - evidence-based double
     // progression against the user's own last session, not just a verbatim
     // copy of what they did last time.
     const programming = derivePersonalizedProgramming(
@@ -138,8 +139,8 @@ function buildExercisesFromTemplate(
       restSeconds: programming.restSeconds,
       rir: programming.rir,
       mandatory: templateEx.mandatory,
-      // Prefer the live, personalized rationale ("+2.5kg — hit 8 reps last
-      // time") over the template's generic static hint — it's the same UI
+      // Prefer the live, personalized rationale ("+2.5kg - hit 8 reps last
+      // time") over the template's generic static hint - it's the same UI
       // slot, and the live note is always more useful once there's history.
       progression: programming.note || templateEx.progression,
     } as WorkoutExercise;
@@ -153,7 +154,7 @@ export default function LogWorkout() {
   const { preferences, isLoading: prefsLoading, updatePreferences } = useUserPreferences();
   const { workouts, isLoading: workoutsLoading, createWorkout, isCreating } = useWorkouts();
   const { draft, loaded, saveDraft, clearDraft, hasProgress: draftHasProgress } = useDraftWorkout();
-  const { getPRForExercise } = usePersonalRecords();
+  const { getPRForExercise, getFamilyPRForExercise } = usePersonalRecords();
   const { getLastUsed, lastUsedMap, isLoading: weightsLoading } = useLastUsedWeights();
   const { customDays, hasCustomRoutine, isLoading: routineLoading } = useCustomRoutine();
   const { recordUsage, setPreferredVariant, preferredVariants } = useExercisePreferences();
@@ -220,7 +221,7 @@ export default function LogWorkout() {
       // ISO timestamp of the (possibly back-dated) session, so honoring it keeps
       // a back-dated in-progress workout attributed to its intended day.
       // BUT: a draft carried over from a previous calendar day that is being
-      // trained *today* (start time or last save is today) must snap to today —
+      // trained *today* (start time or last save is today) must snap to today -
       // otherwise the finished session silently saves onto yesterday's date and
       // looks to the user like the save "glitched" and never happened.
       const draftDate = draft.date ? new Date(draft.date) : new Date();
@@ -296,7 +297,7 @@ export default function LogWorkout() {
 
   const handleDaySelect = (day: string, date: Date, week: number) => {
     // Never silently rebuild the exercise list over a session that already has
-    // logged sets — that's how in-progress work used to disappear.
+    // logged sets - that's how in-progress work used to disappear.
     const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
     if (hasCompletedSets) {
       setPendingDaySelect({ day, date, week });
@@ -315,7 +316,7 @@ export default function LogWorkout() {
   // Deep link from the Today screen: /app/log?day=Day%201 jumps straight into
   // that day's review, with last-used weights already applied. Skipped if a
   // draft was restored so we never clobber an in-progress session.
-  // NOTE: this hook MUST stay above the early returns below — React requires
+  // NOTE: this hook MUST stay above the early returns below - React requires
   // hooks to run in the same order every render, and gating it behind a
   // loading/`return` guard is what previously crashed this page on a cold
   // load/refresh straight onto /app/log. The prefs-loading check now lives
@@ -353,7 +354,7 @@ export default function LogWorkout() {
     );
   }
 
-  // Start session from review — preserve original start time if already set
+  // Start session from review - preserve original start time if already set
   const handleStartSession = () => {
     setWorkoutStartTime(prev => {
       if (prev) return prev; // Never overwrite an existing start time
@@ -388,7 +389,7 @@ export default function LogWorkout() {
 
   // Final safety net against mis-dated saves: a session that was actually
   // trained today must never land on the draft's stale calendar date. If the
-  // selected date isn't today but the session clock started today, snap it —
+  // selected date isn't today but the session clock started today, snap it -
   // unless the user deliberately picked a date or set a manual session time.
   const resolveSaveDate = (startedAt?: Date | null) => {
     const todayKey = localDateKey(new Date());
@@ -553,7 +554,7 @@ export default function LogWorkout() {
       clearDraft();
       const isToday = localDateKey(saveDate) === localDateKey(new Date());
       if (!navigator.onLine) {
-        toast.success('Workout saved offline — will sync when back online 📴');
+        toast.success('Workout saved offline - will sync when back online 📴');
       } else if (!isToday) {
         // Make back-dated saves explicit so a session never silently lands on
         // the wrong day again.
@@ -573,7 +574,7 @@ export default function LogWorkout() {
 
   const handleBack = () => {
     if (step === 'review') {
-      // An active session must never be dropped by a back tap — offer to pause
+      // An active session must never be dropped by a back tap - offer to pause
       // it (draft stays saved) or discard it explicitly.
       if (hasCompletedProgress || workoutStartTime) {
         setShowExitDialog(true);
@@ -594,11 +595,11 @@ export default function LogWorkout() {
     }
   };
 
-  // Leave the session running in the background — the draft is already saved,
+  // Leave the session running in the background - the draft is already saved,
   // so the Resume card on Today (and here) picks it right back up.
   const handlePauseAndExit = () => {
     setShowExitDialog(false);
-    toast.info('Session saved — resume it anytime');
+    toast.info('Session saved - resume it anytime');
     navigate('/app');
   };
 
@@ -614,11 +615,11 @@ export default function LogWorkout() {
   };
 
 
-  // Switch to a different day from the review screen — preserve any completed progress
+  // Switch to a different day from the review screen - preserve any completed progress
   const handleSwitchDay = (dayKey: string) => {
     const hasCompletedSets = exercises.some(ex => ex.sets.some(s => s.completed));
     if (hasCompletedSets) {
-      // Don't wipe exercises that have progress — warn the user
+      // Don't wipe exercises that have progress - warn the user
       toast.error('Finish or discard current progress first');
       return;
     }
@@ -639,13 +640,13 @@ export default function LogWorkout() {
       setExercises([]);
       setStep('select-day');
       // A saved draft from the OLD split (e.g. a Push A session started before
-      // switching to Full Body) must not survive the switch — the draft-restore
+      // switching to Full Body) must not survive the switch - the draft-restore
       // effect on mount would otherwise repopulate the exercise list with the
       // previous split's exercises the next time this page loads, even though
       // the day picker correctly shows the new split.
       clearDraft();
     } catch (error) {
-      toast.error('Failed to change split — please try again');
+      toast.error('Failed to change split - please try again');
     }
   };
 
@@ -672,7 +673,17 @@ export default function LogWorkout() {
                 <ChevronLeft size={16} />
                 Select Split
               </button>
-              <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTimeDialog(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Set session start time and duration"
+                >
+                  <Clock size={13} />
+                  {manualStart ? `${format(manualStart, 'HH:mm')} · ${manualDuration ?? 60}m` : 'Time'}
+                </button>
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
+              </div>
             </div>
           )}
 
@@ -690,15 +701,32 @@ export default function LogWorkout() {
           {/* Step 1: Select Day */}
           {step === 'select-day' && (
             <div className="space-y-5">
+              {draft && draft.exercises?.length > 0 && (
+                <button
+                  onClick={handleResumeDraft}
+                  className="w-full rounded-[24px] bg-foreground text-background p-5 flex items-center gap-3 text-left active:scale-[.99] transition-transform"
+                >
+                  <span className="h-10 w-10 rounded-xl bg-background/15 flex items-center justify-center">
+                    <Dumbbell className="h-5 w-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-xs font-bold tracking-[.16em] opacity-60">Resume Session</span>
+                    <span className="block text-xl font-bold mt-1">{draft.exercises[draft.currentExerciseIndex]?.name || draft.dayName}</span>
+                    <span className="block text-xs opacity-65 mt-1">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName}</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
               <div className="flex items-center justify-between">
                 <span className="type-caption">Logging for</span>
-                <WorkoutDateSelector date={selectedDate} onChange={setSelectedDate} />
+                <WorkoutDateSelector date={selectedDate} onChange={(d) => { setDateTouched(true); setSelectedDate(d); }} />
               </div>
               <DaySelectorWithCheckin
                 selectedDay={selectedDay}
                 selectedDate={selectedDate}
                 onSelect={handleDaySelect}
               />
+
 
               {preferences?.adaptive_mode_enabled && (
                 <motion.div variants={staggerItem}>
@@ -781,8 +809,16 @@ export default function LogWorkout() {
                     <span className="text-lg font-bold tabular-nums">
                       {completedSets}/{totalSets}
                     </span>
-                    <p className="text-xs text-muted-foreground uppercase">SETS</p>
+                    <p className="text-xs text-muted-foreground">Sets</p>
                   </div>
+                  <button
+                    onClick={() => setShowTimeDialog(true)}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                    title="Set session time"
+                    aria-label="Set session start time and duration"
+                  >
+                    <Clock size={14} />
+                  </button>
                   <button
                     onClick={handleEditExercises}
                     className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
@@ -817,6 +853,7 @@ export default function LogWorkout() {
                     isFirstExercise={currentExerciseIndex === 0}
                     isLastExercise={currentExerciseIndex === exercises.length - 1}
                     personalRecord={getPRForExercise(currentExercise.name)}
+                    familyRecord={getFamilyPRForExercise(currentExercise.name)}
                     lastUsed={getLastUsed(currentExercise.name)}
                     workoutBias={dayData?.bias}
                     defaultRestSeconds={preferences?.default_rest_seconds}
@@ -861,6 +898,63 @@ export default function LogWorkout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Switching day over an in-progress session */}
+      <AlertDialog open={pendingDaySelect !== null} onOpenChange={(open) => { if (!open) setPendingDaySelect(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard current session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have logged sets in this session. Switching days rebuilds the exercise list and discards them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDaySelect(null)}>Keep session</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDaySelect) applyDaySelect(pendingDaySelect.day, pendingDaySelect.date, pendingDaySelect.week);
+                setPendingDaySelect(null);
+              }}
+            >
+              Switch & discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leaving an active session */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved. You can pause and resume it later, or discard it completely.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <button
+              type="button"
+              onClick={handleDiscardSession}
+              className="h-10 px-4 rounded-xl border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              Discard
+            </button>
+            <AlertDialogAction onClick={handlePauseAndExit}>Pause & exit</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Manual session time (back-dated logging or corrections) */}
+      <SessionTimeDialog
+        open={showTimeDialog}
+        onOpenChange={setShowTimeDialog}
+        startTime={manualStart ?? workoutStartTime}
+        durationMinutes={manualDuration}
+        date={selectedDate}
+        onSave={(start, mins) => { setManualStart(start); setManualDuration(mins); }}
+        onClear={manualStart ? () => { setManualStart(null); setManualDuration(null); } : undefined}
+      />
     </MainLayout>
   );
 }

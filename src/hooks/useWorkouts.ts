@@ -63,6 +63,16 @@ export interface Workout {
   habits?: Habits;
 }
 
+/** Network blips, timeouts and 5xx are worth retrying; validation/permission
+ *  errors are not - retrying those just delays an honest error message. */
+export function isRetryableError(error: any): boolean {
+  if (!error) return false;
+  const message = String(error?.message || '');
+  if (/Failed to fetch|NetworkError|timeout|ETIMEDOUT|ERR_INTERNET_DISCONNECTED/i.test(message)) return true;
+  const code = String(error?.code || '');
+  return code === '' || /^5\d\d$/.test(code) || code === '57014' || code === '08006';
+}
+
 export function useWorkouts() {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
@@ -98,8 +108,13 @@ export function useWorkouts() {
       completedAt?: Date;
       explicitPauseSeconds?: number;
       pauseIntervals?: Array<{ pausedAt: string; resumedAt?: string }>;
+      /** Stable client-generated id. Makes saving idempotent: a retry after a
+       *  timeout (where the row may already exist) can never create a second
+       *  workout, it just adopts the existing row. */
+      clientId?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
+      const workoutId = workout.clientId || crypto.randomUUID();
 
       // Format date for Supabase (YYYY-MM-DD) using LOCAL time, not UTC.
       const workoutDate = localDateKey(workout.date ?? new Date());
@@ -116,6 +131,7 @@ export function useWorkouts() {
       const burnEstimate = estimateWorkoutEnergy({ durationMinutes: burnDuration + (workout.explicitPauseSeconds || 0) / 60, pausedSeconds: workout.explicitPauseSeconds || 0, completedSets, plannedSets, compoundSets, isolationSets, weightKg: weight.kg, hasActualFinish: !!workout.completedAt, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
 
       const workoutPayload = {
+        id: workoutId,
         user_id: user.id,
         day: workout.day,
         day_name: workout.day_name,
@@ -165,32 +181,59 @@ export function useWorkouts() {
       };
 
       try {
-        // Try online first
-        const { data: workoutData, error: workoutError } = await (supabase
-          .from('workouts') as any)
-          .insert(workoutPayload)
-          .select()
-          .single();
-
-        if (workoutError) throw workoutError;
+        // Try online first. Transient failures (network blip, 5xx, timeout) get
+        // a couple of backed-off retries before we give up - the row id is
+        // client-generated, so a retry after a request that actually succeeded
+        // collides on the primary key and is treated as "already saved".
+        let workoutData: any = null;
+        let lastError: any = null;
+        for (let attempt = 0; attempt < 3 && !workoutData; attempt++) {
+          if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 400 * attempt));
+          const { data, error } = await (supabase
+            .from('workouts') as any)
+            .insert(workoutPayload)
+            .select()
+            .single();
+          if (!error) { workoutData = data; break; }
+          if (error?.code === '23505') {
+            // The insert already landed (duplicate id). Adopt the stored row
+            // instead of creating a second copy of the same session.
+            const { data: existing } = await (supabase.from('workouts') as any).select('*').eq('id', workoutId).maybeSingle();
+            if (existing) { workoutData = existing; break; }
+          }
+          lastError = error;
+          if (!isRetryableError(error)) break;
+        }
+        if (!workoutData) throw lastError || new Error('Workout could not be saved');
 
         if (exerciseRows.length > 0) {
-          const { error: exercisesError } = await supabase
-            .from('exercises')
-            .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
-          if (exercisesError) await rollbackWorkout(workoutData.id, exercisesError);
+          // Re-saving an adopted workout must not duplicate its sets.
+          const { data: existingSets } = await supabase.from('exercises').select('id').eq('workout_id', workoutData.id).limit(1);
+          if (!existingSets?.length) {
+            const { error: exercisesError } = await supabase
+              .from('exercises')
+              .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
+            // Sets are the workout. If they cannot be written, don't leave a
+            // hollow session behind - roll back and let the draft survive.
+            if (exercisesError) await rollbackWorkout(workoutData.id, exercisesError);
+          }
         }
 
+        // Everything below is supporting data. A failure here must NOT discard
+        // a successfully saved session; it is queued for background replay.
         if (habitsPayload) {
           const { error: habitsError } = await supabase
             .from('habits')
             .insert({ workout_id: workoutData.id, ...habitsPayload });
-          if (habitsError) await rollbackWorkout(workoutData.id, habitsError);
+          if (habitsError) {
+            console.error('[useWorkouts] habits insert failed, queued for retry', habitsError);
+            await enqueueOperation({ table: 'habits', operation: 'insert', payload: { workout_id: workoutData.id, ...habitsPayload } }).catch(() => {});
+          }
         }
 
         if (workout.pauseIntervals?.length) {
           const { error: pausesError } = await (supabase.from('workout_pauses' as any) as any).insert(workout.pauseIntervals.map(interval => ({ user_id: user.id, workout_id: workoutData.id, paused_at: interval.pausedAt, resumed_at: interval.resumedAt || workout.completedAt?.toISOString() || null })));
-          if (pausesError) await rollbackWorkout(workoutData.id, pausesError);
+          if (pausesError) console.error('[useWorkouts] pause intervals insert failed', pausesError);
         }
 
         if (burnCalories > 0) {
@@ -211,7 +254,10 @@ export function useWorkouts() {
               energy_model_version: ENERGY_MODEL_VERSION,
               calculation_inputs: workoutPayload.energy_inputs,
           }, { onConflict: 'user_id,date,source,activity_type' });
-          if (burnError) await rollbackWorkout(workoutData.id, burnError);
+          if (burnError) {
+            console.error('[useWorkouts] burn upsert failed, queued for retry', burnError);
+            await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${workoutData.id}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs } }).catch(() => {});
+          }
         }
 
         return workoutData;
@@ -225,7 +271,7 @@ export function useWorkouts() {
         if (isNetworkError) {
           console.log('[OfflineSync] Network unavailable, queuing workout');
           const groupId = crypto.randomUUID();
-          const tempWorkoutId = crypto.randomUUID();
+          const tempWorkoutId = workoutId;
 
           await enqueueOperation({
             table: 'workouts',
@@ -299,13 +345,13 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance — the 'volumeData'/
+      // exercise progression, and muscle balance - the 'volumeData'/
       // 'exerciseProgression' names this used to invalidate read like
       // plausible query keys but match no actual useQuery anywhere in the
       // app, so those charts weren't reactively refreshing on a new/deleted
       // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // 5-minute staleTime, never invalidated elsewhere - without this, "last
       // used" prefills and next-session progression suggestions could show
       // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
@@ -399,13 +445,13 @@ export function useWorkouts() {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
       // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance — the 'volumeData'/
+      // exercise progression, and muscle balance - the 'volumeData'/
       // 'exerciseProgression' names this used to invalidate read like
       // plausible query keys but match no actual useQuery anywhere in the
       // app, so those charts weren't reactively refreshing on a new/deleted
       // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere — without this, "last
+      // 5-minute staleTime, never invalidated elsewhere - without this, "last
       // used" prefills and next-session progression suggestions could show
       // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });

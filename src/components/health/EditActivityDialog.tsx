@@ -30,7 +30,7 @@ interface Props {
 }
 
 /**
- * Full edit for an already-logged manual activity — type, distance, and
+ * Full edit for an already-logged manual activity - type, distance, and
  * time are all changeable, not just deletable. Recomputes calories the same
  * way ActivityLogger does, then updates the row directly by id (rather than
  * upserting on the day+type key, which would leave a stale row behind if
@@ -184,7 +184,7 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
               {cfg.unit === 'km' && (
                 <div className="space-y-2">
                   <Label htmlFor="edit-activity-minutes" className="flex items-center justify-between">
-                    <span>Time (min) <span className="text-muted-foreground font-normal">— optional</span></span>
+                    <span>Time (min) <span className="text-muted-foreground font-normal">- optional</span></span>
                     {usingCustomTime && (
                       <span className="text-xs text-muted-foreground">using your time</span>
                     )}
@@ -204,11 +204,11 @@ export function EditActivityDialog({ burn, onClose, onSave, onDelete }: Props) {
 
               <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
                 <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Burn</div>
+                  <div className="text-xs  tracking-wider text-muted-foreground">Burn</div>
                   <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
+                  <div className="text-xs  tracking-wider text-muted-foreground">Duration</div>
                   <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
                 </div>
               </div>

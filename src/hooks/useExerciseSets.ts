@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, startOfWeek, parseISO } from 'date-fns';
 import { stripSetSuffix, getBodyPart } from '@/lib/exerciseClassification';
+import { getCanonicalName } from '@/lib/exerciseMatching';
+import { fetchAllRows } from '@/lib/supabasePaging';
 
 export interface ExerciseSet {
   id: string;
@@ -61,7 +63,7 @@ function parseReps(reps: string | number | null): number {
 
 // Chest/Shoulders/Triceps push weight away from the body; Back/Biceps/
 // Forearms pull it toward the body. Core has no clean push/pull/legs home,
-// so it's deliberately excluded — see categorizeExercise's fallback.
+// so it's deliberately excluded - see categorizeExercise's fallback.
 const BODY_PART_TO_PPL: Record<string, 'push' | 'pull' | 'legs'> = {
   Chest: 'push',
   Shoulders: 'push',
@@ -81,12 +83,12 @@ export function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' |
   if (lower.includes('pull')) return 'pull';
   // "Lower" (Upper/Lower split) is a leg day but doesn't contain "leg".
   if (lower.includes('leg') || lower.includes('lower')) return 'legs';
-  return null; // Upper / Full Body / custom — day name alone says nothing
+  return null; // Upper / Full Body / custom - day name alone says nothing
 }
 
 // Bucketing an entire workout into one push/pull/legs category by day name
 // alone is wrong for Upper (push+pull combined) and Full Body (everything)
-// days — every exercise in the workout used to get silently misattributed
+// days - every exercise in the workout used to get silently misattributed
 // to the same guess. Classify each exercise individually by the muscle it
 // actually trains first; only fall back to the day-level guess (and then
 // the historical default of 'legs') for exercises with no clean push/pull/
@@ -117,7 +119,7 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
 
       // Query from the exercises table (where data actually lives)
       // joined with workouts for date and day_name
-      let query = supabase
+      const baseQuery = () => supabase
         .from('exercises')
         .select(`
           id,
@@ -135,22 +137,27 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         .eq('workouts.user_id', user.id)
         .eq('completed', true);
 
-      if (dateRange) {
-        query = query
-          .gte('workouts.date', fromKey!)
-          .lte('workouts.date', toKey!);
-      }
-
-      query = query.order('sort_order', { ascending: true });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      // Paged: a single select is truncated at 1000 rows by PostgREST, which
+      // silently amputated the most recent history from every volume chart
+      // and progression once the account grew past that.
+      const data = await fetchAllRows<any>((from, to) => {
+        let query = baseQuery();
+        if (dateRange) {
+          query = query
+            .gte('workouts.date', fromKey!)
+            .lte('workouts.date', toKey!);
+        }
+        return query.order('id', { ascending: true }).range(from, to);
+      });
 
       // Map exercises to ExerciseSet format, deriving push/pull/legs per exercise
       const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {
         const dayName = ex.workouts?.day_name || '';
-        const exerciseName = stripSetSuffix(ex.name);
+        // Insights/Trends must group the same movement logged under different
+        // spellings ("EZ Reverse Curls" vs "Reverse Curl") the way PR tracking
+        // does - stripping the "(Set 2)" suffix alone isn't enough, so resolve
+        // through the same canonical alias map usePersonalRecords uses.
+        const exerciseName = getCanonicalName(stripSetSuffix(ex.name));
         return {
           id: ex.id,
           workout_id: ex.workout_id,

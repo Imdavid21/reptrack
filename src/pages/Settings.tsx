@@ -43,6 +43,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
+const FITNESS_GOALS = [
+  { value: 'lose_weight', label: 'Lose Weight' },
+  { value: 'build_muscle', label: 'Build Muscle' },
+  { value: 'maintain', label: 'Maintain' },
+  { value: 'improve_health', label: 'Improve Health' },
+  { value: 'increase_strength', label: 'Increase Strength' },
+];
+
 const settingsCardSx = {
   bgcolor: 'transparent',
   backgroundImage: 'none',
@@ -241,7 +249,7 @@ export default function Settings() {
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Box>
-                          <Label className="text-xs text-muted-foreground">NAME</Label>
+                          <Label className="text-xs text-muted-foreground">Name</Label>
                           <Input
                             type="text"
                             placeholder="Your name"
@@ -252,7 +260,7 @@ export default function Settings() {
                         </Box>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">DATE OF BIRTH</Label>
+                            <Label className="text-xs text-muted-foreground">Date of Birth</Label>
                             <Input
                               type="date"
                               value={profile.date_of_birth}
@@ -261,7 +269,7 @@ export default function Settings() {
                             />
                           </Box>
                           <Box>
-                            <Label className="text-xs text-muted-foreground">HEIGHT (CM)</Label>
+                            <Label className="text-xs text-muted-foreground">Height (cm)</Label>
                             <Input
                               type="number"
                               placeholder="175"
@@ -273,7 +281,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">INITIAL MEASURED WEIGHT (KG)</Label>
+                          <Label className="text-xs text-muted-foreground">Initial measured weight (kg)</Label>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -285,7 +293,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">TYPICAL NON-EXERCISE DAY</Label>
+                          <Label className="text-xs text-muted-foreground">Typical Non-exercise Day</Label>
                           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
                             {[
                               ['mostly_seated', 'Mostly seated'],
@@ -310,7 +318,7 @@ export default function Settings() {
                         </Box>
 
                         <Box>
-                          <Label className="text-xs text-muted-foreground">GENDER</Label>
+                          <Label className="text-xs text-muted-foreground">Gender</Label>
                           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mt: 0.5 }}>
                             {['male', 'female', 'other'].map((g) => (
                               <button
@@ -350,7 +358,7 @@ export default function Settings() {
                             className="btn-brutalist btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
                           >
                             {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                            {profileDirty ? 'SAVE PROFILE' : 'DONE'}
+                            {profileDirty ? 'Save profile' : 'Done'}
                           </button>
                         </Box>
                       </Box>
@@ -658,6 +666,34 @@ export default function Settings() {
                   </Box>
                 </Box>
 
+                {/* Fitness goal - drives rest-time tweaks in the programming
+                    engine and the profile the AI coach reads. Moved here from
+                    Insights so training preferences live in one place. */}
+                <Box sx={settingsPanelSx}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Fitness Goal
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                    Shapes rest times and the coaching advice you get
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {FITNESS_GOALS.map(goal => (
+                      <button
+                        key={goal.value}
+                        onClick={() => updatePreferences.mutate({ fitness_goal: goal.value } as any)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                          preferences?.fitness_goal === goal.value
+                            ? 'bg-foreground text-background'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {goal.label}
+                      </button>
+                    ))}
+                  </Box>
+                </Box>
+
                 {/* Auto-start rest timer toggle */}
                 <Box sx={{ ...settingsPanelSx, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -742,7 +778,7 @@ export default function Settings() {
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Estimated expenditure today</Typography>
                             <Typography variant="body1" fontWeight={700}>{autoMaintenance.predictedTdee.toLocaleString()} kcal</Typography>
                             <Typography variant="caption" color="text.secondary">
-                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}–{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
+                              Likely {autoMaintenance.likelyRange[0].toLocaleString()}-{autoMaintenance.likelyRange[1].toLocaleString()} | {autoMaintenance.confidence} confidence
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               Normal day {autoMaintenance.maintenance.toLocaleString()} | REE {autoMaintenance.bmr.toLocaleString()} | calibration {autoMaintenance.calibrationAdjustment >= 0 ? '+' : ''}{autoMaintenance.calibrationAdjustment}
@@ -991,7 +1027,7 @@ export default function Settings() {
                 <Server size={18} />
                 <Box>
                   <Typography variant="h6">ChatGPT data connection</Typography>
-                  <Typography variant="caption" color="text.secondary">Read-only MCP status and setup</Typography>
+                  <Typography variant="caption" color="text.secondary">MCP status, tools, and setup</Typography>
                 </Box>
               </Box>
               <ChevronRight size={18} />

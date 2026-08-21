@@ -19,6 +19,13 @@ export interface DraftWorkout {
   /** Manually set session duration in minutes (used for back-dated logging). */
   manualDuration?: number;
 
+  /** Stable client id for the eventual workout row, so an interrupted save can
+   *  be retried idempotently after resuming. */
+  saveId?: string;
+
+  /** Route to return to when resuming (the screen the session was paused from). */
+  resumePath?: string;
+
   elapsedSeconds?: number;
   pausedSeconds?: number;
   pauseStartedAt?: string;
@@ -27,8 +34,29 @@ export interface DraftWorkout {
 
 const DRAFT_KEY = 'fittrack_draft_workout';
 
+/** The local yyyy-MM-dd day a draft belongs to. */
+export function draftDateKey(draft: DraftWorkout): string {
+  const parsed = draft.date ? new Date(draft.date) : new Date();
+  if (Number.isNaN(parsed.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
+}
+
+/**
+ * A draft can only be resumed when it is an in-progress exercise session that
+ * still holds exercises and was saved within the 24h retention window.
+ */
+export function isResumableDraft(draft: DraftWorkout | null | undefined): boolean {
+  if (!draft) return false;
+  if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) return false;
+  if (draft.step === 'select-day') return false;
+  const savedAt = new Date(draft.lastSavedAt ?? draft.date).getTime();
+  if (Number.isNaN(savedAt)) return false;
+  return (Date.now() - savedAt) / 3_600_000 < 24;
+}
+
 export function useDraftWorkout() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [draft, setDraft] = useState<DraftWorkout | null>(null);
   const [loaded, setLoaded] = useState(false);
   const pendingSaveRef = useRef<DraftWorkout | null>(null);
@@ -40,6 +68,10 @@ export function useDraftWorkout() {
 
   // Load draft from localStorage on mount
   useEffect(() => {
+    // Wait for auth to settle. Reporting "loaded with no draft" while the
+    // session is still resolving makes consumers mark the restore as done and
+    // silently skip the paused session that arrives a tick later.
+    if (authLoading) return;
     if (!user) {
       setLoaded(true);
       return;
@@ -53,7 +85,7 @@ export function useDraftWorkout() {
       try {
         const parsed = JSON.parse(saved) as DraftWorkout;
         // Staleness must be measured from when the draft was last SAVED, not from
-        // parsed.date — parsed.date is the workout's (possibly back-dated) logging
+        // parsed.date - parsed.date is the workout's (possibly back-dated) logging
         // date, so basing staleness on it makes any back-dated session look >24h
         // old the instant it's saved and silently discards the in-progress sets.
         const referenceTime = parsed.lastSavedAt ?? parsed.date;
@@ -72,9 +104,9 @@ export function useDraftWorkout() {
       }
     }
     setLoaded(true);
-  }, [user, getKey]);
+  }, [user, authLoading, getKey]);
 
-  // Aggressive persistence — save immediately when app is backgrounded, closed, or killed
+  // Aggressive persistence - save immediately when app is backgrounded, closed, or killed
   useEffect(() => {
     const flushDraft = () => {
       if (pendingSaveRef.current) {
@@ -159,6 +191,7 @@ export function useDraftWorkout() {
 
   return {
     draft,
+    resumable: isResumableDraft(draft),
     loaded,
     saveDraft,
     clearDraft,

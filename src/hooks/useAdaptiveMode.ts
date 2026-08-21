@@ -41,12 +41,12 @@ export interface AdaptivePatternState {
   sessionTargets: SessionTargets | null;
   /** Human-readable "why this variation" explanation, shown on the workout split. */
   whyText: string;
-  /** Detected from workout history when this pattern has never been started — surfaced as a suggestion to confirm, never auto-applied. */
+  /** Detected from workout history when this pattern has never been started - surfaced as a suggestion to confirm, never auto-applied. */
   historySeed: HistorySeed | null;
 }
 
 /**
- * Adaptive Mode data layer — fetches this user's lifecycle + session history
+ * Adaptive Mode data layer - fetches this user's lifecycle + session history
  * and runs it through the pure decision engine (adaptiveEngine.ts) to answer,
  * per movement pattern: which variation is active and why, today's leading/
  * back-off targets, whether it's time to rotate, and what weak point (if any)
@@ -117,8 +117,8 @@ export function useAdaptiveMode() {
   });
 
   // For a pattern that's never been started, detect what its first lifecycle
-  // *could* seed from — the heaviest set on the most recently trained date
-  // for a matching exercise — but never insert it automatically. This is
+  // *could* seed from - the heaviest set on the most recently trained date
+  // for a matching exercise - but never insert it automatically. This is
   // surfaced to the user as an explained suggestion (AdaptiveSuggestionsCard)
   // that they explicitly confirm or edit before anything is written.
   const { data: exerciseSetsData, isLoading: loadingExerciseSets } = useExerciseSets();
@@ -204,7 +204,7 @@ export function useAdaptiveMode() {
       const nextCurve = selection.variation.curve;
       const conversionFactor = currentCurve ? deriveConversionFactor(currentCurve, nextCurve) : 1;
       // The new variation's own last-known starting point in this pattern, if
-      // it's run before; 0 if it's never been trained (see spec Section 3.5 —
+      // it's run before; 0 if it's never been trained (see spec Section 3.5 -
       // a resensitised variation's new floor is the full carryover_total, not
       // where it personally left off).
       const ownBaseline = closedLifecyclesAfterThis
@@ -251,18 +251,18 @@ export function useAdaptiveMode() {
         ? detectPatternSeed(pattern.key, exerciseSetsData.sets)
         : null;
 
-      let whyText = 'Not started yet — pick a variation to begin this pattern\'s first lifecycle.';
+      let whyText = 'Not started yet - pick a variation to begin this pattern\'s first lifecycle.';
       if (active) {
         if (active.carryover_in > 0) {
-          whyText = `${active.variation_name} — carrying forward ${active.carryover_in}kg of accumulated ${pattern.name.toLowerCase()} strength from prior lifecycles.`;
+          whyText = `${active.variation_name} - carrying forward ${active.carryover_in}kg of accumulated ${pattern.name.toLowerCase()} strength from prior lifecycles.`;
         } else {
-          whyText = `${active.variation_name} — this pattern's first tracked lifecycle.`;
+          whyText = `${active.variation_name} - this pattern's first tracked lifecycle.`;
         }
         if (active.weak_points_targeted?.length) {
           whyText += ` Targeting the ${active.weak_points_targeted[0]} weak point flagged last lifecycle.`;
         }
       } else if (historySeed) {
-        whyText = `Detected ${historySeed.variationName} from your workout log — ${historySeed.startingLoad}kg × ${historySeed.startingReps} on ${historySeed.sourceDate}. Confirm to start from there, or pick something else.`;
+        whyText = `Detected ${historySeed.variationName} from your workout log - ${historySeed.startingLoad}kg × ${historySeed.startingReps} on ${historySeed.sourceDate}. Confirm to start from there, or pick something else.`;
       }
 
       return { pattern, activeLifecycle: active, sessions, carryoverTotal, endTrigger, openWeakPoint, sessionTargets, whyText, historySeed };

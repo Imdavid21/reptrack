@@ -8,9 +8,9 @@ import { localDateKey } from '@/lib/dateKey';
 /**
  * Every user-editable daily/weekly target that gets judged against logged
  * history over a date range (and therefore needs point-in-time resolution,
- * not "whatever the goal is right now"). Deliberately excludes weight_goal —
+ * not "whatever the goal is right now"). Deliberately excludes weight_goal -
  * that's a one-time destination compared by trend direction, not a per-day
- * target — and settings-shaped fields (deficit target, maintenance calories,
+ * target - and settings-shaped fields (deficit target, maintenance calories,
  * rest timer, etc.) that aren't judged against a date range at all.
  */
 export const GOAL_KEYS = [
@@ -21,6 +21,7 @@ export const GOAL_KEYS = [
   'daily_fiber_goal',
   'daily_sugar_goal',
   'daily_sodium_goal',
+  'daily_potassium_goal',
   'daily_water_goal',
   'sleep_goal',
   'weekly_workout_goal',
@@ -34,7 +35,7 @@ interface GoalHistoryEntry {
   effective_from: string;
 }
 
-// Matches the migration's backfill sentinel — only needs to sort before every
+// Matches the migration's backfill sentinel - only needs to sort before every
 // real logged day, not represent an actual date.
 const GENESIS_DATE = '2000-01-01';
 
@@ -79,7 +80,7 @@ export function useGoalHistory() {
 
   /** What was `goalKey` set to on `dateKey` (yyyy-MM-dd)? Falls back to the
    *  given value (typically the live preference, or a hardcoded default) when
-   *  there's no history yet — e.g. a goal never edited since this shipped. */
+   *  there's no history yet - e.g. a goal never edited since this shipped. */
   const resolveGoal = useCallback((goalKey: GoalKey, dateKey: string, fallback: number): number => {
     const list = byKey.get(goalKey);
     if (!list || list.length === 0) return fallback;
@@ -107,11 +108,11 @@ export function useGoalHistory() {
     },
   });
 
-  // Most goals have never been explicitly edited — they've been silently
+  // Most goals have never been explicitly edited - they've been silently
   // running on a hardcoded frontend default (or whatever onboarding set,
   // for the few goals it touches) with zero history rows. If someone's
   // *first-ever* edit only recorded "effective today", every day before it
-  // would resolve to the NEW value once there's any history at all — the
+  // would resolve to the NEW value once there's any history at all - the
   // exact bug this feature exists to fix, just triggered by the first edit
   // instead of by pre-existing history. So: the first time a goal is ever
   // recorded, back-fill a genesis entry (dated before all real history) with
@@ -123,7 +124,7 @@ export function useGoalHistory() {
   }, [byKey, recordChange]);
 
   /** Edit a single goal: updates the live preference and records today's value
-   *  in the history ledger in one action — the only thing a simple inline
+   *  in the history ledger in one action - the only thing a simple inline
    *  editor (MacroChart, WaterTracker, a single calorie-goal field) needs;
    *  callers never touch user_preferences directly for a tracked goal.
    *  Pass `previousValue` (whatever the caller was showing before this edit,
@@ -141,7 +142,7 @@ export function useGoalHistory() {
   }, [backfillGenesisIfNeeded, updatePreferences, recordChange]);
 
   /** History-ledger-only recorder, for editors that save several fields in one
-   *  bundled updatePreferences call already (e.g. a goals form) — call this
+   *  bundled updatePreferences call already (e.g. a goals form) - call this
    *  per tracked field that changed instead of setGoal, so the preference
    *  isn't written twice. Same `previousValue` genesis-backfill as setGoal. */
   const recordGoalHistory = useCallback(async (goalKey: GoalKey, value: number, previousValue?: number | null) => {

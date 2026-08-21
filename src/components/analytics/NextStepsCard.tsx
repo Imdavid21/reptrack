@@ -37,7 +37,7 @@ export function NextStepsCard({ overview, isLoading }: Props) {
             <CheckCircle2 className="h-4.5 w-4.5 text-energy-ink" />
           </div>
           <p className="text-xs text-muted-foreground">
-            Nothing urgent — training, fuel, recovery and hydration are all on
+            Nothing urgent - training, fuel, recovery and hydration are all on
             track for this period. Keep doing what you're doing.
           </p>
         </div>

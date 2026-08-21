@@ -97,12 +97,12 @@
     --insight-rose: 340 75% 68%;
     --insight-sky: 199 75% 58%;
 
-    /* Signature energy accent — soft green, the one pop of color used for progress, active states, streaks, and the next-up CTA. */
+    /* Signature energy accent - soft green, the one pop of color used for progress, active states, streaks, and the next-up CTA. */
     --energy: 130 40% 50%;
     --energy-foreground: 0 0% 0%;
     --energy-soft: 130 40% 88%;
 
-    /* Pillar palette — one hue per body domain, used consistently everywhere:
+    /* Pillar palette - one hue per body domain, used consistently everywhere:
        Training = energy (above), Hydration = water, Nutrition = fuel, Sleep/recovery = recover.
        The base value is for FILLS (bars, badges with dark text). The -ink value
        is contrast-safe for TEXT/ICONS on cards and soft tints. */
@@ -179,12 +179,12 @@
     --insight-rose: 340 75% 75%;
     --insight-sky: 199 75% 68%;
 
-    /* Energy accent — soft green on the true-black dark base */
+    /* Energy accent - soft green on the true-black dark base */
     --energy: 130 40% 62%;
     --energy-foreground: 0 0% 0%;
     --energy-soft: 130 40% 15%;
 
-    /* Pillar palette — softened for the dark base; ink = bright text-safe */
+    /* Pillar palette - softened for the dark base; ink = bright text-safe */
     --energy-ink: 130 40% 70%;
     --water: 200 70% 62%;
     --water-ink: 200 72% 70%;
@@ -291,7 +291,7 @@
   }
 
   .type-eyebrow {
-    @apply text-xs font-bold uppercase tracking-[0.08em] leading-4 text-muted-foreground;
+    @apply text-xs font-bold  tracking-[0.08em] leading-4 text-muted-foreground;
   }
 
   /* Brutalist button - high contrast, obvious clickable */
@@ -328,7 +328,7 @@
   }
 
   .stat-label {
-    @apply text-xs text-muted-foreground uppercase tracking-wide mt-1;
+    @apply text-xs text-muted-foreground  tracking-wide mt-1;
   }
 
   /* Progress bar */
@@ -342,7 +342,7 @@
     @apply h-full bg-foreground transition-all duration-300 rounded-full;
   }
 
-  /* Energy CTA — the one high-emphasis colored action (e.g. Start next workout) */
+  /* Energy CTA - the one high-emphasis colored action (e.g. Start next workout) */
   .btn-energy {
     @apply bg-energy text-energy-foreground rounded-xl px-5 py-3 text-sm font-bold;
     @apply transition-all duration-150;
@@ -350,7 +350,7 @@
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Energy badge / chip — soft tint + ink text, matching every other pillar
+  /* Energy badge / chip - soft tint + ink text, matching every other pillar
      chip and guaranteeing legibility at small sizes in both themes. */
   .badge-energy {
     @apply inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold tracking-wide rounded-full;
@@ -359,7 +359,7 @@
 
   /* Section header */
   .section-header {
-    @apply text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3;
+    @apply text-xs font-semibold text-muted-foreground  tracking-wide mb-3;
   }
 
   /* Badge */

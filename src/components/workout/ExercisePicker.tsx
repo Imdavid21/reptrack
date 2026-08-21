@@ -107,7 +107,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
     );
   }, [isSearching, searchLower, allExercises]);
 
-  // "Your exercises" — favorites first, then most-used, resolved to library options.
+  // "Your exercises" - favorites first, then most-used, resolved to library options.
   const quickExercises = useMemo(() => {
     const names = [...favorites, ...topUsed(12).filter(n => !favorites.includes(n))];
     return names
@@ -172,7 +172,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
               <div className="text-xs text-muted-foreground truncate">
                 {option.muscleGroup} | {option.defaultWeight} | {option.defaultReps}
                 {option.exerciseType && option.exerciseType !== 'weighted' && (
-                  <span className="ml-1 text-xs uppercase opacity-60">
+                  <span className="ml-1 text-xs  opacity-60">
                     ({option.exerciseType === 'bodyweight' ? 'bw' : option.exerciseType === 'weighted_bw' ? 'bw+' : 'timed'})
                   </span>
                 )}
@@ -251,7 +251,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
           </div>
         ) : (
           <>
-            {/* Your exercises — favorites + most used */}
+            {/* Your exercises - favorites + most used */}
             {quickExercises.length > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center gap-1 px-1">

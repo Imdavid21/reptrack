@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS, DataTable } from './useDataExport';
+
+// The exported module imports the Supabase client, which expects localStorage.
+// These tests only exercise pure CSV helpers, so a minimal storage stub is enough.
+if (typeof localStorage === 'undefined') {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+const { escapeCSV, parseCSVLine, parseCSVRows, TABLE_COLUMNS, LINKED_TABLES, NUMERIC_FIELDS, BOOLEAN_FIELDS } = await import('./useDataExport');
+import type { DataTable } from './useDataExport';
 
 describe('escapeCSV / parseCSVLine round-trip', () => {
   it('round-trips a plain value unchanged', () => {
@@ -51,7 +68,7 @@ describe('escapeCSV / parseCSVLine round-trip', () => {
 // areas (every Deficit Mode / Adaptive Mode field, workout check-in fields,
 // calorie_burns.distance_km). This doesn't check against the live DB schema,
 // but it locks in that every column NUMERIC_FIELDS/BOOLEAN_FIELDS know how to
-// parse is actually one this file claims to export — so a future column
+// parse is actually one this file claims to export - so a future column
 // added to one list isn't silently forgotten in the other.
 describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
   const allExportedColumns = new Set(Object.values(TABLE_COLUMNS).flat());

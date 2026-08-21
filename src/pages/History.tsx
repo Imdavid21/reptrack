@@ -237,7 +237,7 @@ export default function History() {
                               {isToday ? 'Today' : format(date, 'EEE, MMM d')}
                             </span>
                             {isToday && (
-                              <span className="badge-modern text-xs px-2 py-0.5">TODAY</span>
+                              <span className="badge-modern text-xs px-2 py-0.5">Today</span>
                             )}
                             {isSkipped && (
                               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">

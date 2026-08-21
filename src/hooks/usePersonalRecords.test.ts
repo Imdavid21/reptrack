@@ -31,7 +31,7 @@ describe('getCanonicalName', () => {
     expect(getCanonicalName('Seated Shoulder Press')).toBe('Dumbbell Shoulder Press');
   });
 
-  // Genuinely different exercises/PR metrics must NOT be merged — e.g. a
+  // Genuinely different exercises/PR metrics must NOT be merged - e.g. a
   // bodyweight-reps PR and an added-weight PR aren't comparable numbers.
   it('keeps a weighted variant separate from its bodyweight base exercise', () => {
     expect(getCanonicalName('Pull-ups')).toBe('Pull-ups');
@@ -41,10 +41,10 @@ describe('getCanonicalName', () => {
   });
 
   // Locks in what every exercise name currently shipped in a split template
-  // resolves to. A name that resolves to itself is normal — most exercises
+  // resolves to. A name that resolves to itself is normal - most exercises
   // have no naming variant anywhere. What's NOT normal, and is exactly the
   // shape of today's bug, is a name resolving to itself while nothing in
-  // EXERCISE_ALIASES treats it as a known hub — i.e. it looks like a rename
+  // EXERCISE_ALIASES treats it as a known hub - i.e. it looks like a rename
   // that was never wired up as an alias of its old canonical name. If a
   // future template edit does that again, this test fails with a diff
   // showing exactly which exercise's PR history just got silently orphaned,
@@ -52,7 +52,7 @@ describe('getCanonicalName', () => {
   it('resolves every exercise name in every split template to a known canonical name', () => {
     const canonicalTargets = new Set(Object.values(EXERCISE_ALIASES));
 
-    // Exercises expected to have their own, unmerged PR line — either
+    // Exercises expected to have their own, unmerged PR line - either
     // brand-new movements or ones deliberately kept distinct from a
     // same-named-but-different-metric variant (see test above). None of
     // these have any other spelling elsewhere in the templates, so nothing
@@ -90,9 +90,9 @@ describe('getCanonicalName', () => {
 // Regression coverage: usePersonalRecords used to bucket/look up PRs by the
 // case-preserved getCanonicalName (which only rewrites *known* aliases and
 // otherwise echoes the input verbatim). Two loggings of the same lift that
-// differed only in casing or incidental whitespace — e.g. "Conventional
+// differed only in casing or incidental whitespace - e.g. "Conventional
 // Deadlift" from a split template vs "conventional deadlift " from a swap
-// or AI-parsed workout — formed two separate object keys, silently splitting
+// or AI-parsed workout - formed two separate object keys, silently splitting
 // a lifter's max across buckets so the PR badge could show a lower number
 // than a real, already-saved set. The fix buckets/looks up by
 // resolveCanonicalName (lowercased) instead, while still displaying the

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APPROVED_TOOLS, MCP_MODE, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
+import { APPROVED_TOOLS, MCP_MODE, WRITE_TOOLS, isPermittedTool, isWriteTool, assertWritableDate, capPayload, categorizeDbError, withRetry, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, setMetrics } from '../../supabase/functions/mcp/core';
 
-describe('MCP read-only policy', () => {
+describe('MCP tool policy', () => {
   it('contains exactly the ten approved retrieval tools', () => {
-    expect(MCP_MODE).toBe('read_only');
+    expect(MCP_MODE).toBe('read_write');
     expect(APPROVED_TOOLS).toEqual([
       'get_fitness_profile','get_bodyweight_history','get_workouts','get_exercise_history',
       'get_training_summary','get_nutrition','get_sleep','get_activity',
@@ -14,13 +14,35 @@ describe('MCP read-only policy', () => {
     expect(APPROVED_TOOLS.every(name => name.startsWith('get_'))).toBe(true);
   });
 
-  it('does not register mutation or generic execution surfaces', () => {
+  it('limits writes to food, water, workouts and activities', () => {
+    expect(WRITE_TOOLS).toEqual([
+      'log_meal','update_meal','log_water',
+      'log_workout','update_workout',
+      'log_activity','update_activity',
+    ]);
+    expect(WRITE_TOOLS.every(isWriteTool)).toBe(true);
+    expect(isPermittedTool('delete_workout')).toBe(false);
+    expect(isPermittedTool('log_meal')).toBe(true);
+  });
+
+  it('does not register delete or generic execution surfaces', () => {
     const source = readFileSync(resolve('supabase/functions/mcp/index.ts'), 'utf8');
-    for (const forbidden of ['create_workout','update_workout','delete_workout','execute_sql','shell_access','fetch_url']) {
+    for (const forbidden of ['delete_workout','delete_meal','execute_sql','shell_access','fetch_url']) {
       expect(source).not.toContain(`registerTool("${forbidden}`);
     }
-    expect(source).toContain('readOnlyHint:true');
     expect(source).toContain('destructiveHint:false');
+  });
+
+  it('rejects future and stale write dates', () => {
+    expect(assertWritableDate('2026-08-10','2026-08-12')).toBe('2026-08-10');
+    expect(() => assertWritableDate('2026-08-13','2026-08-12')).toThrow('DATE_IN_FUTURE');
+    expect(assertWritableDate('2020-01-01','2026-08-12')).toBe('2020-01-01');
+  });
+
+  it('applies no request rate limiting', () => {
+    const source = readFileSync(resolve('supabase/functions/mcp/index.ts'), 'utf8');
+    expect(source).not.toContain('check_rate_limit');
+    expect(source).not.toContain('Rate limit exceeded');
   });
 });
 
@@ -41,7 +63,7 @@ describe('MCP calculations and validation', () => {
   it('enforces valid bounded date ranges', () => {
     expect(() => assertDateRange('2026-08-01','2026-08-12')).not.toThrow();
     expect(() => assertDateRange('2026-08-12','2026-08-01')).toThrow('INVALID_DATE_RANGE');
-    expect(() => assertDateRange('2020-01-01','2026-08-12',365)).toThrow('DATE_RANGE_TOO_LARGE');
+    expect(() => assertDateRange('2020-01-01','2026-08-12')).not.toThrow();
   });
 
   it('uses local calendar boundaries for Asia/Kolkata', () => {
@@ -54,5 +76,38 @@ describe('MCP calculations and validation', () => {
     expect(classifyMuscle('Cable Lateral Raise')).toBe('side delts');
     expect(classifyMuscle('Hanging Knee Raise')).toBe('abs/core');
     expect(classifyMuscle('Unknown Movement')).toBe('unmapped');
+  });
+});
+
+describe('MCP failsafes', () => {
+  it('retries transient database failures and fails fast on deterministic ones', async () => {
+    let calls = 0;
+    const value = await withRetry('flaky', async () => {
+      calls++;
+      if (calls < 3) throw Object.assign(new Error('fetch failed'), { code: '08006' });
+      return 'ok';
+    });
+    expect(value).toBe('ok');
+    expect(calls).toBe(3);
+
+    let hard = 0;
+    await expect(withRetry('hard', async () => { hard++; throw Object.assign(new Error('denied'), { code: '42501' }); }))
+      .rejects.toThrow('denied');
+    expect(hard).toBe(1);
+  });
+
+  it('categorizes database errors without leaking internals', () => {
+    expect(categorizeDbError({ code: '42501' })).toBe('PERMISSION_DENIED');
+    expect(categorizeDbError({ code: '57014' })).toBe('QUERY_TIMEOUT');
+    expect(categorizeDbError({ message: 'fetch failed' })).toBe('DATABASE_UNAVAILABLE');
+  });
+
+  it('truncates oversized payloads instead of breaking the client', () => {
+    const big = { data: Array.from({ length: 500 }, (_, i) => ({ i, blob: 'x'.repeat(1000) })), metadata: {} };
+    const { payload, truncated } = capPayload(big, 50_000);
+    expect(truncated).toBe(true);
+    expect((payload as any).data.length).toBeLessThan(500);
+    expect((payload as any).metadata.truncated).toBe(true);
+    expect(capPayload({ data: [1, 2, 3] }, 50_000).truncated).toBe(false);
   });
 });

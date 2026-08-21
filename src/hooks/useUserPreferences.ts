@@ -8,8 +8,8 @@ export type TrainingSplit = 'ppl6' | 'upper_lower4' | 'full_body3' | 'ppl5' | 'c
 
 /**
  * How sets/reps/rest get programmed for every exercise:
- *  - 'strength': low reps, more rest, always — regardless of the day's own bias.
- *  - 'volume': high reps, more sets, shorter rest — regardless of day bias.
+ *  - 'strength': low reps, more rest, always - regardless of the day's own bias.
+ *  - 'volume': high reps, more sets, shorter rest - regardless of day bias.
  *  - 'mix' (default): alternate per the day's own heavy/volume bias, honoring
  *    each split's hand-curated per-exercise prescription (today's behavior).
  * See src/lib/programmingEngine.ts for where this is applied.
@@ -46,11 +46,11 @@ export interface UserPreferences {
   daily_deficit_target: number;
   maintenance_calories: number | null;
   /** Default rest duration (seconds) offered in Settings; only used as the
-   *  final fallback in SetBySetCard's getDefaultRest() — exercise-specific
+   *  final fallback in SetBySetCard's getDefaultRest() - exercise-specific
    *  and workout-bias-derived rest times take priority. */
   default_rest_seconds: number;
   auto_rest_timer: boolean;
-  /** Adaptive Mode (Infinite Progression method) — see src/lib/adaptiveEngine.ts. */
+  /** Adaptive Mode (Infinite Progression method) - see src/lib/adaptiveEngine.ts. */
   adaptive_mode_enabled: boolean;
   /** Whether the BMR/maintenance breakdown tile shows on the dashboard's deficit card. */
   show_bmr_on_dashboard: boolean;
@@ -173,7 +173,7 @@ export function useUserPreferences() {
       return data;
     },
     onSuccess: (data) => {
-      // Seed the cache with the authoritative saved row directly — this is
+      // Seed the cache with the authoritative saved row directly - this is
       // the only query key this resource ever uses, so there's nothing left
       // to invalidate. Deliberately skip invalidateQueries: it would trigger
       // an immediate background refetch racing this write, and a slow/flaky
@@ -202,7 +202,7 @@ export function useUserPreferences() {
     onSuccess: (data) => {
       // The update returns the freshly-saved row (e.g. the new training_split).
       // Write it straight into the cache so the UI updates instantly. Skip
-      // invalidateQueries on purpose — this is the only query key this
+      // invalidateQueries on purpose - this is the only query key this
       // resource uses, so there's nothing else to reconcile, and forcing an
       // immediate refetch here just races this write against a possibly
       // stale service-worker-cached GET (see api-cache in vite.config.ts),

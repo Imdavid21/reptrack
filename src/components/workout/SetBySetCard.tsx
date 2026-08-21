@@ -20,6 +20,11 @@ interface PersonalRecord {
   prType?: 'weight' | 'reps' | 'duration';
 }
 
+interface FamilyRecord extends PersonalRecord {
+  exerciseName: string;
+  familyLabel: string;
+}
+
 interface LastUsedSetData {
   weight: number;
   reps: number;
@@ -49,10 +54,14 @@ interface SetBySetCardProps {
   isFirstExercise: boolean;
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
+  /** Best comparable lift elsewhere in the same movement family. Shown only
+   *  as progression context when this exact variation has no record yet - it
+   *  never stands in for, or overwrites, the variation's own PR. */
+  familyRecord?: FamilyRecord;
   lastUsed?: LastUsedData;
   workoutBias?: 'heavy' | 'volume';
   /** Settings fallback used only when no exercise-specific or bias-derived
-   *  rest duration applies — see getDefaultRest(). Defaults to 90. */
+   *  rest duration applies - see getDefaultRest(). Defaults to 90. */
   defaultRestSeconds?: number;
   /** Whether completing a set should automatically pop the rest timer.
    *  Defaults to true (existing behavior) when not provided. */
@@ -86,6 +95,7 @@ export function SetBySetCard({
   isFirstExercise,
   isLastExercise,
   personalRecord,
+  familyRecord,
   lastUsed,
   workoutBias,
   defaultRestSeconds = 90,
@@ -239,7 +249,7 @@ export function SetBySetCard({
 
   const toggleTimer = () => {
     if (isTimerRunning) {
-      // Stop — save the elapsed time
+      // Stop - save the elapsed time
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -299,7 +309,7 @@ export function SetBySetCard({
     onChange(updated);
 
     if (isLastSet) {
-      // Don't auto-advance — stay on this exercise so user can add sets or move on
+      // Don't auto-advance - stay on this exercise so user can add sets or move on
       // The "Next Exercise" / "Finish" button below handles navigation
       return;
     }
@@ -420,12 +430,17 @@ export function SetBySetCard({
     ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
     : currentMaxWeight;
   const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
-  const isNewPR = personalRecord && (
-    (isTimed || isBodyweight)
+  // A first-ever logging of a movement is itself a record. Without this the
+  // "NEW PR!" flag only ever fired for exercises that already had history,
+  // so freshly added or newly swapped-in exercises never showed one.
+  const isNewPR = currentMaxValue > 0 && (
+    !personalRecord ||
+    ((isTimed || isBodyweight)
       ? currentMaxValue > personalRecord.maxWeight
       : currentMaxWeight > personalRecord.maxWeight ||
-        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps)
+        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps))
   );
+
 
   const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
   const selectedReps = parseInt(currentSet.actualReps) || baseReps;
@@ -445,7 +460,7 @@ export function SetBySetCard({
 
   return (
     <div className="w-full min-w-0 space-y-4 animate-fade-in">
-      {/* Exercise progress — tappable segments */}
+      {/* Exercise progress - tappable segments */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
           {exerciseIndex + 1}/{totalExercises}
@@ -478,7 +493,7 @@ export function SetBySetCard({
           <div className="flex items-baseline gap-2 flex-wrap">
             <h2 className="text-base font-bold">{exercise.name}</h2>
             {isTimed && (
-              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">TIMED</span>
+              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timed</span>
             )}
             {isBodyweight && (
               <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">BW</span>
@@ -495,9 +510,19 @@ export function SetBySetCard({
                   : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
               </span>
             )}
+            {!personalRecord && familyRecord && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {familyRecord.familyLabel} best: {familyRecord.maxWeight}{weightLabel}
+                <span className="opacity-60"> ({familyRecord.exerciseName})</span>
+              </span>
+            )}
+            {!personalRecord && !familyRecord && !isNewPR && (
+              <span className="text-xs text-muted-foreground">No PR yet</span>
+            )}
             {isNewPR && (
               <span className="text-xs text-primary font-bold">NEW PR!</span>
             )}
+
           </div>
           <span className="text-xs text-muted-foreground">
             {completedSets}/{exercise.sets.length} sets
@@ -590,7 +615,7 @@ export function SetBySetCard({
                 </div>
               )}
               <div className="text-xs text-muted-foreground mt-1">
-                {isTimerRunning ? 'TIMING...' : `TARGET: ${formatTime(baseTime)}`}
+                {isTimerRunning ? 'Timing...' : `TARGET: ${formatTime(baseTime)}`}
               </div>
             </div>
 
@@ -605,13 +630,13 @@ export function SetBySetCard({
               )}
             >
               <Timer className="h-3.5 w-3.5" />
-              {isTimerRunning ? 'STOP TIMER' : 'START TIMER'}
+              {isTimerRunning ? 'Stop timer' : 'Start timer'}
             </button>
 
             {/* Quick time selection (when timer not running) */}
             {!isTimerRunning && (
               <>
-                <div className="text-xs text-muted-foreground text-center uppercase tracking-wider">
+                <div className="text-xs text-muted-foreground text-center  tracking-wider">
                   Or set duration
                 </div>
                 {showTimeInput ? (
@@ -661,7 +686,7 @@ export function SetBySetCard({
         {/* ===== WEIGHT SELECTION (weighted + weighted_bw only) ===== */}
         {showWeight && !isTimed && (
           <div className="mb-4">
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               {isWeightedBW ? 'Added Weight (+kg)' : `Weight (${weightLabel})`}
             </div>
             {showWeightInput ? (
@@ -709,7 +734,7 @@ export function SetBySetCard({
         {/* ===== REPS SELECTION (weighted + bodyweight + weighted_bw) ===== */}
         {showReps && !isTimed && (
           <div>
-            <div className="text-xs text-muted-foreground text-center mb-2 uppercase tracking-wider">
+            <div className="text-xs text-muted-foreground text-center mb-2  tracking-wider">
               Reps
             </div>
             {showRepsInput ? (
@@ -754,7 +779,7 @@ export function SetBySetCard({
         )}
       </div>
 
-      {/* Rest Timer — shown between sets */}
+      {/* Rest Timer - shown between sets */}
       {showRestTimer && (
         <RestTimer
           isOpen={showRestTimer}
@@ -787,7 +812,7 @@ export function SetBySetCard({
 
           {/* Main action button */}
           {currentSet.completed && isLastSet ? (
-            // Last set completed — show explicit navigation buttons instead of auto-advance
+            // Last set completed - show explicit navigation buttons instead of auto-advance
             <div className="flex gap-2 flex-1">
               <button
                 onClick={addSet}
@@ -805,7 +830,7 @@ export function SetBySetCard({
                 className="flex-1 h-10 rounded-full text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-1.5"
               >
                 <Check className="h-3.5 w-3.5" />
-                {isLastExercise ? 'Review & Finish' : 'Next Exercise'}
+                {isLastExercise ? 'Finish workout' : 'Next Exercise'}
               </button>
             </div>
           ) : (
@@ -824,6 +849,8 @@ export function SetBySetCard({
           )}
         </div>
       )}
+
     </div>
+
   );
 }

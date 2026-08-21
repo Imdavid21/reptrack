@@ -1,13 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { average, assertDateRange, classifyMuscle, localDayBounds, movingAverage7, round, setMetrics } from "./core.ts";
+import { average, assertDateRange, categorizeDbError, classifyMuscle, localDayBounds, movingAverage7, round, setMetrics, withRetry } from "./core.ts";
 
 type Client = any;
 type Args = Record<string, any>;
 
+const FALLBACK_PREFS = { timezone: "Asia/Kolkata", units_system: "metric" } as Args;
+
+/** Runs a PostgREST read with retries and surfaces a stable, non-sensitive error category. */
+export async function read<T>(label: string, build: () => any): Promise<T> {
+  return await withRetry(label, async () => {
+    const { data, error } = await build();
+    if (error) {
+      const err = new Error(categorizeDbError(error));
+      (err as any).code = (error as any).code;
+      (err as any).status = (error as any).status;
+      throw err;
+    }
+    return data as T;
+  });
+}
+
 async function prefs(db: Client) {
-  const { data, error } = await db.from("user_preferences").select("*").maybeSingle();
-  if (error) throw new Error("DATABASE_READ_FAILED");
-  return data || { timezone: "Asia/Kolkata", units_system: "metric" };
+  try {
+    // limit(1) instead of maybeSingle(): duplicate preference rows must never break a read-only tool.
+    const rows = await read<any[]>("user_preferences", () => db.from("user_preferences").select("*").limit(1));
+    return rows?.[0] ? { ...FALLBACK_PREFS, ...rows[0] } : { ...FALLBACK_PREFS };
+  } catch (error) {
+    console.error("[mcp] preferences unavailable, using defaults:", (error as Error).message);
+    return { ...FALLBACK_PREFS }; // failsafe: profile defaults never block data retrieval
+  }
 }
 const envelope = (start: string, end: string, timezone: string, data: unknown, summary: unknown, metadata: unknown = {}) =>
   ({ start_date: start, end_date: end, timezone, data, summary, metadata });
@@ -15,9 +36,8 @@ const envelope = (start: string, end: string, timezone: string, data: unknown, s
 async function workoutRows(db: Client, start: string, end: string, limit = 50, filters: Args = {}) {
   let q = db.from("workouts").select("id,date,day,day_name,completed_at,started_at,workout_duration_minutes,is_skipped,session_key,readiness_band,completion_percent,exercises(id,name,category,actual_reps,actual_weight,target_reps,target_weight,completed,sort_order,actual_rir,rom_quality,pain_score,set_kind,prescription)")
     .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(limit + 1);
-  if (filters.workout_type) q = q.ilike("day_name", `%${filters.workout_type}%`);
-  const { data, error } = await q;
-  if (error) throw new Error("DATABASE_READ_FAILED");
+  if (filters.workout_type) q = q.ilike("day_name", `%${String(filters.workout_type).replace(/[,()"]/g, " ")}%`);
+  const data = await read<any[]>("workouts", () => q);
   let rows = data || [];
   if (filters.exercise) rows = rows.filter((w: any) => w.exercises?.some((e: any) => e.name.toLowerCase().includes(filters.exercise.toLowerCase())));
   return { rows: rows.slice(0, limit), hasMore: rows.length > limit };
@@ -26,7 +46,8 @@ async function workoutRows(db: Client, start: string, end: string, limit = 50, f
 export async function executeTool(name: string, args: Args, db: Client) {
   const p = await prefs(db), timezone = p.timezone || "Asia/Kolkata";
   if (name === "get_fitness_profile") {
-    const { data: latest } = await db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).order("date", { ascending: false }).limit(1).maybeSingle();
+    const latestRows = await read<any[]>("latest_bodyweight", () => db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).order("date", { ascending: false }).limit(1)).catch(() => [] as any[]);
+    const latest = latestRows?.[0] ?? null;
     const profile = { height_cm: p.height_cm, current_bodyweight: latest?.bodyweight ?? null, bodyweight_date: latest?.date ?? null, age: p.age, sex: p.gender, fitness_goal: p.fitness_goal, goal_weight: p.weight_goal, activity_level: p.activity_level, training_frequency_per_week: p.weekly_workout_goal, calorie_target: p.daily_calorie_goal, protein_target_g: p.daily_protein_goal, carbohydrate_target_g: p.daily_carbs_goal, fat_target_g: p.daily_fat_goal, fiber_target_g: p.daily_fiber_goal, water_target_l: p.daily_water_goal, current_split: p.training_split, training_focus: p.training_focus, units_system: p.units_system, timezone };
     return envelope(latest?.date ?? null, latest?.date ?? null, timezone, profile, {}, { source: "user_preferences,daily_metrics" });
   }
@@ -36,8 +57,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
 
   if (name === "get_bodyweight_history") {
     const limit = Math.min(args.limit ?? 365, 365);
-    const { data, error } = await db.from("daily_metrics").select("date,bodyweight").gte("date", start).lte("date", end).not("bodyweight", "is", null).order("date").limit(limit + 1);
-    if (error) throw new Error("DATABASE_READ_FAILED");
+    const data = await read<any[]>("bodyweight", () => db.from("daily_metrics").select("date,bodyweight").gte("date", start).lte("date", end).not("bodyweight", "is", null).order("date").limit(limit + 1));
     const rows = (data || []).slice(0, limit).map((r: any) => ({ date: r.date, bodyweight: r.bodyweight, unit: p.units_system === "imperial" ? "lb" : "kg" }));
     const weights = rows.map((r: any) => r.bodyweight), first = weights[0] ?? null, latest = weights.at(-1) ?? null;
     return envelope(start, end, timezone, movingAverage7(rows), { first_weight: first, latest_weight: latest, absolute_change: first != null && latest != null ? round(latest-first) : null, percentage_change: first ? round((latest-first)/first*100) : null, average_weight: average(weights) }, { has_more: (data || []).length > limit, limit });
@@ -58,10 +78,10 @@ export async function executeTool(name: string, args: Args, db: Client) {
 
   if (name === "get_nutrition") {
     const limit = Math.min(args.limit ?? 365, 365);
-    const [{data: meals,error}, {data: waters}] = await Promise.all([
-      db.from("meals").select("date,meal_type,food_name,calories,protein,carbs,fat,fiber,sugar,sodium").gte("date",start).lte("date",end).order("date").limit(2000),
-      db.from("water_logs").select("amount,timestamp").gte("timestamp",localDayBounds(start,timezone).start).lt("timestamp",localDayBounds(end,timezone).end).limit(2000),
-    ]); if(error) throw new Error("DATABASE_READ_FAILED");
+    const [meals, waters] = await Promise.all([
+      read<any[]>("meals", () => db.from("meals").select("date,meal_type,food_name,calories,protein,carbs,fat,fiber,sugar,sodium").gte("date",start).lte("date",end).order("date").limit(2000)),
+      read<any[]>("water_logs", () => db.from("water_logs").select("amount,timestamp").gte("timestamp",localDayBounds(start,timezone).start).lt("timestamp",localDayBounds(end,timezone).end).limit(2000)).catch(() => [] as any[]),
+    ]);
     const days:Record<string,any>={}; for(const m of meals||[]){ const d=days[m.date] ||= {date:m.date,calories:0,protein:0,carbs:0,fat:0,fiber:0,water_l:0,meals:[]}; for(const k of ["calories","protein","carbs","fat","fiber"])d[k]+=m[k]||0; d.meals.push({meal_type:m.meal_type,food_name:m.food_name,calories:m.calories}); }
     for(const w of waters||[]){ const date=new Intl.DateTimeFormat("en-CA",{timeZone:timezone}).format(new Date(w.timestamp)); const d=days[date] ||= {date,calories:0,protein:0,carbs:0,fat:0,fiber:0,water_l:0,meals:[]}; d.water_l+=w.amount||0; }
     const data=Object.values(days).sort((a:any,b:any)=>a.date.localeCompare(b.date)).slice(0,limit) as any[];
@@ -69,12 +89,12 @@ export async function executeTool(name: string, args: Args, db: Client) {
   }
 
   if (name === "get_sleep") {
-    const {data,error}=await db.from("daily_metrics").select("date,sleep_hours").gte("date",start).lte("date",end).not("sleep_hours","is",null).order("date"); if(error)throw new Error("DATABASE_READ_FAILED"); const vals=(data||[]).map((r:any)=>r.sleep_hours);
+    const data=await read<any[]>("sleep", () => db.from("daily_metrics").select("date,sleep_hours").gte("date",start).lte("date",end).not("sleep_hours","is",null).order("date")); const vals=(data||[]).map((r:any)=>r.sleep_hours);
     return envelope(start,end,timezone,data||[],{average_sleep_hours:average(vals),minimum_sleep_hours:vals.length?Math.min(...vals):null,maximum_sleep_hours:vals.length?Math.max(...vals):null,logged_nights:vals.length},{unavailable_fields:["bedtime","wake_time","sleep_score","sleep_stages","interruptions"]});
   }
 
   if (name === "get_activity") {
-    const {data,error}=await db.from("calorie_burns").select("date,source,activity_type,calories,duration_minutes,distance_km").gte("date",start).lte("date",end).order("date"); if(error)throw new Error("DATABASE_READ_FAILED");
+    const data=await read<any[]>("activity", () => db.from("calorie_burns").select("date,source,activity_type,calories,duration_minutes,distance_km").gte("date",start).lte("date",end).order("date"));
     return envelope(start,end,timezone,data||[],{active_calories:round((data||[]).reduce((s:number,r:any)=>s+(r.calories||0),0)),activity_minutes:round((data||[]).reduce((s:number,r:any)=>s+(r.duration_minutes||0),0)),distance_km:round((data||[]).reduce((s:number,r:any)=>s+(r.distance_km||0),0))},{unavailable_fields:["steps","heart_rate","BMR","total_expenditure"]});
   }
 
@@ -82,8 +102,9 @@ export async function executeTool(name: string, args: Args, db: Client) {
     const wr=await workoutRows(db,start,end,366); const workouts=wr.rows.filter((w:any)=>!w.is_skipped); const ex=workouts.flatMap((w:any)=>(w.exercises||[]).filter((e:any)=>e.completed!==false).map((e:any)=>({...e,date:w.date,metrics:setMetrics(e.actual_reps,e.actual_weight)}))); const muscle:Record<string,number>={}; ex.forEach((e:any)=>muscle[classifyMuscle(e.name)]=(muscle[classifyMuscle(e.name)]||0)+e.metrics.setCount);
     const training={training_days:new Set(workouts.map((w:any)=>w.date)).size,workouts_completed:workouts.length,total_sets:ex.reduce((s:number,e:any)=>s+e.metrics.setCount,0),total_reps:ex.reduce((s:number,e:any)=>s+e.metrics.totalReps,0),total_volume:round(ex.reduce((s:number,e:any)=>s+e.metrics.volume,0)),average_workout_duration_minutes:average(workouts.map((w:any)=>w.workout_duration_minutes)),total_workout_duration_minutes:round(workouts.reduce((s:number,w:any)=>s+(w.workout_duration_minutes||0),0)),exercises_performed:[...new Set(ex.map((e:any)=>e.name))],sets_per_muscle_group:muscle,training_frequency_per_week:round(workouts.length/Math.max(1,(Date.parse(end)-Date.parse(start))/604800000))};
     if(name==="get_training_summary")return envelope(start,end,timezone,[],training,{muscle_mapping:"maintained deterministic exercise-name mapping; unmapped is reported explicitly"});
-    const [weights,nutrition,sleep,activity]=await Promise.all([executeTool("get_bodyweight_history",{start_date:start,end_date:end,limit:365},db),executeTool("get_nutrition",{start_date:start,end_date:end,limit:365},db),executeTool("get_sleep",{start_date:start,end_date:end},db),executeTool("get_activity",{start_date:start,end_date:end},db)]);
-    const summary={starting_weight:weights.summary.first_weight,ending_weight:weights.summary.latest_weight,weight_change:weights.summary.absolute_change,average_calorie_intake:nutrition.summary.average_calories_per_logged_day,average_protein_g:nutrition.summary.average_protein_g_per_logged_day,average_sleep_hours:sleep.summary.average_sleep_hours,workouts:training.workouts_completed,workouts_per_week:training.training_frequency_per_week,total_sets:training.total_sets,average_workout_duration_minutes:training.average_workout_duration_minutes,active_calories:activity.summary.active_calories,sets_per_muscle_group:muscle};
+    const safe=async(tool:string,a:Args)=>{ try { return await executeTool(tool,a,db); } catch(e){ console.error(`[mcp] ${tool} degraded inside ${name}:`,(e as Error).message); return {data:[],summary:{},metadata:{unavailable:true,reason:(e as Error).message}} as any; } };
+    const [weights,nutrition,sleep,activity]=await Promise.all([safe("get_bodyweight_history",{start_date:start,end_date:end,limit:365}),safe("get_nutrition",{start_date:start,end_date:end,limit:365}),safe("get_sleep",{start_date:start,end_date:end}),safe("get_activity",{start_date:start,end_date:end})]);
+    const summary={starting_weight:weights.summary?.first_weight,ending_weight:weights.summary?.latest_weight,weight_change:weights.summary?.absolute_change,average_calorie_intake:nutrition.summary?.average_calories_per_logged_day,average_protein_g:nutrition.summary?.average_protein_g_per_logged_day,average_sleep_hours:sleep.summary?.average_sleep_hours,workouts:training.workouts_completed,workouts_per_week:training.training_frequency_per_week,total_sets:training.total_sets,average_workout_duration_minutes:training.average_workout_duration_minutes,active_calories:activity.summary?.active_calories,sets_per_muscle_group:muscle};
     return envelope(start,end,timezone,name==="get_recent_fitness_data"?{bodyweight:weights.data,nutrition:nutrition.data,sleep:sleep.data,activity:activity.data,workouts:workouts.map((w:any)=>({date:w.date,name:w.day_name,duration_minutes:w.workout_duration_minutes}))}:[],summary,{compact:true});
   }
   throw new Error("UNKNOWN_TOOL");

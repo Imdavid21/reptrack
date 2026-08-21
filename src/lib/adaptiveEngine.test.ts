@@ -129,12 +129,12 @@ describe('carryover', () => {
   });
 });
 
-describe('selectNextVariation — weak-point matching', () => {
+describe('selectNextVariation - weak-point matching', () => {
   const pattern = MOVEMENT_PATTERNS.vertical_press;
 
   it('prefers a variation strong exactly where the open weak point is weak', () => {
     const candidates = pattern.variations.map(v => ({ variation: v, lastActiveEndDate: null, resensitising: false }));
-    // Landmine Press scores 5/5 at bottom-range — the strongest available.
+    // Landmine Press scores 5/5 at bottom-range - the strongest available.
     const result = selectNextVariation(pattern, candidates, 'Standing Barbell Overhead Press', 'bottom-range');
     expect(result.variation.name).toBe('Landmine Press');
     expect(result.reason).toContain('bottom-range');

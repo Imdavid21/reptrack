@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Pencil, Check, X, LucideIcon } from 'lucide-react';
+import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Banana, Pencil, Check, X, LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -11,18 +11,18 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { cn } from '@/lib/utils';
 
-export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium';
+export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium';
 
 interface MacroConfig {
   label: string;
   unit: string;
   column: MacroKey;
-  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal' | 'daily_sugar_goal' | 'daily_sodium_goal';
+  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal' | 'daily_sugar_goal' | 'daily_sodium_goal' | 'daily_potassium_goal';
   defaultGoal: number;
   colorVar: string;
   icon: LucideIcon;
-  /** 'atLeast' (default) — meeting/exceeding the target is the goal, e.g.
-   *  protein. 'atMost' — staying at/under the target is the goal, e.g. sugar
+  /** 'atLeast' (default) - meeting/exceeding the target is the goal, e.g.
+   *  protein. 'atMost' - staying at/under the target is the goal, e.g. sugar
    *  and sodium, where "hit target" would otherwise mean "ate more of it". */
   direction?: 'atLeast' | 'atMost';
   /** Upper bound for the editable target input. Defaults to 1000 (fits every
@@ -37,6 +37,7 @@ const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
   fiber: { label: 'Fiber', unit: 'g', column: 'fiber', goalKey: 'daily_fiber_goal', defaultGoal: 30, colorVar: '--insight-violet', icon: Leaf },
   sugar: { label: 'Sugar', unit: 'g', column: 'sugar', goalKey: 'daily_sugar_goal', defaultGoal: 50, colorVar: '--insight-rose', icon: Candy, direction: 'atMost' },
   sodium: { label: 'Sodium', unit: 'mg', column: 'sodium', goalKey: 'daily_sodium_goal', defaultGoal: 2300, colorVar: '--insight-sky', icon: Waves, direction: 'atMost', maxTarget: 10000 },
+  potassium: { label: 'Potassium', unit: 'mg', column: 'potassium', goalKey: 'daily_potassium_goal', defaultGoal: 3400, colorVar: '--insight-mint', icon: Banana, maxTarget: 10000 },
 };
 
 interface DataPoint {
@@ -61,7 +62,7 @@ function useMacroHistory(macro: MacroKey) {
         .eq('user_id', user.id)
         .gte('date', startDateStr)
         .lte('date', endDateStr);
-      // Surface failures instead of rendering them as an all-zero chart — a
+      // Surface failures instead of rendering them as an all-zero chart - a
       // missing column (unapplied migration) looked identical to "no data".
       if (error) throw error;
 
@@ -88,7 +89,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   const dailyTarget = (preferences as any)?.[cfg.goalKey] ?? cfg.defaultGoal;
   const isAtMost = cfg.direction === 'atMost';
   // v > 0 guards against an unlogged (zero) day reading as "good" for atMost
-  // macros — 0 is trivially <= any target, which would otherwise paint a day
+  // macros - 0 is trivially <= any target, which would otherwise paint a day
   // with no data logged the same as a deliberately low-sugar/low-sodium day.
   // No-op for atLeast macros: a zero value was never >= a positive target anyway.
   const isGood = (v: number, target: number) => v > 0 && (isAtMost ? v <= target : v >= target);
@@ -104,7 +105,7 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
   };
 
   // Each day gets the target that was actually active on it (via goal_history),
-  // not today's live value — so changing a target doesn't retroactively rewrite
+  // not today's live value - so changing a target doesn't retroactively rewrite
   // whether past days "hit" it. The reference line and editor above still show
   // the current target, since that's what you're aiming for right now.
   const dataWithTargets = useMemo(

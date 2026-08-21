@@ -1,14 +1,14 @@
 /**
- * Automated basal metabolic rate — the number Deficit Mode's "maintenance
+ * Automated basal metabolic rate - the number Deficit Mode's "maintenance
  * calories" is built from instead of a manually-typed guess.
  *
- * Mifflin-St Jeor is the single source of truth for this formula —
+ * Mifflin-St Jeor is the single source of truth for this formula -
  * previously duplicated ad hoc in useCalorieBurn.ts and OnboardingFlow.tsx,
  * which risked the two drifting apart. Both now import from here.
  *
  * Deliberately BMR only, not BMR + an activity estimate: the app's
  * net-deficit formula (maintenance − eaten + burned) already adds TODAY's
- * real logged burn back on top — the standard "eat back your exercise
+ * real logged burn back on top - the standard "eat back your exercise
  * calories" model. Folding an activity estimate into maintenance on top of
  * that would double-count it on a typical day (once as an assumption here,
  * again for real via today's logged burn) and credit activity that never
@@ -36,7 +36,7 @@ export function calculateBMR(weightKg: number, heightCm: number, age: number, ge
   return calculateRee(weightKg, heightCm, age, gender);
 }
 
-/** How much of today (0–1) has elapsed as of `now`. */
+/** How much of today (0-1) has elapsed as of `now`. */
 export function fractionOfDayElapsed(now: Date = new Date()): number {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const msElapsed = now.getTime() - startOfDay;
@@ -44,7 +44,7 @@ export function fractionOfDayElapsed(now: Date = new Date()): number {
 }
 
 /**
- * Resting calories burned so far today, at the given moment — BMR prorated
+ * Resting calories burned so far today, at the given moment - BMR prorated
  * by how much of the day has elapsed. BMR is a per-day rate; a lifter
  * checking in at 9am has only "spent" roughly 9/24 of it so far, not the
  * full daily figure. Purely a display number (today's totals elsewhere
@@ -55,7 +55,7 @@ export function bmrBurnedSoFarToday(bmr: number, now: Date = new Date()): number
 }
 
 /**
- * Same as bmrBurnedSoFarToday but unrounded, to two decimal places — a
+ * Same as bmrBurnedSoFarToday but unrounded, to two decimal places - a
  * ~1700 kcal/day BMR only moves ~0.02 kcal per second, so a whole-number
  * "live" counter barely changes for a minute at a time and looks frozen.
  * This is what actually powers a visibly ticking counter.
@@ -66,7 +66,7 @@ export function bmrBurnedSoFarTodayPrecise(bmr: number, now: Date = new Date()):
 
 /**
  * A stored `maintenance_calories` of 0 must NOT be treated as a real
- * override — 0 kcal maintenance is nonsensical and previously zeroed out
+ * override - 0 kcal maintenance is nonsensical and previously zeroed out
  * the whole deficit calculation, since `??` only falls back to auto-calc on
  * null/undefined, not 0. Anywhere the manual override is read, it should go
  * through this instead of a raw `??`.

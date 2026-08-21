@@ -18,7 +18,7 @@ const recoveryMobility:SessionTemplate={key:'recovery',name:'Recovery',objective
 
 export const CONDITIONING_OPTIONS:Record<ConditioningOptionKey,SessionTemplate>={
  cindy:{key:'recovery',name:'Cindy',objective:'As many rounds as possible in 20 minutes',duration:20,exercises:[e('Cindy Round','compound',20,'1 round · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
- annie:{key:'recovery',name:'Annie',objective:'50–40–30–20–10 for time',duration:15,exercises:[50,40,30,20,10].map(reps=>e(`${reps} Double-Unders + Sit-Ups`,'compound',1,`${reps} each`,{rir:'3+',rest:0}))},
+ annie:{key:'recovery',name:'Annie',objective:'50-40-30-20-10 for time',duration:15,exercises:[50,40,30,20,10].map(reps=>e(`${reps} Double-Unders + Sit-Ups`,'compound',1,`${reps} each`,{rir:'3+',rest:0}))},
  chelsea:{key:'recovery',name:'Chelsea',objective:'Complete one round every minute for 30 minutes',duration:30,exercises:[e('Chelsea Minute','compound',30,'1 minute · 5 pull-ups · 10 push-ups · 15 air squats',{rir:'3+',rest:0})]},
  bodyweight_emom:{key:'recovery',name:'Bodyweight EMOM',objective:'15-minute low-equipment conditioning',duration:15,exercises:[e('EMOM Round','compound',15,'1 minute · 5 push-ups · 10 air squats · 20 mountain climbers',{rir:'3+',rest:0})]},
  mobility:{key:'recovery',name:'Mobility',objective:'20-minute mobility-only reset',duration:20,exercises:[e('Cat-Cow','accessory',1,'10'),e('Open Book','accessory',1,'8/side'),e('90/90 Hip Switch','accessory',2,'8/side'),e('Hip CAR','accessory',1,'5/side'),e('Adductor Rock-Back','accessory',2,'10/side'),e('Knee-to-Wall','accessory',2,'10/side'),e('Deep Squat Hold','accessory',2,'45 sec',{timed:true}),e('Dead Hang','accessory',2,'30 sec',{timed:true})]},
@@ -51,7 +51,7 @@ export function calculateReadiness(input:ReadinessInput,key:SessionKey){
  const red=input.sharpPain||input.illness||input.sleep<5.5||input.fatigue>=8||targetSoreness>=7||joint>=5;
  const yellow=!red&&(input.sleep<7||input.fatigue>=6||targetSoreness>=5||joint>=3||input.performanceDecline||(key.startsWith('legs')&&(input.recentLowerBodyKm||0)>12));
  const band:ReadinessBand=red?'red':yellow?'yellow':'green';
- return {band,targetSoreness,maxJointPain:joint,volumeMultiplier:band==='green'?1:band==='yellow'?.75:.55,targetRir:band==='green'?'1-2':band==='yellow'?'2-3':'3+',allowIntensity:band==='green',message:band==='green'?'Full session':band==='yellow'?'Keep primary work; reduce accessories 20–30%':'Choose recovery or a reduced session'};
+ return {band,targetSoreness,maxJointPain:joint,volumeMultiplier:band==='green'?1:band==='yellow'?.75:.55,targetRir:band==='green'?'1-2':band==='yellow'?'2-3':'3+',allowIntensity:band==='green',message:band==='green'?'Full session':band==='yellow'?'Keep primary work; reduce accessories 20-30%':'Choose recovery or a reduced session'};
 }
 export function adaptSession(template:SessionTemplate,band:ReadinessBand,redChoice:'recovery'|'reduced'='reduced'){
  if(band==='red'&&redChoice==='recovery')return recoveryMobility;
@@ -88,6 +88,6 @@ export function sessionKeyFromWorkout(sessionKey?:string|null,dayName?:string|nu
  return PPL_SEQUENCE.find(key=>normalized===key||normalized.startsWith(`${key}_`))||null;
 }
 export function warmupSets(workingKg:number,lowerBody=false){if(!workingKg||workingKg<20)return[];const steps=lowerBody?[.2,.4,.6,.75,.88]:[20/workingKg,.55,.72,.86];return [...new Set(steps.map(p=>Math.max(20,Math.round(workingKg*p/2.5)*2.5)).filter(x=>x<workingKg))].map((load,i,a)=>({load,reps:i===0?12:i===a.length-1?3:i===a.length-2?5:8}));}
-export function nextSet(load:number,reps:number,rir:number,min:number,max:number,increment=2.5){if(reps>=max&&rir>=3)return{load:load+increment,target:`${min}-${max}`,reason:'Top of range with reserve—small load increase'};if(reps<min||rir<=0)return{load:Math.max(0,load-increment),target:`${min}-${max}`,reason:'Below target or at failure—reduce load'};return{load,target:`${min}-${max}`,reason:'Stay at load and earn reps'};}
+export function nextSet(load:number,reps:number,rir:number,min:number,max:number,increment=2.5){if(reps>=max&&rir>=3)return{load:load+increment,target:`${min}-${max}`,reason:'Top of range with reserve-small load increase'};if(reps<min||rir<=0)return{load:Math.max(0,load-increment),target:`${min}-${max}`,reason:'Below target or at failure-reduce load'};return{load,target:`${min}-${max}`,reason:'Stay at load and earn reps'};}
 export const SORENESS_AREAS=['chest','shoulders','triceps','back','biceps','quads','hamstrings','glutes','calves'];
 export const JOINT_AREAS=['shoulder','elbow','wrist','lower back','hip','knee','ankle'];
