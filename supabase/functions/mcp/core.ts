@@ -7,10 +7,9 @@ export const APPROVED_TOOLS = [
   "get_sleep", "get_activity", "get_progress_summary", "get_recent_fitness_data",
 ] as const;
 
-/** Writes are limited to food, water, caffeine, workouts and activities. No deletes exist. */
+/** Writes are limited to food/nutrition, water, workouts and activities. No deletes exist. */
 export const WRITE_TOOLS = [
   "log_meal", "update_meal", "log_water",
-  "log_caffeine", "update_caffeine",
   "log_workout", "update_workout",
   "log_activity", "update_activity",
 ] as const;
