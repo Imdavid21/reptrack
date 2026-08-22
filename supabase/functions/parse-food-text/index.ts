@@ -42,7 +42,7 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const user = await authResp.json();
+    await authResp.json();
 
     if (!(await checkRateLimit({ supabaseUrl, anonKey: supabaseAnonKey, authHeader, bucket: "parse-food-text", max: 20, windowSeconds: 60 }))) {
       return rateLimitResponse(corsHeaders);
@@ -82,16 +82,18 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition expert. Parse natural language food descriptions and estimate calories and macros.
+            content: `You are a nutrition expert. Parse natural language food descriptions and estimate calories, macros, and caffeine.
             
 Examples:
-- "2 eggs and toast" → 2 large eggs (~140 cal) + 1 slice toast (~80 cal)
-- "chicken salad with dressing" → grilled chicken breast + mixed greens + dressing (~400 cal)
-- "large pepperoni pizza slice" → 1 large slice pepperoni pizza (~300 cal)
+- "2 eggs and toast" → 2 large eggs (~140 cal) + 1 slice toast (~80 cal), 0 mg caffeine
+- "chicken salad with dressing" → grilled chicken breast + mixed greens + dressing (~400 cal), 0 mg caffeine
+- "large pepperoni pizza slice" → 1 large slice pepperoni pizza (~300 cal), 0 mg caffeine
+- "double-shot cappuccino" → include its milk calories/macros plus about 120-150 mg caffeine depending on shot size
+- "330 ml Diet Coke" → near-zero calories plus roughly the brand/serving's known caffeine amount
 
 Be accurate with portions. When quantities aren't specified, assume reasonable single servings.
 
-Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat - sauces, dressings, and processed or cured items usually dominate the sodium total. Also estimate potassium (milligrams) - fruit, vegetables, legumes, dairy and potatoes carry most of it.`
+Always estimate sugar (grams, a subset of carbs), sodium (milligrams), and potassium (milligrams). Also assess caffeine in milligrams for every item. Use 0 when the item is confidently caffeine-free. For coffee, espresso, tea, cola, energy drinks, chocolate/cocoa, pre-workout, caffeine-containing medication, or another known source, estimate caffeine from the stated brand/type/serving when available; otherwise use a reasonable common-serving estimate. Do not invent caffeine for ambiguous foods.`
           },
           {
             role: "user",
@@ -103,7 +105,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
             type: "function",
             function: {
               name: "parse_food",
-              description: "Parse food description into structured nutrition data",
+              description: "Parse food description into structured nutrition data, including caffeine",
               parameters: {
                 type: "object",
                 properties: {
@@ -121,11 +123,10 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         fiber: { type: "number", description: "Dietary fiber in grams" },
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                         sodium: { type: "number", description: "Sodium in milligrams" },
-                      potassium: { type: "number", description: "Potassium in milligrams" }
+                        potassium: { type: "number", description: "Potassium in milligrams" },
+                        caffeine_mg: { type: "number", description: "Estimated caffeine in milligrams. Use 0 when confidently caffeine-free." }
                       },
-                      // Macros are required: left optional, the model routinely
-                      // omitted sugar and sodium, so those never got recorded.
-                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
+                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium", "caffeine_mg"]
                     }
                   },
                   total_calories: { type: "number" },
@@ -135,7 +136,8 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   total_fiber: { type: "number" },
                   total_sugar: { type: "number" },
                   total_sodium: { type: "number" },
-                total_potassium: { type: "number" },
+                  total_potassium: { type: "number" },
+                  total_caffeine_mg: { type: "number", description: "Total estimated caffeine across all listed items in milligrams" },
                   description: { type: "string", description: "Brief description of the meal" },
                   food_quality: { 
                     type: "string", 
@@ -144,7 +146,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   },
                   confidence: { type: "number", description: "Confidence score 0-1" }
                 },
-                required: ["foods", "total_calories", "description", "confidence"]
+                required: ["foods", "total_calories", "total_caffeine_mg", "description", "confidence"]
               }
             }
           }
