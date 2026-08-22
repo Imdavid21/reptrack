@@ -5,6 +5,16 @@ import { APP_VERSION } from '@/lib/version';
 
 const changelogEntries = [
   {
+    date: '2026-08-22',
+    title: 'Caffeine tracking across RepTrack',
+    items: [
+      'Added caffeine logging to Today with quick add, custom milligrams, source, intake time, backdating, and individual entry removal.',
+      'Added a configurable daily caffeine limit with point-in-time goal history, plus caffeine trends in Insights and evidence context in Data Room.',
+      'Caffeine logs and the caffeine limit are included in CSV export/import, and the ChatGPT connection can read, log, and correct caffeine entries.',
+      'Caffeine remains an observed input only and does not change the existing body score or infer recovery effects.',
+    ],
+  },
+  {
     date: '2026-08-18',
     title: 'ChatGPT connection can now log for you',
     items: [
