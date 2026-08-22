@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserPreferences } from './useUserPreferences';
 import { useDailyMetrics } from './useDailyMetrics';
-import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { calculateWorkoutCalories as estimateWorkoutCalories } from '@/lib/workoutCalories';
 import { calculateBMR as sharedCalculateBMR } from '@/lib/metabolism';
 import { effectiveWeightAt } from '@/lib/energyEngineV3';
+import { timingFromWorkout, workoutNetKcal } from '@/lib/dayActivity';
 
 interface CalorieBurn {
   id: string;
@@ -131,19 +132,11 @@ export function useCalorieBurn(date?: Date) {
     },
   });
 
-  // Calculate workout duration
+  // Use the same workout timing convention as Energy Engine V3. Timestamp
+  // span is authoritative when present; explicit pauses are not active time.
   const calculateWorkoutDuration = (workout: WorkoutWithExercises): number => {
-    if (workout.workout_duration_minutes) return workout.workout_duration_minutes;
-
-    if (workout.started_at && workout.completed_at) {
-      const durationMinutes = differenceInMinutes(
-        parseISO(workout.completed_at),
-        parseISO(workout.started_at)
-      );
-      return Math.max(durationMinutes, 0);
-    }
-
-    return 0;
+    const timing = timingFromWorkout(workout);
+    return Math.max(0, Math.round(timing.elapsedMinutes - timing.pausedSeconds / 60));
   };
 
   // Calculate calories burned from an already-resolved category (the MET
@@ -166,30 +159,61 @@ export function useCalorieBurn(date?: Date) {
   const calculateBMR = (age: number, heightCm: number, gender: 'male' | 'female') =>
     sharedCalculateBMR(weightKg, heightCm, age, gender);
 
-  // Calculate today's workout calories across all workouts on the day
-  const workoutSummaries = todayWorkouts.map((workout) => {
-    const calculatedDuration = calculateWorkoutDuration(workout);
-    const calculatedCalories = calculatedDuration > 0
-      ? estimateWorkoutCalories({ day_name: workout.day_name, exercises: workout.exercises, pausedSeconds: workout.explicit_pause_seconds }, weightKg, calculatedDuration)
-      : 0;
-    return { ...workout, calculatedDuration, calculatedCalories };
-  });
+  // Calculate today's workout rows from the same V3 source of truth used by
+  // the dashboard headline. Persisted workout burns are only a cache and can
+  // be stale after timing/model changes, so they are not used for display.
+  const workoutSummaries = todayWorkouts
+    .filter(workout => !!workout.completed_at)
+    .map((workout) => {
+      const calculatedDuration = calculateWorkoutDuration(workout);
+      const calculatedCalories = calculatedDuration > 0
+        ? Math.round(workoutNetKcal(workout, weightKg))
+        : 0;
+      return { ...workout, calculatedDuration, calculatedCalories };
+    });
   const workoutCaloriesFromDuration = workoutSummaries.reduce((sum, w) => sum + w.calculatedCalories, 0);
   const primaryWorkout = workoutSummaries.reduce<typeof workoutSummaries[number] | null>((longest, workout) => {
     if (!longest) return workout;
     return workout.calculatedDuration > longest.calculatedDuration ? workout : longest;
   }, null);
 
-  const totalBurned = burns.reduce((sum, b) => sum + b.calories, 0);
-  const workoutBurned = burns.filter(b => b.source === 'workout').reduce((sum, b) => sum + b.calories, 0);
+  const nonWorkoutBurned = burns.filter(b => b.source !== 'workout').reduce((sum, b) => sum + b.calories, 0);
   const stepBurned = burns.filter(b => b.source === 'steps').reduce((sum, b) => sum + b.calories, 0);
 
-  // Use calculated workout calories if no persisted workout entry exists; keep manual activity too
-  const effectiveWorkoutBurned = workoutBurned > 0 ? workoutBurned : workoutCaloriesFromDuration;
-  const effectiveTotalBurned = totalBurned + (workoutBurned > 0 ? 0 : workoutCaloriesFromDuration);
+  const displayWorkoutBurns: CalorieBurn[] = workoutSummaries
+    .filter(workout => workout.calculatedCalories > 0)
+    .map(workout => {
+      const persisted = burns.find(burn =>
+        burn.source === 'workout' &&
+        burn.activity_type?.toLowerCase() === `workout:${workout.id}`.toLowerCase()
+      );
+      return {
+        ...(persisted || {
+          id: `workout:${workout.id}`,
+          user_id: user?.id || '',
+          date: workout.date,
+          source: 'workout' as const,
+        }),
+        activity_type: workout.day_name,
+        duration_minutes: workout.calculatedDuration,
+        calories: workout.calculatedCalories,
+        started_at: workout.started_at,
+        ended_at: workout.completed_at,
+      };
+    });
+
+  // Detail rows now use real workout names and the same recomputed calories as
+  // the headline. Non-workout entries keep their existing labels and values.
+  const displayBurns = [
+    ...displayWorkoutBurns,
+    ...burns.filter(burn => burn.source !== 'workout'),
+  ];
+
+  const effectiveWorkoutBurned = workoutCaloriesFromDuration;
+  const effectiveTotalBurned = nonWorkoutBurned + workoutCaloriesFromDuration;
 
   return {
-    burns,
+    burns: displayBurns,
     isLoading,
     addBurn,
     totalBurned: effectiveTotalBurned,
@@ -361,5 +385,4 @@ export function useManualActivitiesInRange(from: Date, to: Date) {
     enabled: !!user,
   });
 }
-
 
