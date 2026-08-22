@@ -10,6 +10,7 @@ export interface MealHistoryRow {
   sugar: number | null;
   sodium: number | null;
   potassium: number | null;
+  caffeine: number | null;
 }
 
 const PAGE_SIZE = 1000;
@@ -24,7 +25,7 @@ export async function fetchMealRows(userId: string, startDate: string, endDate: 
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const { data, error } = await supabase
       .from('meals')
-      .select('date,calories,protein,carbs,fat,fiber,sugar,sodium,potassium')
+      .select('date,calories,protein,carbs,fat,fiber,sugar,sodium,potassium,caffeine')
       .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)

@@ -37,7 +37,7 @@ export function useDataroomComparisons(dateRange: DateRange) {
       const rows = await fetchMealRows(user.id, startDate, endDate);
       const byDay = new Map<string, MealDay>();
       for (const row of rows) {
-        const day = byDay.get(row.date) ?? { date: row.date, calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0, potassium: 0 };
+        const day = byDay.get(row.date) ?? { date: row.date, calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0, potassium: 0, caffeine: 0 };
         day.calories += Number(row.calories) || 0;
         day.protein += Number(row.protein) || 0;
         day.carbs += Number(row.carbs) || 0;
@@ -46,6 +46,7 @@ export function useDataroomComparisons(dateRange: DateRange) {
         day.sugar += Number(row.sugar) || 0;
         day.sodium += Number(row.sodium) || 0;
         day.potassium += Number(row.potassium) || 0;
+        day.caffeine += Number(row.caffeine) || 0;
         byDay.set(row.date, day);
       }
       return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));

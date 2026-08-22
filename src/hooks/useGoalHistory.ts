@@ -22,6 +22,7 @@ export const GOAL_KEYS = [
   'daily_sugar_goal',
   'daily_sodium_goal',
   'daily_potassium_goal',
+  'daily_caffeine_goal',
   'daily_water_goal',
   'sleep_goal',
   'weekly_workout_goal',

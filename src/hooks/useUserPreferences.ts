@@ -36,6 +36,7 @@ export interface UserPreferences {
   daily_sugar_goal?: number | null;
   daily_sodium_goal?: number | null;
   daily_potassium_goal?: number | null;
+  daily_caffeine_goal?: number | null;
   calorie_target_locked?: boolean;
   protein_target_locked?: boolean;
   weekly_workout_goal: number;
