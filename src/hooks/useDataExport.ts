@@ -8,7 +8,6 @@ export type DataTable =
   | 'exercises'
   | 'daily_metrics'
   | 'water_logs'
-  | 'caffeine_logs'
   | 'meals'
   | 'calorie_burns'
   | 'habits'
@@ -67,12 +66,9 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   water_logs: [
     'id', 'user_id', 'timestamp', 'amount', 'method'
   ],
-  caffeine_logs: [
-    'id', 'user_id', 'amount_mg', 'source', 'label', 'timestamp', 'method', 'created_at'
-  ],
   meals: [
     'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
-    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'food_quality',
+    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine_mg', 'food_quality',
     'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed',
     'nutrition_source', 'source_metadata', 'notes', 'created_at'
   ],
@@ -155,7 +151,6 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   exercises: { column: 'sort_order', ascending: true },
   daily_metrics: { column: 'date', ascending: true },
   water_logs: { column: 'timestamp', ascending: true },
-  caffeine_logs: { column: 'timestamp', ascending: true },
   meals: { column: 'date', ascending: true },
   calorie_burns: { column: 'date', ascending: true },
   habits: null,
@@ -180,10 +175,10 @@ export const NUMERIC_FIELDS = new Set([
   'actual_weight', 'actual_reps', 'target_weight', 'target_reps', 'sort_order',
   // daily_metrics / habits
   'sleep_hours', 'bodyweight', 'pullups', 'energy_level',
-  // water / caffeine logs
-  'amount', 'amount_mg',
+  // water_logs
+  'amount',
   // meals
-  'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'ai_confidence',
+  'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine_mg', 'ai_confidence',
   // calorie_burns
   'duration_minutes', 'distance_km', 'met_estimate', 'effective_weight_kg',
   // habits
@@ -380,7 +375,7 @@ export function useDataExport() {
               const orderBy = TABLE_ORDER_BY[table];
 
               const rowsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-                let q = (supabase as any).from(table).select('*').in(linked.fkColumn, chunk);
+                let q = (supabase.from(table) as any).select('*').in(linked.fkColumn, chunk);
                 if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
                 const result = await q.range(from, to);
                 return { data: result.data ?? null, error: result.error };
@@ -395,7 +390,7 @@ export function useDataExport() {
           // Standard query for tables with user_id
           const orderBy = TABLE_ORDER_BY[table];
           data = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-            let q = (supabase as any).from(table).select('*').eq('user_id', user.id);
+            let q = (supabase.from(table) as any).select('*').eq('user_id', user.id);
             if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
             const result = await q.range(from, to);
             return { data: result.data ?? null, error: result.error };
@@ -459,7 +454,6 @@ export function useDataExport() {
       'exercises',
       'daily_metrics',
       'water_logs',
-      'caffeine_logs',
       'meals',
       'calorie_burns',
       'habits',
@@ -635,12 +629,12 @@ export function useDataExport() {
             const batchOldIds = oldIds.slice(j, j + batchSize);
 
             if (table === 'user_preferences' || table === 'training_state') {
-              const { error } = await (supabase as any).from(table).upsert(batch, { onConflict: 'user_id' });
+              const { error } = await (supabase.from(table) as any).upsert(batch, { onConflict: 'user_id' });
               if (error) errors.push(`Error importing ${table}: ${error.message}`);
               else insertedCount += batch.length;
             } else if (isParentTable) {
               // Need the freshly-generated ids back to remap dependent tables.
-              const { data, error } = await (supabase as any).from(table).insert(batch).select('id');
+              const { data, error } = await (supabase.from(table) as any).insert(batch).select('id');
               if (error) {
                 errors.push(`Error importing ${table}: ${error.message}`);
               } else {
@@ -651,7 +645,7 @@ export function useDataExport() {
                 });
               }
             } else {
-              const { error } = await (supabase as any).from(table).insert(batch);
+              const { error } = await (supabase.from(table) as any).insert(batch);
               if (error) {
                 errors.push(`Error importing ${table}: ${error.message}`);
               } else {
