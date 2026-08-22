@@ -88,6 +88,7 @@ function macroPayload(args: Args) {
     sugar: boundedNumber("sugar", args.sugar, 0, 800),
     sodium: boundedNumber("sodium", args.sodium, 0, 20000),
     potassium: boundedNumber("potassium", args.potassium, 0, 20000),
+    caffeine: boundedNumber("caffeine", args.caffeine, 0, 2000),
   };
 }
 

@@ -729,6 +729,7 @@ export type Database = {
         Row: {
           ai_confidence: number | null
           ai_detected_food: string | null
+          caffeine: number | null
           calories: number | null
           carbs: number | null
           created_at: string | null
@@ -753,6 +754,7 @@ export type Database = {
         Insert: {
           ai_confidence?: number | null
           ai_detected_food?: string | null
+          caffeine?: number | null
           calories?: number | null
           carbs?: number | null
           created_at?: string | null
@@ -777,6 +779,7 @@ export type Database = {
         Update: {
           ai_confidence?: number | null
           ai_detected_food?: string | null
+          caffeine?: number | null
           calories?: number | null
           carbs?: number | null
           created_at?: string | null
@@ -1106,6 +1109,7 @@ export type Database = {
           age: number | null
           calorie_target_locked: boolean
           created_at: string | null
+          daily_caffeine_goal: number | null
           daily_calorie_goal: number | null
           daily_carbs_goal: number | null
           daily_deficit_target: number
@@ -1147,6 +1151,7 @@ export type Database = {
           age?: number | null
           calorie_target_locked?: boolean
           created_at?: string | null
+          daily_caffeine_goal?: number | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
           daily_deficit_target?: number
@@ -1188,6 +1193,7 @@ export type Database = {
           age?: number | null
           calorie_target_locked?: boolean
           created_at?: string | null
+          daily_caffeine_goal?: number | null
           daily_calorie_goal?: number | null
           daily_carbs_goal?: number | null
           daily_deficit_target?: number

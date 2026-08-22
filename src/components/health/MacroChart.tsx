@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Banana, Pencil, Check, X, LucideIcon } from 'lucide-react';
+import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Banana, Coffee, Pencil, Check, X, LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -11,13 +11,13 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { cn } from '@/lib/utils';
 
-export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium';
+export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium' | 'caffeine';
 
 interface MacroConfig {
   label: string;
   unit: string;
   column: MacroKey;
-  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal' | 'daily_sugar_goal' | 'daily_sodium_goal' | 'daily_potassium_goal';
+  goalKey: 'daily_protein_goal' | 'daily_carbs_goal' | 'daily_fat_goal' | 'daily_fiber_goal' | 'daily_sugar_goal' | 'daily_sodium_goal' | 'daily_potassium_goal' | 'daily_caffeine_goal';
   defaultGoal: number;
   colorVar: string;
   icon: LucideIcon;
@@ -38,6 +38,7 @@ const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
   sugar: { label: 'Sugar', unit: 'g', column: 'sugar', goalKey: 'daily_sugar_goal', defaultGoal: 50, colorVar: '--insight-rose', icon: Candy, direction: 'atMost' },
   sodium: { label: 'Sodium', unit: 'mg', column: 'sodium', goalKey: 'daily_sodium_goal', defaultGoal: 2300, colorVar: '--insight-sky', icon: Waves, direction: 'atMost', maxTarget: 10000 },
   potassium: { label: 'Potassium', unit: 'mg', column: 'potassium', goalKey: 'daily_potassium_goal', defaultGoal: 3400, colorVar: '--insight-mint', icon: Banana, maxTarget: 10000 },
+  caffeine: { label: 'Caffeine', unit: 'mg', column: 'caffeine', goalKey: 'daily_caffeine_goal', defaultGoal: 400, colorVar: '--insight-amber', icon: Coffee, direction: 'atMost', maxTarget: 2000 },
 };
 
 interface DataPoint {

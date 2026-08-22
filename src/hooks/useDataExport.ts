@@ -68,7 +68,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   ],
   meals: [
     'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
-    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'food_quality',
+    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine', 'food_quality',
     'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed',
     'nutrition_source', 'source_metadata', 'notes', 'created_at'
   ],
@@ -92,7 +92,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'weekly_workout_goal', 'daily_calorie_goal', 'daily_protein_goal',
     'calorie_target_locked', 'protein_target_locked',
     'daily_carbs_goal', 'daily_fat_goal', 'daily_fiber_goal', 'daily_sugar_goal',
-    'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal', 'dietary_preferences',
+    'daily_sodium_goal', 'daily_potassium_goal', 'daily_caffeine_goal', 'daily_water_goal', 'dietary_preferences',
     'deficit_mode_enabled', 'daily_deficit_target', 'maintenance_calories',
     'adaptive_mode_enabled', 'onboarding_completed', 'routine_setup_completed',
     'rest_days', 'training_split', 'training_focus', 'default_rest_seconds',
@@ -178,7 +178,7 @@ export const NUMERIC_FIELDS = new Set([
   // water_logs
   'amount',
   // meals
-  'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'ai_confidence',
+  'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine', 'ai_confidence',
   // calorie_burns
   'duration_minutes', 'distance_km', 'met_estimate', 'effective_weight_kg',
   // habits
@@ -190,7 +190,7 @@ export const NUMERIC_FIELDS = new Set([
   // user_preferences
   'age', 'height_cm', 'initial_weight_kg', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
   'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
-  'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal',
+  'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_caffeine_goal', 'daily_water_goal',
   'daily_deficit_target', 'maintenance_calories', 'default_rest_seconds',
   'completion_percent', 'actual_rir', 'rom_quality', 'pain_score', 'fatigue', 'motivation', 'resting_hr',
   'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'discomfort',

@@ -50,6 +50,7 @@ const macros = {
   fat: z.number().min(0).max(500).optional(), fiber: z.number().min(0).max(200).optional(),
   sugar: z.number().min(0).max(800).optional(), sodium: z.number().min(0).max(20000).optional().describe("Milligrams."),
   potassium: z.number().min(0).max(20000).optional().describe("Milligrams."),
+  caffeine: z.number().min(0).max(2000).optional().describe("Milligrams."),
 };
 const exerciseList = z.array(z.object({
   name: z.string().min(1).max(120),

@@ -15,6 +15,7 @@ export interface MealDay {
   sugar: number;
   sodium: number;
   potassium: number;
+  caffeine?: number;
 }
 export interface TrainingSet {
   exercise: string;

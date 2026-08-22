@@ -111,9 +111,9 @@ UNCERTAINTY - be honest:
 - Confidence score: 0.9+ = very clear image with confident specific identification, 0.7-0.9 = clear but some variety/cut guesswork, below 0.7 = poor image quality or highly ambiguous items.
 
 MACRO CALCULATION:
-- Always provide protein, carbs, fat, fiber, sugar, sodium, and potassium for each item and totals.
+- Always provide protein, carbs, fat, fiber, sugar, sodium, potassium, and caffeine for each item and totals.
 - Base macros on USDA values for the SPECIFIC variety/cut identified - basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.
-- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams - account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total. Potassium is milligrams - fruit, vegetables, legumes, dairy and potatoes carry most of it.`
+- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams - account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total. Potassium is milligrams - fruit, vegetables, legumes, dairy and potatoes carry most of it. Caffeine is milligrams - coffee, espresso, tea, cola, energy drinks, chocolate and pre-workout carry it; use 0 for items with none.`
         },
         {
           role: "user",
@@ -152,12 +152,13 @@ MACRO CALCULATION:
                       fiber: { type: "number", description: "Dietary fiber in grams" },
                       sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                       sodium: { type: "number", description: "Sodium in milligrams" },
-                      potassium: { type: "number", description: "Potassium in milligrams" }
+                      potassium: { type: "number", description: "Potassium in milligrams" },
+                      caffeine: { type: "number", description: "Caffeine in milligrams, 0 if none" }
                     },
                     // Every macro is required: left optional, the model routinely
                     // omitted sugar and sodium entirely, so those columns never
                     // got recorded. Estimate them, never skip them.
-                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
+                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium", "caffeine"]
                   }
                 },
                 total_calories: { type: "number" },
@@ -168,6 +169,7 @@ MACRO CALCULATION:
                 total_sugar: { type: "number" },
                 total_sodium: { type: "number" },
                 total_potassium: { type: "number" },
+                total_caffeine: { type: "number" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
                 description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
                 food_quality: {
