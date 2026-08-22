@@ -8,6 +8,7 @@ export type DataTable =
   | 'exercises'
   | 'daily_metrics'
   | 'water_logs'
+  | 'caffeine_logs'
   | 'meals'
   | 'calorie_burns'
   | 'habits'
@@ -66,6 +67,9 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
   water_logs: [
     'id', 'user_id', 'timestamp', 'amount', 'method'
   ],
+  caffeine_logs: [
+    'id', 'user_id', 'amount_mg', 'source', 'label', 'timestamp', 'method', 'created_at'
+  ],
   meals: [
     'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
     'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'food_quality',
@@ -92,7 +96,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'weekly_workout_goal', 'daily_calorie_goal', 'daily_protein_goal',
     'calorie_target_locked', 'protein_target_locked',
     'daily_carbs_goal', 'daily_fat_goal', 'daily_fiber_goal', 'daily_sugar_goal',
-    'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal', 'dietary_preferences',
+    'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal', 'daily_caffeine_limit', 'dietary_preferences',
     'deficit_mode_enabled', 'daily_deficit_target', 'maintenance_calories',
     'adaptive_mode_enabled', 'onboarding_completed', 'routine_setup_completed',
     'rest_days', 'training_split', 'training_focus', 'default_rest_seconds',
@@ -151,6 +155,7 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
   exercises: { column: 'sort_order', ascending: true },
   daily_metrics: { column: 'date', ascending: true },
   water_logs: { column: 'timestamp', ascending: true },
+  caffeine_logs: { column: 'timestamp', ascending: true },
   meals: { column: 'date', ascending: true },
   calorie_burns: { column: 'date', ascending: true },
   habits: null,
@@ -175,8 +180,8 @@ export const NUMERIC_FIELDS = new Set([
   'actual_weight', 'actual_reps', 'target_weight', 'target_reps', 'sort_order',
   // daily_metrics / habits
   'sleep_hours', 'bodyweight', 'pullups', 'energy_level',
-  // water_logs
-  'amount',
+  // water / caffeine logs
+  'amount', 'amount_mg',
   // meals
   'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'ai_confidence',
   // calorie_burns
@@ -190,7 +195,7 @@ export const NUMERIC_FIELDS = new Set([
   // user_preferences
   'age', 'height_cm', 'initial_weight_kg', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
   'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
-  'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal',
+  'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal', 'daily_caffeine_limit',
   'daily_deficit_target', 'maintenance_calories', 'default_rest_seconds',
   'completion_percent', 'actual_rir', 'rom_quality', 'pain_score', 'fatigue', 'motivation', 'resting_hr',
   'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'discomfort',
@@ -375,7 +380,7 @@ export function useDataExport() {
               const orderBy = TABLE_ORDER_BY[table];
 
               const rowsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-                let q = (supabase.from(table) as any).select('*').in(linked.fkColumn, chunk);
+                let q = (supabase as any).from(table).select('*').in(linked.fkColumn, chunk);
                 if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
                 const result = await q.range(from, to);
                 return { data: result.data ?? null, error: result.error };
@@ -390,7 +395,7 @@ export function useDataExport() {
           // Standard query for tables with user_id
           const orderBy = TABLE_ORDER_BY[table];
           data = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-            let q = (supabase.from(table) as any).select('*').eq('user_id', user.id);
+            let q = (supabase as any).from(table).select('*').eq('user_id', user.id);
             if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
             const result = await q.range(from, to);
             return { data: result.data ?? null, error: result.error };
@@ -454,6 +459,7 @@ export function useDataExport() {
       'exercises',
       'daily_metrics',
       'water_logs',
+      'caffeine_logs',
       'meals',
       'calorie_burns',
       'habits',
@@ -629,12 +635,12 @@ export function useDataExport() {
             const batchOldIds = oldIds.slice(j, j + batchSize);
 
             if (table === 'user_preferences' || table === 'training_state') {
-              const { error } = await (supabase.from(table) as any).upsert(batch, { onConflict: 'user_id' });
+              const { error } = await (supabase as any).from(table).upsert(batch, { onConflict: 'user_id' });
               if (error) errors.push(`Error importing ${table}: ${error.message}`);
               else insertedCount += batch.length;
             } else if (isParentTable) {
               // Need the freshly-generated ids back to remap dependent tables.
-              const { data, error } = await (supabase.from(table) as any).insert(batch).select('id');
+              const { data, error } = await (supabase as any).from(table).insert(batch).select('id');
               if (error) {
                 errors.push(`Error importing ${table}: ${error.message}`);
               } else {
@@ -645,7 +651,7 @@ export function useDataExport() {
                 });
               }
             } else {
-              const { error } = await (supabase.from(table) as any).insert(batch);
+              const { error } = await (supabase as any).from(table).insert(batch);
               if (error) {
                 errors.push(`Error importing ${table}: ${error.message}`);
               } else {
