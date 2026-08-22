@@ -18,6 +18,7 @@ export interface Meal {
   sodium: number | null;
   potassium: number | null;
   caffeine_mg: number | null;
+  consumed_at: string | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;
@@ -26,6 +27,12 @@ export interface Meal {
   created_at: string;
   nutrition_source?: 'manual' | 'ai_photo' | 'ai_text' | 'saved_meal' | 'import' | 'legacy';
   source_metadata?: Record<string, unknown>;
+}
+
+function defaultConsumedAt(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const now = new Date();
+  return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds()).toISOString();
 }
 
 export function useMeals(date?: Date) {
@@ -39,11 +46,12 @@ export function useMeals(date?: Date) {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('meals')
+      const { data, error } = await (supabase
+        .from('meals') as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('date', dateStr)
+        .order('consumed_at', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -73,6 +81,7 @@ export function useMeals(date?: Date) {
       sodium?: number;
       potassium?: number;
       caffeine_mg?: number;
+      consumed_at?: string;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;
@@ -85,13 +94,15 @@ export function useMeals(date?: Date) {
       date?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
+      const resolvedDate = meal.date || dateStr;
 
       const { data, error } = await (supabase
         .from('meals') as any)
         .insert({
           user_id: user.id,
-          date: dateStr,
-          ...meal, // a `date` in here overrides the default
+          date: resolvedDate,
+          ...meal,
+          consumed_at: meal.consumed_at || defaultConsumedAt(resolvedDate),
         })
         .select()
         .single();
@@ -106,10 +117,11 @@ export function useMeals(date?: Date) {
     mutationFn: async ({ id, ...updates }: Partial<Meal> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('meals')
-        .update(updates as never)
+      const { data, error } = await (supabase
+        .from('meals') as any)
+        .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -126,7 +138,8 @@ export function useMeals(date?: Date) {
       const { error } = await supabase
         .from('meals')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
     },
