@@ -20,6 +20,7 @@ import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { VolumeSankeyChart } from '@/components/analytics/VolumeSankeyChart';
 import { DailyVitalsChart } from '@/components/analytics/DailyVitalsChart';
 import { HydrationChart } from '@/components/analytics/HydrationChart';
+import { CaffeineChart } from '@/components/analytics/CaffeineChart';
 import { CalorieChart } from '@/components/health/CalorieChart';
 import { MacroChart } from '@/components/health/MacroChart';
 import { EfficiencyChart } from '@/components/analytics/EfficiencyChart';
@@ -418,7 +419,7 @@ function InsightsContent() {
               </motion.div>
             </InsightSection>
 
-            <InsightSection label="Fuel" count={7} dotClass="bg-fuel">
+            <InsightSection label="Fuel" count={9} dotClass="bg-fuel">
               <motion.div variants={staggerItem}>
                 <CalorieChart />
               </motion.div>
@@ -442,6 +443,9 @@ function InsightsContent() {
               </motion.div>
               <motion.div variants={staggerItem}>
                 <MacroChart macro="potassium" />
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <CaffeineChart />
               </motion.div>
             </InsightSection>
 
