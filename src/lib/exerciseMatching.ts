@@ -108,6 +108,11 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'lat pulldowns': 'Lat Pulldown',
   'reverse grip lat pulldown': 'Lat Pulldown',
   'wide grip lat pulldown': 'Lat Pulldown',
+  'neutral grip lat pulldown': 'Lat Pulldown',
+  'neutral grip pulldown': 'Lat Pulldown',
+  'pulldown': 'Lat Pulldown',
+  'pulldowns': 'Lat Pulldown',
+
   'db lateral raise': 'Lateral Raises',
   'dumbbell lateral raise': 'Lateral Raises',
   'dumbbell lateral raises': 'Lateral Raises',
@@ -238,19 +243,57 @@ function stripSetNumber(name: string): string {
 }
 
 /**
+ * Grip and handle descriptors that do not change the movement pattern.
+ * Swapping a neutral handle onto a lat pulldown is still a lat pulldown, so
+ * these must never fork a new exercise identity (and never a new PR bucket).
+ *
+ * "Close grip" is deliberately excluded: close grip bench press and close grip
+ * barbell curl are established, separately-loaded movements with their own
+ * canonical entries.
+ */
+/** Handle/grip words that carry no movement meaning at all. */
+const NEUTRAL_GRIP_WORDS =
+  /\b(neutral|wide|narrow|medium|shoulder[\s-]?width|mixed|false|thumbless|v[\s-]?bar|straight[\s-]?bar|rope)[\s-]*grip(ped)?\b/gi;
+
+/** Descriptors that stay (they flip the movement) but lose the word "grip". */
+const MEANINGFUL_GRIP_WORDS = /\b(reverse|underhand|overhand|supinated|pronated)[\s-]*grip(ped)?\b/gi;
+
+function stripGripDescriptors(name: string): string {
+  if (!/grip/i.test(name)) return name;
+  return name
+    .replace(/[-_]/g, ' ')
+    .replace(NEUTRAL_GRIP_WORDS, ' ')
+    .replace(MEANINGFUL_GRIP_WORDS, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+/**
  * Resolve a name to its canonical, properly-cased display form (exact
  * case-insensitive alias match), or the input unchanged if unknown. This is
  * the form to use anywhere the result is shown to the user, e.g. PR badges.
  */
 export function getCanonicalName(name: string): string {
   const base = stripSetNumber(name);
-  return EXERCISE_ALIASES[base.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(base)] ?? base;
+  const direct = EXERCISE_ALIASES[base.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(base)];
+  if (direct) return direct;
+
+  const stripped = stripGripDescriptors(base);
+  if (stripped && stripped.toLowerCase() !== base.toLowerCase()) {
+    const viaGrip = EXERCISE_ALIASES[stripped.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(stripped)];
+    if (viaGrip) return viaGrip;
+    return stripped;
+  }
+
+  return base;
 }
 
 /** Resolve a name through the canonical alias map, lowercased for matching. */
 export function resolveCanonicalName(name: string): string {
   return getCanonicalName(name).toLowerCase();
 }
+
 
 /** Normalize an exercise name for fuzzy matching across naming variations. */
 export function normalizeExerciseName(name: string): string {
