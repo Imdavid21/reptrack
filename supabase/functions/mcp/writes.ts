@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * MCP write tools. Scope is deliberately narrow: meals, water, caffeine,
+ * MCP write tools. Scope is deliberately narrow: meals/nutrition, water,
  * workouts and activities. There is no delete path, and every row is written
  * for the authenticated user through the user-scoped PostgREST client so RLS applies.
  */
-import { assertWritableDate, boundedNumber, categorizeDbError, localDayBounds, round, withRetry } from "./core.ts";
+import { assertWritableDate, boundedNumber, categorizeDbError, round, withRetry } from "./core.ts";
 import { ENERGY_MODEL_VERSION, estimateActivityEnergy, estimateWorkoutEnergyMcp, type ActivityKind } from "./energy.ts";
 
 type Client = any;
@@ -12,7 +12,6 @@ type Args = Record<string, any>;
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 const ACTIVITY_KINDS = ["walking", "running", "cycling"] as const;
-const CAFFEINE_SOURCES = ["coffee", "espresso", "tea", "energy_drink", "pre_workout", "soda", "medication", "other"] as const;
 
 async function write<T>(label: string, build: () => any): Promise<T> {
   return await withRetry(label, async () => {
@@ -88,6 +87,7 @@ function macroPayload(args: Args) {
     sugar: boundedNumber("sugar", args.sugar, 0, 800),
     sodium: boundedNumber("sodium", args.sodium, 0, 20000),
     potassium: boundedNumber("potassium", args.potassium, 0, 20000),
+    caffeine_mg: boundedNumber("caffeine_mg", args.caffeine_mg, 0, 2000),
   };
 }
 
@@ -102,7 +102,7 @@ async function logMeal(args: Args, db: Client, userId: string, today: string) {
     notes: args.notes ? String(args.notes).slice(0, 500) : null,
     is_confirmed: true,
     nutrition_source: "mcp_estimate",
-    source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant" },
+    source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant", caffeine_assessed: args.caffeine_mg !== undefined },
   };
   // Idempotency: a retried call with the same client key updates its own row.
   if (args.client_key) {
@@ -140,73 +140,6 @@ async function logWater(args: Args, db: Client, userId: string, today: string) {
   const timestamp = date === today ? new Date().toISOString() : `${date}T12:00:00.000Z`;
   const row = await write<any>("water_insert", () => db.from("water_logs").insert({ user_id: userId, amount: litres, method: "automation", timestamp }).select().single());
   return ok("water_logged", row, { litres });
-}
-
-/* ------------------------------ caffeine ------------------------------ */
-
-function localDateTime(date: string, time: string, timezone: string) {
-  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("INVALID_TIME");
-  const [hours, minutes] = time.split(":").map(Number);
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) throw new Error("INVALID_TIME");
-  const { start } = localDayBounds(date, timezone);
-  return new Date(Date.parse(start) + hours * 3600000 + minutes * 60000).toISOString();
-}
-
-function zonedDateTimeParts(timestamp: string, timezone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).formatToParts(new Date(timestamp)).reduce<Record<string, string>>((acc, part) => (acc[part.type] = part.value, acc), {});
-  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
-}
-
-function caffeinePayload(args: Args) {
-  const payload: Args = {};
-  if (args.amount_mg !== undefined) payload.amount_mg = Math.round(boundedNumber("amount_mg", args.amount_mg, 1, 2000, false)!);
-  if (args.source !== undefined) payload.source = oneOf("source", args.source, CAFFEINE_SOURCES);
-  if (args.label !== undefined) payload.label = String(args.label ?? "").trim().slice(0, 120) || null;
-  return payload;
-}
-
-async function logCaffeine(args: Args, db: Client, userId: string, today: string, timezone: string) {
-  const date = assertWritableDate(args.date || today, today);
-  const time = args.time || (date === today ? null : "12:00");
-  const timestamp = time ? localDateTime(date, String(time), timezone) : new Date().toISOString();
-  if (date === today && Date.parse(timestamp) > Date.now() + 60000) throw new Error("TIME_IN_FUTURE");
-  const id = typeof args.client_key === "string" && args.client_key.trim()
-    ? await stableUuid(`${userId}:caffeine:${args.client_key.trim()}`)
-    : crypto.randomUUID();
-  const payload = {
-    id,
-    user_id: userId,
-    amount_mg: Math.round(boundedNumber("amount_mg", args.amount_mg, 1, 2000, false)!),
-    source: oneOf("source", args.source, CAFFEINE_SOURCES, "other"),
-    label: args.label ? String(args.label).trim().slice(0, 120) || null : null,
-    timestamp,
-    method: "automation",
-  };
-  const row = await write<any>("caffeine_upsert", () => db.from("caffeine_logs").upsert(payload, { onConflict: "id" }).select().single());
-  return ok("caffeine_logged", row, { amount_mg: payload.amount_mg, source: payload.source });
-}
-
-async function updateCaffeine(args: Args, db: Client, userId: string, today: string, timezone: string) {
-  const id = requireString("caffeine_id", args.caffeine_id, 40);
-  const current = await write<any>("caffeine_lookup", () => db.from("caffeine_logs").select("id,timestamp").eq("id", id).eq("user_id", userId).maybeSingle());
-  if (!current) throw new Error("CAFFEINE_NOT_FOUND");
-  const patch = caffeinePayload(args);
-  if (args.date !== undefined || args.time !== undefined) {
-    const existing = zonedDateTimeParts(current.timestamp, timezone);
-    const date = assertWritableDate(args.date || existing.date, today);
-    const time = String(args.time || existing.time);
-    const timestamp = localDateTime(date, time, timezone);
-    if (date === today && Date.parse(timestamp) > Date.now() + 60000) throw new Error("TIME_IN_FUTURE");
-    patch.timestamp = timestamp;
-  }
-  if (!Object.keys(patch).length) throw new Error("NO_FIELDS_TO_UPDATE");
-  const row = await write<any>("caffeine_update", () => db.from("caffeine_logs").update(patch).eq("id", id).eq("user_id", userId).select().maybeSingle());
-  if (!row) throw new Error("CAFFEINE_NOT_FOUND");
-  return ok("caffeine_updated", row);
 }
 
 /* ------------------------------ workouts ------------------------------ */
@@ -388,8 +321,6 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
     case "log_meal": return await logMeal(args, db, userId, today);
     case "update_meal": return await updateMeal(args, db, userId, today);
     case "log_water": return await logWater(args, db, userId, today);
-    case "log_caffeine": return await logCaffeine(args, db, userId, today, resolvedTimezone);
-    case "update_caffeine": return await updateCaffeine(args, db, userId, today, resolvedTimezone);
     case "log_workout": return await logWorkout(args, db, userId, today, prefs);
     case "update_workout": return await updateWorkout(args, db, userId, today, prefs);
     case "log_activity": return await logActivity(args, db, userId, today, prefs);
