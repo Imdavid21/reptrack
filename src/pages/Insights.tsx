@@ -62,6 +62,7 @@ function ProgressCard() {
   const [goals, setGoals] = useState({
     weekly_workout_goal: '',
     sleep_goal: '',
+    daily_caffeine_limit: '',
     weight_goal: '',
     weight_goal_type: 'maintain',
   });
@@ -71,6 +72,7 @@ function ProgressCard() {
       setGoals({
         weekly_workout_goal: preferences.weekly_workout_goal?.toString() || '4',
         sleep_goal: preferences.sleep_goal?.toString() || '8',
+        daily_caffeine_limit: preferences.daily_caffeine_limit?.toString() || '400',
         weight_goal: preferences.weight_goal?.toString() || '',
         weight_goal_type: preferences.weight_goal_type || 'maintain',
       });
@@ -85,10 +87,13 @@ function ProgressCard() {
     try {
       const workoutGoalValue = goals.weekly_workout_goal ? parseInt(goals.weekly_workout_goal) : 4;
       const sleepGoalValue = goals.sleep_goal ? parseFloat(goals.sleep_goal) : 8;
+      const caffeineLimitValue = goals.daily_caffeine_limit ? Math.round(parseFloat(goals.daily_caffeine_limit)) : 400;
+      if (!Number.isFinite(caffeineLimitValue) || caffeineLimitValue <= 0 || caffeineLimitValue > 2000) throw new Error('INVALID_CAFFEINE_LIMIT');
 
       await updatePreferences.mutateAsync({
         weekly_workout_goal: workoutGoalValue,
         sleep_goal: sleepGoalValue,
+        daily_caffeine_limit: caffeineLimitValue,
         weight_goal: goals.weight_goal ? parseFloat(goals.weight_goal) : null,
         weight_goal_type: (goals.weight_goal_type as 'lose' | 'gain' | 'maintain') || null,
       });
@@ -96,12 +101,13 @@ function ProgressCard() {
       await Promise.all([
         recordGoalHistory('weekly_workout_goal', workoutGoalValue, preferences?.weekly_workout_goal),
         recordGoalHistory('sleep_goal', sleepGoalValue, preferences?.sleep_goal),
+        recordGoalHistory('daily_caffeine_limit', caffeineLimitValue, preferences?.daily_caffeine_limit),
       ]);
 
       toast.success('Goals updated');
       setIsEditing(false);
     } catch (error) {
-      toast.error('Failed to save goals');
+      toast.error(error instanceof Error && error.message === 'INVALID_CAFFEINE_LIMIT' ? 'Caffeine limit must be between 1 and 2000 mg' : 'Failed to save goals');
     } finally {
       setIsSaving(false);
     }
@@ -256,6 +262,23 @@ function ProgressCard() {
                   sx: { fontSize: '0.875rem' }
                 }}
                 inputProps={{ step: '0.5' }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>
+                Caffeine daily limit
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                value={goals.daily_caffeine_limit}
+                onChange={(e) => setGoals(g => ({ ...g, daily_caffeine_limit: e.target.value }))}
+                InputProps={{
+                  endAdornment: <Typography variant="caption" color="text.secondary">mg/day</Typography>,
+                  sx: { fontSize: '0.875rem' }
+                }}
+                inputProps={{ min: 1, max: 2000, step: '10' }}
               />
             </Box>
           </Box>
