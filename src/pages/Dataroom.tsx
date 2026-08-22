@@ -17,7 +17,7 @@ function TemporalLoadingState() {
 
 function DataroomContent() {
   const { dateRange } = useDateRange();
-  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData(dateRange);
+  const { analysis, meals, energy, hydration, caffeine, preferences, isLoading, error } = useDataroomData(dateRange);
   const temporal = useDataroomComparisons(dateRange);
 
   return (
@@ -82,6 +82,8 @@ function DataroomContent() {
                 intake: meals.some(meal => meal.date === day.date) ? day.intake : undefined,
               }))}
               hydration={hydration}
+              caffeine={caffeine}
+              caffeineLimit={preferences?.daily_caffeine_limit ?? 400}
               proteinGoal={preferences?.daily_protein_goal || 165}
             />
           </section>
