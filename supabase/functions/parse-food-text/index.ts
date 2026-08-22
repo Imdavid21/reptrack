@@ -91,7 +91,7 @@ Examples:
 
 Be accurate with portions. When quantities aren't specified, assume reasonable single servings.
 
-Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat - sauces, dressings, and processed or cured items usually dominate the sodium total. Also estimate potassium (milligrams) - fruit, vegetables, legumes, dairy and potatoes carry most of it.`
+Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongside protein/carbs/fat - sauces, dressings, and processed or cured items usually dominate the sodium total. Also estimate potassium (milligrams) - fruit, vegetables, legumes, dairy and potatoes carry most of it. Also estimate caffeine (milligrams) - coffee, espresso, tea, cola, energy drinks, chocolate and pre-workout carry it; use 0 for items with none.`
           },
           {
             role: "user",
@@ -121,11 +121,12 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                         fiber: { type: "number", description: "Dietary fiber in grams" },
                         sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                         sodium: { type: "number", description: "Sodium in milligrams" },
-                      potassium: { type: "number", description: "Potassium in milligrams" }
+                      potassium: { type: "number", description: "Potassium in milligrams" },
+                        caffeine: { type: "number", description: "Caffeine in milligrams, 0 if none" }
                       },
                       // Macros are required: left optional, the model routinely
                       // omitted sugar and sodium, so those never got recorded.
-                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
+                      required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium", "caffeine"]
                     }
                   },
                   total_calories: { type: "number" },
@@ -136,6 +137,7 @@ Always estimate sugar (grams, a subset of carbs) and sodium (milligrams) alongsi
                   total_sugar: { type: "number" },
                   total_sodium: { type: "number" },
                 total_potassium: { type: "number" },
+                  total_caffeine: { type: "number" },
                   description: { type: "string", description: "Brief description of the meal" },
                   food_quality: { 
                     type: "string", 
