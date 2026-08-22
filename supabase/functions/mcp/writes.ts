@@ -4,7 +4,7 @@
  * workouts and activities. There is no delete path, and every row is written
  * for the authenticated user through the user-scoped PostgREST client so RLS applies.
  */
-import { assertWritableDate, boundedNumber, categorizeDbError, round, withRetry } from "./core.ts";
+import { assertWritableDate, boundedNumber, categorizeDbError, localDayBounds, round, withRetry } from "./core.ts";
 import { ENERGY_MODEL_VERSION, estimateActivityEnergy, estimateWorkoutEnergyMcp, type ActivityKind } from "./energy.ts";
 
 type Client = any;
@@ -29,6 +29,37 @@ async function write<T>(label: string, build: () => any): Promise<T> {
 
 function todayIn(timezone: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+function localClockIn(timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date()).reduce<Record<string, string>>((acc, part) => (acc[part.type] = part.value, acc), {});
+  return `${parts.hour}:${parts.minute}`;
+}
+
+function localDateTime(date: string, time: string, timezone: string) {
+  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("INVALID_TIME");
+  const [hours, minutes] = time.split(":").map(Number);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) throw new Error("INVALID_TIME");
+  const { start } = localDayBounds(date, timezone);
+  return new Date(Date.parse(start) + hours * 3600000 + minutes * 60000).toISOString();
+}
+
+function zonedDateTimeParts(timestamp: string, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date(timestamp)).reduce<Record<string, string>>((acc, part) => (acc[part.type] = part.value, acc), {});
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+
+function occurrenceTimestamp(date: string, time: unknown, today: string, timezone: string) {
+  const resolvedTime = typeof time === "string" && time.trim() ? time.trim() : localClockIn(timezone);
+  const timestamp = localDateTime(date, resolvedTime, timezone);
+  if (date === today && Date.parse(timestamp) > Date.now() + 60000) throw new Error("TIME_IN_FUTURE");
+  return timestamp;
 }
 
 async function preferences(db: Client) {
@@ -91,18 +122,20 @@ function macroPayload(args: Args) {
   };
 }
 
-async function logMeal(args: Args, db: Client, userId: string, today: string) {
+async function logMeal(args: Args, db: Client, userId: string, today: string, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
+  const consumedAt = occurrenceTimestamp(date, args.time, today, timezone);
   const payload = {
     user_id: userId,
     date,
+    consumed_at: consumedAt,
     meal_type: oneOf("meal_type", args.meal_type, MEAL_TYPES, "snack"),
     food_name: requireString("food_name", args.food_name, 200),
     ...macroPayload(args),
     notes: args.notes ? String(args.notes).slice(0, 500) : null,
     is_confirmed: true,
     nutrition_source: "mcp_estimate",
-    source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant", caffeine_assessed: args.caffeine_mg !== undefined },
+    source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant", caffeine_assessed: args.caffeine_mg !== undefined, occurrence_time_supplied: args.time !== undefined },
   };
   // Idempotency: a retried call with the same client key updates its own row.
   if (args.client_key) {
@@ -113,8 +146,10 @@ async function logMeal(args: Args, db: Client, userId: string, today: string) {
   return ok("meal_logged", await write("meal_insert", () => db.from("meals").insert(payload).select().single()));
 }
 
-async function updateMeal(args: Args, db: Client, userId: string, today: string) {
+async function updateMeal(args: Args, db: Client, userId: string, today: string, timezone: string) {
   const id = requireString("meal_id", args.meal_id, 40);
+  const current = await write<any>("meal_lookup", () => db.from("meals").select("id,date,consumed_at").eq("id", id).eq("user_id", userId).maybeSingle());
+  if (!current) throw new Error("MEAL_NOT_FOUND");
   const patch: Args = {};
   if (args.date !== undefined) patch.date = assertWritableDate(args.date, today);
   if (args.meal_type !== undefined) patch.meal_type = oneOf("meal_type", args.meal_type, MEAL_TYPES);
@@ -122,6 +157,12 @@ async function updateMeal(args: Args, db: Client, userId: string, today: string)
   if (args.notes !== undefined) patch.notes = String(args.notes).slice(0, 500);
   for (const [key, value] of Object.entries(macroPayload({ calories: args.calories ?? 0, ...args }))) {
     if (args[key] !== undefined) patch[key] = value;
+  }
+  if (args.date !== undefined || args.time !== undefined) {
+    const existing = current.consumed_at ? zonedDateTimeParts(current.consumed_at, timezone) : { date: current.date, time: localClockIn(timezone) };
+    const date = assertWritableDate(args.date || existing.date, today);
+    patch.date = date;
+    patch.consumed_at = occurrenceTimestamp(date, args.time || existing.time, today, timezone);
   }
   if (!Object.keys(patch).length) throw new Error("NO_FIELDS_TO_UPDATE");
   const row = await write<any>("meal_update", () => db.from("meals").update(patch).eq("id", id).eq("user_id", userId).select().maybeSingle());
@@ -318,8 +359,8 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
   const prefs = await preferences(db);
   const run = async () => {
   switch (name) {
-    case "log_meal": return await logMeal(args, db, userId, today);
-    case "update_meal": return await updateMeal(args, db, userId, today);
+    case "log_meal": return await logMeal(args, db, userId, today, resolvedTimezone);
+    case "update_meal": return await updateMeal(args, db, userId, today, resolvedTimezone);
     case "log_water": return await logWater(args, db, userId, today);
     case "log_workout": return await logWorkout(args, db, userId, today, prefs);
     case "update_workout": return await updateWorkout(args, db, userId, today, prefs);
