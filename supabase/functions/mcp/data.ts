@@ -22,12 +22,11 @@ export async function read<T>(label: string, build: () => any): Promise<T> {
 
 async function prefs(db: Client) {
   try {
-    // limit(1) instead of maybeSingle(): duplicate preference rows must never break a read-only tool.
     const rows = await read<any[]>("user_preferences", () => db.from("user_preferences").select("*").limit(1));
     return rows?.[0] ? { ...FALLBACK_PREFS, ...rows[0] } : { ...FALLBACK_PREFS };
   } catch (error) {
     console.error("[mcp] preferences unavailable, using defaults:", (error as Error).message);
-    return { ...FALLBACK_PREFS }; // failsafe: profile defaults never block data retrieval
+    return { ...FALLBACK_PREFS };
   }
 }
 const envelope = (start: string, end: string, timezone: string, data: unknown, summary: unknown, metadata: unknown = {}) =>
@@ -79,7 +78,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
   if (name === "get_nutrition") {
     const limit = Math.min(args.limit ?? 365, 365);
     const [meals, waters] = await Promise.all([
-      read<any[]>("meals", () => db.from("meals").select("date,meal_type,food_name,calories,protein,carbs,fat,fiber,sugar,sodium,potassium,caffeine_mg").gte("date",start).lte("date",end).order("date").limit(2000)),
+      read<any[]>("meals", () => db.from("meals").select("date,consumed_at,meal_type,food_name,calories,protein,carbs,fat,fiber,sugar,sodium,potassium,caffeine_mg").gte("date",start).lte("date",end).order("date").order("consumed_at", { ascending: true, nullsFirst: false }).limit(2000)),
       read<any[]>("water_logs", () => db.from("water_logs").select("amount,timestamp").gte("timestamp",localDayBounds(start,timezone).start).lt("timestamp",localDayBounds(end,timezone).end).limit(2000)).catch(() => [] as any[]),
     ]);
     const day = (date:string) => ({date,calories:0,protein:0,carbs:0,fat:0,fiber:0,water_l:0,caffeine_mg:0,caffeine_tracked:false,meals:[] as any[]});
@@ -88,7 +87,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
       const d=days[m.date] ||= day(m.date);
       for(const k of ["calories","protein","carbs","fat","fiber"]) d[k]+=Number(m[k])||0;
       if(m.caffeine_mg !== null && m.caffeine_mg !== undefined){ d.caffeine_mg+=Number(m.caffeine_mg)||0; d.caffeine_tracked=true; }
-      d.meals.push({meal_type:m.meal_type,food_name:m.food_name,calories:m.calories,caffeine_mg:m.caffeine_mg});
+      d.meals.push({meal_type:m.meal_type,food_name:m.food_name,calories:m.calories,caffeine_mg:m.caffeine_mg,consumed_at:m.consumed_at});
     }
     for(const w of waters||[]){ const date=new Intl.DateTimeFormat("en-CA",{timeZone:timezone}).format(new Date(w.timestamp)); const d=days[date] ||= day(date); d.water_l+=w.amount||0; }
     const data=Object.values(days).sort((a:any,b:any)=>a.date.localeCompare(b.date)).slice(0,limit) as any[];
