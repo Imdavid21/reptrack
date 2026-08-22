@@ -29,7 +29,7 @@ function scoreWord(score: number): string {
 function TrendIcon({ trend }: { trend: PillarResult['trend'] }) {
   if (trend === 'up') return <TrendingUp className="h-3 w-3 text-energy-ink" aria-label="trending up" />;
   if (trend === 'down') return <TrendingDown className="h-3 w-3 text-destructive" aria-label="trending down" />;
-  return <Minus className="h-3 w-3 text-muted-foreground/50" aria-label="flat" />;
+  return <Minus className="h-3 w-3 text-muted-foreground" aria-label="flat" />;
 }
 
 function ScoreRing({ score }: { score: number | null }) {

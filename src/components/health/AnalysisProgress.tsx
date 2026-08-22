@@ -40,7 +40,7 @@ export function AnalysisProgress({ currentStep }: AnalysisProgressProps) {
                 'flex items-center gap-1 text-xs transition-colors',
                 isDone && 'text-foreground',
                 isActive && 'text-foreground font-medium',
-                !isDone && !isActive && 'text-muted-foreground/40'
+                !isDone && !isActive && 'text-muted-foreground'
               )}>
                 {isDone ? <Check className="h-3 w-3" /> : STEP_ICONS[step]}
               </div>
