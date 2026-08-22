@@ -23,7 +23,7 @@ export class FoodAnalysisError extends Error {
 }
 
 export interface FoodAnalysis {
-  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number; sugar?: number; sodium?: number; potassium?: number }[];
+  foods: { name: string; portion: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number; sugar?: number; sodium?: number; potassium?: number; caffeine_mg?: number }[];
   total_calories: number;
   total_protein?: number;
   total_carbs?: number;
@@ -32,6 +32,7 @@ export interface FoodAnalysis {
   total_sugar?: number;
   total_sodium?: number;
   total_potassium?: number;
+  total_caffeine_mg?: number;
   confidence: number;
   description: string;
   food_quality?: string;
