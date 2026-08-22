@@ -67,7 +67,7 @@ export const TABLE_COLUMNS: Record<DataTable, string[]> = {
     'id', 'user_id', 'timestamp', 'amount', 'method'
   ],
   meals: [
-    'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
+    'id', 'user_id', 'date', 'consumed_at', 'meal_type', 'food_name', 'calories',
     'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine_mg', 'food_quality',
     'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed',
     'nutrition_source', 'source_metadata', 'notes', 'created_at'
@@ -171,23 +171,15 @@ const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } |
 
 /** Every column that's a genuine number in the DB, across all tables - used to parse CSV strings back to numbers on import. */
 export const NUMERIC_FIELDS = new Set([
-  // exercises
   'actual_weight', 'actual_reps', 'target_weight', 'target_reps', 'sort_order',
-  // daily_metrics / habits
   'sleep_hours', 'bodyweight', 'pullups', 'energy_level',
-  // water_logs
   'amount',
-  // meals
   'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine_mg', 'ai_confidence',
-  // calorie_burns
   'duration_minutes', 'distance_km', 'met_estimate', 'effective_weight_kg',
-  // habits
   'water_intake',
-  // workouts
   'workout_duration_minutes', 'explicit_pause_seconds', 'estimated_net_kcal',
   'energy_model_version', 'week_number', 'pre_energy', 'pre_motivation',
   'pre_soreness', 'post_difficulty', 'post_satisfaction',
-  // user_preferences
   'age', 'height_cm', 'initial_weight_kg', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
   'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
   'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_water_goal', 'daily_caffeine_limit',
@@ -195,14 +187,10 @@ export const NUMERIC_FIELDS = new Set([
   'completion_percent', 'actual_rir', 'rom_quality', 'pain_score', 'fatigue', 'motivation', 'resting_hr',
   'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'discomfort',
   'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'waist_cm',
-  // goal_history
   'value',
-  // adaptive_lifecycles
   'rep_range_low', 'rep_range_high', 'starting_load', 'ending_load',
   'carryover_in', 'carryover_out',
-  // adaptive_session_logs
   'leading_load', 'leading_reps', 'backoff_load', 'backoff_reps',
-  // versioned energy model
   'effective_weight_kg', 'formula_ree', 'nonexercise_factor', 'formula_baseline',
   'calibration_adjustment', 'personal_baseline', 'predicted_tdee', 'calibrated_tdee',
   'likely_low', 'likely_high', 'calorie_target', 'protein_target',
@@ -247,7 +235,6 @@ export function escapeCSV(value: any): string {
     ? JSON.stringify(value)
     : String(value);
 
-  // Escape quotes and wrap in quotes if contains comma, quote, or newline
   if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
     return `"${stringValue.replace(/"/g, '""')}"`;
   }
@@ -265,7 +252,7 @@ export function parseCSVLine(line: string): string[] {
     if (char === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"';
-        i++; // Skip next quote
+        i++;
       } else {
         inQuotes = !inQuotes;
       }
@@ -312,7 +299,6 @@ export function useDataExport() {
   const [progress, setProgress] = useState({ current: 0, total: 0, table: '' });
   const [lastExport, setLastExport] = useState<LastExportFile | null>(null);
 
-  // Revoke object URLs on unmount (and when the URL changes).
   useEffect(() => {
     return () => {
       if (lastExport?.url) URL.revokeObjectURL(lastExport.url);
@@ -352,10 +338,8 @@ export function useDataExport() {
         let data: Record<string, any>[] | null = null;
         const error: any = null;
 
-        // Handle tables that don't have a direct user_id (they link via a parent row instead)
         const linked = LINKED_TABLES[table];
         if (linked) {
-          // Get all parent-table IDs for this user first
           const parents = await fetchAllPaged<{ id: string }>(async (from, to) => {
             const result = await (supabase as any)
               .from(linked.parentTable)
@@ -387,7 +371,6 @@ export function useDataExport() {
             data = allRows;
           }
         } else {
-          // Standard query for tables with user_id
           const orderBy = TABLE_ORDER_BY[table];
           data = await fetchAllPaged<Record<string, any>>(async (from, to) => {
             let q = (supabase.from(table) as any).select('*').eq('user_id', user.id);
@@ -401,19 +384,15 @@ export function useDataExport() {
 
         if (data && data.length > 0) {
           const columns = TABLE_COLUMNS[table];
-
-          // Create CSV content
           const headerRow = columns.join(',');
           const dataRows = data.map(row =>
             columns.map(col => escapeCSV(row[col as keyof typeof row])).join(',')
           );
-
           const csvContent = [headerRow, ...dataRows].join('\n');
           csvFiles.push({ name: `${table}.csv`, content: csvContent });
         }
       }
 
-      // Prepare final export (single CSV or combined multi-table CSV)
       if (csvFiles.length === 0) return null;
 
       const exportContent =
@@ -437,8 +416,6 @@ export function useDataExport() {
         createdAt: new Date(),
       };
 
-      // Attempt automatic download (may be blocked on some browsers after async work);
-      // we also store the URL so the user can click a dedicated Download button.
       setLastExportSafely(file);
       triggerBrowserDownload(url, exportFilename);
       return file;
@@ -485,21 +462,14 @@ export function useDataExport() {
     setIsImporting(true);
     const imported: Record<string, number> = {};
     const errors: string[] = [];
-    // Old CSV id -> newly-inserted DB id, per table. Populated as each
-    // "parent" table (workouts, adaptive_lifecycles) is imported, so
-    // dependent tables (exercises/habits, adaptive_session_logs) can
-    // reattach to the right freshly-created row instead of a dangling old id.
     const idMaps: Partial<Record<DataTable, Record<string, string>>> = {};
 
     try {
       const text = await file.text();
       const sections = text.split(/### TABLE: (\w+) ###\n/).filter(Boolean);
-
-      // Handle single table CSV or combined export
       const tablesToProcess: { table: DataTable; content: string }[] = [];
 
       if (sections.length >= 2) {
-        // Combined export format
         for (let i = 0; i < sections.length; i += 2) {
           const tableName = sections[i].trim() as DataTable;
           const content = sections[i + 1]?.trim();
@@ -508,7 +478,6 @@ export function useDataExport() {
           }
         }
       } else {
-        // Try to detect table from filename or first column
         const filename = file.name.replace('.csv', '').toLowerCase();
         if (TABLE_COLUMNS[filename as DataTable]) {
           tablesToProcess.push({ table: filename as DataTable, content: text });
@@ -518,9 +487,6 @@ export function useDataExport() {
         }
       }
 
-      // Parent tables must be imported before whatever links to them, so the
-      // id map exists by the time a dependent table needs it - regardless of
-      // the order they happened to appear in the file.
       const parentTablesNeeded = new Set(
         tablesToProcess
           .map(t => LINKED_TABLES[t.table]?.parentTable)
@@ -556,22 +522,14 @@ export function useDataExport() {
               let value: any = values[idx];
 
               if (header === 'id') {
-                // Captured for remapping if other tables link to this row;
-                // the DB assigns a fresh id on insert either way.
                 oldId = value || null;
                 return;
               }
               if (linked && header === linked.fkColumn) {
-                // Captured, not dropped - remapped below once we know the
-                // new id it should point to. Dropping this outright (as a
-                // previous version of this importer did) silently orphaned
-                // every imported exercise/habit/session log with no parent
-                // row to attach to.
                 oldFkValue = value || null;
                 return;
               }
 
-              // Parse special types
               if (value === '') {
                 value = null;
               } else if (BOOLEAN_FIELDS.has(header)) {
@@ -589,24 +547,14 @@ export function useDataExport() {
               const parentMap = idMaps[linked.parentTable];
               const newFk = oldFkValue ? parentMap?.[oldFkValue] : undefined;
               if (!newFk) {
-                // No matching parent row was imported in this same run (e.g.
-                // the export file didn't include it, or it failed above) -
-                // inserting would either violate the FK constraint or leave
-                // an orphaned row. Skip it and report instead of guessing.
-                // Deliberately NOT pushed to oldIds - it must stay index-
-                // aligned with `rows` after the filter() below drops this
-                // row, or later batching pairs the wrong old id with the
-                // wrong newly-inserted row.
                 skippedForMissingParent++;
                 return null;
               }
               row[linked.fkColumn] = newFk;
             }
 
-            // Add user_id to all rows
             row.user_id = user.id;
             oldIds.push(oldId);
-
             return row;
           }).filter((r): r is Record<string, any> => r !== null);
 
@@ -614,7 +562,6 @@ export function useDataExport() {
             errors.push(`${table}: skipped ${skippedForMissingParent} row(s) whose parent row wasn't found in this import`);
           }
 
-          // Insert in batches - use type assertion to avoid complex inference
           const batchSize = 100;
           let insertedCount = 0;
           const isParentTable = parentTablesNeeded.has(table);
@@ -622,10 +569,6 @@ export function useDataExport() {
 
           for (let j = 0; j < rows.length; j += batchSize) {
             const batch = rows.slice(j, j + batchSize);
-            // Deliberately NOT filtering out nulls here - this must stay
-            // index-aligned with `batch` and the `data` rows Postgres hands
-            // back, or a null earlier in the batch shifts every id pairing
-            // after it by one.
             const batchOldIds = oldIds.slice(j, j + batchSize);
 
             if (table === 'user_preferences' || table === 'training_state') {
@@ -633,7 +576,6 @@ export function useDataExport() {
               if (error) errors.push(`Error importing ${table}: ${error.message}`);
               else insertedCount += batch.length;
             } else if (isParentTable) {
-              // Need the freshly-generated ids back to remap dependent tables.
               const { data, error } = await (supabase.from(table) as any).insert(batch).select('id');
               if (error) {
                 errors.push(`Error importing ${table}: ${error.message}`);
@@ -690,7 +632,6 @@ function triggerBrowserDownload(url: string, filename: string) {
   link.href = url;
   link.download = filename;
   link.rel = 'noopener noreferrer';
-  // Some browsers (especially mobile) handle blob downloads more reliably when opened in a new context.
   link.target = '_blank';
   document.body.appendChild(link);
   link.click();
