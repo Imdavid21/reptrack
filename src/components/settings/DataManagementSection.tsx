@@ -40,6 +40,7 @@ const TABLE_LABELS: Record<DataTable, string> = {
   exercises: 'Exercises',
   daily_metrics: 'Daily Metrics',
   water_logs: 'Water Logs',
+  caffeine_logs: 'Caffeine Logs',
   meals: 'Meals',
   calorie_burns: 'Calorie Burns',
   habits: 'Habits',
@@ -73,7 +74,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
-    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
+    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'caffeine_logs', 'meals',
     'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
     'goal_history', 'adaptive_lifecycles', 'adaptive_session_logs',
     'training_state', 'readiness_checkins', 'post_workout_checkins',
