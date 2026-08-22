@@ -259,6 +259,7 @@ const NEUTRAL_GRIP_WORDS =
 const MEANINGFUL_GRIP_WORDS = /\b(reverse|underhand|overhand|supinated|pronated)[\s-]*grip(ped)?\b/gi;
 
 function stripGripDescriptors(name: string): string {
+  if (!/grip/i.test(name)) return name;
   return name
     .replace(/[-_]/g, ' ')
     .replace(NEUTRAL_GRIP_WORDS, ' ')
