@@ -48,7 +48,7 @@ export function analyzeBodyweight(
   metrics: MetricObservation[],
   goal: 'lose' | 'gain' | 'maintain' | null,
   endDate: string,
-  windowDays = DATAROOM_WINDOWS.bodyweightDays,
+  windowDays: number = DATAROOM_WINDOWS.bodyweightDays,
 ): BodyweightAnalysis {
   const start = subDays(parseISO(endDate), Math.max(1, windowDays) - 1);
   const observations = metrics
@@ -90,7 +90,7 @@ export function analyzeBodyweight(
   };
 }
 
-export function analyzeExerciseProgression(sets: TrainingSet[], exposureCount = DATAROOM_WINDOWS.exerciseExposureCount): ExerciseTrend[] {
+export function analyzeExerciseProgression(sets: TrainingSet[], exposureCount: number = DATAROOM_WINDOWS.exerciseExposureCount): ExerciseTrend[] {
   const grouped = new Map<string, Map<string, ExerciseExposure>>();
   for (const set of sets) {
     if (!set.exercise || !set.date || set.reps <= 0) continue;
@@ -121,7 +121,7 @@ export function analyzeExerciseProgression(sets: TrainingSet[], exposureCount = 
   }).sort((a, b) => b.exposures.length - a.exposures.length || (b.deltaPercent ?? -999) - (a.deltaPercent ?? -999));
 }
 
-export function analyzeMuscleExposure(sets: TrainingSet[], exerciseTrends: ExerciseTrend[], rangeDays = DATAROOM_WINDOWS.resistanceVolumeDays): MuscleExposure[] {
+export function analyzeMuscleExposure(sets: TrainingSet[], exerciseTrends: ExerciseTrend[], rangeDays: number = DATAROOM_WINDOWS.resistanceVolumeDays): MuscleExposure[] {
   const weeks = Math.max(rangeDays / 7, 1);
   const counts = new Map<string, number>();
   const muscleStates = new Map<string, TrendState[]>();
@@ -143,7 +143,7 @@ export function analyzeMuscleExposure(sets: TrainingSet[], exerciseTrends: Exerc
   });
 }
 
-export function analyzeNutrition(meals: MealDay[], energy: EnergyDay[], weight: BodyweightAnalysis, windowDays = DATAROOM_WINDOWS.nutritionDays): NutritionAnalysis {
+export function analyzeNutrition(meals: MealDay[], energy: EnergyDay[], weight: BodyweightAnalysis, windowDays: number = DATAROOM_WINDOWS.nutritionDays): NutritionAnalysis {
   const loggedDates = new Set(meals.map(meal => meal.date));
   const loggedDays = loggedDates.size;
   const coverage = loggedDays / Math.max(windowDays, 1);
@@ -168,7 +168,7 @@ export function analyzeRecovery(
   exerciseTrends: ExerciseTrend[],
   sleepGoal: number,
   endDate: string,
-  windowDays = DATAROOM_WINDOWS.immediateRecoveryDays,
+  windowDays: number = DATAROOM_WINDOWS.immediateRecoveryDays,
 ): RecoveryAnalysis {
   const effectiveWindow = Math.max(1, Math.min(windowDays, DATAROOM_WINDOWS.immediateRecoveryDays));
   const start = subDays(parseISO(endDate), effectiveWindow - 1);
