@@ -47,7 +47,7 @@
     --secondary-foreground: 0 0% 12%;
 
     --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 38%;
+    --muted-foreground: 0 0% 32%;
 
     /* Accent is a subtle surface (shadcn semantics) */
     --accent: 0 0% 96%;
@@ -65,7 +65,7 @@
     --warning-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 0 0% 86%;
+    --border: 0 0% 80%;
     --input: 0 0% 55%;
     --ring: 0 0% 18%;
 
@@ -154,7 +154,7 @@
     --secondary-foreground: 0 0% 94%;
 
     --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 68%;
+    --muted-foreground: 0 0% 76%;
 
     --accent: 0 0% 15%;
     --accent-foreground: 0 0% 94%;
@@ -168,7 +168,7 @@
     --warning: 38 90% 62%;
     --warning-foreground: 0 0% 7%;
 
-    --border: 0 0% 20%;
+    --border: 0 0% 26%;
     --input: 0 0% 38%;
     --ring: 0 0% 82%;
 
