@@ -695,6 +695,81 @@ export type Database = {
           },
         ]
       }
+      live_workout_sessions: {
+        Row: {
+          coach_note: string | null
+          coach_note_at: string | null
+          completed_sets: number
+          created_at: string
+          current_exercise: string | null
+          current_exercise_index: number
+          current_set_index: number
+          date: string
+          day: string | null
+          day_name: string | null
+          draft_id: string | null
+          elapsed_seconds: number
+          ended_at: string | null
+          exercises: Json
+          id: string
+          started_at: string
+          status: string
+          total_sets: number
+          total_volume: number
+          updated_at: string
+          user_id: string
+          week_number: number | null
+        }
+        Insert: {
+          coach_note?: string | null
+          coach_note_at?: string | null
+          completed_sets?: number
+          created_at?: string
+          current_exercise?: string | null
+          current_exercise_index?: number
+          current_set_index?: number
+          date?: string
+          day?: string | null
+          day_name?: string | null
+          draft_id?: string | null
+          elapsed_seconds?: number
+          ended_at?: string | null
+          exercises?: Json
+          id?: string
+          started_at?: string
+          status?: string
+          total_sets?: number
+          total_volume?: number
+          updated_at?: string
+          user_id: string
+          week_number?: number | null
+        }
+        Update: {
+          coach_note?: string | null
+          coach_note_at?: string | null
+          completed_sets?: number
+          created_at?: string
+          current_exercise?: string | null
+          current_exercise_index?: number
+          current_set_index?: number
+          date?: string
+          day?: string | null
+          day_name?: string | null
+          draft_id?: string | null
+          elapsed_seconds?: number
+          ended_at?: string | null
+          exercises?: Json
+          id?: string
+          started_at?: string
+          status?: string
+          total_sets?: number
+          total_volume?: number
+          updated_at?: string
+          user_id?: string
+          week_number?: number | null
+        }
+        Relationships: []
+      }
       mcp_audit_logs: {
         Row: {
           created_at: string
@@ -1292,6 +1367,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_triggers: {
+        Row: {
+          acknowledged_at: string | null
+          comparator: string
+          condition_type: string
+          created_at: string
+          exercise_name: string | null
+          expires_at: string | null
+          fired_at: string | null
+          fired_count: number
+          id: string
+          message: string
+          repeat_mode: string
+          source: string
+          status: string
+          threshold: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          comparator?: string
+          condition_type: string
+          created_at?: string
+          exercise_name?: string | null
+          expires_at?: string | null
+          fired_at?: string | null
+          fired_count?: number
+          id?: string
+          message: string
+          repeat_mode?: string
+          source?: string
+          status?: string
+          threshold?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          comparator?: string
+          condition_type?: string
+          created_at?: string
+          exercise_name?: string | null
+          expires_at?: string | null
+          fired_at?: string | null
+          fired_count?: number
+          id?: string
+          message?: string
+          repeat_mode?: string
+          source?: string
+          status?: string
+          threshold?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       workouts: {
         Row: {
