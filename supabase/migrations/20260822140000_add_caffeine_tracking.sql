@@ -50,3 +50,20 @@ drop policy if exists "Users can delete own caffeine logs" on public.caffeine_lo
 create policy "Users can delete own caffeine logs"
   on public.caffeine_logs for delete
   using (auth.uid() = user_id);
+
+-- MCP writes happen outside the browser. Publish this table so an open client
+-- receives those inserts/updates immediately through the same realtime path
+-- used by the caffeine hook, rather than waiting for a navigation/refetch.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1
+       from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'caffeine_logs'
+     ) then
+    alter publication supabase_realtime add table public.caffeine_logs;
+  end if;
+end $$;
