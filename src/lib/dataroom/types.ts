@@ -15,7 +15,6 @@ export interface MealDay {
   sugar: number;
   sodium: number;
   potassium: number;
-  caffeine?: number;
 }
 export interface TrainingSet {
   exercise: string;
@@ -44,7 +43,6 @@ export interface BodyweightAnalysis {
   confidence: Confidence;
   observations: number;
   spanDays: number;
-  windowDays: number;
   points: WeightTrendPoint[];
 }
 
@@ -91,7 +89,6 @@ export interface RecoveryAnalysis {
   sleepNights: number;
   consecutiveTrainingDays: number;
   recentTrainingDays: number;
-  windowDays: number;
   reason: string;
 }
 
@@ -111,7 +108,6 @@ export interface DataroomFinding {
 export interface DataroomAnalysis {
   headline: string;
   confidence: Confidence;
-  rangeDays: number;
   weight: BodyweightAnalysis;
   exercises: ExerciseTrend[];
   muscles: MuscleExposure[];
@@ -119,3 +115,4 @@ export interface DataroomAnalysis {
   recovery: RecoveryAnalysis;
   findings: DataroomFinding[];
 }
+

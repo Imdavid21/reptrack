@@ -78,6 +78,7 @@ export default function History() {
     return acc;
   }, {} as Record<string, number>);
 
+
   const startEdit = (dateStr: string) => {
     const metric = metricsByDate[dateStr];
     const sleepHours = metric?.sleep_hours || 0;
@@ -124,6 +125,7 @@ export default function History() {
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
+  // Stats
   const thisMonthWorkouts = workouts.filter(w => {
     const d = parseDateKey(w.date);
     const now = new Date();
@@ -135,54 +137,56 @@ export default function History() {
   return (
     <MainLayout>
       <AnimatedPage>
-        <div className="space-y-5 pb-10">
-          <header className="app-page-header">
+        <div className="space-y-4 pb-10">
+          <header className="pb-2">
             <div>
-              <p className="type-eyebrow">Training log</p>
               <h1 className="type-page-title">History</h1>
             </div>
-            <span className="type-meta tabular-nums">{daysToShow} days</span>
           </header>
-
           {!hasAnyHistory ? (
-            <motion.div variants={staggerItem} className="flex flex-col items-center justify-center px-6 py-20 text-center">
-              <Dumbbell size={40} className="mb-4 text-muted-foreground/30" />
-              <p className="type-card-title text-foreground">No workouts yet</p>
-              <p className="type-supporting mt-1 max-w-[240px]">
+            <motion.div variants={staggerItem} className="flex flex-col items-center justify-center py-20 px-6 text-center">
+              <Dumbbell size={40} className="text-muted-foreground/30 mb-4" />
+              <p className="text-lg font-semibold text-foreground">No workouts yet</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[240px]">
                 Your activity will show up here once you log your first session.
               </p>
-              <button onClick={() => navigate('/app/log')} className="btn-brutalist mt-6 px-6">
+              <button
+                onClick={() => navigate('/app/log')}
+                className="btn-brutalist mt-6 px-6 py-2.5 text-sm"
+              >
                 Start workout
               </button>
             </motion.div>
           ) : (
             <>
+              {/* Monthly stats row */}
               <motion.div variants={staggerItem} className="grid grid-cols-3 gap-2">
-                <div className="surface-standard p-4 text-center">
-                  <div className="type-card-title tabular-nums">{thisMonthWorkouts.length}</div>
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">{thisMonthWorkouts.length}</div>
                   <div className="type-caption mt-1">This month</div>
                 </div>
-                <div className="surface-standard p-4 text-center">
-                  <div className="type-card-title tabular-nums">{workouts.length}</div>
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">{workouts.length}</div>
                   <div className="type-caption mt-1">All time</div>
                 </div>
-                <div className="surface-standard p-4 text-center">
-                  <div className="type-card-title tabular-nums">
+                <div className="card-brutalist text-center !py-4">
+                  <div className="text-xl font-bold tabular-nums">
                     {workouts.length > 0 ? Math.max(...workouts.map(w => w.week_number)) : 0}
                   </div>
                   <div className="type-caption mt-1">Weeks</div>
                 </div>
               </motion.div>
 
-              <motion.div variants={staggerItem} className="flex items-center justify-between gap-3">
+              {/* Calorie display toggle */}
+              <motion.div variants={staggerItem} className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 type-caption">
-                  <Flame size={16} /> Calories
+                  <Flame size={11} /> Calories
                 </div>
-                <div className="inline-flex rounded-xl border border-border bg-muted/35 p-1">
+                <div className="inline-flex rounded-xl bg-muted p-0.5">
                   <button
                     onClick={() => setCalorieMode('net')}
                     className={cn(
-                      'h-9 rounded-lg px-3 type-action transition-colors',
+                      'px-3 py-1 text-xs font-semibold rounded-lg transition-colors',
                       calorieMode === 'net' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                     )}
                   >
@@ -191,7 +195,7 @@ export default function History() {
                   <button
                     onClick={() => setCalorieMode('split')}
                     className={cn(
-                      'h-9 rounded-lg px-3 type-action transition-colors',
+                      'px-3 py-1 text-xs font-semibold rounded-lg transition-colors',
                       calorieMode === 'split' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                     )}
                   >
@@ -200,7 +204,8 @@ export default function History() {
                 </div>
               </motion.div>
 
-              <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+              {/* Timeline */}
+              <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
                 {visibleDays.map((date) => {
                   const dateStr = format(date, 'yyyy-MM-dd');
                   const dayWorkouts = workoutsByDateList[dateStr] || [];
@@ -215,24 +220,29 @@ export default function History() {
                   const calorieDisplay = formatCalorieDisplay(calorieEntry, calorieMode);
                   const dayBurns = burnsByDateList[dateStr] || [];
                   const hasAnyData = workout || hasSleep || hasWeight || calorieEntry.hasCalories || dayBurns.length > 0;
+
                   const isSkipped = (workout as any)?.is_skipped;
 
                   return (
                     <motion.div key={dateStr} variants={staggerItem}>
                       <div className={cn(
-                        'surface-standard p-4 transition-opacity',
+                        'card-brutalist transition-all',
                         !hasAnyData && !isEditing && 'opacity-40',
                         isSkipped && 'opacity-60'
                       )}>
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="type-action truncate">
+                        {/* Date Header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">
                               {isToday ? 'Today' : format(date, 'EEE, MMM d')}
                             </span>
+                            {isToday && (
+                              <span className="badge-modern text-xs px-2 py-0.5">Today</span>
+                            )}
                             {isSkipped && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 type-meta">
-                                <EyeOff className="h-3 w-3" />
-                                Skipped
+                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                <EyeOff className="h-2.5 w-2.5" />
+                                SKIPPED
                               </span>
                             )}
                           </div>
@@ -244,99 +254,114 @@ export default function History() {
                                 setSelectedWorkoutForEdit(workout || null);
                                 setSelectedEditDate(dateStr);
                               }}
-                              aria-label={`Edit ${isToday ? 'today' : format(date, 'MMM d')} history`}
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              className="text-muted-foreground hover:text-foreground p-1.5 rounded-xl hover:bg-muted transition-colors"
                             >
-                              <MoreHorizontal size={16} />
+                              <MoreHorizontal size={13} />
                             </button>
                           )}
                         </div>
 
+                        {/* Inline Edit Mode */}
                         {isEditing && (
-                          <div className="mb-3 animate-fade-in rounded-xl border border-border bg-muted/30 p-3">
-                            <div className="mb-3 flex flex-wrap gap-3">
+                          <div className="mb-3 p-3 bg-muted/50 rounded-xl animate-fade-in">
+                            <div className="flex flex-wrap gap-3 mb-3">
                               <div className="flex items-center gap-2">
-                                <Moon size={16} className="text-muted-foreground" />
+                                <Moon size={14} className="text-muted-foreground" />
                                 <div className="flex items-center gap-1">
                                   <input
                                     type="number"
                                     placeholder="H"
-                                    className="h-9 w-12 rounded-xl border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+                                   className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     value={editValues.sleepHours}
                                     onChange={(e) => setEditValues(v => ({ ...v, sleepHours: e.target.value }))}
                                     min="0"
                                     max="24"
                                   />
-                                  <span className="type-meta">hr</span>
+                                  <span className="text-xs text-muted-foreground font-medium">hr</span>
                                   <input
                                     type="number"
                                     placeholder="M"
-                                    className="h-9 w-12 rounded-xl border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-12 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     value={editValues.sleepMinutes}
                                     onChange={(e) => setEditValues(v => ({ ...v, sleepMinutes: e.target.value }))}
                                     min="0"
                                     max="59"
                                   />
-                                  <span className="type-meta">min</span>
+                                  <span className="text-xs text-muted-foreground font-medium">min</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Scale size={16} className="text-muted-foreground" />
+                                <Scale size={14} className="text-muted-foreground" />
                                 <input
                                   type="number"
                                   placeholder="kg"
-                                  className="h-9 w-20 rounded-xl border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+                                  className="w-20 h-8 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                   value={editValues.bodyweight}
                                   onChange={(e) => setEditValues(v => ({ ...v, bodyweight: e.target.value }))}
                                   min="0"
                                   step="0.1"
                                 />
-                                <span className="type-meta">kg</span>
+                                <span className="text-xs text-muted-foreground font-medium">kg</span>
                               </div>
                             </div>
                             <div className="flex justify-end gap-2">
-                              <button onClick={cancelEdit} aria-label="Cancel editing" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                              <button
+                                onClick={cancelEdit}
+                                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              >
                                 <X size={16} />
                               </button>
-                              <button onClick={saveEdit} aria-label="Save history changes" disabled={isUpserting} className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+                              <button
+                                onClick={saveEdit}
+                                disabled={isUpserting}
+                                className="p-1.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                              >
                                 <Check size={16} />
                               </button>
                             </div>
                           </div>
                         )}
 
+                        {/* Content */}
                         {hasAnyData && !isEditing && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {/* Workout chip - navigates to detail */}
                             {dayWorkouts.filter(w => !(w as any)?.is_skipped).map((dayWorkout) => (
                               <button
                                 key={dayWorkout.id}
                                 onClick={() => navigate(`/app/history/${dayWorkout.id}`)}
-                                className="flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-3 type-action text-background transition-opacity hover:opacity-90"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity"
                               >
-                                <Dumbbell size={16} />
-                                <span>{dayWorkout.day_name}</span>
-                                <ChevronRight size={14} className="opacity-50" />
+                                <Dumbbell size={13} />
+                                <span className="text-xs font-bold">{dayWorkout.day_name}</span>
+                                <ChevronRight size={12} className="opacity-50" />
                               </button>
                             ))}
 
                             {hasSleep && (
-                              <div className="flex min-h-9 items-center gap-1.5 rounded-full bg-recover-soft px-3 type-caption text-recover-ink">
-                                <Moon size={14} />
-                                <span className="tabular-nums">{formatSleep(metric.sleep_hours)}</span>
+                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-recover-soft rounded-xl">
+                                <Moon size={13} className="text-recover-ink" />
+                                <span className="text-xs font-medium text-recover-ink">
+                                  {formatSleep(metric.sleep_hours)}
+                                </span>
                               </div>
                             )}
 
                             {hasWeight && (
-                              <div className="flex min-h-9 items-center gap-1.5 rounded-full bg-muted px-3 type-caption">
-                                <Scale size={14} />
-                                <span className="tabular-nums">{metric.bodyweight} kg</span>
+                               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-xl">
+                                <Scale size={13} className="text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {metric.bodyweight} kg
+                                </span>
                               </div>
                             )}
 
                             {calorieEntry.hasCalories && (
-                              <div className="flex min-h-9 items-center gap-1.5 rounded-full bg-fuel-soft px-3 type-caption text-fuel-ink" title={calorieDisplay.tooltip}>
-                                <Flame size={14} />
-                                <span className="tabular-nums">{calorieDisplay.label}</span>
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-fuel-soft rounded-xl" title={calorieDisplay.tooltip}>
+                                <Flame size={13} className="text-fuel-ink" />
+                                <span className="text-xs font-medium text-fuel-ink tabular-nums">
+                                  {calorieDisplay.label}
+                                </span>
                               </div>
                             )}
 
@@ -346,15 +371,27 @@ export default function History() {
                               const Icon = config?.icon || Footprints;
                               const label = config?.label || (type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Activity');
                               const unit = config?.unit === 'min' ? 'min' : 'km';
+                              // Prefer the real logged distance; only entries saved before
+                              // distance_km was tracked fall back to a pace-based estimate.
                               const unitValue = config?.unit === 'min'
                                 ? (b.duration_minutes ?? 0)
                                 : (b.distance_km ?? ((b.duration_minutes ?? 0) / (config?.paceMinPerKm || 1)));
                               return (
-                                <div key={b.id} className="flex min-h-9 items-center gap-1 rounded-xl bg-energy-soft pl-3 pr-1 text-energy-ink" title={`${label} · ${unitValue} ${unit} · ${b.calories} kcal`}>
-                                  <Icon size={14} />
-                                  <span className="type-caption tabular-nums text-energy-ink">{label} · {b.calories} kcal</span>
-                                  <button onClick={() => setEditingBurn(b)} className="flex h-8 w-8 items-center justify-center rounded-lg text-energy-ink/60 transition-colors hover:bg-background/50 hover:text-foreground" aria-label={`Edit ${label.toLowerCase()} activity`}>
-                                    <Edit size={13} />
+                                <div
+                                  key={b.id}
+                                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-energy-soft rounded-xl"
+                                  title={`${label} · ${unitValue} ${unit} · ${b.calories} kcal`}
+                                >
+                                  <Icon size={13} className="text-energy-ink" />
+                                  <span className="text-xs font-medium text-energy-ink tabular-nums">
+                                    {label} · {b.calories} kcal
+                                  </span>
+                                  <button
+                                    onClick={() => setEditingBurn(b)}
+                                    className="ml-0.5 p-0.5 text-energy-ink/50 hover:text-foreground transition-colors"
+                                    aria-label={`Edit ${label.toLowerCase()} activity`}
+                                  >
+                                    <Edit size={11} />
                                   </button>
                                   <button
                                     onClick={async () => {
@@ -365,19 +402,21 @@ export default function History() {
                                         toast.error('Failed to remove');
                                       }
                                     }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-energy-ink/60 transition-colors hover:bg-background/50 hover:text-destructive"
+                                    className="p-0.5 text-energy-ink/50 hover:text-destructive transition-colors"
                                     aria-label={`Delete ${label.toLowerCase()} activity`}
                                   >
-                                    <Trash2 size={13} />
+                                    <Trash2 size={11} />
                                   </button>
                                 </div>
                               );
                             })}
+
                           </div>
                         )}
 
+                        {/* Empty state */}
                         {!hasAnyData && !isEditing && (
-                          <p className="type-caption italic">No activity</p>
+                          <p className="text-xs text-muted-foreground/50 italic">No activity</p>
                         )}
                       </div>
                     </motion.div>
@@ -385,11 +424,12 @@ export default function History() {
                 })}
               </motion.div>
 
+              {/* Load more button */}
               <button
                 onClick={() => setDaysToShow(prev => prev + 30)}
-                className="control-standard w-full border border-border bg-card px-4 type-action text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                className="w-full py-3 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted/40 transition-colors"
               >
-                Load older · {daysToShow} days shown
+                Load older ({daysToShow} days shown)
               </button>
             </>
           )}

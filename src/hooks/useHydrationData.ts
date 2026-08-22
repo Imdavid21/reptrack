@@ -24,8 +24,6 @@ export interface DateRangeFilter {
   to: Date;
 }
 
-const PAGE_SIZE = 1000;
-
 /**
  * Pure per-day hydration totals - no goal comparison here. "Met goal" is a
  * point-in-time judgment (what was the target on that specific day), which
@@ -48,25 +46,22 @@ export function useHydrationData(dateRange?: DateRangeFilter) {
 
       const endDate = dateRange?.to ?? new Date();
       const startDate = dateRange?.from ?? subDays(endDate, 13);
-      const logs: any[] = [];
 
-      for (let offset = 0; ; offset += PAGE_SIZE) {
-        const { data, error } = await supabase
-          .from('water_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('timestamp', startOfDay(startDate).toISOString())
-          .lte('timestamp', endOfDay(endDate).toISOString())
-          .order('timestamp', { ascending: true })
-          .range(offset, offset + PAGE_SIZE - 1);
-        if (error) throw error;
-        const page = data ?? [];
-        logs.push(...page);
-        if (page.length < PAGE_SIZE) break;
-      }
+      // Fetch water logs
+      const { data: logs, error } = await supabase
+        .from('water_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('timestamp', startOfDay(startDate).toISOString())
+        .lte('timestamp', endOfDay(endDate).toISOString())
+        .order('timestamp', { ascending: true });
 
+      if (error) throw error;
+
+      // Create a map of date -> total
       const dailyTotals = new Map<string, { total: number; logs: number }>();
-      logs.forEach((log: any) => {
+      
+      (logs || []).forEach((log: any) => {
         const date = format(parseISO(log.timestamp), 'yyyy-MM-dd');
         const existing = dailyTotals.get(date) || { total: 0, logs: 0 };
         existing.total += Number(log.amount);
@@ -74,6 +69,7 @@ export function useHydrationData(dateRange?: DateRangeFilter) {
         dailyTotals.set(date, existing);
       });
 
+      // Generate data for all days in range
       const allDays = eachDayOfInterval({ start: startDate, end: endDate });
       const dailyData: DailyHydration[] = allDays.map(day => {
         const dateKey = format(day, 'yyyy-MM-dd');
@@ -86,8 +82,10 @@ export function useHydrationData(dateRange?: DateRangeFilter) {
         };
       });
 
+      // Calculate totals
       const daysWithData = dailyData.filter(d => d.total > 0);
       const totalLiters = dailyData.reduce((sum, d) => sum + d.total, 0);
+      
       const totals = {
         totalLiters,
         avgDaily: daysWithData.length > 0 ? totalLiters / daysWithData.length : 0,
