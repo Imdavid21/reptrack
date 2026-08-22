@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Box, Chip, Skeleton, Typography, useTheme } from '@mui/material';
 import { Coffee, Target } from 'lucide-react';
 import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { format } from 'date-fns';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useCaffeineData } from '@/hooks/useCaffeineData';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -46,7 +45,6 @@ export function CaffeineChart() {
       <Typography variant="body2" fontWeight={600}>{label}</Typography>
       <Typography variant="caption" color="text.secondary" display="block">{Math.round(day.totalMg)} mg · {day.logs} tracked food/drink {day.logs === 1 ? 'log' : 'logs'}</Typography>
       <Typography variant="caption" color="text.secondary" display="block">Limit on this day: {Math.round(day.limit)} mg</Typography>
-      {day.lastIntakeAt && <Typography variant="caption" color="text.secondary" display="block">Latest caffeinated log: {format(new Date(day.lastIntakeAt), 'h:mm a')}</Typography>}
     </Box>;
   };
 
