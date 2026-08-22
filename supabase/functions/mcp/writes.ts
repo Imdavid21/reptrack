@@ -62,6 +62,20 @@ function occurrenceTimestamp(date: string, time: unknown, today: string, timezon
   return timestamp;
 }
 
+function completedInterval(date: string, startTime: unknown, durationMinutes: number, today: string, timezone: string) {
+  if (typeof startTime === "string" && startTime.trim()) {
+    const startedAt = localDateTime(date, startTime.trim(), timezone);
+    const endedAt = new Date(Date.parse(startedAt) + durationMinutes * 60000).toISOString();
+    if (date === today && Date.parse(startedAt) > Date.now() + 60000) throw new Error("TIME_IN_FUTURE");
+    if (date === today && Date.parse(endedAt) > Date.now() + 60000) throw new Error("END_TIME_IN_FUTURE");
+    return { startedAt, endedAt, source: "supplied_start_time" };
+  }
+  if (date !== today) throw new Error("BACKDATED_TIME_REQUIRED");
+  const endedAt = new Date().toISOString();
+  const startedAt = new Date(Date.parse(endedAt) - durationMinutes * 60000).toISOString();
+  return { startedAt, endedAt, source: "inferred_from_completion" };
+}
+
 async function preferences(db: Client) {
   try {
     const { data } = await db.from("user_preferences").select("*").limit(1);
@@ -69,13 +83,12 @@ async function preferences(db: Client) {
   } catch { return {}; }
 }
 
-/** Bodyweight nearest on/before the log date; falls back to the onboarding weight. */
 async function effectiveWeight(db: Client, date: string, prefs: Args): Promise<number> {
   try {
     const { data } = await db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).lte("date", date).order("date", { ascending: false }).limit(1);
     const w = Number((Array.isArray(data) ? data[0] : data)?.bodyweight);
     if (Number.isFinite(w) && w > 0) return w;
-  } catch { /* fall through to preference weight */ }
+  } catch { /* fall through */ }
   const fallback = Number(prefs?.initial_weight_kg);
   return Number.isFinite(fallback) && fallback > 0 ? fallback : 75;
 }
@@ -96,7 +109,6 @@ function oneOf<T extends readonly string[]>(label: string, value: unknown, allow
 const ok = (action: string, record: unknown, extra: Args = {}) =>
   ({ start_date: null, end_date: null, timezone: "", data: record, summary: { action, ...extra }, metadata: { written: true, model_version: ENERGY_MODEL_VERSION } });
 
-/** Deterministic UUID (v4-shaped) derived from an arbitrary idempotency key. */
 async function stableUuid(seed: string): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(seed)));
   const bytes = digest.slice(0, 16);
@@ -137,7 +149,6 @@ async function logMeal(args: Args, db: Client, userId: string, today: string, ti
     nutrition_source: "mcp_estimate",
     source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant", caffeine_assessed: args.caffeine_mg !== undefined, occurrence_time_supplied: args.time !== undefined },
   };
-  // Idempotency: a retried call with the same client key updates its own row.
   if (args.client_key) {
     const { data: existing } = await db.from("meals").select("id").eq("date", date).eq("source_metadata->>client_key", String(args.client_key)).limit(1);
     const id = (Array.isArray(existing) ? existing[0] : existing)?.id;
@@ -177,7 +188,6 @@ async function logWater(args: Args, db: Client, userId: string, today: string) {
     ? boundedNumber("litres", args.litres, 0.05, 10, false)!
     : round((boundedNumber("milliliters", args.milliliters, 50, 10000, false) as number) / 1000, 3);
   const date = assertWritableDate(args.date || today, today);
-  // water_logs is timestamp based; backdated entries land at local midday.
   const timestamp = date === today ? new Date().toISOString() : `${date}T12:00:00.000Z`;
   const row = await write<any>("water_insert", () => db.from("water_logs").insert({ user_id: userId, amount: litres, method: "automation", timestamp }).select().single());
   return ok("water_logged", row, { litres });
@@ -223,25 +233,33 @@ async function persistWorkoutEnergy(db: Client, userId: string, workout: Args, r
   }).eq("id", workout.id).eq("user_id", userId));
   if (estimate.netKcal > 0) {
     await write("workout_burn", () => db.from("calorie_burns").upsert({
-      user_id: userId, date: workout.date, source: "workout", activity_type: `workout:${workout.id}`,
-      duration_minutes: workout.workout_duration_minutes || 0, calories: estimate.netKcal,
-      intensity_band: estimate.intensity, intensity_source: "workout_structure", met_estimate: estimate.met,
-      effective_weight_kg: weightKg, confidence: estimate.confidence, energy_model_version: ENERGY_MODEL_VERSION,
-      calculation_inputs: inputs,
+      user_id: userId,
+      date: workout.date,
+      source: "workout",
+      activity_type: `workout:${workout.id}`,
+      duration_minutes: workout.workout_duration_minutes || 0,
+      calories: estimate.netKcal,
+      started_at: workout.started_at ?? null,
+      ended_at: workout.completed_at ?? null,
+      intensity_band: estimate.intensity,
+      intensity_source: "workout_structure",
+      met_estimate: estimate.met,
+      effective_weight_kg: weightKg,
+      confidence: estimate.confidence,
+      energy_model_version: ENERGY_MODEL_VERSION,
+      calculation_inputs: { ...inputs, eventTimeSource: workout.started_at ? "workout_session" : "legacy_unknown" },
     }, { onConflict: "user_id,date,source,activity_type" }));
   }
   return estimate;
 }
 
-async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
   const exercises: ExerciseInput[] = Array.isArray(args.exercises) ? args.exercises : [];
   if (!exercises.length) throw new Error("MISSING_EXERCISES");
   const duration = boundedNumber("duration_minutes", args.duration_minutes ?? 45, 1, 480, false)!;
   const name = requireString("workout_name", args.workout_name || "Workout", 80);
-  // Assistants send human-shaped idempotency keys ("chatgpt-2026-08-20-push"),
-  // not UUIDs, so any string is accepted and folded into a stable UUID scoped
-  // to the user. A retry with the same key updates the same session.
+  const timing = completedInterval(date, args.start_time, duration, today, timezone);
   const id = typeof args.client_key === "string" && args.client_key.trim()
     ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim())
       ? args.client_key.trim()
@@ -252,41 +270,58 @@ async function logWorkout(args: Args, db: Client, userId: string, today: string,
   const already = Array.isArray(existingRows?.data) ? existingRows.data[0] : null;
 
   const payload = {
-    id, user_id: userId, date, day: name.slice(0, 40), day_name: name,
+    id,
+    user_id: userId,
+    date,
+    day: name.slice(0, 40),
+    day_name: name,
     week_number: boundedNumber("week_number", args.week_number ?? 1, 1, 520, false)!,
     workout_duration_minutes: duration,
-    started_at: args.start_time ? new Date(`${date}T${String(args.start_time).slice(0, 5)}:00`).toISOString() : null,
-    completed_at: null as string | null,
+    started_at: timing.startedAt,
+    completed_at: timing.endedAt,
     explicit_pause_seconds: 0,
-    energy_inputs: {},
+    energy_inputs: { eventTimeSource: timing.source },
   };
-  if (payload.started_at) payload.completed_at = new Date(Date.parse(payload.started_at) + duration * 60000).toISOString();
 
   if (!already) {
     await write("workout_insert", () => db.from("workouts").insert(payload));
   } else {
-    await write("workout_update", () => db.from("workouts").update({ date, day_name: name, workout_duration_minutes: duration }).eq("id", id).eq("user_id", userId));
+    await write("workout_update", () => db.from("workouts").update({ date, day_name: name, workout_duration_minutes: duration, started_at: timing.startedAt, completed_at: timing.endedAt }).eq("id", id).eq("user_id", userId));
     await write("workout_sets_clear", () => db.from("exercises").delete().eq("workout_id", id));
   }
   const rows = exerciseRows(exercises, id);
   await write("workout_sets", () => db.from("exercises").insert(rows));
-  const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration }, rows, prefs);
-  return ok(already ? "workout_updated" : "workout_logged", { workout_id: id, date, workout_name: name, duration_minutes: duration, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
+  const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration, started_at: timing.startedAt, completed_at: timing.endedAt }, rows, prefs);
+  return ok(already ? "workout_updated" : "workout_logged", { workout_id: id, date, workout_name: name, duration_minutes: duration, started_at: timing.startedAt, completed_at: timing.endedAt, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
 }
 
-async function updateWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function updateWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const id = requireString("workout_id", args.workout_id, 40);
-  const current = await write<any>("workout_lookup", () => db.from("workouts").select("id,date,day_name,workout_duration_minutes").eq("id", id).eq("user_id", userId).maybeSingle());
+  const current = await write<any>("workout_lookup", () => db.from("workouts").select("id,date,day_name,workout_duration_minutes,started_at,completed_at").eq("id", id).eq("user_id", userId).maybeSingle());
   if (!current) throw new Error("WORKOUT_NOT_FOUND");
 
   const patch: Args = {};
   if (args.date !== undefined) patch.date = assertWritableDate(args.date, today);
   if (args.workout_name !== undefined) patch.day_name = requireString("workout_name", args.workout_name, 80);
   if (args.duration_minutes !== undefined) patch.workout_duration_minutes = boundedNumber("duration_minutes", args.duration_minutes, 1, 480, false);
-  if (Object.keys(patch).length) await write("workout_patch", () => db.from("workouts").update(patch).eq("id", id).eq("user_id", userId));
 
   const date = patch.date ?? current.date;
   const duration = patch.workout_duration_minutes ?? current.workout_duration_minutes ?? 45;
+  let startedAt: string | null = current.started_at ?? null;
+  if (args.start_time !== undefined) {
+    startedAt = localDateTime(date, String(args.start_time), timezone);
+  } else if (patch.date && current.started_at) {
+    startedAt = localDateTime(date, zonedDateTimeParts(current.started_at, timezone).time, timezone);
+  }
+  if (startedAt && (args.start_time !== undefined || patch.date !== undefined || patch.workout_duration_minutes !== undefined)) {
+    const completedAt = new Date(Date.parse(startedAt) + Number(duration) * 60000).toISOString();
+    if (date === today && Date.parse(completedAt) > Date.now() + 60000) throw new Error("END_TIME_IN_FUTURE");
+    patch.started_at = startedAt;
+    patch.completed_at = completedAt;
+  }
+
+  if (Object.keys(patch).length) await write("workout_patch", () => db.from("workouts").update(patch).eq("id", id).eq("user_id", userId));
+
   let rows: Args[];
   if (Array.isArray(args.exercises) && args.exercises.length) {
     await write("workout_sets_clear", () => db.from("exercises").delete().eq("workout_id", id));
@@ -295,12 +330,13 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
   } else {
     rows = (await write<any[]>("workout_sets_read", () => db.from("exercises").select("category").eq("workout_id", id))) || [];
   }
-  // Stale burn rows for the previous date must not linger after a move.
   if (patch.date && patch.date !== current.date) {
     await db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`);
   }
-  const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration }, rows, prefs);
-  return ok("workout_updated", { workout_id: id, date, duration_minutes: duration, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
+  const finalStartedAt = patch.started_at ?? current.started_at ?? null;
+  const finalCompletedAt = patch.completed_at ?? current.completed_at ?? (finalStartedAt ? new Date(Date.parse(finalStartedAt) + Number(duration) * 60000).toISOString() : null);
+  const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration, started_at: finalStartedAt, completed_at: finalCompletedAt }, rows, prefs);
+  return ok("workout_updated", { workout_id: id, date, duration_minutes: duration, started_at: finalStartedAt, completed_at: finalCompletedAt, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
 }
 
 /* ----------------------------- activities ----------------------------- */
@@ -317,31 +353,75 @@ async function activityPayload(args: Args, db: Client, userId: string, date: str
   const estimate = estimateActivityEnergy(kind, weightKg, distance, duration);
   const calories = boundedNumber("calories", args.calories, 0, 5000) ?? estimate.netKcal;
   return {
-    kind, estimate, calories,
+    kind,
+    estimate,
+    calories,
     row: {
-      user_id: userId, date, source: "manual", activity_type: kind,
+      user_id: userId,
+      date,
+      source: "manual",
+      activity_type: kind,
       duration_minutes: Math.round(estimate.durationMinutes) || duration || 0,
-      distance_km: distance, calories,
-      intensity_band: "pace_based", intensity_source: estimate.paceSource, met_estimate: estimate.met,
-      effective_weight_kg: weightKg, confidence: estimate.confidence,
+      distance_km: distance,
+      calories,
+      intensity_band: "pace_based",
+      intensity_source: estimate.paceSource,
+      met_estimate: estimate.met,
+      effective_weight_kg: weightKg,
+      confidence: estimate.confidence,
       energy_model_version: ENERGY_MODEL_VERSION,
       calculation_inputs: { paceMinutesPerKm: estimate.paceMinutesPerKm, paceSource: estimate.paceSource, via: "mcp" },
     },
   };
 }
 
-async function logActivity(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function logActivity(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
   const { row, estimate } = await activityPayload(args, db, userId, date, prefs);
-  // Upsert on the app's natural key: one entry per day and activity type.
+  const timing = completedInterval(date, args.start_time, Number(row.duration_minutes), today, timezone);
+  row.started_at = timing.startedAt;
+  row.ended_at = timing.endedAt;
+  row.calculation_inputs = { ...row.calculation_inputs, eventTimeSource: timing.source };
   const saved = await write<any>("activity_upsert", () => db.from("calorie_burns").upsert(row, { onConflict: "user_id,date,source,activity_type" }).select().single());
-  return ok("activity_logged", saved, { met: estimate.met, pace_source: estimate.paceSource });
+  return ok("activity_logged", saved, { met: estimate.met, pace_source: estimate.paceSource, started_at: timing.startedAt, ended_at: timing.endedAt });
 }
 
-async function updateActivity(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function updateActivity(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
   const id = args.activity_id ? requireString("activity_id", args.activity_id, 40) : null;
-  const { row } = await activityPayload(args, db, userId, date, prefs);
+  const { row, kind } = await activityPayload(args, db, userId, date, prefs);
+  let current: any = null;
+  if (id) {
+    current = await write<any>("activity_lookup", () => db.from("calorie_burns").select("id,date,started_at,ended_at").eq("id", id).eq("user_id", userId).maybeSingle());
+    if (!current) throw new Error("ACTIVITY_NOT_FOUND");
+  } else {
+    const { data } = await db.from("calorie_burns").select("id,date,started_at,ended_at").eq("user_id", userId).eq("date", date).eq("source", "manual").eq("activity_type", kind).limit(1);
+    current = Array.isArray(data) ? data[0] : data;
+  }
+
+  let startedAt: string | null = current?.started_at ?? null;
+  let endedAt: string | null = current?.ended_at ?? null;
+  if (args.start_time !== undefined) {
+    const timing = completedInterval(date, args.start_time, Number(row.duration_minutes), today, timezone);
+    startedAt = timing.startedAt;
+    endedAt = timing.endedAt;
+    row.calculation_inputs = { ...row.calculation_inputs, eventTimeSource: timing.source };
+  } else if (startedAt) {
+    const existingClock = zonedDateTimeParts(startedAt, timezone).time;
+    startedAt = localDateTime(date, existingClock, timezone);
+    endedAt = new Date(Date.parse(startedAt) + Number(row.duration_minutes) * 60000).toISOString();
+    row.calculation_inputs = { ...row.calculation_inputs, eventTimeSource: "preserved_existing_start" };
+  } else if (!current) {
+    const timing = completedInterval(date, undefined, Number(row.duration_minutes), today, timezone);
+    startedAt = timing.startedAt;
+    endedAt = timing.endedAt;
+    row.calculation_inputs = { ...row.calculation_inputs, eventTimeSource: timing.source };
+  } else {
+    row.calculation_inputs = { ...row.calculation_inputs, eventTimeSource: "legacy_unknown" };
+  }
+  row.started_at = startedAt;
+  row.ended_at = endedAt;
+
   if (id) {
     const saved = await write<any>("activity_update", () => db.from("calorie_burns").update(row).eq("id", id).eq("user_id", userId).select().maybeSingle());
     if (!saved) throw new Error("ACTIVITY_NOT_FOUND");
@@ -358,16 +438,16 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
   const today = todayIn(resolvedTimezone);
   const prefs = await preferences(db);
   const run = async () => {
-  switch (name) {
-    case "log_meal": return await logMeal(args, db, userId, today, resolvedTimezone);
-    case "update_meal": return await updateMeal(args, db, userId, today, resolvedTimezone);
-    case "log_water": return await logWater(args, db, userId, today);
-    case "log_workout": return await logWorkout(args, db, userId, today, prefs);
-    case "update_workout": return await updateWorkout(args, db, userId, today, prefs);
-    case "log_activity": return await logActivity(args, db, userId, today, prefs);
-    case "update_activity": return await updateActivity(args, db, userId, today, prefs);
-    default: throw new Error("UNKNOWN_TOOL");
-  }
+    switch (name) {
+      case "log_meal": return await logMeal(args, db, userId, today, resolvedTimezone);
+      case "update_meal": return await updateMeal(args, db, userId, today, resolvedTimezone);
+      case "log_water": return await logWater(args, db, userId, today);
+      case "log_workout": return await logWorkout(args, db, userId, today, prefs, resolvedTimezone);
+      case "update_workout": return await updateWorkout(args, db, userId, today, prefs, resolvedTimezone);
+      case "log_activity": return await logActivity(args, db, userId, today, prefs, resolvedTimezone);
+      case "update_activity": return await updateActivity(args, db, userId, today, prefs, resolvedTimezone);
+      default: throw new Error("UNKNOWN_TOOL");
+    }
   };
   return { ...(await run()), timezone: resolvedTimezone };
 }
