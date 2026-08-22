@@ -148,7 +148,7 @@ export default function Landing() {
           {/* Theme toggle - inside header to avoid z-index overlap, but visually matches auth pages */}
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 shadow-sm"
+            className="p-2.5 rounded-xl border border-border bg-card hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95"
             aria-label="Toggle theme"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -157,9 +157,20 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section id="hero" className="scroll-mt-24 pt-32 pb-20 px-6 md:px-4">
+      <section id="hero" className="relative scroll-mt-24 pt-32 pb-20 px-6 md:px-4 overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)',
+            backgroundSize: '56px 56px',
+            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 0%, black, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 0%, black, transparent 75%)',
+          }}
+        />
         <motion.div
-          className="max-w-4xl mx-auto text-center"
+          className="relative max-w-4xl mx-auto text-center"
           initial="hidden"
           animate="visible"
           variants={staggerContainer}
@@ -188,12 +199,15 @@ export default function Landing() {
             variants={fadeInUp}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Link
-              to="/signin"
-              className="btn-energy px-8 py-4 text-base flex items-center justify-center"
-            >
-              Start for free
-            </Link>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 24 }}>
+              <Link
+                to="/signin"
+                className="btn-energy group px-8 py-4 text-base flex items-center justify-center gap-2"
+              >
+                Start for free
+                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div
@@ -211,6 +225,7 @@ export default function Landing() {
           </motion.div>
         </motion.div>
       </section>
+
 
       {/* Reptrack vs Others */}
       <section className="py-16 md:py-24 px-6 md:px-4 border-t border-border">
