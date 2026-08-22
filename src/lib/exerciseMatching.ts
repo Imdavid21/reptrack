@@ -246,17 +246,22 @@ function stripSetNumber(name: string): string {
  * barbell curl are established, separately-loaded movements with their own
  * canonical entries.
  */
-const GRIP_DESCRIPTORS =
-  /\b(neutral|wide|narrow|medium|shoulder width|reverse|underhand|overhand|supinated|pronated|semi supinated|mixed|false|thumbless|v bar|vbar|straight bar|rope|ez bar)?[\s-]*grip\b/g;
+/** Handle/grip words that carry no movement meaning at all. */
+const NEUTRAL_GRIP_WORDS =
+  /\b(neutral|wide|narrow|medium|shoulder[\s-]?width|mixed|false|thumbless|v[\s-]?bar|straight[\s-]?bar|rope)[\s-]*grip(ped)?\b/gi;
+
+/** Descriptors that stay (they flip the movement) but lose the word "grip". */
+const MEANINGFUL_GRIP_WORDS = /\b(reverse|underhand|overhand|supinated|pronated)[\s-]*grip(ped)?\b/gi;
 
 function stripGripDescriptors(name: string): string {
-  const cleaned = name
+  return name
     .replace(/[-_]/g, ' ')
-    .replace(GRIP_DESCRIPTORS, ' ')
+    .replace(NEUTRAL_GRIP_WORDS, ' ')
+    .replace(MEANINGFUL_GRIP_WORDS, '$1')
     .replace(/\s+/g, ' ')
     .trim();
-  return cleaned;
 }
+
 
 /**
  * Resolve a name to its canonical, properly-cased display form (exact
