@@ -28,7 +28,6 @@ export interface UserPreferences {
   nonexercise_lifestyle?: 'mostly_seated' | 'mixed_seated_standing' | 'physically_active_occupation' | null;
   onboarding_completed: boolean;
   daily_water_goal: number;
-  daily_caffeine_limit?: number | null;
   daily_calorie_goal: number;
   daily_protein_goal: number;
   daily_carbs_goal?: number | null;

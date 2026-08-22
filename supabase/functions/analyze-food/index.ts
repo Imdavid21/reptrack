@@ -110,18 +110,17 @@ UNCERTAINTY - be honest:
 - If you cannot identify something at all, list it as "Unknown item" and estimate 150-200 cal.
 - Confidence score: 0.9+ = very clear image with confident specific identification, 0.7-0.9 = clear but some variety/cut guesswork, below 0.7 = poor image quality or highly ambiguous items.
 
-NUTRITION CALCULATION:
-- Always provide protein, carbs, fat, fiber, sugar, sodium, potassium, and caffeine for each item and totals.
-- Base macros on USDA values for the SPECIFIC variety/cut identified - basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the estimate, not just the label.
-- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams - account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total. Potassium is milligrams - fruit, vegetables, legumes, dairy and potatoes carry most of it.
-- Caffeine is milligrams. Use 0 when the item is confidently caffeine-free. Estimate caffeine for visually identifiable coffee/espresso drinks, tea, cola, energy drinks, chocolate/cocoa, and other obvious sources. If the image does not support a specific brand or shot count, use a reasonable common-serving estimate rather than inventing specificity. User-provided context can resolve brand, size, decaf status, or shot count and should override visual uncertainty.`
+MACRO CALCULATION:
+- Always provide protein, carbs, fat, fiber, sugar, sodium, and potassium for each item and totals.
+- Base macros on USDA values for the SPECIFIC variety/cut identified - basmati and sushi rice, or chicken breast and chicken thigh, have meaningfully different macro profiles per 100g. Precise naming should sharpen the macro estimate, not just the label.
+- Sugar is grams of total sugars (naturally occurring + added) within the carbs figure, not separate from it. Sodium is milligrams - account for cooking salt, sauces, cured/processed items, and condiments, which usually dominate the sodium total. Potassium is milligrams - fruit, vegetables, legumes, dairy and potatoes carry most of it.`
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this food image with maximum specificity. For every item: identify the exact type, variety, or cut - not a generic category - plus its cooking method and a precise, size-referenced portion. Call out sauces, oils, condiments, and drinks separately. Estimate caffeine for any identifiable source and use 0 for items that are confidently caffeine-free. If a specific variety genuinely can't be told apart visually, say so honestly rather than guessing.${userContextNote}`
+              text: `Analyze this food image with maximum specificity. For every item: identify the exact type, variety, or cut - not a generic category - plus its cooking method and a precise, size-referenced portion. Call out sauces, oils, and condiments separately. If a specific variety genuinely can't be told apart visually, say so honestly rather than guessing.${userContextNote}`
             },
             {
               type: "image_url",
@@ -135,7 +134,7 @@ NUTRITION CALCULATION:
           type: "function",
           function: {
             name: "analyze_food",
-            description: "Analyze food in an image and estimate calories, macros, and caffeine",
+            description: "Analyze food in an image and estimate calories and macros",
             parameters: {
               type: "object",
               properties: {
@@ -153,10 +152,12 @@ NUTRITION CALCULATION:
                       fiber: { type: "number", description: "Dietary fiber in grams" },
                       sugar: { type: "number", description: "Total sugars in grams (subset of carbs)" },
                       sodium: { type: "number", description: "Sodium in milligrams" },
-                      potassium: { type: "number", description: "Potassium in milligrams" },
-                      caffeine_mg: { type: "number", description: "Estimated caffeine in milligrams. Use 0 when confidently caffeine-free." }
+                      potassium: { type: "number", description: "Potassium in milligrams" }
                     },
-                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium", "caffeine_mg"]
+                    // Every macro is required: left optional, the model routinely
+                    // omitted sugar and sodium entirely, so those columns never
+                    // got recorded. Estimate them, never skip them.
+                    required: ["name", "portion", "calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "potassium"]
                   }
                 },
                 total_calories: { type: "number" },
@@ -167,7 +168,6 @@ NUTRITION CALCULATION:
                 total_sugar: { type: "number" },
                 total_sodium: { type: "number" },
                 total_potassium: { type: "number" },
-                total_caffeine_mg: { type: "number", description: "Total estimated caffeine across all items in milligrams" },
                 confidence: { type: "number", description: "Confidence score 0-1" },
                 description: { type: "string", description: "Brief 1-sentence description of the entire meal" },
                 food_quality: {
@@ -176,7 +176,7 @@ NUTRITION CALCULATION:
                   description: "Overall nutritional quality rating"
                 }
               },
-              required: ["foods", "total_calories", "total_caffeine_mg", "confidence", "description"]
+              required: ["foods", "total_calories", "confidence", "description"]
             }
           }
         }
@@ -324,12 +324,12 @@ serve(async (req) => {
         const result = JSON.parse(toolCall.function.arguments);
         
         // Validate required fields
-        if (typeof result.total_calories !== 'number' || typeof result.total_caffeine_mg !== 'number' || !result.description) {
+        if (typeof result.total_calories !== 'number' || !result.description) {
           console.error("analyze-food: Missing required fields:", JSON.stringify(result).substring(0, 200));
           throw new Error("Missing required fields in AI response");
         }
 
-        console.log(`analyze-food: Success! ${result.total_calories} cal, ${result.total_caffeine_mg} mg caffeine - ${result.description}`);
+        console.log(`analyze-food: Success! ${result.total_calories} cal - ${result.description}`);
         return new Response(
           JSON.stringify(result),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -345,7 +345,7 @@ serve(async (req) => {
     if (content) {
       try {
         const parsed = JSON.parse(content);
-        if (typeof parsed.total_calories === 'number' && typeof parsed.total_caffeine_mg === 'number') {
+        if (typeof parsed.total_calories === 'number') {
           return new Response(
             JSON.stringify(parsed),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }

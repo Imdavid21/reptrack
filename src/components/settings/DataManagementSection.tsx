@@ -339,7 +339,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
 
           {/* Info */}
           <Alert severity="info" sx={{ fontSize: '0.75rem' }}>
-            <strong>Tip:</strong> Export your data regularly as a backup. Caffeine is stored with each meal or drink entry and is included automatically in meal exports.
+            <strong>Tip:</strong> Export your data regularly as a backup. You can re-import it to restore or transfer to another account.
           </Alert>
         </Box>
       </Collapse>

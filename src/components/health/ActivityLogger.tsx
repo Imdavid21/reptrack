@@ -14,25 +14,42 @@ export type ActivityKind = 'walking' | 'running' | 'cycling' | 'boxing';
 
 export const ACTIVITY_CONFIG: Record<ActivityKind, {
   label: string;
+  // Default/assumed pace: seeds a duration before a real time is entered,
+  // and shown as paceLabel. Doesn't drive the calorie math on its own - see
+  // effectiveMet, which calculates MET from real pace when it's known.
   paceMinPerKm: number;
   icon: typeof Footprints;
   quickKm: number[];
   paceLabel: string;
   unit: 'km' | 'min';
 }> = {
-  walking: { label: 'Walk',    paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],     paceLabel: '~5 km/h', unit: 'km' },
-  running: { label: 'Run',     paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15],   paceLabel: '~10 km/h', unit: 'km' },
+  walking: { label: 'Walk',    paceMinPerKm: 12, icon: Footprints,      quickKm: [2, 3, 4, 5, 7],   paceLabel: '~5 km/h', unit: 'km' },
+  running: { label: 'Run',     paceMinPerKm: 6,  icon: PersonStanding,  quickKm: [3, 5, 8, 10, 15], paceLabel: '~10 km/h', unit: 'km' },
   cycling: { label: 'Cycling', paceMinPerKm: 3,  icon: Bike,            quickKm: [5, 10, 20, 30, 50], paceLabel: '~20 km/h', unit: 'km' },
   boxing:  { label: 'Boxing',  paceMinPerKm: 1,  icon: Swords,          quickKm: [15, 30, 45, 60, 90], paceLabel: 'training rounds', unit: 'min' },
 };
 
+// Boxing has no distance, so there's no pace to calculate a MET from - it
+// keeps a fixed intensity estimate. The other three compute MET from actual
+// speed instead (see effectiveMet).
 const BOXING_MET = 6.0;
-const SPEED_CLAMP_KMH: Record<'walking' | 'running' | 'cycling', [number, number]> = {
+
+// Bounds a computed speed to what's physiologically plausible for each
+// activity, so a mistyped distance or time (an extra zero, a unit mix-up)
+// can't imply an impossible pace and produce an absurd calorie estimate -
+// while still letting a genuinely fast or slow real pace move the number.
+const SPEED_CLAMP_KMH: Record<'walking' | 'running' | 'cycling', [min: number, max: number]> = {
   walking: [1, 9],
   running: [3, 28],
   cycling: [4, 55],
 };
 
+// ACSM metabolic equations for flat-ground walking/running:
+// VO2 (ml/kg/min) = coefficient * speed(m/min) + 3.5, MET = VO2 / 3.5.
+// Walking and running use different coefficients because gait mechanics
+// differ, not just speed. This is the standard exercise-science way to get
+// energy cost from pace, rather than one flat MET regardless of how fast
+// the activity actually was.
 function walkingMet(speedKmh: number): number {
   const speedMPerMin = (speedKmh * 1000) / 60;
   return (0.1 * speedMPerMin + 3.5) / 3.5;
@@ -43,14 +60,29 @@ function runningMet(speedKmh: number): number {
   return (0.2 * speedMPerMin + 3.5) / 3.5;
 }
 
-const CYCLING_MET_CURVE: [number, number][] = [
-  [8.0, 3.0],
-  [16.1, 4.0],
-  [19.3, 6.8],
-  [22.5, 8.0],
-  [25.7, 10.0],
-  [30.6, 12.0],
-  [32.2, 15.8],
+// Cycling's energy cost doesn't follow a clean linear formula the way
+// walking/running do (aerodynamic drag dominates at speed), so there's no
+// equivalent ACSM equation. Instead, linearly interpolate between the
+// Compendium of Physical Activities' speed brackets for cycling - a smooth
+// curve instead of one flat number or a step at each bracket boundary.
+//
+// The Compendium's own lowest bracket is a single flat value covering
+// everything under 10mph/16.1km/h - used verbatim as-is, that makes
+// cyclingMet() return the exact same MET for a near-stationary 4km/h crawl
+// and a genuine 15km/h cruise, silently flattening most of the realistic
+// speed range right where this feature most needs to be pace-sensitive. The
+// 8.0km/h point below isn't a sourced Compendium bracket (there isn't one
+// this granular) - it's a deliberately conservative estimate that breaks up
+// that flat zone so distance actually moves the number below 16.1km/h too,
+// without a hard published bracket boundary to source it from.
+const CYCLING_MET_CURVE: [speedKmh: number, met: number][] = [
+  [8.0, 3.0],   // very slow / barely pedaling - estimated, not a Compendium bracket
+  [16.1, 4.0],  // <10 mph, leisure
+  [19.3, 6.8],  // 10-11.9 mph, light effort
+  [22.5, 8.0],  // 12-13.9 mph, moderate effort
+  [25.7, 10.0], // 14-15.9 mph, vigorous effort
+  [30.6, 12.0], // 16-19 mph, fast/vigorous
+  [32.2, 15.8], // 20+ mph, racing
 ];
 
 function cyclingMet(speedKmh: number): number {
@@ -66,20 +98,46 @@ function cyclingMet(speedKmh: number): number {
   return CYCLING_MET_CURVE[CYCLING_MET_CURVE.length - 1][1];
 }
 
+/**
+ * MET calculated from actual pace (distance ÷ time), not looked up from a
+ * fixed per-activity number - running a 5k in 40 minutes is a different
+ * effort than running it in 20, and the estimate should reflect that. When
+ * a real time hasn't been entered yet, seeds from the activity's typical
+ * pace (paceMinPerKm) so there's still a reasonable number to show - that
+ * seed runs through the same formula, it's just the starting point rather
+ * than a separate fixed value.
+ */
 export function effectiveMet(kind: ActivityKind, distanceKm: number, minutes: number): number {
   const cfg = ACTIVITY_CONFIG[kind];
   if (cfg.unit !== 'km') return BOXING_MET;
-  const rawSpeedKmh = distanceKm > 0 && minutes > 0 ? distanceKm / (minutes / 60) : 60 / cfg.paceMinPerKm;
+
+  const rawSpeedKmh = distanceKm > 0 && minutes > 0
+    ? distanceKm / (minutes / 60)
+    : 60 / cfg.paceMinPerKm;
   const [minSpeed, maxSpeed] = SPEED_CLAMP_KMH[kind as 'walking' | 'running' | 'cycling'];
   const speedKmh = Math.min(maxSpeed, Math.max(minSpeed, rawSpeedKmh));
+
   if (kind === 'walking') return walkingMet(speedKmh);
   if (kind === 'running') return runningMet(speedKmh);
   return cyclingMet(speedKmh);
 }
 
-export function activityCalories(kind: ActivityKind, value: number, weightKg: number, minutesOverride?: number) {
+/**
+ * Net kcal uses (MET - 1) above rest so it can be added to the normal-day
+ * baseline without counting resting expenditure twice.
+ * For km-based activities, `minutesOverride` (if > 0) replaces the default
+ * pace-derived duration - see effectiveMet, which calculates MET from
+ * whatever pace that implies rather than a fixed per-activity number.
+ */
+export function activityCalories(
+  kind: ActivityKind,
+  value: number,
+  weightKg: number,
+  minutesOverride?: number,
+) {
   const minutes = activityDuration(kind, value, minutesOverride);
   const met = effectiveMet(kind, value, minutes);
+  // Maintenance already includes resting expenditure; log only active kcal.
   return Math.round(netActivityKcal(met, weightKg, minutes));
 }
 
@@ -90,21 +148,6 @@ export function activityDuration(kind: ActivityKind, value: number, minutesOverr
   return Math.round(value * cfg.paceMinPerKm);
 }
 
-function localClock(timestamp: string | null | undefined) {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  return Number.isNaN(date.getTime()) ? '' : format(date, 'HH:mm');
-}
-
-function occurrenceOnDate(day: Date, clock: string) {
-  if (!/^\d{2}:\d{2}$/.test(clock)) return null;
-  const [hours, minutes] = clock.split(':').map(Number);
-  if (hours > 23 || minutes > 59) return null;
-  const stamp = new Date(day);
-  stamp.setHours(hours, minutes, 0, 0);
-  return stamp;
-}
-
 export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   const { weightKg, addBurn } = useCalorieBurn();
   const { data: manualBurns = [] } = useManualBurns(180);
@@ -113,27 +156,21 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   const [kind, setKind] = useState<ActivityKind>('walking');
   const [value, setValue] = useState('');
   const [minutes, setMinutes] = useState('');
-  const [endTime, setEndTime] = useState('');
   const [boxingIntensity, setBoxingIntensity] = useState<'technique' | 'normal' | 'conditioning' | 'sparring'>('normal');
   const [saving, setSaving] = useState(false);
 
   const cfg = ACTIVITY_CONFIG[kind];
   const numericValue = parseFloat(value) || 0;
   const numericMinutes = parseFloat(minutes) || 0;
-  const activityHistory: ActivityObservation[] = useMemo(
-    () => manualBurns.map(entry => ({ date: entry.date, activityType: entry.activity_type || 'other', distanceKm: entry.distance_km, durationMinutes: entry.duration_minutes })),
-    [manualBurns],
-  );
-  const estimate = useMemo(
-    () => estimateActivity({ kind, date: logDate, weight: weightKg, distanceKm: cfg.unit === 'km' ? numericValue : null, durationMinutes: cfg.unit === 'min' ? numericValue : numericMinutes || null, history: activityHistory, boxingIntensity }),
-    [kind, logDate, weightKg, numericValue, numericMinutes, cfg.unit, activityHistory, boxingIntensity],
-  );
+  const activityHistory: ActivityObservation[] = useMemo(() => manualBurns.map(entry => ({ date: entry.date, activityType: entry.activity_type || 'other', distanceKm: entry.distance_km, durationMinutes: entry.duration_minutes })), [manualBurns]);
+  const estimate = useMemo(() => estimateActivity({ kind, date: logDate, weight: weightKg, distanceKm: cfg.unit === 'km' ? numericValue : null, durationMinutes: cfg.unit === 'min' ? numericValue : numericMinutes || null, history: activityHistory, boxingIntensity }), [kind, logDate, weightKg, numericValue, numericMinutes, cfg.unit, activityHistory, boxingIntensity]);
   const kcal = Math.round(estimate.netKcal);
   const duration = Math.round(estimate.durationMinutes);
   const met = estimate.met;
   const usingCustomTime = cfg.unit === 'km' && numericMinutes > 0;
-  const canSave = (numericValue > 0 || (cfg.unit === 'km' && numericMinutes > 0)) && !!endTime;
+  const canSave = numericValue > 0 || (cfg.unit === 'km' && numericMinutes > 0);
 
+  // Existing activity of this type already logged on the selected date.
   const logDateStr = format(logDate, 'yyyy-MM-dd');
   const existing = useMemo(
     () => manualBurns.find(b => b.date === logDateStr && b.activity_type === kind),
@@ -141,6 +178,8 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
   );
   const recentForDay = useMemo(() => manualBurns.find(b => b.date === logDateStr), [manualBurns, logDateStr]);
 
+  // When opening or changing date/type, preload any existing entry so the user
+  // updates it instead of unknowingly overwriting it (addBurn upserts per day+type).
   useEffect(() => {
     if (!open) return;
     if (existing?.duration_minutes) {
@@ -148,56 +187,46 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
         setValue(String(existing.duration_minutes));
         setMinutes('');
       } else if (existing.distance_km != null) {
+        // Real stored distance - show it alongside the time it took.
         setValue(String(existing.distance_km));
         setMinutes(String(existing.duration_minutes));
       } else {
+        // Pre-fix entry: the original distance was never stored, only the
+        // resulting duration. Approximate it from the default pace - this
+        // can't recover what was actually logged, just estimate a plausible
+        // value so the field isn't blank.
         const km = existing.duration_minutes / ACTIVITY_CONFIG[kind].paceMinPerKm;
         setValue(km.toFixed(1));
         setMinutes(String(existing.duration_minutes));
       }
-      setEndTime(localClock(existing.ended_at));
     } else {
       setValue('');
       setMinutes('');
-      setEndTime(isBackDated ? '' : format(new Date(), 'HH:mm'));
     }
-  }, [open, logDateStr, kind, existing, cfg.unit, isBackDated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, logDateStr, kind]);
 
   const handleSave = async () => {
     if (!canSave) return;
-    const endedAt = occurrenceOnDate(logDate, endTime);
-    if (!endedAt) {
-      toast.error('Enter a valid activity time');
-      return;
-    }
-    if (!isBackDated && endedAt.getTime() > Date.now() + 60_000) {
-      toast.error('Activity time cannot be in the future');
-      return;
-    }
-    const startedAt = new Date(endedAt.getTime() - duration * 60_000);
-
     setSaving(true);
     try {
+      const endedAt = isBackDated ? null : new Date();
+      const startedAt = endedAt ? new Date(endedAt.getTime() - duration * 60_000) : null;
       await addBurn.mutateAsync({
         source: 'manual',
         activity_type: kind,
         duration_minutes: duration,
         distance_km: cfg.unit === 'km' ? numericValue : null,
         calories: kcal,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
+        started_at: startedAt?.toISOString() || null,
+        ended_at: endedAt?.toISOString() || null,
         intensity_band: kind === 'boxing' ? boxingIntensity : 'pace_based',
         intensity_source: estimate.paceSource,
         met_estimate: estimate.met,
         effective_weight_kg: estimate.effectiveWeightKg,
         confidence: estimate.confidence,
         energy_model_version: ENERGY_MODEL_VERSION,
-        calculation_inputs: {
-          paceMinutesPerKm: estimate.paceMinutesPerKm,
-          paceSource: estimate.paceSource,
-          warnings: estimate.warnings,
-          eventTimeSource: 'user_confirmed_end_time',
-        },
+        calculation_inputs: { paceMinutesPerKm: estimate.paceMinutesPerKm, paceSource: estimate.paceSource, warnings: estimate.warnings, eventTimeSource: endedAt ? 'log_time_minus_duration' : 'unknown_backdated_time' },
         ...(isBackDated ? { date: logDateStr } : {}),
       });
       const when = isBackDated ? ` on ${format(logDate, 'MMM d')}` : '';
@@ -207,7 +236,6 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
       toast.success(`${verb} ${amountLabel} ${cfg.label.toLowerCase()} · ${kcal} kcal${when}`);
       setValue('');
       setMinutes('');
-      setEndTime('');
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message || 'Failed to log activity');
@@ -216,11 +244,12 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
     }
   };
 
+
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className={compact ? 'w-full h-14 flex items-center justify-between px-4 hover:bg-muted/30 transition-colors text-sm' : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium'}
+        className={compact ? "w-full h-14 flex items-center justify-between px-4 hover:bg-muted/30 transition-colors text-sm" : "w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-card border border-border hover:border-foreground/30 transition-colors text-sm font-medium"}
       >
         {compact ? <><span>Activity</span><span className="flex items-center gap-2 font-semibold">{recentForDay ? `${ACTIVITY_CONFIG[(recentForDay.activity_type || 'walking') as ActivityKind]?.label || 'Activity'} · ${recentForDay.distance_km ?? recentForDay.duration_minutes}${recentForDay.distance_km != null ? ' km' : ' min'}` : 'Add'}<span aria-hidden>›</span></span></> : <><Activity className="w-4 h-4" />Log Activity{isBackDated ? ` · ${format(logDate, 'MMM d')}` : ''}</>}
       </button>
@@ -235,13 +264,23 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
+            {/* Activity type selector */}
             <div className="grid grid-cols-4 gap-2">
               {(Object.keys(ACTIVITY_CONFIG) as ActivityKind[]).map(k => {
                 const c = ACTIVITY_CONFIG[k];
                 const Icon = c.icon;
                 const active = k === kind;
                 return (
-                  <button key={k} onClick={() => setKind(k)} className={cn('flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-colors', active ? 'bg-foreground text-background border-foreground' : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground')}>
+                  <button
+                    key={k}
+                    onClick={() => setKind(k)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-colors',
+                      active
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
                     <Icon className="w-4 h-4" />
                     <span className="text-xs font-semibold">{c.label}</span>
                   </button>
@@ -250,49 +289,100 @@ export function ActivityLogger({ compact = false }: { compact?: boolean }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="activity-value">{cfg.unit === 'min' ? 'Duration (min)' : 'Distance (km)'}</Label>
-              <Input id="activity-value" type="number" inputMode="decimal" step={cfg.unit === 'min' ? '1' : '0.1'} placeholder={cfg.unit === 'min' ? '30' : '4.0'} value={value} onChange={(e) => setValue(e.target.value)} autoFocus className="h-12 text-lg" />
+              <Label htmlFor="activity-value">
+                {cfg.unit === 'min' ? 'Duration (min)' : 'Distance (km)'}
+              </Label>
+              <Input
+                id="activity-value"
+                type="number"
+                inputMode="decimal"
+                step={cfg.unit === 'min' ? '1' : '0.1'}
+                placeholder={cfg.unit === 'min' ? '30' : '4.0'}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                autoFocus
+                className="h-12 text-lg"
+              />
               <div className="flex gap-2">
-                {cfg.quickKm.map(v => <button key={v} onClick={() => setValue(String(v))} className="flex-1 py-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors">{v}{cfg.unit === 'min' ? 'm' : 'km'}</button>)}
+                {cfg.quickKm.map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setValue(String(v))}
+                    className="flex-1 py-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors"
+                  >
+                    {v}{cfg.unit === 'min' ? 'm' : 'km'}
+                  </button>
+                ))}
               </div>
             </div>
 
             {cfg.unit === 'km' && (
               <div className="space-y-2">
                 <Label htmlFor="activity-minutes" className="flex items-center justify-between">
-                  <span>Duration (min) <span className="text-muted-foreground font-normal">- optional</span></span>
-                  {usingCustomTime && <span className="text-xs text-muted-foreground">using your time</span>}
+                  <span>Time (min) <span className="text-muted-foreground font-normal">- optional</span></span>
+                  {usingCustomTime && (
+                    <span className="text-xs text-muted-foreground">using your time</span>
+                  )}
                 </Label>
-                <Input id="activity-minutes" type="number" inputMode="numeric" step="1" placeholder={`default ${activityDuration(kind, numericValue || 1)} min for ${numericValue || 1} km`} value={minutes} onChange={(e) => setMinutes(e.target.value)} className="h-11" />
+                <Input
+                  id="activity-minutes"
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  placeholder={`default ${activityDuration(kind, numericValue || 1)} min for ${numericValue || 1} km`}
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  className="h-11"
+                />
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="activity-end-time">Finished at</Label>
-              <Input id="activity-end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="h-11 tabular-nums" />
-              {isBackDated && !endTime && <p className="text-xs text-muted-foreground">Time is required for a backdated activity so RepTrack does not invent a timestamp.</p>}
-            </div>
 
             {kind === 'boxing' && (
               <div className="grid grid-cols-2 gap-2">
                 {(['technique', 'normal', 'conditioning', 'sparring'] as const).map(level => (
-                  <button key={level} type="button" onClick={() => setBoxingIntensity(level)} className={cn('rounded-xl border px-3 py-2 text-xs capitalize', boxingIntensity === level ? 'border-foreground bg-foreground text-background' : 'border-border')}>{level}</button>
+                  <button key={level} type="button" onClick={() => setBoxingIntensity(level)} className={cn('rounded-xl border px-3 py-2 text-xs capitalize', boxingIntensity === level ? 'border-foreground bg-foreground text-background' : 'border-border')}>
+                    {level}
+                  </button>
                 ))}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/40">
-              <div><div className="type-caption">Burn</div><div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div></div>
-              <div><div className="type-caption">Duration</div><div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div></div>
+              <div>
+                <div className="type-caption">Burn</div>
+                <div className="text-xl font-bold">{kcal} <span className="text-xs font-normal text-muted-foreground">kcal</span></div>
+              </div>
+              <div>
+                <div className="type-caption">Duration</div>
+                <div className="text-xl font-bold">{duration} <span className="text-xs font-normal text-muted-foreground">min</span></div>
+              </div>
             </div>
 
-            {existing && <p className="text-xs text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} - {existing.calories} kcal already logged.</p>}
+            {existing && (
+              <p className="text-xs text-energy-ink bg-energy-soft rounded-lg px-2.5 py-1.5">
+                Updating your {format(logDate, 'MMM d')} {cfg.label.toLowerCase()} - {existing.calories} kcal already logged.
+              </p>
+            )}
 
-            <p className="text-xs text-muted-foreground">Based on {weightKg.toFixed(1)} kg · {estimate.paceSource.replace(/_/g, ' ')} · intensity {met.toFixed(1)} MET · {estimate.confidence} confidence</p>
+
+            <p className="text-xs text-muted-foreground">
+              Based on {weightKg.toFixed(1)} kg · {estimate.paceSource.replace(/_/g, ' ')} · intensity {met.toFixed(1)} MET · {estimate.confidence} confidence
+            </p>
 
             <div className="flex gap-2">
-              <button onClick={() => setOpen(false)} className="flex-1 py-3 rounded-xl border border-border text-sm font-medium">Cancel</button>
-              <button onClick={handleSave} disabled={!canSave || saving} className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50">{saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}</button>
+              <button
+                onClick={() => setOpen(false)}
+                className="flex-1 py-3 rounded-xl border border-border text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!canSave || saving}
+                className="flex-1 py-3 rounded-xl bg-foreground text-background text-sm font-medium disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : existing ? 'Update' : 'Add Burn'}
+              </button>
             </div>
           </div>
         </DialogContent>

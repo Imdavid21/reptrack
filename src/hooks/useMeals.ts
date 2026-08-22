@@ -17,8 +17,6 @@ export interface Meal {
   sugar: number | null;
   sodium: number | null;
   potassium: number | null;
-  caffeine_mg: number | null;
-  consumed_at: string | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;
@@ -27,12 +25,6 @@ export interface Meal {
   created_at: string;
   nutrition_source?: 'manual' | 'ai_photo' | 'ai_text' | 'saved_meal' | 'import' | 'legacy';
   source_metadata?: Record<string, unknown>;
-}
-
-function defaultConsumedAt(dateKey: string) {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const now = new Date();
-  return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds()).toISOString();
 }
 
 export function useMeals(date?: Date) {
@@ -46,12 +38,11 @@ export function useMeals(date?: Date) {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await (supabase
-        .from('meals') as any)
+      const { data, error } = await supabase
+        .from('meals')
         .select('*')
         .eq('user_id', user.id)
         .eq('date', dateStr)
-        .order('consumed_at', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -59,14 +50,6 @@ export function useMeals(date?: Date) {
     },
     enabled: !!user,
   });
-
-  const invalidateNutrition = () => {
-    queryClient.invalidateQueries({ queryKey: ['meals'] });
-    queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
-    queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
-    queryClient.invalidateQueries({ queryKey: ['caffeineData'] });
-    queryClient.invalidateQueries({ queryKey: ['dataroom-caffeine'] });
-  };
 
   const addMeal = useMutation({
     mutationFn: async (meal: {
@@ -80,8 +63,6 @@ export function useMeals(date?: Date) {
       sugar?: number;
       sodium?: number;
       potassium?: number;
-      caffeine_mg?: number;
-      consumed_at?: string;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;
@@ -94,15 +75,13 @@ export function useMeals(date?: Date) {
       date?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
-      const resolvedDate = meal.date || dateStr;
 
       const { data, error } = await (supabase
         .from('meals') as any)
         .insert({
           user_id: user.id,
-          date: resolvedDate,
-          ...meal,
-          consumed_at: meal.consumed_at || defaultConsumedAt(resolvedDate),
+          date: dateStr,
+          ...meal, // a `date` in here overrides the default
         })
         .select()
         .single();
@@ -110,25 +89,32 @@ export function useMeals(date?: Date) {
       if (error) throw error;
       return data;
     },
-    onSuccess: invalidateNutrition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meals'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+    },
   });
 
   const updateMeal = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Meal> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await (supabase
-        .from('meals') as any)
-        .update(updates)
+      const { data, error } = await supabase
+        .from('meals')
+        .update(updates as never)
         .eq('id', id)
-        .eq('user_id', user.id)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: invalidateNutrition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meals'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+    },
   });
 
   const deleteMeal = useMutation({
@@ -138,16 +124,18 @@ export function useMeals(date?: Date) {
       const { error } = await supabase
         .from('meals')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
     },
-    onSuccess: invalidateNutrition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meals'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+    },
   });
 
   const totalCalories = query.data?.reduce((sum, meal) => sum + (meal.calories || 0), 0) ?? 0;
-  const totalCaffeine = query.data?.reduce((sum, meal) => sum + Number(meal.caffeine_mg || 0), 0) ?? 0;
   const mealsByType = {
     breakfast: query.data?.filter(m => m.meal_type === 'breakfast') ?? [],
     lunch: query.data?.filter(m => m.meal_type === 'lunch') ?? [],
@@ -159,7 +147,6 @@ export function useMeals(date?: Date) {
     meals: query.data ?? [],
     mealsByType,
     totalCalories,
-    totalCaffeine,
     isLoading: query.isLoading,
     addMeal: addMeal.mutateAsync,
     updateMeal: updateMeal.mutateAsync,

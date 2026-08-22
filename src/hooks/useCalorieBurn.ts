@@ -52,6 +52,7 @@ export function useCalorieBurn(date?: Date) {
   const { data: metricsData } = useDailyMetrics({ from: new Date(referenceDate.getTime() - 30 * 86400000), to: referenceDate });
   const weightKg = effectiveWeightAt((metricsData?.dataPoints || []).map(point => ({ date: point.date, kg: Number(point.bodyweight) })), dateStr, preferences?.initial_weight_kg).kg;
 
+  // Fetch today's workouts so manual activity and exercise burn can coexist
   const { data: todayWorkouts = [] } = useQuery({
     queryKey: ['workout-with-exercises', user?.id, dateStr],
     queryFn: async () => {
@@ -86,13 +87,12 @@ export function useCalorieBurn(date?: Date) {
     queryKey: ['calorie-burns', user?.id, dateStr],
     queryFn: async () => {
       if (!user) return [];
-
+      
       const { data, error } = await (supabase
         .from('calorie_burns') as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('date', dateStr)
-        .order('started_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -102,6 +102,7 @@ export function useCalorieBurn(date?: Date) {
   });
 
   const addBurn = useMutation({
+    // An optional `date` lets the user back-date the burn; defaults to today.
     mutationFn: async (burn: Omit<CalorieBurn, 'id' | 'user_id' | 'date'> & { date?: string }) => {
       if (!user) throw new Error('No user');
 
@@ -130,6 +131,7 @@ export function useCalorieBurn(date?: Date) {
     },
   });
 
+  // Calculate workout duration
   const calculateWorkoutDuration = (workout: WorkoutWithExercises): number => {
     if (workout.workout_duration_minutes) return workout.workout_duration_minutes;
 
@@ -144,17 +146,27 @@ export function useCalorieBurn(date?: Date) {
     return 0;
   };
 
+  // Calculate calories burned from an already-resolved category (the MET
+  // table itself lives in lib/workoutCalories.ts, single source of truth).
   const calculateWorkoutCalories = (durationMinutes: number) =>
     estimateWorkoutCalories({ exercises: [] }, weightKg, durationMinutes);
 
+  // Category derivation also lives in lib/workoutCalories.ts - see that file
+  // for why day_name is checked before exercise.category.
+
+  // Calculate calories from steps (rough estimate: 0.04 cal per step per kg)
   const calculateStepCalories = (steps: number) => {
+    // Average: ~0.04-0.05 calories per step (adjusted for weight)
     const caloriesPerStep = 0.04 * (weightKg / 70);
     return Math.round(steps * caloriesPerStep);
   };
 
+  // BMR calculation (Mifflin-St Jeor) - see src/lib/metabolism.ts, the shared
+  // source of truth (also used by useAutoMaintenanceCalories and onboarding).
   const calculateBMR = (age: number, heightCm: number, gender: 'male' | 'female') =>
     sharedCalculateBMR(weightKg, heightCm, age, gender);
 
+  // Calculate today's workout calories across all workouts on the day
   const workoutSummaries = todayWorkouts.map((workout) => {
     const calculatedDuration = calculateWorkoutDuration(workout);
     const calculatedCalories = calculatedDuration > 0
@@ -172,6 +184,7 @@ export function useCalorieBurn(date?: Date) {
   const workoutBurned = burns.filter(b => b.source === 'workout').reduce((sum, b) => sum + b.calories, 0);
   const stepBurned = burns.filter(b => b.source === 'steps').reduce((sum, b) => sum + b.calories, 0);
 
+  // Use calculated workout calories if no persisted workout entry exists; keep manual activity too
   const effectiveWorkoutBurned = workoutBurned > 0 ? workoutBurned : workoutCaloriesFromDuration;
   const effectiveTotalBurned = totalBurned + (workoutBurned > 0 ? 0 : workoutCaloriesFromDuration);
 
@@ -186,6 +199,7 @@ export function useCalorieBurn(date?: Date) {
     calculateStepCalories,
     calculateBMR,
     weightKg,
+    // Expose workout details
     todayWorkout: primaryWorkout,
   };
 }
@@ -229,8 +243,6 @@ export interface BurnEntry {
   calories: number;
   duration_minutes: number | null;
   distance_km: number | null;
-  started_at: string | null;
-  ended_at: string | null;
 }
 
 export function useManualBurns(days: number = 30) {
@@ -244,14 +256,13 @@ export function useManualBurns(days: number = 30) {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const { data, error } = await (supabase
-        .from('calorie_burns') as any)
-        .select('id, date, source, activity_type, calories, duration_minutes, distance_km, started_at, ended_at')
+      const { data, error } = await supabase
+        .from('calorie_burns')
+        .select('id, date, source, activity_type, calories, duration_minutes, distance_km')
         .eq('user_id', user.id)
         .eq('source', 'manual')
         .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .order('date', { ascending: false })
-        .order('started_at', { ascending: false, nullsFirst: false });
+        .order('date', { ascending: false });
 
       if (error) throw error;
       return (data || []) as BurnEntry[];
@@ -273,6 +284,10 @@ export function useManualBurns(days: number = 30) {
     },
   });
 
+  // Updates a specific row by id rather than upserting on (user_id, date,
+  // source, activity_type) - the edit dialog lets the activity_type itself
+  // change, and re-targeting the natural key mid-edit would leave the old
+  // row behind instead of replacing it.
   const updateBurn = useMutation({
     mutationFn: async (input: {
       id: string;
@@ -280,8 +295,6 @@ export function useManualBurns(days: number = 30) {
       duration_minutes: number;
       distance_km: number | null;
       calories: number;
-      started_at?: string | null;
-      ended_at?: string | null;
       met_estimate?: number;
       effective_weight_kg?: number;
       confidence?: 'low' | 'medium' | 'high';
@@ -289,7 +302,7 @@ export function useManualBurns(days: number = 30) {
       calculation_inputs?: Record<string, unknown>;
     }) => {
       const { id, ...fields } = input;
-      const { error } = await (supabase.from('calorie_burns') as any).update(fields).eq('id', id);
+      const { error } = await supabase.from('calorie_burns').update(fields as never).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -310,6 +323,12 @@ export interface ManualActivityEntry {
   duration_minutes: number;
 }
 
+/**
+ * Manual activities within an explicit [from, to] range. Unlike useManualBurns
+ * (always "last N days through today"), this respects an arbitrary selected
+ * range - needed so muscle-balance analysis matches whatever range the user
+ * has picked on Insights, not just the last N days from right now.
+ */
 export function useManualActivitiesInRange(from: Date, to: Date) {
   const { user } = useAuth();
   const fromStr = format(from, 'yyyy-MM-dd');
@@ -342,3 +361,5 @@ export function useManualActivitiesInRange(from: Date, to: Date) {
     enabled: !!user,
   });
 }
+
+
