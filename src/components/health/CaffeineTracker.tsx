@@ -56,9 +56,9 @@ export function CaffeineTracker() {
   const [source, setSource] = useState<CaffeineSource>('coffee');
   const [label, setLabel] = useState('');
   const [time, setTime] = useState('12:00');
-  const [limitInput, setLimitInput] = useState(String(liveLimit));
+  const [limitInput, setLimitInput] = useState(String(dailyLimit));
 
-  useEffect(() => { setLimitInput(String(liveLimit)); }, [liveLimit]);
+  useEffect(() => { setLimitInput(String(dailyLimit)); }, [dailyLimit]);
 
   const entryCountLabel = useMemo(
     () => `${caffeineLogs.length} caffeine ${caffeineLogs.length === 1 ? 'entry' : 'entries'}`,
@@ -105,6 +105,7 @@ export function CaffeineTracker() {
   };
 
   const saveLimit = async () => {
+    if (isBackDated) return;
     const value = Number(limitInput);
     if (!Number.isFinite(value) || value <= 0 || value > 2000) {
       toast.error('Set a daily caffeine limit between 1 and 2000 mg.');
@@ -173,8 +174,13 @@ export function CaffeineTracker() {
           </div>
 
           <div className="rounded-xl border border-border p-3">
-            <div className="flex items-center justify-between gap-3"><div><div className="type-action text-foreground">Daily caffeine limit</div><div className="type-meta">Used for Today and Insights comparisons</div></div><div className="flex items-center gap-2"><Input type="number" inputMode="numeric" min="1" max="2000" value={limitInput} onChange={event => setLimitInput(event.target.value)} className="h-9 w-24 text-right tabular-nums" /><span className="type-meta">mg</span></div></div>
-            <button disabled={isSavingGoal || Number(limitInput) === liveLimit} onClick={saveLimit} className="mt-2 type-action text-foreground disabled:opacity-40">{isSavingGoal ? 'Saving…' : 'Update limit'}</button>
+            <div className="flex items-center justify-between gap-3">
+              <div><div className="type-action text-foreground">{isBackDated ? 'Limit on this date' : 'Daily caffeine limit'}</div><div className="type-meta">{isBackDated ? 'Historical limits are read-only' : 'Tracking threshold used by Today and Insights'}</div></div>
+              <div className="flex items-center gap-2"><Input type="number" inputMode="numeric" min="1" max="2000" disabled={isBackDated} value={limitInput} onChange={event => setLimitInput(event.target.value)} className="h-9 w-24 text-right tabular-nums" /><span className="type-meta">mg</span></div>
+            </div>
+            {isBackDated
+              ? <div className="mt-2 type-meta">Change the current tracking limit from Today.</div>
+              : <button disabled={isSavingGoal || Number(limitInput) === liveLimit} onClick={saveLimit} className="mt-2 type-action text-foreground disabled:opacity-40">{isSavingGoal ? 'Saving…' : 'Update limit'}</button>}
           </div>
 
           <button onClick={saveEntry} disabled={isAdding || amount <= 0} className="control-large w-full rounded-xl bg-foreground font-bold text-background disabled:opacity-50">{isAdding ? 'Saving…' : `Log ${Math.round(amount || 0)} mg`}</button>
