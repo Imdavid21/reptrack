@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { eachDayOfInterval, endOfDay, format, parseISO, startOfDay, subDays } from 'date-fns';
+import { eachDayOfInterval, format, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -8,6 +8,7 @@ export interface DailyCaffeine {
   displayDate: string;
   totalMg: number;
   logs: number;
+  caffeinatedLogs: number;
   lastIntakeAt: string | null;
 }
 
@@ -37,36 +38,43 @@ export function useCaffeineData(dateRange?: CaffeineDateRange) {
 
       const endDate = dateRange?.to ?? new Date();
       const startDate = dateRange?.from ?? subDays(endDate, 13);
-      const logs: Array<{ amount_mg: number; timestamp: string }> = [];
+      const startKey = format(startDate, 'yyyy-MM-dd');
+      const endKey = format(endDate, 'yyyy-MM-dd');
+      const meals: Array<{ date: string; caffeine_mg: number | null; created_at: string | null }> = [];
 
       for (let offset = 0; ; offset += PAGE_SIZE) {
         const { data, error } = await (supabase as any)
-          .from('caffeine_logs')
-          .select('amount_mg,timestamp')
+          .from('meals')
+          .select('date,caffeine_mg,created_at')
           .eq('user_id', user.id)
-          .gte('timestamp', startOfDay(startDate).toISOString())
-          .lte('timestamp', endOfDay(endDate).toISOString())
-          .order('timestamp', { ascending: true })
+          .gte('date', startKey)
+          .lte('date', endKey)
+          .not('caffeine_mg', 'is', null)
+          .order('date', { ascending: true })
+          .order('created_at', { ascending: true })
           .range(offset, offset + PAGE_SIZE - 1);
         if (error) throw error;
-        const page = (data ?? []) as Array<{ amount_mg: number; timestamp: string }>;
-        logs.push(...page);
+        const page = (data ?? []) as Array<{ date: string; caffeine_mg: number | null; created_at: string | null }>;
+        meals.push(...page);
         if (page.length < PAGE_SIZE) break;
       }
 
-      const byDay = new Map<string, { totalMg: number; logs: number; lastIntakeAt: string | null }>();
-      for (const log of logs) {
-        const date = format(parseISO(log.timestamp), 'yyyy-MM-dd');
-        const current = byDay.get(date) ?? { totalMg: 0, logs: 0, lastIntakeAt: null };
-        current.totalMg += Number(log.amount_mg || 0);
+      const byDay = new Map<string, { totalMg: number; logs: number; caffeinatedLogs: number; lastIntakeAt: string | null }>();
+      for (const meal of meals) {
+        const current = byDay.get(meal.date) ?? { totalMg: 0, logs: 0, caffeinatedLogs: 0, lastIntakeAt: null };
+        const caffeineMg = Number(meal.caffeine_mg || 0);
+        current.totalMg += caffeineMg;
         current.logs += 1;
-        if (!current.lastIntakeAt || log.timestamp > current.lastIntakeAt) current.lastIntakeAt = log.timestamp;
-        byDay.set(date, current);
+        if (caffeineMg > 0) {
+          current.caffeinatedLogs += 1;
+          if (meal.created_at && (!current.lastIntakeAt || meal.created_at > current.lastIntakeAt)) current.lastIntakeAt = meal.created_at;
+        }
+        byDay.set(meal.date, current);
       }
 
       const dailyData = eachDayOfInterval({ start: startDate, end: endDate }).map(day => {
         const date = format(day, 'yyyy-MM-dd');
-        const current = byDay.get(date) ?? { totalMg: 0, logs: 0, lastIntakeAt: null };
+        const current = byDay.get(date) ?? { totalMg: 0, logs: 0, caffeinatedLogs: 0, lastIntakeAt: null };
         return { date, displayDate: format(day, 'MMM d'), ...current };
       });
       const tracked = dailyData.filter(day => day.logs > 0);
