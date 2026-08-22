@@ -225,12 +225,7 @@ async function persistWorkoutEnergy(db: Client, userId: string, workout: Args, r
   const compoundSets = rows.filter(r => ["primary", "compound"].includes(r.category)).length;
   const estimate = estimateWorkoutEnergyMcp({ durationMinutes: workout.workout_duration_minutes || 0, completedSets: rows.length, compoundSets, weightKg });
   const inputs = { effectiveWeightKg: weightKg, intensity: estimate.intensity, met: estimate.met, completedSets: rows.length, compoundSets, via: "mcp" };
-  await write("workout_energy", () => db.from("workouts").update({
-    energy_model_version: ENERGY_MODEL_VERSION,
-    estimated_net_kcal: estimate.netKcal,
-    energy_confidence: estimate.confidence,
-    energy_inputs: inputs,
-  }).eq("id", workout.id).eq("user_id", userId));
+  await write("workout_energy", () => db.from("workouts").update({ energy_model_version: ENERGY_MODEL_VERSION, estimated_net_kcal: estimate.netKcal, energy_confidence: estimate.confidence, energy_inputs: inputs }).eq("id", workout.id).eq("user_id", userId));
   if (estimate.netKcal > 0) {
     await write("workout_burn", () => db.from("calorie_burns").upsert({
       user_id: userId,
@@ -261,20 +256,13 @@ async function logWorkout(args: Args, db: Client, userId: string, today: string,
   const name = requireString("workout_name", args.workout_name || "Workout", 80);
   const timing = completedInterval(date, args.start_time, duration, today, timezone);
   const id = typeof args.client_key === "string" && args.client_key.trim()
-    ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim())
-      ? args.client_key.trim()
-      : await stableUuid(`${userId}:${args.client_key.trim()}`))
+    ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim()) ? args.client_key.trim() : await stableUuid(`${userId}:${args.client_key.trim()}`))
     : crypto.randomUUID();
 
   const existingRows = await db.from("workouts").select("id").eq("id", id).limit(1);
   const already = Array.isArray(existingRows?.data) ? existingRows.data[0] : null;
-
   const payload = {
-    id,
-    user_id: userId,
-    date,
-    day: name.slice(0, 40),
-    day_name: name,
+    id, user_id: userId, date, day: name.slice(0, 40), day_name: name,
     week_number: boundedNumber("week_number", args.week_number ?? 1, 1, 520, false)!,
     workout_duration_minutes: duration,
     started_at: timing.startedAt,
@@ -308,18 +296,15 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
   const date = patch.date ?? current.date;
   const duration = patch.workout_duration_minutes ?? current.workout_duration_minutes ?? 45;
   let startedAt: string | null = current.started_at ?? null;
-  if (args.start_time !== undefined) {
-    startedAt = localDateTime(date, String(args.start_time), timezone);
-  } else if (patch.date && current.started_at) {
-    startedAt = localDateTime(date, zonedDateTimeParts(current.started_at, timezone).time, timezone);
-  }
+  if (args.start_time !== undefined) startedAt = localDateTime(date, String(args.start_time), timezone);
+  else if (patch.date && current.started_at) startedAt = localDateTime(date, zonedDateTimeParts(current.started_at, timezone).time, timezone);
+
   if (startedAt && (args.start_time !== undefined || patch.date !== undefined || patch.workout_duration_minutes !== undefined)) {
     const completedAt = new Date(Date.parse(startedAt) + Number(duration) * 60000).toISOString();
     if (date === today && Date.parse(completedAt) > Date.now() + 60000) throw new Error("END_TIME_IN_FUTURE");
     patch.started_at = startedAt;
     patch.completed_at = completedAt;
   }
-
   if (Object.keys(patch).length) await write("workout_patch", () => db.from("workouts").update(patch).eq("id", id).eq("user_id", userId));
 
   let rows: Args[];
@@ -330,9 +315,7 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
   } else {
     rows = (await write<any[]>("workout_sets_read", () => db.from("exercises").select("category").eq("workout_id", id))) || [];
   }
-  if (patch.date && patch.date !== current.date) {
-    await db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`);
-  }
+  if (patch.date && patch.date !== current.date) await db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`);
   const finalStartedAt = patch.started_at ?? current.started_at ?? null;
   const finalCompletedAt = patch.completed_at ?? current.completed_at ?? (finalStartedAt ? new Date(Date.parse(finalStartedAt) + Number(duration) * 60000).toISOString() : null);
   const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration, started_at: finalStartedAt, completed_at: finalCompletedAt }, rows, prefs);
@@ -341,11 +324,10 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
 
 /* ----------------------------- activities ----------------------------- */
 
-async function activityPayload(args: Args, db: Client, userId: string, date: string, prefs: Args) {
+async function activityPayload(args: Args, db: Client, userId: string, date: string, prefs: Args): Promise<{ kind: ActivityKind; estimate: any; calories: number; row: Args }> {
   const alias: Record<string, string> = { walk: "walking", run: "running", cycle: "cycling", ride: "cycling", bike: "cycling" };
   const rawKind = String(args.activity_type ?? "").toLowerCase().trim();
   const kind = oneOf("activity_type", alias[rawKind] ?? rawKind, ACTIVITY_KINDS) as ActivityKind;
-
   const distance = boundedNumber("distance_km", args.distance_km, 0.1, 500);
   const duration = boundedNumber("duration_minutes", args.duration_minutes, 1, 1440);
   if (distance === null && duration === null) throw new Error("MISSING_DISTANCE_OR_DURATION");
@@ -357,19 +339,11 @@ async function activityPayload(args: Args, db: Client, userId: string, date: str
     estimate,
     calories,
     row: {
-      user_id: userId,
-      date,
-      source: "manual",
-      activity_type: kind,
+      user_id: userId, date, source: "manual", activity_type: kind,
       duration_minutes: Math.round(estimate.durationMinutes) || duration || 0,
-      distance_km: distance,
-      calories,
-      intensity_band: "pace_based",
-      intensity_source: estimate.paceSource,
-      met_estimate: estimate.met,
-      effective_weight_kg: weightKg,
-      confidence: estimate.confidence,
-      energy_model_version: ENERGY_MODEL_VERSION,
+      distance_km: distance, calories,
+      intensity_band: "pace_based", intensity_source: estimate.paceSource, met_estimate: estimate.met,
+      effective_weight_kg: weightKg, confidence: estimate.confidence, energy_model_version: ENERGY_MODEL_VERSION,
       calculation_inputs: { paceMinutesPerKm: estimate.paceMinutesPerKm, paceSource: estimate.paceSource, via: "mcp" },
     },
   };
