@@ -411,7 +411,7 @@ export function SetBySetCard({
               aria-label={`Go to exercise ${i + 1}`}
               className={cn(
                 'h-2 flex-1 rounded-full transition-all duration-300',
-                i < exerciseIndex ? 'bg-energy' : i === exerciseIndex ? 'bg-energy/50' : 'bg-muted',
+                i < exerciseIndex ? 'bg-foreground' : i === exerciseIndex ? 'bg-foreground/50' : 'bg-muted',
                 onJumpToExercise && 'cursor-pointer hover:opacity-80 active:scale-95'
               )}
             />
@@ -485,10 +485,10 @@ export function SetBySetCard({
             aria-label={`Go to set ${idx + 1}`}
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-full type-meta transition-all duration-150',
-              idx === currentSetIndex
-                ? 'bg-foreground text-background'
-                : set.completed
-                  ? 'bg-energy-soft text-energy-ink'
+              set.completed
+                ? 'bg-energy-soft text-energy-ink'
+                : idx === currentSetIndex
+                  ? 'bg-foreground text-background'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
             )}
           >
