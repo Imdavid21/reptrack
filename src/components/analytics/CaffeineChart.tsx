@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box, Chip, Skeleton, Typography, useTheme } from '@mui/material';
 import { Coffee, Target } from 'lucide-react';
-import { Bar, BarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { format } from 'date-fns';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useCaffeineData } from '@/hooks/useCaffeineData';
@@ -26,7 +26,7 @@ export function CaffeineChart() {
     () => chartData.filter(day => day.logs > 0 && day.totalMg <= day.limit).length,
     [chartData],
   );
-  const peak = Math.max(liveLimit, ...chartData.map(day => day.totalMg), 0);
+  const peak = Math.max(liveLimit, ...chartData.flatMap(day => [day.totalMg, day.limit]), 0);
   const yMax = Math.max(400, Math.ceil(peak / 100) * 100);
   const ticks = Array.from({ length: Math.floor(yMax / 100) + 1 }, (_, index) => index * 100);
   const muted = theme.palette.text.secondary;
@@ -53,18 +53,18 @@ export function CaffeineChart() {
   return <MuiCard>
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Box sx={{ p: 1, borderRadius: 2, bgcolor: 'action.hover' }}><Coffee size={14} /></Box><Typography variant="body2" fontWeight={600}>Caffeine</Typography></Box>
-      <Chip size="small" icon={<Target size={12} />} label={`≤${Math.round(liveLimit)} mg/day`} sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, bgcolor: 'action.hover', '& .MuiChip-icon': { color: 'inherit' } }} />
+      <Chip size="small" icon={<Target size={12} />} label={`Current ≤${Math.round(liveLimit)} mg/day`} sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, bgcolor: 'action.hover', '& .MuiChip-icon': { color: 'inherit' } }} />
     </Box>
 
     <Box sx={{ height: 160 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -12, bottom: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -12, bottom: 0 }}>
           <XAxis dataKey="displayDate" tick={{ fill: muted, fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
           <YAxis domain={[0, yMax]} ticks={ticks} tick={{ fill: muted, fontSize: 12 }} axisLine={false} tickLine={false} width={46} />
-          <ReferenceLine y={liveLimit} stroke={muted} strokeDasharray="4 4" />
           <Tooltip content={tooltip} />
           <Bar dataKey="totalMg" radius={[4, 4, 0, 0]} fill="hsl(var(--fuel))" />
-        </BarChart>
+          <Line dataKey="limit" type="stepAfter" stroke={muted} strokeDasharray="4 4" strokeWidth={1.5} dot={false} activeDot={false} />
+        </ComposedChart>
       </ResponsiveContainer>
     </Box>
 
