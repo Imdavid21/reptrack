@@ -19,7 +19,7 @@ export default function MiniWaterDemo() {
   const percent = Math.min((level / goal) * 100, 100);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 max-w-xs mx-auto h-full flex flex-col">
+    <div className="bg-card border border-border rounded-xl p-5 max-w-xs mx-auto h-full flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <Droplets className="w-4 h-4 text-muted-foreground" />
         <span className="type-caption font-semibold">Water</span>
