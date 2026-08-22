@@ -238,19 +238,51 @@ function stripSetNumber(name: string): string {
 }
 
 /**
+ * Grip and handle descriptors that do not change the movement pattern.
+ * Swapping a neutral handle onto a lat pulldown is still a lat pulldown, so
+ * these must never fork a new exercise identity (and never a new PR bucket).
+ *
+ * "Close grip" is deliberately excluded: close grip bench press and close grip
+ * barbell curl are established, separately-loaded movements with their own
+ * canonical entries.
+ */
+const GRIP_DESCRIPTORS =
+  /\b(neutral|wide|narrow|medium|shoulder width|reverse|underhand|overhand|supinated|pronated|semi supinated|mixed|false|thumbless|v bar|vbar|straight bar|rope|ez bar)?[\s-]*grip\b/g;
+
+function stripGripDescriptors(name: string): string {
+  const cleaned = name
+    .replace(/[-_]/g, ' ')
+    .replace(GRIP_DESCRIPTORS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned;
+}
+
+/**
  * Resolve a name to its canonical, properly-cased display form (exact
  * case-insensitive alias match), or the input unchanged if unknown. This is
  * the form to use anywhere the result is shown to the user, e.g. PR badges.
  */
 export function getCanonicalName(name: string): string {
   const base = stripSetNumber(name);
-  return EXERCISE_ALIASES[base.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(base)] ?? base;
+  const direct = EXERCISE_ALIASES[base.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(base)];
+  if (direct) return direct;
+
+  const stripped = stripGripDescriptors(base);
+  if (stripped && stripped.toLowerCase() !== base.toLowerCase()) {
+    const viaGrip = EXERCISE_ALIASES[stripped.toLowerCase()] ?? ALIASES_BY_MORPH[morphKey(stripped)];
+    if (viaGrip) return viaGrip;
+    return stripped;
+  }
+
+  return base;
 }
 
 /** Resolve a name through the canonical alias map, lowercased for matching. */
 export function resolveCanonicalName(name: string): string {
   return getCanonicalName(name).toLowerCase();
 }
+
 
 /** Normalize an exercise name for fuzzy matching across naming variations. */
 export function normalizeExerciseName(name: string): string {
