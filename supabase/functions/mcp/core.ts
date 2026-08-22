@@ -1,5 +1,5 @@
 export const MCP_MODE = "read_write" as const;
-export const MCP_VERSION = "1.1.0";
+export const MCP_VERSION = "1.2.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
@@ -7,9 +7,10 @@ export const APPROVED_TOOLS = [
   "get_sleep", "get_activity", "get_progress_summary", "get_recent_fitness_data",
 ] as const;
 
-/** Writes are limited to food, water, workouts and activities. No deletes exist. */
+/** Writes are limited to food, water, caffeine, workouts and activities. No deletes exist. */
 export const WRITE_TOOLS = [
   "log_meal", "update_meal", "log_water",
+  "log_caffeine", "update_caffeine",
   "log_workout", "update_workout",
   "log_activity", "update_activity",
 ] as const;
