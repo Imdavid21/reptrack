@@ -366,12 +366,16 @@ export default function Landing() {
           <p className="text-muted-foreground text-lg mb-8">
             Free forever.
           </p>
-          <Link
-            to="/signin"
-            className="btn-energy px-8 py-4 text-base inline-flex items-center"
-          >
-            Start for free
-          </Link>
+          <motion.div className="inline-block" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 24 }}>
+            <Link
+              to="/signin"
+              className="btn-energy group px-8 py-4 text-base inline-flex items-center gap-2"
+            >
+              Start for free
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+
         </motion.div>
       </section>
 
