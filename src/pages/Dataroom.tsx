@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { ArachnidRead, ChangesNext, DataroomDeepDives, TrajectoryConsole } from '@/components/dataroom/DataRoomVisuals';
+import { CaffeineEvidenceCard } from '@/components/dataroom/CaffeineEvidenceCard';
 import { TemporalDecisionMatrix } from '@/components/dataroom/TemporalDecisionMatrix';
 import { useDataroomData } from '@/hooks/useDataroomData';
 import { useDataroomComparisons } from '@/hooks/useDataroomComparisons';
@@ -17,7 +18,7 @@ function TemporalLoadingState() {
 
 function DataroomContent() {
   const { dateRange } = useDateRange();
-  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData(dateRange);
+  const { analysis, meals, energy, hydration, caffeine, preferences, isLoading, error } = useDataroomData(dateRange);
   const temporal = useDataroomComparisons(dateRange);
 
   return (
@@ -70,6 +71,7 @@ function DataroomContent() {
               <p className="type-eyebrow">Evidence</p>
               <h2 className="type-section-title">Explore the analysis</h2>
             </div>
+            <CaffeineEvidenceCard data={caffeine} dailyLimit={preferences?.daily_caffeine_limit ?? 400} />
             <DataroomDeepDives
               analysis={analysis}
               meals={meals}

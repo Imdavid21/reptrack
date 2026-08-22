@@ -5,6 +5,17 @@ import { APP_VERSION } from '@/lib/version';
 
 const changelogEntries = [
   {
+    date: '2026-08-22',
+    title: 'Caffeine and occurrence timestamps',
+    items: [
+      'Food and drink logs can now store caffeine alongside calories and macros, so coffee, tea, cola, energy drinks, pre-workout, chocolate, and other sources stay attached to the nutrition record that produced them.',
+      'Photo and text food analysis estimate caffeine automatically; the review screen lets you correct the estimate before saving, and manual food entry includes an optional caffeine field.',
+      'Added a configurable daily caffeine limit with point-in-time goal history, plus caffeine trends in Insights and evidence context in Data Room.',
+      'Food, workout, and activity records now preserve occurrence time separately from when the record was saved. Backdated activities require a real clock time rather than receiving an invented timestamp.',
+      'Meal CSV exports/imports and the ChatGPT connection now carry caffeine and occurrence time on the same records. Caffeine remains observational and does not change Body Score or infer recovery effects.',
+    ],
+  },
+  {
     date: '2026-08-18',
     title: 'ChatGPT connection can now log for you',
     items: [

@@ -62,14 +62,6 @@ describe('escapeCSV / parseCSVLine round-trip', () => {
   });
 });
 
-// Regression coverage for the class of bug this file has had before
-// (usePersonalRecords-style drift): TABLE_COLUMNS silently falling behind
-// the real schema meant "export all my data" quietly dropped whole feature
-// areas (every Deficit Mode / Adaptive Mode field, workout check-in fields,
-// calorie_burns.distance_km). This doesn't check against the live DB schema,
-// but it locks in that every column NUMERIC_FIELDS/BOOLEAN_FIELDS know how to
-// parse is actually one this file claims to export - so a future column
-// added to one list isn't silently forgotten in the other.
 describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
   const allExportedColumns = new Set(Object.values(TABLE_COLUMNS).flat());
 
@@ -95,5 +87,22 @@ describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
     for (const link of Object.values(LINKED_TABLES) as { parentTable: DataTable; fkColumn: string }[]) {
       expect(TABLE_COLUMNS[link.parentTable]).toBeDefined();
     }
+  });
+
+  it('exports caffeine and occurrence time as part of each meal record', () => {
+    expect(TABLE_COLUMNS.meals).toContain('caffeine_mg');
+    expect(TABLE_COLUMNS.meals).toContain('consumed_at');
+    expect(NUMERIC_FIELDS.has('caffeine_mg')).toBe(true);
+    expect((TABLE_COLUMNS as Record<string, string[]>).caffeine_logs).toBeUndefined();
+  });
+
+  it('exports workout and activity occurrence timestamps', () => {
+    expect(TABLE_COLUMNS.workouts).toEqual(expect.arrayContaining(['started_at', 'completed_at']));
+    expect(TABLE_COLUMNS.calorie_burns).toEqual(expect.arrayContaining(['started_at', 'ended_at']));
+  });
+
+  it('exports and parses the caffeine limit as a numeric preference', () => {
+    expect(TABLE_COLUMNS.user_preferences).toContain('daily_caffeine_limit');
+    expect(NUMERIC_FIELDS.has('daily_caffeine_limit')).toBe(true);
   });
 });

@@ -6,6 +6,7 @@ import { useDailyMetrics } from './useDailyMetrics';
 import { useExerciseSets } from './useExerciseSets';
 import { useCalorieHistory } from './useCalorieHistory';
 import { useHydrationData } from './useHydrationData';
+import { useCaffeineData } from './useCaffeineData';
 import { useWorkouts } from './useWorkouts';
 import { useUserPreferences } from './useUserPreferences';
 import { buildDataroomAnalysis } from '@/lib/dataroom/analysis';
@@ -23,6 +24,7 @@ export function useDataroomData(dateRange: DateRange) {
   const exerciseSets = useExerciseSets(dateRange);
   const calorieHistory = useCalorieHistory(dateRange);
   const hydration = useHydrationData(dateRange);
+  const caffeine = useCaffeineData(dateRange);
   const workouts = useWorkouts();
   const { preferences, isLoading: preferencesLoading } = useUserPreferences();
 
@@ -85,8 +87,9 @@ export function useDataroomData(dateRange: DateRange) {
     meals: meals.data ?? [],
     energy: calorieHistory.data ?? [],
     hydration: hydration.data,
+    caffeine: caffeine.data,
     preferences,
-    isLoading: metrics.isLoading || exerciseSets.isLoading || calorieHistory.isLoading || meals.isLoading || workouts.isLoading || hydration.isLoading || preferencesLoading,
-    error: metrics.error || exerciseSets.error || calorieHistory.error || meals.error || workouts.error || hydration.error,
+    isLoading: metrics.isLoading || exerciseSets.isLoading || calorieHistory.isLoading || meals.isLoading || workouts.isLoading || hydration.isLoading || caffeine.isLoading || preferencesLoading,
+    error: metrics.error || exerciseSets.error || calorieHistory.error || meals.error || workouts.error || hydration.error || caffeine.error,
   };
 }
