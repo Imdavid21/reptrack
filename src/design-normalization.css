@@ -6,15 +6,24 @@
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
-  color: hsl(var(--foreground));
 }
 
 .type-meta {
   font-size: 0.75rem;
   line-height: 1rem;
   font-weight: 500;
+}
+
+/* Colors are declared at zero specificity so Tailwind color utilities
+   (text-background, text-energy-ink, ...) on the same element always win. */
+:where(.type-action) {
+  color: hsl(var(--foreground));
+}
+
+:where(.type-meta) {
   color: hsl(var(--muted-foreground));
 }
+
 
 .app-page-header {
   display: flex;
