@@ -145,7 +145,7 @@ function ExerciseItemCard({
               onClick={onMoveUp}
               disabled={globalIndex === 0}
               aria-label={`Move ${exercise.name} up`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronUp className="h-4 w-4" />
             </button>
@@ -153,7 +153,7 @@ function ExerciseItemCard({
               onClick={onMoveDown}
               disabled={globalIndex === totalExercises - 1}
               aria-label={`Move ${exercise.name} down`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronDown className="h-4 w-4" />
             </button>

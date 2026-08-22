@@ -146,7 +146,7 @@ export default function History() {
 
           {!hasAnyHistory ? (
             <motion.div variants={staggerItem} className="flex flex-col items-center justify-center px-6 py-20 text-center">
-              <Dumbbell size={40} className="mb-4 text-muted-foreground/30" />
+              <Dumbbell size={40} className="mb-4 text-muted-foreground" />
               <p className="type-card-title text-foreground">No workouts yet</p>
               <p className="type-supporting mt-1 max-w-[240px]">
                 Your activity will show up here once you log your first session.
@@ -221,8 +221,8 @@ export default function History() {
                     <motion.div key={dateStr} variants={staggerItem}>
                       <div className={cn(
                         'surface-standard p-4 transition-opacity',
-                        !hasAnyData && !isEditing && 'opacity-40',
-                        isSkipped && 'opacity-60'
+                        !hasAnyData && !isEditing && 'opacity-75',
+                        isSkipped && 'opacity-80'
                       )}>
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div className="flex min-w-0 items-center gap-2">

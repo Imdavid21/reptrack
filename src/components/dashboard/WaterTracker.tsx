@@ -100,7 +100,7 @@ export function WaterTracker() {
           <h2 className="section-header mb-0">{viewingToday ? "Today's water" : `${format(logDate, 'MMM d')} water`}</h2>
           <button
             onClick={() => setIsEditingGoal(!isEditingGoal)}
-            className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors rounded-lg"
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded-lg"
             title="Edit goal"
           >
             <Pencil className="h-3 w-3" />

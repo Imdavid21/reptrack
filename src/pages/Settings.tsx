@@ -202,7 +202,7 @@ export default function Settings() {
                         <Typography variant="body2" fontWeight={600}>Profile Details</Typography>
                         <button
                           onClick={() => setIsEditingProfile(true)}
-                          className="p-1.5 -mr-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                          className="p-1.5 -mr-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                           aria-label="Edit profile"
                           title="Edit profile"
                         >
@@ -377,7 +377,7 @@ export default function Settings() {
                         </Box>
                         <button
                           onClick={() => setIsEditingEmail(true)}
-                          className="p-1.5 -mr-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                          className="p-1.5 -mr-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                           aria-label="Edit email"
                           title="Edit email"
                         >
