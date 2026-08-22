@@ -40,7 +40,6 @@ const TABLE_LABELS: Record<DataTable, string> = {
   exercises: 'Exercises',
   daily_metrics: 'Daily Metrics',
   water_logs: 'Water Logs',
-  caffeine_logs: 'Caffeine Logs',
   meals: 'Meals',
   calorie_burns: 'Calorie Burns',
   habits: 'Habits',
@@ -74,7 +73,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedTables, setSelectedTables] = useState<DataTable[]>([
-    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'caffeine_logs', 'meals',
+    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
     'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
     'goal_history', 'adaptive_lifecycles', 'adaptive_session_logs',
     'training_state', 'readiness_checkins', 'post_workout_checkins',
@@ -340,7 +339,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
 
           {/* Info */}
           <Alert severity="info" sx={{ fontSize: '0.75rem' }}>
-            <strong>Tip:</strong> Export your data regularly as a backup. You can re-import it to restore or transfer to another account.
+            <strong>Tip:</strong> Export your data regularly as a backup. Caffeine is stored with each meal or drink entry and is included automatically in meal exports.
           </Alert>
         </Box>
       </Collapse>
