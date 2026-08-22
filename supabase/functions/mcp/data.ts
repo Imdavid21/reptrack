@@ -6,7 +6,6 @@ type Args = Record<string, any>;
 
 const FALLBACK_PREFS = { timezone: "Asia/Kolkata", units_system: "metric" } as Args;
 
-/** Runs a PostgREST read with retries and surfaces a stable, non-sensitive error category. */
 export async function read<T>(label: string, build: () => any): Promise<T> {
   return await withRetry(label, async () => {
     const { data, error } = await build();
@@ -29,6 +28,7 @@ async function prefs(db: Client) {
     return { ...FALLBACK_PREFS };
   }
 }
+
 const envelope = (start: string, end: string, timezone: string, data: unknown, summary: unknown, metadata: unknown = {}) =>
   ({ start_date: start, end_date: end, timezone, data, summary, metadata });
 
@@ -64,7 +64,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
 
   if (name === "get_workouts") {
     const limit = Math.min(args.limit ?? 50, 50), result = await workoutRows(db, start, end, limit, args);
-    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, session_key:w.session_key, readiness:w.readiness_band, completion_percent:w.completion_percent, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, set_kind:e.set_kind, reps: e.actual_reps, load: e.actual_weight, rir:e.actual_rir, rom_quality:e.rom_quality, pain_score:e.pain_score, completed: e.completed })) }));
+    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, started_at: w.started_at, completed_at: w.completed_at, workout_name: w.day_name, session_key:w.session_key, readiness:w.readiness_band, completion_percent:w.completion_percent, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, set_kind:e.set_kind, reps: e.actual_reps, load: e.actual_weight, rir:e.actual_rir, rom_quality:e.rom_quality, pain_score:e.pain_score, completed: e.completed })) }));
     return envelope(start, end, timezone, data, { workouts_returned: data.length }, { has_more: result.hasMore, limit });
   }
 
@@ -102,7 +102,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
   }
 
   if (name === "get_activity") {
-    const data=await read<any[]>("activity", () => db.from("calorie_burns").select("date,source,activity_type,calories,duration_minutes,distance_km").gte("date",start).lte("date",end).order("date"));
+    const data=await read<any[]>("activity", () => db.from("calorie_burns").select("date,source,activity_type,calories,duration_minutes,distance_km,started_at,ended_at").gte("date",start).lte("date",end).order("date").order("started_at", { ascending: true, nullsFirst: false }));
     return envelope(start,end,timezone,data||[],{active_calories:round((data||[]).reduce((s:number,r:any)=>s+(r.calories||0),0)),activity_minutes:round((data||[]).reduce((s:number,r:any)=>s+(r.duration_minutes||0),0)),distance_km:round((data||[]).reduce((s:number,r:any)=>s+(r.distance_km||0),0))},{unavailable_fields:["steps","heart_rate","BMR","total_expenditure"]});
   }
 
@@ -113,7 +113,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
     const safe=async(tool:string,a:Args)=>{ try { return await executeTool(tool,a,db); } catch(e){ console.error(`[mcp] ${tool} degraded inside ${name}:`,(e as Error).message); return {data:[],summary:{},metadata:{unavailable:true,reason:(e as Error).message}} as any; } };
     const [weights,nutrition,sleep,activity]=await Promise.all([safe("get_bodyweight_history",{start_date:start,end_date:end,limit:365}),safe("get_nutrition",{start_date:start,end_date:end,limit:365}),safe("get_sleep",{start_date:start,end_date:end}),safe("get_activity",{start_date:start,end_date:end})]);
     const summary={starting_weight:weights.summary?.first_weight,ending_weight:weights.summary?.latest_weight,weight_change:weights.summary?.absolute_change,average_calorie_intake:nutrition.summary?.average_calories_per_logged_day,average_protein_g:nutrition.summary?.average_protein_g_per_logged_day,average_caffeine_mg_per_tracked_day:nutrition.summary?.average_caffeine_mg_per_tracked_day,caffeine_tracked_days:nutrition.summary?.caffeine_tracked_days,average_sleep_hours:sleep.summary?.average_sleep_hours,workouts:training.workouts_completed,workouts_per_week:training.training_frequency_per_week,total_sets:training.total_sets,average_workout_duration_minutes:training.average_workout_duration_minutes,active_calories:activity.summary?.active_calories,sets_per_muscle_group:muscle};
-    return envelope(start,end,timezone,name==="get_recent_fitness_data"?{bodyweight:weights.data,nutrition:nutrition.data,sleep:sleep.data,activity:activity.data,workouts:workouts.map((w:any)=>({date:w.date,name:w.day_name,duration_minutes:w.workout_duration_minutes}))}:[],summary,{compact:true});
+    return envelope(start,end,timezone,name==="get_recent_fitness_data"?{bodyweight:weights.data,nutrition:nutrition.data,sleep:sleep.data,activity:activity.data,workouts:workouts.map((w:any)=>({date:w.date,name:w.day_name,started_at:w.started_at,completed_at:w.completed_at,duration_minutes:w.workout_duration_minutes}))}:[],summary,{compact:true});
   }
   throw new Error("UNKNOWN_TOOL");
 }
