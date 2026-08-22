@@ -96,4 +96,16 @@ describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
       expect(TABLE_COLUMNS[link.parentTable]).toBeDefined();
     }
   });
+
+  it('exports the full caffeine record needed for a round-trip', () => {
+    expect(TABLE_COLUMNS.caffeine_logs).toEqual(expect.arrayContaining([
+      'id', 'user_id', 'amount_mg', 'source', 'label', 'timestamp', 'method', 'created_at',
+    ]));
+    expect(NUMERIC_FIELDS.has('amount_mg')).toBe(true);
+  });
+
+  it('exports and parses the caffeine limit as a numeric preference', () => {
+    expect(TABLE_COLUMNS.user_preferences).toContain('daily_caffeine_limit');
+    expect(NUMERIC_FIELDS.has('daily_caffeine_limit')).toBe(true);
+  });
 });
