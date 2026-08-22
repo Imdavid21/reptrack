@@ -36,7 +36,7 @@ export function CaffeineChart() {
   }
 
   if (!chartData.some(day => day.logs > 0)) {
-    return <MuiCard><Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}><Coffee size={14} /><Typography variant="body2" fontWeight={600}>Caffeine</Typography></Box><Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>No caffeine data yet. Log an intake from Today.</Typography></MuiCard>;
+    return <MuiCard><Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}><Coffee size={14} /><Typography variant="body2" fontWeight={600}>Caffeine</Typography></Box><Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>No caffeine data yet. New food and drink logs will include caffeine when it can be assessed.</Typography></MuiCard>;
   }
 
   const tooltip = ({ active, payload, label }: any) => {
@@ -44,9 +44,9 @@ export function CaffeineChart() {
     const day = payload[0].payload;
     return <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, boxShadow: 2, border: 1, borderColor: 'divider', p: 1.5 }}>
       <Typography variant="body2" fontWeight={600}>{label}</Typography>
-      <Typography variant="caption" color="text.secondary" display="block">{Math.round(day.totalMg)} mg · {day.logs} {day.logs === 1 ? 'intake' : 'intakes'}</Typography>
+      <Typography variant="caption" color="text.secondary" display="block">{Math.round(day.totalMg)} mg · {day.logs} tracked food/drink {day.logs === 1 ? 'log' : 'logs'}</Typography>
       <Typography variant="caption" color="text.secondary" display="block">Limit on this day: {Math.round(day.limit)} mg</Typography>
-      {day.lastIntakeAt && <Typography variant="caption" color="text.secondary" display="block">Last intake: {format(new Date(day.lastIntakeAt), 'h:mm a')}</Typography>}
+      {day.lastIntakeAt && <Typography variant="caption" color="text.secondary" display="block">Latest caffeinated log: {format(new Date(day.lastIntakeAt), 'h:mm a')}</Typography>}
     </Box>;
   };
 
