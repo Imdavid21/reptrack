@@ -108,6 +108,11 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'lat pulldowns': 'Lat Pulldown',
   'reverse grip lat pulldown': 'Lat Pulldown',
   'wide grip lat pulldown': 'Lat Pulldown',
+  'neutral grip lat pulldown': 'Lat Pulldown',
+  'neutral grip pulldown': 'Lat Pulldown',
+  'pulldown': 'Lat Pulldown',
+  'pulldowns': 'Lat Pulldown',
+
   'db lateral raise': 'Lateral Raises',
   'dumbbell lateral raise': 'Lateral Raises',
   'dumbbell lateral raises': 'Lateral Raises',
