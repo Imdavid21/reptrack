@@ -17,6 +17,7 @@ export interface Meal {
   sugar: number | null;
   sodium: number | null;
   potassium: number | null;
+  caffeine_mg: number | null;
   photo_url: string | null;
   ai_detected_food: string | null;
   ai_confidence: number | null;
@@ -51,6 +52,14 @@ export function useMeals(date?: Date) {
     enabled: !!user,
   });
 
+  const invalidateNutrition = () => {
+    queryClient.invalidateQueries({ queryKey: ['meals'] });
+    queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+    queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+    queryClient.invalidateQueries({ queryKey: ['caffeineData'] });
+    queryClient.invalidateQueries({ queryKey: ['dataroom-caffeine'] });
+  };
+
   const addMeal = useMutation({
     mutationFn: async (meal: {
       meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -63,6 +72,7 @@ export function useMeals(date?: Date) {
       sugar?: number;
       sodium?: number;
       potassium?: number;
+      caffeine_mg?: number;
       photo_url?: string;
       ai_detected_food?: string;
       ai_confidence?: number;
@@ -89,11 +99,7 @@ export function useMeals(date?: Date) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
-      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
-    },
+    onSuccess: invalidateNutrition,
   });
 
   const updateMeal = useMutation({
@@ -110,11 +116,7 @@ export function useMeals(date?: Date) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
-      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
-    },
+    onSuccess: invalidateNutrition,
   });
 
   const deleteMeal = useMutation({
@@ -128,14 +130,11 @@ export function useMeals(date?: Date) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['meals'] });
-      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
-      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
-    },
+    onSuccess: invalidateNutrition,
   });
 
   const totalCalories = query.data?.reduce((sum, meal) => sum + (meal.calories || 0), 0) ?? 0;
+  const totalCaffeine = query.data?.reduce((sum, meal) => sum + Number(meal.caffeine_mg || 0), 0) ?? 0;
   const mealsByType = {
     breakfast: query.data?.filter(m => m.meal_type === 'breakfast') ?? [],
     lunch: query.data?.filter(m => m.meal_type === 'lunch') ?? [],
@@ -147,6 +146,7 @@ export function useMeals(date?: Date) {
     meals: query.data ?? [],
     mealsByType,
     totalCalories,
+    totalCaffeine,
     isLoading: query.isLoading,
     addMeal: addMeal.mutateAsync,
     updateMeal: updateMeal.mutateAsync,
