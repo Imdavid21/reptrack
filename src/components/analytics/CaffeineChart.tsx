@@ -41,10 +41,15 @@ export function CaffeineChart() {
   const tooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const day = payload[0].payload;
+    const lastIntake = day.lastIntakeAt ? new Date(day.lastIntakeAt) : null;
+    const lastIntakeLabel = lastIntake && !Number.isNaN(lastIntake.getTime())
+      ? lastIntake.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : null;
     return <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, boxShadow: 2, border: 1, borderColor: 'divider', p: 1.5 }}>
       <Typography variant="body2" fontWeight={600}>{label}</Typography>
       <Typography variant="caption" color="text.secondary" display="block">{Math.round(day.totalMg)} mg · {day.logs} tracked food/drink {day.logs === 1 ? 'log' : 'logs'}</Typography>
       <Typography variant="caption" color="text.secondary" display="block">Limit on this day: {Math.round(day.limit)} mg</Typography>
+      {lastIntakeLabel && <Typography variant="caption" color="text.secondary" display="block">Latest caffeine: {lastIntakeLabel}</Typography>}
     </Box>;
   };
 
