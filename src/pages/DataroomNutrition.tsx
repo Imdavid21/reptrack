@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { eachDayOfInterval, format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
 import { DailyBars, EvidenceMatrix, MiniSparkline, VisualSection } from '@/components/dataroom/MobileDataVisuals';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
 
-type NutritionPoint = { date: string; label: string; calories: number | null; protein: number | null; carbs: number | null; fat: number | null; fiber: number | null };
+type NutritionPoint = { [key: string]: string | number | null; date: string; label: string; calories: number | null; protein: number | null; carbs: number | null; fat: number | null; fiber: number | null };
 
 function average(values: Array<number | null>) {
   const present = values.filter((value): value is number => value != null && Number.isFinite(value));
@@ -13,6 +14,7 @@ function average(values: Array<number | null>) {
 }
 
 function NutritionContent() {
+  const navigate = useNavigate();
   const { days, dateRange } = useDataroomRange();
   const data = useDataroomData(dateRange);
   const nutrition = data.analysis?.nutrition;
@@ -33,10 +35,10 @@ function NutritionContent() {
   }, [daily, days]);
   const aggregationLabel = days > 90 ? 'Weekly average of logged days' : 'Recorded by day';
   const macroSeries = [
-    { label: 'Protein', values: display.map(day => day.protein), value: nutrition?.averageProtein == null ? '—' : `${nutrition.averageProtein} g` },
-    { label: 'Carbs', values: display.map(day => day.carbs), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.carbs, 0) / data.meals.length)} g` : '—' },
-    { label: 'Fat', values: display.map(day => day.fat), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.fat, 0) / data.meals.length)} g` : '—' },
-    { label: 'Fibre', values: display.map(day => day.fiber), value: nutrition?.averageFiber == null ? '—' : `${nutrition.averageFiber} g` },
+    { label: 'Protein', values: display.map(day => day.protein as number | null), value: nutrition?.averageProtein == null ? '—' : `${nutrition.averageProtein} g` },
+    { label: 'Carbs', values: display.map(day => day.carbs as number | null), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.carbs, 0) / data.meals.length)} g` : '—' },
+    { label: 'Fat', values: display.map(day => day.fat as number | null), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.fat, 0) / data.meals.length)} g` : '—' },
+    { label: 'Fibre', values: display.map(day => day.fiber as number | null), value: nutrition?.averageFiber == null ? '—' : `${nutrition.averageFiber} g` },
   ];
 
   return <div className="space-y-9">
@@ -47,7 +49,7 @@ function NutritionContent() {
       <div><div className="type-caption">Fibre</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.averageFiber == null ? 'Need data' : `${nutrition.averageFiber} g`}</div><div className="type-caption mt-0.5">logged-day average</div></div>
     </section>
 
-    <VisualSection title="Logging coverage" description="Filled periods contain food records. Blank periods are unknown, not zero intake."><EvidenceMatrix dates={dates} rows={[{ label: 'Food', observed: loggedDates }]} /></VisualSection>
+    <VisualSection title="Logging coverage" description="Filled periods contain food records. Blank periods are unknown, not zero intake."><EvidenceMatrix dates={dates} rows={[{ label: 'Food', observed: loggedDates }]} onSelect={() => navigate('/app/dataroom/timeline')} /></VisualSection>
 
     <VisualSection title="Protein consistency" description={`${aggregationLabel}. Missing evidence remains blank.`}><DailyBars data={display} valueKey="protein" label={days > 90 ? 'Avg protein / logged day' : 'Protein'} goal={proteinTarget || null} suffix=" g" tone="nutrition" /></VisualSection>
 
