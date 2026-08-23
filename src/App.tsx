@@ -9,7 +9,6 @@ import { Toaster } from "sonner";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 
-// Public pages
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -17,7 +16,6 @@ import Privacy from "./pages/Privacy";
 import Changelog from "./pages/Changelog";
 import OAuthConsent from "./pages/OAuthConsent";
 
-// Authenticated product surfaces
 import AppIndex from "./pages/AppIndex";
 import AdaptiveWorkout from "./pages/AdaptiveWorkout";
 import Progress from "./pages/Progress";
@@ -25,6 +23,7 @@ import History from "./pages/History";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Insights from "./pages/Insights";
 import Dataroom from "./pages/Dataroom";
+import SettingsHome from "./pages/SettingsHome";
 import Settings from "./pages/Settings";
 import LifecycleTracker from "./pages/LifecycleTracker";
 import McpStatus from "./pages/McpStatus";
@@ -56,7 +55,6 @@ const queryClient = new QueryClient({
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public */}
       <Route path="/" element={<RootRoute />} />
       <Route path="/signin" element={<Auth />} />
       <Route path="/signup" element={<Auth />} />
@@ -64,7 +62,6 @@ function AppRoutes() {
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
 
-      {/* Three-destination authenticated information architecture */}
       <Route path="/app" element={<AppIndex />} />
       <Route path="/app/train" element={<AdaptiveWorkout />} />
       <Route path="/app/train/current" element={<AdaptiveWorkout />} />
@@ -72,21 +69,18 @@ function AppRoutes() {
       <Route path="/app/progress/history" element={<History />} />
       <Route path="/app/progress/workout/:workoutId" element={<WorkoutDetail />} />
 
-      {/* Deeper Progress views retain existing proven implementations. */}
       <Route path="/app/progress/analytics" element={<Insights />} />
       <Route path="/app/progress/training" element={<Insights />} />
       <Route path="/app/progress/recovery" element={<Insights />} />
       <Route path="/app/progress/nutrition" element={<Insights />} />
       <Route path="/app/progress/dataroom" element={<Dataroom />} />
 
-      {/* Administration. Engineering surfaces stay out of primary navigation. */}
-      <Route path="/app/settings" element={<Settings />} />
+      <Route path="/app/settings" element={<SettingsHome />} />
       <Route path="/app/settings/data" element={<Settings />} />
       <Route path="/app/settings/advanced" element={<Settings />} />
       <Route path="/app/settings/mcp" element={<McpStatus />} />
       <Route path="/app/settings/lifecycle" element={<LifecycleTracker />} />
 
-      {/* Existing authenticated deep links remain valid. */}
       <Route path="/app/log" element={<Navigate to="/app/train" replace />} />
       <Route path="/app/history" element={<Navigate to="/app/progress/history" replace />} />
       <Route path="/app/history/:workoutId" element={<LegacyWorkoutDetailRedirect />} />
@@ -95,7 +89,6 @@ function AppRoutes() {
       <Route path="/app/lifecycle" element={<Navigate to="/app/settings/lifecycle" replace />} />
       <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
-      {/* Legacy public-era shortcuts */}
       <Route path="/log" element={<Navigate to="/app/train" replace />} />
       <Route path="/create" element={<Navigate to="/app/train" replace />} />
       <Route path="/insights" element={<Navigate to="/app/progress" replace />} />
@@ -122,11 +115,7 @@ function MuiThemedApp() {
   return (
     <MuiThemeProvider theme={isDark ? darkTheme : lightTheme}>
       <CssBaseline />
-      <Toaster
-        theme={isDark ? "dark" : "light"}
-        position="top-center"
-        closeButton
-      />
+      <Toaster theme={isDark ? "dark" : "light"} position="top-center" closeButton />
       <BrowserRouter>
         <OfflineBanner />
         {isStandalone && <PWAUpdatePrompt />}
