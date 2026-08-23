@@ -54,14 +54,14 @@ describe('PR transferability', () => {
     expect(getPrTransferability('Single-Arm Lat Pulldown', 'Single-Arm Kneeling Lat Pulldown')).toBe('comparable');
   });
 
-  it('keeps machine/free-weight and leverage-changing alternatives as context only', () => {
+  it('keeps machine/free-weight variants as context rather than a shared PR', () => {
     expect(getPrTransferability('Barbell Bench Press', 'Machine Chest Press')).toBe('context');
-    expect(getPrTransferability('Barbell Squat', 'Leg Press')).toBe('context');
     expect(getPrTransferability('Barbell Row', 'T-Bar Row')).toBe('context');
     expect(getPrTransferability('Pec Deck', 'Cable Flyes')).toBe('context');
   });
 
-  it('does not transfer inverse or incompatible PR metrics', () => {
+  it('does not transfer PR numbers across deliberately incompatible alternatives', () => {
+    expect(getPrTransferability('Barbell Squat', 'Leg Press')).toBe('none');
     expect(getPrTransferability('Pull-ups', 'Assisted Pull-ups')).toBe('none');
     expect(getPrTransferability('Pull-ups', 'Weighted Pull-ups')).toBe('none');
   });
