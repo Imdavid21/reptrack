@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Box, Button, Checkbox, Dialog, DialogContent, IconButton, TextField, Typography } from '@mui/material';
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, Dumbbell, Gauge, ListChecks, Pause, Pencil, Play, RefreshCw, SkipForward, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, Dumbbell, Gauge, ListChecks, MessageSquare, Pause, Pencil, Play, RefreshCw, SkipForward, X } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { ExerciseReview } from '@/components/workout/ExerciseReview';
