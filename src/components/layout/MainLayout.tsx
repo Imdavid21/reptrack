@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from './BottomNav';
+import { GlobalRestTimerBar } from '@/components/workout/GlobalRestTimerBar';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -31,31 +32,16 @@ export function MainLayout({ children, showBack, backTo, hideNav = false, wide =
       {showBack && (
         <Box component="header" sx={{ px: { xs: 2, md: 3 }, pt: 1, pb: 0 }}>
           <Box sx={{ width: '100%', maxWidth: wide ? 1120 : 760, mx: 'auto' }}>
-            <button
-              onClick={handleBack}
-              aria-label="Go back"
-              className="flex h-11 w-11 -ml-2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
+            <button onClick={handleBack} aria-label="Go back" className="flex h-11 w-11 -ml-2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
               <ChevronLeft size={21} />
             </button>
           </Box>
         </Box>
       )}
-      <Box
-        component="main"
-        sx={{
-          px: { xs: 2, sm: 2.5, md: 3 },
-          pt: showBack ? 1 : { xs: 2, md: 3 },
-          pb: 2,
-          width: '100%',
-          minWidth: 0,
-          overflowX: 'clip',
-        }}
-      >
-        <Box sx={{ width: '100%', maxWidth: wide ? 1120 : 760, mx: 'auto' }}>
-          {children}
-        </Box>
+      <Box component="main" sx={{ px: { xs: 2, sm: 2.5, md: 3 }, pt: showBack ? 1 : { xs: 2, md: 3 }, pb: 2, width: '100%', minWidth: 0, overflowX: 'clip' }}>
+        <Box sx={{ width: '100%', maxWidth: wide ? 1120 : 760, mx: 'auto' }}>{children}</Box>
       </Box>
+      <GlobalRestTimerBar />
       {!hideNav && <BottomNav />}
     </Box>
   );
