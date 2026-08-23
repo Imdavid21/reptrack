@@ -65,9 +65,6 @@ export function CalorieTrackerCompact() {
 
   const calorieTarget = energy.model?.calorieTarget ?? preferences?.daily_calorie_goal ?? 2000;
   const proteinTarget = energy.model?.proteinTarget ?? preferences?.daily_protein_goal ?? 165;
-  const carbTarget = preferences?.daily_carbs_goal ?? 200;
-  const fatTarget = preferences?.daily_fat_goal ?? 60;
-  const fiberTarget = preferences?.daily_fiber_goal ?? 25;
 
   const macros = useMemo(() => meals.reduce((acc, meal) => ({
     protein: acc.protein + Number(meal.protein || 0),
@@ -133,7 +130,11 @@ export function CalorieTrackerCompact() {
     const valid = foods.filter(food => food.name.trim() && Number(food.calories) > 0);
     const sum = (key: keyof EditableFood) => valid.reduce((total, food) => total + Number(food[key] || 0), 0);
     return {
-      calories: sum('calories'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'),
+      calories: sum('calories'),
+      protein: sum('protein'),
+      carbs: sum('carbs'),
+      fat: sum('fat'),
+      fiber: sum('fiber'),
     };
   }, [foods]);
 
@@ -165,7 +166,10 @@ export function CalorieTrackerCompact() {
 
   const saveManual = async () => {
     const calories = Number(manual.calories);
-    if (!manual.name.trim() || !Number.isFinite(calories) || calories <= 0) { setError('Enter a food name and calories.'); return; }
+    if (!manual.name.trim() || !Number.isFinite(calories) || calories <= 0) {
+      setError('Enter a food name and calories.');
+      return;
+    }
     setError(null);
     try {
       await addMeal({
@@ -187,21 +191,43 @@ export function CalorieTrackerCompact() {
   };
 
   return <>
-    <input ref={cameraRef} className="hidden" type="file" accept="image/*" capture="environment" onChange={event => { const file = event.target.files?.[0]; if (file) void analyzePhoto(file); event.target.value = ''; }} />
+    <input
+      ref={cameraRef}
+      className="hidden"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      onChange={event => {
+        const file = event.target.files?.[0];
+        if (file) void analyzePhoto(file);
+        event.target.value = '';
+      }}
+    />
 
     <section className="rounded-[20px] border border-border bg-card overflow-hidden" aria-labelledby="nutrition-today-heading">
       <div className="p-4">
-        <div className="flex items-center justify-between gap-3"><div><h2 id="nutrition-today-heading" className="type-eyebrow">Food</h2><div className="mt-1 flex items-baseline gap-1.5"><span className="text-3xl font-semibold tabular-nums">{totalCalories.toLocaleString()}</span><span className="text-sm text-muted-foreground tabular-nums">/ {calorieTarget.toLocaleString()} kcal</span></div></div><Utensils className="h-4 w-4 text-muted-foreground" /></div>
-        <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${progress(totalCalories, calorieTarget)}%` }} /></div>
-
-        <div className="mt-4 border-t border-border pt-4">
-          <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Protein</span><span className="text-sm font-semibold tabular-nums">{Math.round(macros.protein)} / {proteinTarget} g</span></div>
-          <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${progress(macros.protein, proteinTarget)}%` }} /></div>
-          <div className="mt-1 type-caption text-right tabular-nums">{macros.protein >= proteinTarget ? `${Math.round(macros.protein - proteinTarget)} g over` : `${Math.round(proteinTarget - macros.protein)} g remaining`}</div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 id="nutrition-today-heading" className="type-eyebrow">Food</h2>
+            {meals.length === 0 ? (
+              <div className="mt-1"><div className="text-lg font-semibold">Nothing logged today.</div><p className="type-caption mt-1">Add food when you have something to record.</p></div>
+            ) : (
+              <div className="mt-1 flex items-baseline gap-1.5"><span className="text-3xl font-semibold tabular-nums">{totalCalories.toLocaleString()}</span><span className="text-sm text-muted-foreground tabular-nums">/ {calorieTarget.toLocaleString()} kcal</span></div>
+            )}
+          </div>
+          <Utensils className="h-4 w-4 text-muted-foreground mt-1" />
         </div>
 
-        <button onClick={() => setDetailsOpen(value => !value)} className="mt-3 min-h-10 w-full flex items-center justify-between text-sm text-muted-foreground hover:text-foreground"><span>Carbs {Math.round(macros.carbs)}/{carbTarget} g · Fat {Math.round(macros.fat)}/{fatTarget} g · Fibre {Math.round(macros.fiber)}/{fiberTarget} g</span>{detailsOpen ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}</button>
-        {detailsOpen && <div className="mt-2 border-t border-border divide-y divide-border">{meals.length ? meals.map(meal => <div key={meal.id} className="py-3 flex items-start gap-3"><div className="min-w-0 flex-1"><div className="text-sm font-medium break-words">{meal.food_name || meal.ai_detected_food || 'Meal'}</div><div className="type-caption mt-0.5 capitalize">{meal.meal_type} · {meal.calories || 0} kcal{meal.protein ? ` · ${Math.round(meal.protein)} g protein` : ''}</div></div><button onClick={async () => { try { await deleteMeal(meal.id); } catch { /* row remains if query refresh fails */ } }} aria-label={`Delete ${meal.food_name || 'meal'}`} className="h-10 w-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted"><Trash2 className="h-4 w-4"/></button></div>) : <p className="py-4 text-sm text-muted-foreground">Nothing logged today.</p>}</div>}
+        {meals.length > 0 && <>
+          <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${progress(totalCalories, calorieTarget)}%` }} /></div>
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Protein</span><span className="text-sm font-semibold tabular-nums">{Math.round(macros.protein)} / {proteinTarget} g</span></div>
+            <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${progress(macros.protein, proteinTarget)}%` }} /></div>
+            <div className="mt-1 type-caption text-right tabular-nums">{macros.protein >= proteinTarget ? `${Math.round(macros.protein - proteinTarget)} g over` : `${Math.round(proteinTarget - macros.protein)} g remaining`}</div>
+          </div>
+          <button onClick={() => setDetailsOpen(value => !value)} className="mt-3 min-h-10 w-full flex items-center justify-between gap-3 text-sm text-muted-foreground hover:text-foreground text-left"><span className="tabular-nums">Carbs {Math.round(macros.carbs)} g · Fat {Math.round(macros.fat)} g · Fibre {Math.round(macros.fiber)} g</span>{detailsOpen ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}</button>
+          {detailsOpen && <div className="mt-2 border-t border-border divide-y divide-border">{meals.map(meal => <div key={meal.id} className="py-3 flex items-start gap-3"><div className="min-w-0 flex-1"><div className="text-sm font-medium break-words">{meal.food_name || meal.ai_detected_food || 'Meal'}</div><div className="type-caption mt-0.5 capitalize">{meal.meal_type} · {meal.calories || 0} kcal{meal.protein ? ` · ${Math.round(meal.protein)} g protein` : ''}</div></div><button onClick={async () => { try { await deleteMeal(meal.id); } catch { /* existing row remains authoritative on refetch */ } }} aria-label={`Delete ${meal.food_name || 'meal'}`} className="h-10 w-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted"><Trash2 className="h-4 w-4"/></button></div>)}</div>}
+        </>}
       </div>
 
       <div className="border-t border-border p-3 flex gap-2">
