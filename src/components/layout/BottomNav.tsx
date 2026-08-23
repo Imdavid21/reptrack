@@ -1,6 +1,6 @@
 import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, History, TrendingUp, Database } from 'lucide-react';
+import { Home, Dumbbell, History, TrendingUp } from 'lucide-react';
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -11,11 +11,10 @@ export function BottomNav() {
     { path: '/app/log', icon: Dumbbell, label: 'Train' },
     { path: '/app/history', icon: History, label: 'History' },
     { path: '/app/insights', icon: TrendingUp, label: 'Trends' },
-    { path: '/app/dataroom', icon: Database, label: 'Data' },
   ];
 
   const currentPath = location.pathname;
-  const currentValue = navItems.findIndex(item =>
+  const currentValue = currentPath === '/app/dataroom' ? 3 : navItems.findIndex(item =>
     item.path === currentPath ||
     (item.path !== '/app' && currentPath.startsWith(item.path))
   );
@@ -63,17 +62,18 @@ export function BottomNav() {
             '&.Mui-selected': {
               color: 'hsl(var(--foreground))',
             },
+            // Accent dot above the active tab's icon
             '&.Mui-selected .nav-dot': {
               opacity: 1,
             },
           },
           '& .MuiBottomNavigationAction-label': {
-            fontSize: '0.7rem',
+            fontSize: '0.75rem',
             fontFamily: 'inherit',
-            letterSpacing: '0.01em',
+            letterSpacing: '0.02em',
             mt: 0.25,
             '&.Mui-selected': {
-              fontSize: '0.7rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
             },
           },

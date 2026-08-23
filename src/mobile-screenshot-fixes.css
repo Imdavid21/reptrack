@@ -1,0 +1,30 @@
+/* Narrow-screen fixes for workout and Today surfaces. */
+
+/* Workout progress should reserve the green energy accent for completed work.
+   The currently selected exercise remains neutral until it is completed. */
+button[aria-label^="Go to exercise"].bg-energy\/50 {
+  background-color: hsl(var(--muted));
+}
+
+@media (max-width: 420px) {
+  /* Keep the Today nutrition card inside the viewport even when macro targets
+     contain longer values such as 2300 mg or 3400 mg. */
+  #nutrition,
+  #nutrition > *,
+  #nutrition .surface-standard {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #nutrition .grid-cols-3 > * {
+    min-width: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  #nutrition .grid-cols-3 .whitespace-nowrap {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+  }
+}
