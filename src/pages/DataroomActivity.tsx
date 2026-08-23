@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 import { eachDayOfInterval, format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
 import { ActivityBars, EvidenceMatrix, SymmetryGauge, VisualSection } from '@/components/dataroom/MobileDataVisuals';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
 
 function ActivityContent() {
+  const navigate = useNavigate();
   const { dateRange } = useDataroomRange();
   const data = useDataroomData(dateRange);
   const grouped = new Map<string, { minutes: number; sessions: number }>();
@@ -22,7 +24,7 @@ function ActivityContent() {
       {activityRows.length ? <ActivityBars rows={activityRows.map(([kind, row]) => ({ label: kind.replace(/_/g, ' '), value: row.minutes, detail: `${row.sessions} recorded session${row.sessions === 1 ? '' : 's'}` }))} /> : <div className="border-y border-border py-8 text-center type-caption">No manual activities in this range.</div>}
     </VisualSection>
 
-    <VisualSection title="Activity evidence" description="Filled periods contain at least one recorded manual activity."><EvidenceMatrix dates={dates} rows={[{ label: 'Activity', observed: activityDates }]} /></VisualSection>
+    <VisualSection title="Activity evidence" description="Filled periods contain at least one recorded manual activity."><EvidenceMatrix dates={dates} rows={[{ label: 'Activity', observed: activityDates }]} onSelect={() => navigate('/app/dataroom/timeline')} /></VisualSection>
 
     <VisualSection title="Left-right mobility" description="Each pair shares one zero-based scale. The bars compare recorded sides without turning the difference into a score.">
       {latestMobility ? <div className="space-y-5"><SymmetryGauge label="Knee-to-wall" left={latestMobility.knee_to_wall_left_cm} right={latestMobility.knee_to_wall_right_cm} unit=" cm" /><SymmetryGauge label="Hip 90/90" left={latestMobility.hip_90_90_left} right={latestMobility.hip_90_90_right} /></div> : <div className="border-y border-border py-8 text-center type-caption">No mobility assessments in this range.</div>}
