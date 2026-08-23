@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, MoreHorizontal, Plus, SkipForward } from 'lucide-react';
-import type { WorkoutExercise } from '@/hooks/useWorkouts';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, MoreHorizontal, Plus, SkipForward } from 'lucide-react';
+import type { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { RestTimer } from './RestTimer';
@@ -16,6 +16,7 @@ import {
 import { getExerciseRelationships, getPrTransferability } from '@/lib/exerciseRelationships';
 import { getExerciseVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
 import { readDevicePreference } from '@/hooks/useDevicePreferences';
+import { useActiveWorkoutEnvironment } from '@/hooks/useActiveWorkoutEnvironment';
 
 interface PersonalRecord {
   maxWeight: number;
@@ -106,6 +107,7 @@ export function SetBySetCard({
   const [timedSeconds, setTimedSeconds] = useState(0);
   const timedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const environment = useActiveWorkoutEnvironment();
 
   const exType = exercise.exerciseType || 'weighted';
   const isTimed = exType === 'timed';
@@ -136,7 +138,8 @@ export function SetBySetCard({
     return () => {
       cancelled = true;
       document.removeEventListener('visibilitychange', onVisibility);
-      void wakeLockRef.current?.release?.().catch?.(() => {});
+      const release = wakeLockRef.current?.release?.();
+      if (release && typeof release.catch === 'function') release.catch(() => {});
       wakeLockRef.current = null;
     };
   }, []);
@@ -185,12 +188,12 @@ export function SetBySetCard({
   const equipment = getEquipmentType(exercise.name);
   const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipment);
 
-  const patchSet = (patch: Partial<typeof currentSet>) => {
+  const patchSet = (patch: Partial<ExerciseSet>) => {
     const sets = exercise.sets.map((set, index) => index === currentSetIndex ? { ...set, ...patch } : set);
     onChange({ ...exercise, sets });
   };
 
-  const setWeight = (value: number) => patchSet({ actualWeight: numberLabel(Math.max(isWeightedBW ? 0 : 0, value)) });
+  const setWeight = (value: number) => patchSet({ actualWeight: numberLabel(Math.max(0, value)) });
   const setReps = (value: number) => patchSet({ actualReps: String(Math.max(0, Math.round(value))) });
   const setTime = (value: number) => patchSet({ actualTime: Math.max(0, Math.round(value)) });
 
@@ -247,7 +250,7 @@ export function SetBySetCard({
   const addSet = () => {
     const lastCompleted = [...exercise.sets].reverse().find(set => set.completed);
     const last = exercise.sets[exercise.sets.length - 1];
-    const next = {
+    const next: ExerciseSet = {
       setNumber: last.setNumber + 1,
       targetWeight: lastCompleted?.actualWeight || last.targetWeight,
       targetReps: lastCompleted?.actualReps || last.targetReps,
@@ -283,11 +286,7 @@ export function SetBySetCard({
   const replaceWith = (name: string) => {
     const transfer = getPrTransferability(exercise.name, name);
     const keepLoad = transfer === 'shared' || transfer === 'comparable';
-    const sets = exercise.sets.map(set => ({
-      ...set,
-      targetWeight: keepLoad ? set.targetWeight : '',
-      actualWeight: keepLoad ? set.actualWeight : '',
-    }));
+    const sets = exercise.sets.map(set => ({ ...set, targetWeight: keepLoad ? set.targetWeight : '', actualWeight: keepLoad ? set.actualWeight : '' }));
     onChange({ ...exercise, name, sets });
     haptic('medium');
   };
@@ -310,7 +309,7 @@ export function SetBySetCard({
     ? showWeight ? `${numberLabel(previous.weight)} ${weightLabel.replace('+', '')} × ${previous.reps}` : `${previous.reps} reps`
     : 'First logged session';
   const targetLabel = isTimed
-    ? `${formatTime(baseTime)}`
+    ? formatTime(baseTime)
     : `${showWeight && currentSet.targetWeight ? `${currentSet.targetWeight} ${weightLabel.replace('+', '')} · ` : ''}${currentSet.targetReps || `${baseReps} reps`}`;
 
   const completeOrAdvance = () => {
@@ -327,8 +326,12 @@ export function SetBySetCard({
         <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>
           {Array.from({ length: totalExercises }).map((_, index) => <button key={index} onClick={() => onJumpToExercise?.(index)} aria-label={`Go to exercise ${index + 1}`} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}
         </div>
-        {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
+        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
+        {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums hidden sm:inline">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
       </div>
+
+      {environment.otherTabActive && <div className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5 flex gap-2 text-sm" role="status"><AlertTriangle className="h-4 w-4 mt-0.5 shrink-0"/><div><div className="font-semibold">Workout is open in another tab.</div><div className="text-xs text-muted-foreground mt-0.5">Use one tab for set edits to avoid conflicting local draft state.</div></div></div>}
+      {environment.unusuallyLong && <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm"><span className="font-semibold">Workout has been running for {environment.elapsedLabel}.</span><span className="text-muted-foreground"> If you are still training, continue normally. RepTrack will not auto-finish it.</span></div>}
 
       <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
