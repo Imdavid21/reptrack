@@ -1,0 +1,47 @@
+name: Frontend quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+      - 'overhaul/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # The repository lockfile predates several existing package.json changes.
+      # Install from package.json without rewriting the checked-in lockfile so
+      # this workflow can validate the frontend without sneaking dependency
+      # churn into the product-overhaul PR.
+      - run: npm install --package-lock=false --no-audit --no-fund
+      - run: npm run test
+      - run: npm run build
+      - name: Lint changed TypeScript
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "main" && -z "${GITHUB_BASE_REF}" ]]; then
+            base="HEAD^"
+          else
+            base_ref="${GITHUB_BASE_REF:-main}"
+            git fetch origin "$base_ref"
+            base="origin/$base_ref"
+          fi
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$base...HEAD" -- '*.ts' '*.tsx')
+          if (( ${#files[@]} == 0 )); then
+            echo "No changed TypeScript files to lint."
+            exit 0
+          fi
+          printf 'Linting %s changed TypeScript files\n' "${#files[@]}"
+          npx eslint "${files[@]}"

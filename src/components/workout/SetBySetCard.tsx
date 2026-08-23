@@ -1,17 +1,23 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { WorkoutExercise } from '@/hooks/useWorkouts';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, History, MoreHorizontal, Plus, SkipForward, Trash2, Undo2 } from 'lucide-react';
+import type { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
-import { Plus, ArrowLeftRight, ChevronLeft, Check, SkipForward, Timer, RefreshCw } from 'lucide-react';
-import { getExerciseVariants, hasVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
-import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
 import { RestTimer } from './RestTimer';
+import { ExerciseHistorySheet } from './ExerciseHistorySheet';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getExerciseRelationships, getPrTransferability } from '@/lib/exerciseRelationships';
+import { getExerciseVariants, getEquipmentType, getWeightLabel } from '@/lib/exerciseVariants';
+import { readDevicePreference } from '@/hooks/useDevicePreferences';
+import { useActiveWorkoutEnvironment } from '@/hooks/useActiveWorkoutEnvironment';
 
 interface PersonalRecord {
   maxWeight: number;
@@ -23,18 +29,12 @@ interface PersonalRecord {
 interface FamilyRecord extends PersonalRecord {
   exerciseName: string;
   familyLabel: string;
+  transferability?: 'comparable';
 }
 
-interface LastUsedSetData {
-  weight: number;
-  reps: number;
-}
-
-interface LastUsedData {
-  weight: number;
-  reps: number;
-  perSet?: LastUsedSetData[];
-}
+interface LastUsedSetData { weight: number; reps: number }
+interface LastUsedData { weight: number; reps: number; perSet?: LastUsedSetData[] }
+interface WakeLockSentinelLike { release?: () => Promise<void> | void }
 
 interface SetBySetCardProps {
   exercise: WorkoutExercise;
@@ -54,26 +54,31 @@ interface SetBySetCardProps {
   isFirstExercise: boolean;
   isLastExercise: boolean;
   personalRecord?: PersonalRecord;
-  /** Best comparable lift elsewhere in the same movement family. Shown only
-   *  as progression context when this exact variation has no record yet - it
-   *  never stands in for, or overwrites, the variation's own PR. */
   familyRecord?: FamilyRecord;
   lastUsed?: LastUsedData;
   workoutBias?: 'heavy' | 'volume';
-  /** Settings fallback used only when no exercise-specific or bias-derived
-   *  rest duration applies - see getDefaultRest(). Defaults to 90. */
   defaultRestSeconds?: number;
-  /** Whether completing a set should automatically pop the rest timer.
-   *  Defaults to true (existing behavior) when not provided. */
   autoRestTimer?: boolean;
 }
 
-function formatTime(seconds: number): string {
+function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  if (m > 0 && s > 0) return `${m}m ${s}s`;
-  if (m > 0) return `${m}m`;
-  return `${s}s`;
+  return m ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
+}
+
+function numberLabel(value: number) {
+  if (!Number.isFinite(value)) return '0';
+  return Number(value.toFixed(2)).toString();
+}
+
+function parseTargetReps(value: string) {
+  const match = value.match(/\d+/);
+  return match ? Number(match[0]) : 8;
+}
+
+function renumberSets(sets: ExerciseSet[]) {
+  return sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
 }
 
 export function SetBySetCard({
@@ -101,142 +106,119 @@ export function SetBySetCard({
   autoRestTimer = true,
 }: SetBySetCardProps) {
   const currentSet = exercise.sets[currentSetIndex];
-  const isLastSet = currentSetIndex === exercise.sets.length - 1;
-  const isFirstSet = currentSetIndex === 0;
-  const prevSet = currentSetIndex > 0 ? exercise.sets[currentSetIndex - 1] : null;
-  const [showWeightInput, setShowWeightInput] = useState(false);
-  const [showRepsInput, setShowRepsInput] = useState(false);
-  const [showTimeInput, setShowTimeInput] = useState(false);
-  const [showRestTimer, setShowRestTimer] = useState(false);
-  const [restDuration, setRestDuration] = useState(90);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [editing, setEditing] = useState<'weight' | 'reps' | 'time' | null>(null);
+  const [restOpen, setRestOpen] = useState(false);
+  const [restDuration, setRestDuration] = useState(defaultRestSeconds);
+  const [timedRunning, setTimedRunning] = useState(false);
+  const [timedSeconds, setTimedSeconds] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [finishConfirm, setFinishConfirm] = useState(false);
+  const [removedSet, setRemovedSet] = useState<{ set: ExerciseSet; index: number } | null>(null);
+  const timedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
+  const environment = useActiveWorkoutEnvironment();
 
   const exType = exercise.exerciseType || 'weighted';
   const isTimed = exType === 'timed';
   const isBodyweight = exType === 'bodyweight';
   const isWeightedBW = exType === 'weighted_bw';
-  const showWeight = exType === 'weighted' || exType === 'weighted_bw';
-  const showReps = exType === 'weighted' || exType === 'bodyweight' || exType === 'weighted_bw';
-
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  const showWeight = exType === 'weighted' || isWeightedBW;
+  const showReps = !isTimed;
+  const isFirstSet = currentSetIndex === 0;
+  const isLastSet = currentSetIndex === exercise.sets.length - 1;
+  const completedAcrossWorkout = completedWorkoutSets ?? exercise.sets.filter(set => set.completed).length;
+  const totalAcrossWorkout = totalWorkoutSets ?? exercise.sets.length;
+  const remainingAcrossWorkout = Math.max(0, totalAcrossWorkout - completedAcrossWorkout);
 
   useEffect(() => {
-    setIsTimerRunning(false);
-    setTimerSeconds(0);
-    setShowRestTimer(false);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, [currentSetIndex, exerciseIndex]);
-
-  const completedPrev = prevSet?.completed ? prevSet : null;
-  const lastUsedForSet = lastUsed?.perSet?.[currentSetIndex];
-
-  const getBaseWeight = (): number => {
-    if (currentSet.actualWeight) return parseFloat(currentSet.actualWeight);
-    if (completedPrev?.actualWeight) return parseFloat(completedPrev.actualWeight);
-    if (lastUsedForSet?.weight) return lastUsedForSet.weight;
-    if (lastUsed?.weight) return lastUsed.weight;
-    return parseFloat(currentSet.targetWeight) || 0;
-  };
-
-  const getBaseReps = (): number => {
-    if (currentSet.actualReps) return parseInt(currentSet.actualReps);
-    if (completedPrev?.actualReps) return parseInt(completedPrev.actualReps);
-    if (lastUsedForSet?.reps) return lastUsedForSet.reps;
-    if (lastUsed?.reps) return lastUsed.reps;
-    return parseInt(currentSet.targetReps) || 8;
-  };
-
-  const getBaseTime = (): number => {
-    if (currentSet.actualTime) return currentSet.actualTime;
-    if (completedPrev?.actualTime) return completedPrev.actualTime;
-    if (currentSet.targetTime) return currentSet.targetTime;
-    const parsed = parseInt(currentSet.targetReps);
-    return !isNaN(parsed) ? parsed : 30;
-  };
-
-  const baseWeight = getBaseWeight();
-  const baseReps = getBaseReps();
-  const baseTime = getBaseTime();
-
-  const generateWeightOptions = (): number[] => {
-    const options = new Set<number>();
-    const increments = isWeightedBW
-      ? [-10, -5, -2.5, 0, 2.5, 5, 10, 15, 20]
-      : [-20, -15, -10, -5, -2.5, 0, 2.5, 5, 10, 15, 20];
-    increments.forEach(delta => {
-      const w = baseWeight + delta;
-      if (isWeightedBW ? w >= 0 : w > 0) options.add(w);
-    });
-    return Array.from(options).sort((a, b) => a - b);
-  };
-
-  const generateRepOptions = (): number[] => {
-    const options = new Set<number>();
-    const range = isBodyweight
-      ? [-8, -5, -3, -2, -1, 0, 1, 2, 3, 5, 8]
-      : [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
-    range.forEach(delta => {
-      const r = baseReps + delta;
-      if (r > 0 && r <= 100) options.add(r);
-    });
-    return Array.from(options).sort((a, b) => a - b);
-  };
-
-  const generateTimeOptions = (): number[] => {
-    const options = new Set<number>();
-    [-30, -15, -10, -5, 0, 5, 10, 15, 30].forEach(delta => {
-      const t = baseTime + delta;
-      if (t > 0 && t <= 300) options.add(t);
-    });
-    return Array.from(options).sort((a, b) => a - b);
-  };
-
-  const weightOptions = showWeight ? generateWeightOptions() : [];
-  const repOptions = showReps ? generateRepOptions() : [];
-  const timeOptions = isTimed ? generateTimeOptions() : [];
-
-  const handleWeightSelect = (weight: number) => {
-    haptic('light');
-    const updated = { ...exercise, sets: [...exercise.sets] };
-    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualWeight: weight.toString() };
-    onChange(updated);
-  };
-
-  const handleRepsSelect = (reps: number) => {
-    haptic('light');
-    const updated = { ...exercise, sets: [...exercise.sets] };
-    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualReps: reps.toString() };
-    onChange(updated);
-  };
-
-  const handleTimeSelect = (seconds: number) => {
-    haptic('light');
-    const updated = { ...exercise, sets: [...exercise.sets] };
-    updated.sets[currentSetIndex] = { ...updated.sets[currentSetIndex], actualTime: seconds };
-    onChange(updated);
-  };
-
-  const toggleTimer = () => {
-    if (isTimerRunning) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+    if (!readDevicePreference('keepScreenAwake')) return;
+    let cancelled = false;
+    const request = async () => {
+      const wakeLock = (navigator as Navigator & { wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinelLike> } }).wakeLock;
+      if (!wakeLock || document.visibilityState !== 'visible') return;
+      try {
+        const sentinel = await wakeLock.request('screen');
+        if (cancelled) await sentinel.release?.();
+        else wakeLockRef.current = sentinel;
+      } catch {
+        // Wake Lock is an enhancement. Training must never depend on it.
       }
-      setIsTimerRunning(false);
-      handleTimeSelect(timerSeconds);
-    } else {
-      setTimerSeconds(0);
-      setIsTimerRunning(true);
-      timerRef.current = setInterval(() => setTimerSeconds(prev => prev + 1), 1000);
+    };
+    const onVisibility = () => { if (document.visibilityState === 'visible' && !wakeLockRef.current) void request(); };
+    void request();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibility);
+      const release = wakeLockRef.current?.release?.();
+      if (release && typeof release.catch === 'function') release.catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => () => { if (timedRef.current) clearInterval(timedRef.current); }, []);
+
+  useEffect(() => {
+    setEditing(null);
+    setRestOpen(false);
+    setTimedRunning(false);
+    setTimedSeconds(0);
+    setRemovedSet(null);
+    setFinishConfirm(false);
+    if (timedRef.current) {
+      clearInterval(timedRef.current);
+      timedRef.current = null;
     }
+  }, [exerciseIndex]);
+
+  useEffect(() => {
+    if (!removedSet) return;
+    const timer = window.setTimeout(() => setRemovedSet(null), 7000);
+    return () => window.clearTimeout(timer);
+  }, [removedSet]);
+
+  if (!currentSet) return null;
+
+  const previous = lastUsed?.perSet?.[currentSetIndex] ?? (lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : undefined);
+  const previousCompleted = currentSetIndex > 0 && exercise.sets[currentSetIndex - 1]?.completed ? exercise.sets[currentSetIndex - 1] : undefined;
+
+  const baseWeight = (() => {
+    const current = Number(currentSet.actualWeight);
+    if (current > 0 || (isWeightedBW && current === 0 && currentSet.actualWeight !== '')) return current;
+    const prior = Number(previousCompleted?.actualWeight);
+    if (prior > 0 || (isWeightedBW && prior === 0 && previousCompleted?.actualWeight !== '')) return prior;
+    if (previous?.weight != null && Number.isFinite(previous.weight)) return previous.weight;
+    const target = Number(currentSet.targetWeight);
+    return Number.isFinite(target) ? target : 0;
+  })();
+
+  const baseReps = (() => {
+    const current = Number(currentSet.actualReps);
+    if (current > 0) return current;
+    const prior = Number(previousCompleted?.actualReps);
+    if (prior > 0) return prior;
+    if (previous?.reps) return previous.reps;
+    return parseTargetReps(currentSet.targetReps);
+  })();
+
+  const baseTime = currentSet.actualTime || currentSet.targetTime || parseTargetReps(currentSet.targetReps) || 30;
+  const selectedWeight = currentSet.actualWeight !== '' ? Number(currentSet.actualWeight) : baseWeight;
+  const selectedReps = currentSet.actualReps !== '' ? Number(currentSet.actualReps) : baseReps;
+  const selectedTime = currentSet.actualTime || baseTime;
+  const equipment = getEquipmentType(exercise.name);
+  const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipment);
+
+  const patchSet = (patch: Partial<ExerciseSet>) => {
+    if (!environment.canEdit) return;
+    const sets = exercise.sets.map((set, index) => index === currentSetIndex ? { ...set, ...patch } : set);
+    onChange({ ...exercise, sets });
   };
 
-  const getDefaultRest = (): number => {
+  const setWeight = (value: number) => patchSet({ actualWeight: numberLabel(Math.max(0, value)) });
+  const setReps = (value: number) => patchSet({ actualReps: String(Math.max(0, Math.round(value))) });
+  const setTime = (value: number) => patchSet({ actualTime: Math.max(0, Math.round(value)) });
+
+  const defaultRest = () => {
     if (exercise.restSeconds) return exercise.restSeconds;
     if (workoutBias === 'heavy') return 180;
     if (workoutBias === 'volume') return 90;
@@ -246,426 +228,235 @@ export function SetBySetCard({
   };
 
   const completeSet = () => {
+    if (!environment.canEdit) return;
     haptic('success');
-    const updated = { ...exercise, sets: [...exercise.sets] };
+    const finalTime = isTimed ? (currentSet.actualTime || (timedRunning ? timedSeconds : baseTime)) : undefined;
+    if (timedRef.current) clearInterval(timedRef.current);
+    timedRef.current = null;
+    setTimedRunning(false);
 
-    if (isTimed) {
-      const finalTime = currentSet.actualTime || (isTimerRunning ? timerSeconds : baseTime);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setIsTimerRunning(false);
-      updated.sets[currentSetIndex] = {
-        ...updated.sets[currentSetIndex],
-        completed: true,
-        actualTime: finalTime,
-        actualReps: String(finalTime),
-        actualWeight: '',
-      };
-    } else {
-      const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
-      const finalReps = currentSet.actualReps || baseReps.toString();
-      updated.sets[currentSetIndex] = {
-        ...updated.sets[currentSetIndex],
-        completed: true,
-        actualWeight: finalWeight,
-        actualReps: finalReps,
+    const finalWeight = showWeight ? numberLabel(selectedWeight) : '';
+    const finalReps = isTimed ? String(finalTime) : String(selectedReps);
+    const sets = exercise.sets.map((set, index) => index === currentSetIndex ? {
+      ...set,
+      completed: true,
+      actualWeight: finalWeight,
+      actualReps: finalReps,
+      actualTime: finalTime,
+    } : set);
+
+    if (!isLastSet) {
+      const next = sets[currentSetIndex + 1];
+      sets[currentSetIndex + 1] = {
+        ...next,
+        actualWeight: next.actualWeight || finalWeight,
+        actualReps: next.actualReps || finalReps,
+        actualTime: next.actualTime || finalTime,
       };
     }
-    onChange(updated);
+    onChange({ ...exercise, sets });
 
-    if (isLastSet) return;
-
-    const nextSetIndex = currentSetIndex + 1;
-    if (isTimed) {
-      updated.sets[nextSetIndex] = {
-        ...updated.sets[nextSetIndex],
-        actualTime: updated.sets[nextSetIndex].actualTime || updated.sets[currentSetIndex].actualTime,
-      };
-    } else {
-      const finalWeight = showWeight ? (currentSet.actualWeight || baseWeight.toString()) : '';
-      const finalReps = currentSet.actualReps || baseReps.toString();
-      updated.sets[nextSetIndex] = {
-        ...updated.sets[nextSetIndex],
-        actualWeight: updated.sets[nextSetIndex].actualWeight || finalWeight,
-        actualReps: updated.sets[nextSetIndex].actualReps || finalReps,
-      };
-    }
-    onChange(updated);
-
-    if (autoRestTimer) {
-      setRestDuration(getDefaultRest());
-      setShowRestTimer(true);
-    } else {
+    if (!isLastSet && autoRestTimer) {
+      setRestDuration(defaultRest());
+      setRestOpen(true);
+    } else if (!isLastSet) {
       onSetIndexChange(currentSetIndex + 1);
     }
   };
 
-  const handleRestDismiss = useCallback(() => {
-    setShowRestTimer(false);
+  const advanceAfterRest = () => {
+    setRestOpen(false);
     if (!isLastSet) onSetIndexChange(currentSetIndex + 1);
-  }, [isLastSet, currentSetIndex, onSetIndexChange]);
-
-  const handleRestComplete = useCallback(() => {
-    setShowRestTimer(false);
-    if (!isLastSet) onSetIndexChange(currentSetIndex + 1);
-  }, [isLastSet, currentSetIndex, onSetIndexChange]);
-
-  const skipSet = () => {
-    haptic('light');
-    if (isLastSet) {
-      if (isLastExercise) onComplete();
-      else onSkipExercise();
-    } else {
-      onSetIndexChange(currentSetIndex + 1);
-    }
-  };
-
-  const goToPrevSet = () => {
-    haptic('light');
-    if (!isFirstSet) onSetIndexChange(currentSetIndex - 1);
-    else if (!isFirstExercise) onPrevExercise();
   };
 
   const addSet = () => {
-    haptic('light');
-    const updated = { ...exercise };
-    const lastCompleted = [...updated.sets].reverse().find(s => s.completed);
-    const lastSet = updated.sets[updated.sets.length - 1];
-    updated.sets = [
-      ...updated.sets,
-      {
-        setNumber: lastSet.setNumber + 1,
-        targetWeight: lastCompleted?.actualWeight || lastSet.targetWeight,
-        targetReps: lastCompleted?.actualReps || lastSet.targetReps,
-        actualWeight: lastCompleted?.actualWeight || '',
-        actualReps: lastCompleted?.actualReps || '',
-        targetTime: lastCompleted?.actualTime || lastSet.targetTime,
-        completed: false,
-      },
-    ];
+    if (!environment.canEdit) return;
+    const lastCompleted = [...exercise.sets].reverse().find(set => set.completed);
+    const last = exercise.sets[exercise.sets.length - 1];
+    const next: ExerciseSet = {
+      setNumber: last.setNumber + 1,
+      targetWeight: lastCompleted?.actualWeight || last.targetWeight,
+      targetReps: lastCompleted?.actualReps || last.targetReps,
+      actualWeight: lastCompleted?.actualWeight || '',
+      actualReps: lastCompleted?.actualReps || '',
+      targetTime: lastCompleted?.actualTime || last.targetTime,
+      completed: false,
+    };
+    const updated = { ...exercise, sets: [...exercise.sets, next] };
     onChange(updated);
     onSetIndexChange(updated.sets.length - 1);
+    haptic('light');
   };
 
-  const switchVariant = (variantName: string, defaultWeight: string) => {
-    haptic('medium');
-    const updated = { ...exercise };
-    updated.name = variantName;
-    if (defaultWeight) updated.sets = updated.sets.map(set => ({ ...set, targetWeight: defaultWeight }));
-    onChange(updated);
+  const removeCurrentSet = () => {
+    if (!environment.canEdit || exercise.sets.length <= 1) return;
+    const removed = exercise.sets[currentSetIndex];
+    const nextSets = renumberSets(exercise.sets.filter((_, index) => index !== currentSetIndex));
+    setRestOpen(false);
+    setRemovedSet({ set: removed, index: currentSetIndex });
+    onChange({ ...exercise, sets: nextSets });
+    onSetIndexChange(Math.min(currentSetIndex, nextSets.length - 1));
+    haptic('light');
   };
 
-  const completedSets = exercise.sets.filter(s => s.completed).length;
-  const variants = getExerciseVariants(exercise.name);
-  const showVariantSwitch = hasVariants(exercise.name);
-  const equipmentType = getEquipmentType(exercise.name);
-  const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipmentType);
+  const undoRemoveSet = () => {
+    if (!environment.canEdit || !removedSet) return;
+    const nextSets = [...exercise.sets];
+    nextSets.splice(Math.min(removedSet.index, nextSets.length), 0, removedSet.set);
+    const renumbered = renumberSets(nextSets);
+    onChange({ ...exercise, sets: renumbered });
+    onSetIndexChange(Math.min(removedSet.index, renumbered.length - 1));
+    setRemovedSet(null);
+    haptic('light');
+  };
 
-  const completedWeightSets = exercise.sets.filter(s => s.completed && s.actualWeight);
-  const currentMaxWeight = Math.max(...completedWeightSets.map(s => parseFloat(s.actualWeight) || 0), 0);
-  const currentMaxWeightBestReps = Math.max(
-    ...completedWeightSets
-      .filter(s => (parseFloat(s.actualWeight) || 0) === currentMaxWeight)
-      .map(s => parseInt(s.actualReps) || 0),
-    0
-  );
-  const currentMaxValue = isTimed
-    ? Math.max(...exercise.sets.filter(s => s.completed && s.actualTime).map(s => s.actualTime || 0), 0)
-    : isBodyweight
-      ? Math.max(...exercise.sets.filter(s => s.completed && s.actualReps).map(s => parseInt(s.actualReps) || 0), 0)
-      : currentMaxWeight;
-  const prReps = personalRecord ? parseInt(personalRecord.reps) || 0 : 0;
-  const isNewPR = currentMaxValue > 0 && (
-    !personalRecord ||
-    ((isTimed || isBodyweight)
-      ? currentMaxValue > personalRecord.maxWeight
-      : currentMaxWeight > personalRecord.maxWeight ||
-        (currentMaxWeight === personalRecord.maxWeight && currentMaxWeightBestReps > prReps))
-  );
-
-  const selectedWeight = parseFloat(currentSet.actualWeight) || baseWeight;
-  const selectedReps = parseInt(currentSet.actualReps) || baseReps;
-  const selectedTime = currentSet.actualTime || baseTime;
-
-  const getLogLabel = () => {
-    if (isTimed) {
-      if (isTimerRunning) return `Stop & log ${formatTime(timerSeconds)}`;
-      return `Log ${formatTime(selectedTime)}`;
+  const toggleTimed = () => {
+    if (!environment.canEdit) return;
+    if (timedRunning) {
+      if (timedRef.current) clearInterval(timedRef.current);
+      timedRef.current = null;
+      setTimedRunning(false);
+      setTime(timedSeconds);
+      return;
     }
-    if (isBodyweight) return `Log ${selectedReps} reps`;
-    if (isWeightedBW) return `Log +${selectedWeight}kg × ${selectedReps}`;
-    return `Log ${selectedWeight}${weightLabel} × ${selectedReps}`;
+    setTimedSeconds(selectedTime > 0 ? selectedTime : 0);
+    setTimedRunning(true);
+    const started = Date.now() - (selectedTime > 0 ? selectedTime * 1000 : 0);
+    timedRef.current = setInterval(() => setTimedSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
   };
 
-  return (
-    <div className="w-full min-w-0 space-y-4 animate-fade-in">
+  const relationshipOptions = getExerciseRelationships(exercise.name);
+  const legacyOptions = getExerciseVariants(exercise.name).filter(option => option.name !== exercise.name);
+
+  const replaceWith = (name: string) => {
+    if (!environment.canEdit) return;
+    const transfer = getPrTransferability(exercise.name, name);
+    const keepLoad = transfer === 'shared' || transfer === 'comparable';
+    const sets = exercise.sets.map(set => ({ ...set, targetWeight: keepLoad ? set.targetWeight : '', actualWeight: keepLoad ? set.actualWeight : '' }));
+    onChange({ ...exercise, name, sets });
+    haptic('medium');
+  };
+
+  const completedSets = exercise.sets.filter(set => set.completed).length;
+  const completedWeightSets = exercise.sets.filter(set => set.completed && Number(set.actualWeight) > 0);
+  const bestWeight = Math.max(0, ...completedWeightSets.map(set => Number(set.actualWeight)));
+  const bestRepsAtWeight = Math.max(0, ...completedWeightSets.filter(set => Number(set.actualWeight) === bestWeight).map(set => Number(set.actualReps) || 0));
+  const currentBest = isTimed
+    ? Math.max(0, ...exercise.sets.filter(set => set.completed).map(set => set.actualTime || 0))
+    : isBodyweight
+      ? Math.max(0, ...exercise.sets.filter(set => set.completed).map(set => Number(set.actualReps) || 0))
+      : bestWeight;
+  const historicalPrReps = personalRecord ? Number.parseInt(personalRecord.reps) || 0 : 0;
+  const isNewPR = currentBest > 0 && (!personalRecord || (isTimed || isBodyweight
+    ? currentBest > personalRecord.maxWeight
+    : bestWeight > personalRecord.maxWeight || (bestWeight === personalRecord.maxWeight && bestRepsAtWeight > historicalPrReps)));
+
+  const previousLabel = previous
+    ? showWeight ? `${numberLabel(previous.weight)} ${weightLabel.replace('+', '')} × ${previous.reps}` : `${previous.reps} reps`
+    : 'First logged session';
+  const targetLabel = isTimed
+    ? formatTime(baseTime)
+    : `${showWeight && currentSet.targetWeight ? `${currentSet.targetWeight} ${weightLabel.replace('+', '')} · ` : ''}${currentSet.targetReps || `${baseReps} reps`}`;
+
+  const requestFinish = () => {
+    if (!environment.canEdit) return;
+    if (remainingAcrossWorkout > 0) {
+      setFinishConfirm(true);
+      return;
+    }
+    onComplete();
+  };
+
+  const completeOrAdvance = () => {
+    if (!environment.canEdit) return;
+    if (!currentSet.completed) completeSet();
+    else if (!isLastSet) advanceAfterRest();
+    else if (isLastExercise) requestFinish();
+    else onNextExercise();
+  };
+
+  if (environment.otherTabActive) {
+    return <div className="w-full min-w-0 space-y-4">
       <div className="flex items-center gap-2">
         <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
-        <div className="flex flex-1 gap-0.5">
-          {Array.from({ length: totalExercises }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => onJumpToExercise?.(i)}
-              aria-label={`Go to exercise ${i + 1}`}
-              className={cn(
-                'h-2 flex-1 rounded-full transition-all duration-300',
-                i < exerciseIndex ? 'bg-foreground' : i === exerciseIndex ? 'bg-foreground/50' : 'bg-muted',
-                onJumpToExercise && 'cursor-pointer hover:opacity-80 active:scale-95'
-              )}
-            />
-          ))}
+        <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>{Array.from({ length: totalExercises }).map((_, index) => <span key={index} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}</div>
+        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
+      </div>
+      <section className="rounded-[22px] border border-warning/40 bg-card p-5" role="status">
+        <div className="flex gap-3"><AlertTriangle className="h-5 w-5 mt-0.5 shrink-0"/><div className="min-w-0 flex-1"><div className="font-semibold">This workout is active in another tab.</div><p className="type-supporting mt-1">Set editing is locked here so two tabs cannot race the same draft. Take over only if this is the tab you want to keep using.</p></div></div>
+        <div className="mt-4 rounded-xl bg-muted/50 p-3"><div className="type-eyebrow">Current set</div><div className="mt-1 text-lg font-semibold">{exercise.name}</div><div className="type-caption mt-1">Set {currentSetIndex + 1} · Previous: {previousLabel} · Target: {targetLabel}</div></div>
+        <button onClick={() => environment.takeOver()} className="mt-4 w-full min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">Take over in this tab</button>
+      </section>
+    </div>;
+  }
+
+  return (
+    <div className="w-full min-w-0 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
+        <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>
+          {Array.from({ length: totalExercises }).map((_, index) => <button key={index} onClick={() => onJumpToExercise?.(index)} aria-label={`Go to exercise ${index + 1}`} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}
         </div>
-        {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && (
-          <span className="type-meta whitespace-nowrap tabular-nums">{completedWorkoutSets}/{totalWorkoutSets} sets</span>
-        )}
+        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
+        {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums hidden sm:inline">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
       </div>
 
-      <div className="flex items-start justify-between gap-3">
+      {environment.unusuallyLong && <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm"><span className="font-semibold">Workout has been running for {environment.elapsedLabel}.</span><span className="text-muted-foreground"> If you are still training, continue normally. RepTrack will not auto-finish it.</span></div>}
+
+      <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-2">
-            <h2 className="type-card-title">{exercise.name}</h2>
-            {isTimed && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">Timed</span>}
-            {isBodyweight && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">BW</span>}
-            {isWeightedBW && <span className="rounded-full bg-muted px-2 py-0.5 type-meta">BW+</span>}
-            {personalRecord && !isNewPR && (
-              <span className="type-meta tabular-nums">
-                PR · {personalRecord.prType === 'duration'
-                  ? formatTime(personalRecord.maxWeight)
-                  : personalRecord.prType === 'reps'
-                    ? `${personalRecord.maxWeight} reps`
-                    : `${personalRecord.maxWeight}${weightLabel}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}
-              </span>
-            )}
-            {!personalRecord && familyRecord && (
-              <span className="type-meta tabular-nums">
-                {familyRecord.familyLabel} best · {familyRecord.maxWeight}{weightLabel} ({familyRecord.exerciseName})
-              </span>
-            )}
-            {!personalRecord && !familyRecord && !isNewPR && <span className="type-meta">No PR yet</span>}
-            {isNewPR && <span className="inline-flex items-center gap-1 rounded-full bg-energy-soft px-2 py-0.5 type-meta text-energy-ink"><Check className="h-3 w-3" />New PR</span>}
-          </div>
-          <div className="mt-1 type-meta">
-            <span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>
-            {exercise.rir && <span className="ml-2 text-foreground">@ {exercise.rir} RIR</span>}
-          </div>
+          <div className="type-eyebrow">Current exercise</div>
+          <h2 className="type-section-title mt-1 break-words">{exercise.name}</h2>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 type-caption"><span>{exercise.category}</span><span>·</span><span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>{exercise.rir && <><span>·</span><span>{exercise.rir} RIR target</span></>}</div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {onSwapExercise && (
-            <button onClick={onSwapExercise} aria-label="Replace exercise" className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          )}
-          {showVariantSwitch && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button aria-label="Switch exercise variation" className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                  <ArrowLeftRight className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-50 border-border bg-background">
-                {variants.map((variant) => (
-                  <DropdownMenuItem key={variant.name} onClick={() => switchVariant(variant.name, variant.defaultWeight)} className={cn('cursor-pointer text-sm', variant.name === exercise.name && 'bg-energy-soft')}>
-                    {variant.name}
-                    {variant.name === exercise.name && <Check className="ml-auto h-3.5 w-3.5" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><button aria-label="Exercise options" className="h-11 w-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="z-50 max-h-[60dvh] overflow-y-auto min-w-64">
+            <DropdownMenuLabel>Exercise</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>View history</DropdownMenuItem>
+            {onSwapExercise && <DropdownMenuItem onClick={onSwapExercise}>Search exercise library</DropdownMenuItem>}
+            {relationshipOptions.filter(option => option.kind === 'variation').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Variations</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'variation').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">{option.prTransfer === 'comparable' ? 'PR comparable' : 'own PR'}</span></DropdownMenuItem>)}</>}
+            {relationshipOptions.filter(option => option.kind === 'alternative').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Alternatives</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'alternative').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">separate PR</span></DropdownMenuItem>)}</>}
+            {!relationshipOptions.length && legacyOptions.map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}>{option.name}</DropdownMenuItem>)}
+            {completedAcrossWorkout > 0 && <><DropdownMenuSeparator/><DropdownMenuItem onClick={requestFinish}>Finish workout</DropdownMenuItem></>}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </header>
+
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
+        <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Previous</span><span className="text-sm font-medium tabular-nums text-right">{previousLabel}</span></div>
+        <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Target</span><span className="text-sm font-medium tabular-nums text-right">{targetLabel}</span></div>
+        {personalRecord && <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Record</span><span className="text-sm font-medium tabular-nums text-right">{personalRecord.prType === 'duration' ? formatTime(personalRecord.maxWeight) : personalRecord.prType === 'reps' ? `${personalRecord.maxWeight} reps` : `${numberLabel(personalRecord.maxWeight)} ${weightLabel.replace('+','')}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}</span></div>}
+        {!personalRecord && familyRecord && <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Reference</span><span className="text-sm font-medium tabular-nums text-right">{familyRecord.exerciseName} · {numberLabel(familyRecord.maxWeight)} kg</span></div>}
+      </section>
+
+      <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {exercise.sets.map((set, index) => <button key={index} onClick={() => onSetIndexChange(index)} aria-label={`Go to set ${index + 1}`} aria-current={index === currentSetIndex ? 'step' : undefined} className={cn('h-10 min-w-10 rounded-full type-meta tabular-nums flex items-center justify-center', set.completed ? 'bg-foreground text-background' : index === currentSetIndex ? 'border-2 border-foreground text-foreground' : 'bg-muted text-muted-foreground')}>{set.completed ? <Check className="h-4 w-4" /> : index + 1}</button>)}
+        <button onClick={addSet} aria-label="Add set" className="h-10 min-w-10 rounded-full border border-dashed border-border text-muted-foreground flex items-center justify-center"><Plus className="h-4 w-4" /></button>
       </div>
 
-      <div className="flex justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-        {exercise.sets.map((set, idx) => (
-          <button
-            key={idx}
-            onClick={() => onSetIndexChange(idx)}
-            aria-label={`Go to set ${idx + 1}`}
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-full type-meta transition-all duration-150',
-              set.completed
-                ? 'bg-energy-soft text-energy-ink'
-                : idx === currentSetIndex
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {set.completed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
-          </button>
-        ))}
-        <button onClick={addSet} aria-label="Add set" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:text-foreground">
-          <Plus className="h-3.5 w-3.5" />
-        </button>
+      {removedSet && <div role="status" className="rounded-xl border border-border bg-muted/35 px-3 py-2.5 flex items-center gap-3"><span className="text-sm flex-1">Set removed.</span><button onClick={undoRemoveSet} className="min-h-10 px-3 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-muted"><Undo2 className="h-4 w-4"/>Undo</button></div>}
+
+      <section className={cn('rounded-[22px] border p-4', currentSet.completed ? 'border-border bg-muted/30' : 'border-border bg-card')}>
+        <div className="flex items-center justify-between gap-3 mb-4"><div><div className="type-eyebrow">Actual</div><div className="text-sm font-semibold mt-0.5">Set {currentSetIndex + 1} of {exercise.sets.length}</div></div><div className="flex items-center gap-2">{isNewPR && <span className="rounded-full bg-foreground text-background px-2.5 py-1 text-xs font-bold">New PR</span>}{exercise.sets.length > 1 && <button onClick={removeCurrentSet} aria-label={`Remove set ${currentSetIndex + 1}`} className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-muted flex items-center justify-center"><Trash2 className="h-4 w-4"/></button>}</div></div>
+
+        {isTimed ? <div className="space-y-3"><button onClick={toggleTimed} className="w-full rounded-2xl bg-muted py-5 text-center"><div className="text-4xl font-semibold tabular-nums">{formatTime(timedRunning ? timedSeconds : selectedTime)}</div><div className="type-caption mt-1">{timedRunning ? 'Tap to stop timer' : 'Tap to start timer'}</div></button>{editing === 'time' ? <Input autoFocus type="number" inputMode="numeric" value={selectedTime} onChange={event => setTime(Number(event.target.value))} onBlur={() => setEditing(null)} className="h-12 text-center text-lg tabular-nums" /> : <button onClick={() => setEditing('time')} className="w-full min-h-11 text-sm font-semibold text-muted-foreground">Enter another duration</button>}</div> : <div className={cn('grid gap-3', showWeight ? 'grid-cols-2' : 'grid-cols-1')}>
+          {showWeight && <div><div className="type-caption text-center mb-2">Weight ({weightLabel})</div>{editing === 'weight' ? <Input autoFocus type="number" inputMode="decimal" step="0.01" value={currentSet.actualWeight !== '' ? currentSet.actualWeight : selectedWeight} onChange={event => patchSet({ actualWeight: event.target.value })} onBlur={() => setEditing(null)} onKeyDown={event => event.key === 'Enter' && setEditing(null)} className="h-14 text-center text-xl font-semibold tabular-nums" /> : <div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setWeight(selectedWeight - 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Decrease weight by 2.5">−</button><button onClick={() => setEditing('weight')} className="h-14 rounded-xl bg-muted text-xl font-semibold tabular-nums">{isWeightedBW ? '+' : ''}{numberLabel(selectedWeight)}</button><button onClick={() => setWeight(selectedWeight + 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Increase weight by 2.5">+</button></div>}</div>}
+          {showReps && <div><div className="type-caption text-center mb-2">Reps</div>{editing === 'reps' ? <Input autoFocus type="number" inputMode="numeric" value={currentSet.actualReps !== '' ? currentSet.actualReps : selectedReps} onChange={event => patchSet({ actualReps: event.target.value })} onBlur={() => setEditing(null)} onKeyDown={event => event.key === 'Enter' && setEditing(null)} className="h-14 text-center text-xl font-semibold tabular-nums" /> : <div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setReps(selectedReps - 1)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Decrease reps by 1">−</button><button onClick={() => setEditing('reps')} className="h-14 rounded-xl bg-muted text-xl font-semibold tabular-nums">{selectedReps}</button><button onClick={() => setReps(selectedReps + 1)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Increase reps by 1">+</button></div>}</div>}
+        </div>}
+      </section>
+
+      {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="region" aria-live="polite" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
+
+      {restOpen && <RestTimer isOpen defaultDuration={restDuration} onDismiss={advanceAfterRest} onComplete={advanceAfterRest} />}
+
+      <div className="flex gap-2 pb-[max(4px,env(safe-area-inset-bottom))]">
+        {(!isFirstSet || !isFirstExercise) && <button onClick={() => { if (!isFirstSet) onSetIndexChange(currentSetIndex - 1); else onPrevExercise(); }} aria-label="Previous set or exercise" className="h-14 w-12 rounded-xl border border-border flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>}
+        {!currentSet.completed && <button onClick={onSkipExercise} className="h-14 px-3 rounded-xl text-sm font-semibold text-muted-foreground flex items-center gap-1"><SkipForward className="h-4 w-4"/>Skip</button>}
+        <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? (remainingAcrossWorkout > 0 ? 'Review finish' : 'Finish workout') : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
       </div>
 
-      <div className={cn('surface-standard p-4 transition-colors', currentSet.completed && 'border-energy-border bg-energy-soft')}>
-        <div className="mb-4 text-center type-eyebrow">Set {currentSetIndex + 1}</div>
-
-        {isTimed && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className={cn('metric-hero tabular-nums', isTimerRunning && 'text-energy-ink')}>{formatTime(isTimerRunning ? timerSeconds : selectedTime)}</div>
-              <div className="mt-1 type-meta">{isTimerRunning ? 'Timing' : `Target · ${formatTime(baseTime)}`}</div>
-            </div>
-
-            <button
-              onClick={toggleTimer}
-              className={cn(
-                'control-standard flex w-full items-center justify-center gap-2 rounded-xl type-action transition-colors',
-                isTimerRunning ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-foreground'
-              )}
-            >
-              <Timer className="h-4 w-4" />
-              {isTimerRunning ? 'Stop timer' : 'Start timer'}
-            </button>
-
-            {!isTimerRunning && (
-              <>
-                <div className="type-caption text-center">Set duration</div>
-                {showTimeInput ? (
-                  <div className="flex justify-center">
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      autoFocus
-                      value={currentSet.actualTime || ''}
-                      onChange={(e) => handleTimeSelect(parseInt(e.target.value) || 0)}
-                      onBlur={() => setShowTimeInput(false)}
-                      onKeyDown={(e) => e.key === 'Enter' && setShowTimeInput(false)}
-                      className="h-9 w-24 rounded-xl border-border bg-muted text-center text-sm"
-                      placeholder={baseTime.toString()}
-                    />
-                    <span className="ml-2 self-center type-meta">sec</span>
-                  </div>
-                ) : (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
-                    {timeOptions.map((t) => (
-                      <button key={t} onClick={() => handleTimeSelect(t)} className={cn('h-9 min-w-[3rem] shrink-0 snap-center rounded-full px-2.5 type-meta transition-colors', selectedTime === t ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
-                        {formatTime(t)}
-                      </button>
-                    ))}
-                    <button onClick={() => setShowTimeInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {showWeight && !isTimed && (
-          <div className="mb-4">
-            <div className="mb-2 type-caption text-center">{isWeightedBW ? 'Added weight (+kg)' : `Weight (${weightLabel})`}</div>
-            {showWeightInput ? (
-              <div className="flex justify-center">
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  autoFocus
-                  value={currentSet.actualWeight || ''}
-                  onChange={(e) => handleWeightSelect(parseFloat(e.target.value) || 0)}
-                  onBlur={() => setShowWeightInput(false)}
-                  onKeyDown={(e) => e.key === 'Enter' && setShowWeightInput(false)}
-                  className="h-9 w-24 rounded-xl border-border bg-muted text-center text-sm"
-                  placeholder={baseWeight.toString()}
-                />
-              </div>
-            ) : (
-              <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
-                {weightOptions.map((w) => (
-                  <button key={w} onClick={() => handleWeightSelect(w)} className={cn('h-9 min-w-[3rem] shrink-0 snap-center rounded-full px-2.5 type-meta tabular-nums transition-colors', selectedWeight === w ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
-                    {isWeightedBW && '+'}{w % 1 === 0 ? w : w.toFixed(1)}
-                  </button>
-                ))}
-                <button onClick={() => setShowWeightInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showReps && !isTimed && (
-          <div>
-            <div className="mb-2 type-caption text-center">Reps</div>
-            {showRepsInput ? (
-              <div className="flex justify-center">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  autoFocus
-                  value={currentSet.actualReps || ''}
-                  onChange={(e) => handleRepsSelect(parseInt(e.target.value) || 0)}
-                  onBlur={() => setShowRepsInput(false)}
-                  onKeyDown={(e) => e.key === 'Enter' && setShowRepsInput(false)}
-                  className="h-9 w-20 rounded-xl border-border bg-muted text-center text-sm"
-                  placeholder={baseReps.toString()}
-                />
-              </div>
-            ) : (
-              <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 scrollbar-hide snap-x">
-                {repOptions.map((r) => (
-                  <button key={r} onClick={() => handleRepsSelect(r)} className={cn('h-9 w-9 shrink-0 snap-center rounded-full type-meta tabular-nums transition-colors', selectedReps === r ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>
-                    {r}
-                  </button>
-                ))}
-                <button onClick={() => setShowRepsInput(true)} className="h-9 shrink-0 rounded-full px-3 type-meta hover:text-foreground">Custom</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showRestTimer && (
-        <RestTimer isOpen={showRestTimer} defaultDuration={restDuration} onDismiss={handleRestDismiss} onComplete={handleRestComplete} />
-      )}
-
-      {!showRestTimer && (
-        <div className="flex gap-2">
-          {(!isFirstSet || !isFirstExercise) && (
-            <button onClick={goToPrevSet} aria-label="Previous set or exercise" className="control-large flex w-[52px] shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
-
-          {!currentSet.completed && (
-            <button onClick={skipSet} aria-label="Skip current set" className="control-large flex items-center gap-1.5 rounded-xl px-3 type-action text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              <SkipForward className="h-4 w-4" />
-              Skip
-            </button>
-          )}
-
-          {currentSet.completed && isLastSet ? (
-            <div className="flex flex-1 gap-2">
-              <button onClick={addSet} className="control-large flex items-center gap-1.5 rounded-xl border border-border px-3 type-action text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <Plus className="h-4 w-4" />
-                Add set
-              </button>
-              <button
-                onClick={() => {
-                  haptic('medium');
-                  if (isLastExercise) onComplete();
-                  else onNextExercise();
-                }}
-                className="control-large flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-foreground px-4 type-action text-background transition-opacity hover:opacity-90"
-              >
-                <Check className="h-4 w-4" />
-                {isLastExercise ? 'Finish workout' : 'Next exercise'}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={completeSet}
-              className={cn(
-                'control-large flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 type-action transition-colors',
-                currentSet.completed ? 'border border-energy-border bg-energy-soft text-energy-ink' : 'bg-foreground text-background hover:opacity-90'
-              )}
-            >
-              <Check className="h-4 w-4" />
-              {currentSet.completed ? 'Next set' : getLogLabel()}
-            </button>
-          )}
-        </div>
-      )}
+      <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );
 }

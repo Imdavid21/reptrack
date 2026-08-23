@@ -41,10 +41,8 @@ export function DateRangeProvider({
     return DATE_PRESETS.some(p => p.value === saved) ? saved! : defaultPreset;
   };
 
-  const [preset, setPreset] = useState(() => {
-    return resolvePreset();
-  });
-  
+  const [preset, setPreset] = useState(() => resolvePreset());
+
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const presetConfig = DATE_PRESETS.find(p => p.value === resolvePreset()) ?? DATE_PRESETS[2];
     return {
@@ -65,12 +63,12 @@ export function DateRangeProvider({
   };
 
   return (
-    <DateRangeContext.Provider 
-      value={{ 
-        dateRange, 
-        setDateRange, 
-        preset, 
-        setPreset: handleSetPreset 
+    <DateRangeContext.Provider
+      value={{
+        dateRange,
+        setDateRange,
+        preset,
+        setPreset: handleSetPreset,
       }}
     >
       {children}
