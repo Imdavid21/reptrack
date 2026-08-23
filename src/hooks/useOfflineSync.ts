@@ -5,6 +5,29 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const MAX_RETRIES = 5;
 
+type DynamicResult = {
+  data: Array<Record<string, unknown>> | null;
+  error: { code?: string; message?: string } | null;
+};
+
+interface DynamicQuery extends PromiseLike<DynamicResult> {
+  select(columns?: string): DynamicQuery;
+  insert(payload: Record<string, unknown>): DynamicQuery;
+  update(payload: Record<string, unknown>): DynamicQuery;
+  delete(): DynamicQuery;
+  eq(column: string, value: unknown): DynamicQuery;
+  limit(count: number): DynamicQuery;
+}
+
+const dynamicSupabase = supabase as unknown as {
+  from: (table: string) => DynamicQuery;
+};
+
+function errorCode(error: unknown) {
+  if (!error || typeof error !== 'object' || !('code' in error)) return '';
+  return String((error as { code?: unknown }).code ?? '');
+}
+
 export function useOfflineSync() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
@@ -53,7 +76,8 @@ export function useOfflineSync() {
     }
 
     if (item.table === 'workout_pauses' && payload.workout_id && payload.paused_at) {
-      const { data, error } = await (supabase.from('workout_pauses' as any) as any)
+      const { data, error } = await dynamicSupabase
+        .from('workout_pauses')
         .select('id')
         .eq('workout_id', String(payload.workout_id))
         .eq('paused_at', String(payload.paused_at))
@@ -71,21 +95,22 @@ export function useOfflineSync() {
 
   const processItem = useCallback(async (item: SyncQueueItem): Promise<boolean> => {
     try {
+      const table = dynamicSupabase.from(item.table);
       if (item.operation === 'insert') {
         if (await insertAlreadyLanded(item)) return true;
-        const { error } = await supabase.from(item.table as any).insert(item.payload as any);
+        const { error } = await table.insert(item.payload);
         if (error) throw error;
       } else if (item.operation === 'update') {
         const { id: rowId, ...updates } = item.payload;
-        const { error } = await supabase.from(item.table as any).update(updates as any).eq('id', rowId as string);
+        const { error } = await table.update(updates).eq('id', rowId);
         if (error) throw error;
       } else if (item.operation === 'delete') {
-        const { error } = await supabase.from(item.table as any).delete().eq('id', item.payload.id as string);
+        const { error } = await table.delete().eq('id', item.payload.id);
         if (error) throw error;
       }
       return true;
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if (errorCode(err) === '23505') {
         console.warn(`[OfflineSync] Item ${item.id} already present server-side, dropping`);
         return true;
       }
