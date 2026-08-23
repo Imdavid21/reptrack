@@ -111,9 +111,10 @@ export default function SettingsAccount() {
     }
   };
 
-  const useAutomatic = async (field: 'calorie_target_locked' | 'protein_target_locked') => {
+  const restoreAutomatic = async (field: 'calorie_target_locked' | 'protein_target_locked') => {
     try {
-      await updatePreferences.mutateAsync({ [field]: false });
+      if (field === 'calorie_target_locked') await updatePreferences.mutateAsync({ calorie_target_locked: false });
+      else await updatePreferences.mutateAsync({ protein_target_locked: false });
       toast.success(field === 'calorie_target_locked' ? 'Automatic calorie target restored' : 'Automatic protein target restored');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not update target mode');
@@ -146,7 +147,7 @@ export default function SettingsAccount() {
       </div></section>
 
       <section className="mb-7 scroll-mt-4" id="nutrition"><div className="mb-3"><div className="type-eyebrow">Nutrition</div><h2 className="type-section-title mt-1">Daily targets</h2></div><div className="rounded-[20px] border border-border bg-card p-4 space-y-4"><div className="grid sm:grid-cols-3 gap-4"><div><Label htmlFor="settings-calories">Calories</Label><Input id="settings-calories" type="number" min="800" max="6000" value={form.daily_calorie_goal} onChange={event => field('daily_calorie_goal', event.target.value)} className="mt-1 h-12" /><p className="type-caption mt-1">{preferences?.calorie_target_locked ? 'Manual target' : 'Automatic unless you edit and save this value'}</p></div><div><Label htmlFor="settings-protein">Protein (g)</Label><Input id="settings-protein" type="number" min="1" max="500" value={form.daily_protein_goal} onChange={event => field('daily_protein_goal', event.target.value)} className="mt-1 h-12" /><p className="type-caption mt-1">{preferences?.protein_target_locked ? 'Manual target' : 'Automatic unless you edit and save this value'}</p></div><div><Label htmlFor="settings-water">Water (L)</Label><Input id="settings-water" type="number" step="0.25" min="0.25" max="15" value={form.daily_water_goal} onChange={event => field('daily_water_goal', event.target.value)} className="mt-1 h-12" /></div></div>
-        {(preferences?.calorie_target_locked || preferences?.protein_target_locked) && <div className="flex flex-wrap gap-2 border-t border-border pt-4">{preferences?.calorie_target_locked && <button type="button" onClick={() => useAutomatic('calorie_target_locked')} className="min-h-10 rounded-xl bg-muted px-3 text-xs font-semibold">Use automatic calories</button>}{preferences?.protein_target_locked && <button type="button" onClick={() => useAutomatic('protein_target_locked')} className="min-h-10 rounded-xl bg-muted px-3 text-xs font-semibold">Use automatic protein</button>}</div>}
+        {(preferences?.calorie_target_locked || preferences?.protein_target_locked) && <div className="flex flex-wrap gap-2 border-t border-border pt-4">{preferences?.calorie_target_locked && <button type="button" onClick={() => restoreAutomatic('calorie_target_locked')} className="min-h-10 rounded-xl bg-muted px-3 text-xs font-semibold">Use automatic calories</button>}{preferences?.protein_target_locked && <button type="button" onClick={() => restoreAutomatic('protein_target_locked')} className="min-h-10 rounded-xl bg-muted px-3 text-xs font-semibold">Use automatic protein</button>}</div>}
         <p className="type-caption">Changing a tracked target also records its effective date so historical Dataroom comparisons keep the goal that was actually in effect.</p>
       </div></section>
 
