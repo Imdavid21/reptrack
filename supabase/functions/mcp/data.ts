@@ -69,7 +69,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
 
   if (name === "get_workouts") {
     const limit = Math.min(args.limit ?? 50, 50), result = await workoutRows(db, start, end, limit, args);
-    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, session_key:w.session_key, readiness:w.readiness_band, completion_percent:w.completion_percent, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, set_kind:e.set_kind, reps: e.actual_reps, load: e.actual_weight, rir:e.actual_rir, rom_quality:e.rom_quality, pain_score:e.pain_score, completed: e.completed })) }));
+    const data = result.rows.map((w: any) => ({ workout_id: w.id, date: w.date, completed_at: w.completed_at, workout_name: w.day_name, session_key:w.session_key, readiness:w.readiness_band, completion_percent:w.completion_percent, duration_minutes: w.workout_duration_minutes, skipped: w.is_skipped, exercises: (w.exercises || []).filter((e:any) => e.completed !== false).map((e:any) => ({ exercise: e.name, category: e.category, set_kind:e.set_kind, reps: e.actual_reps, load:e.actual_weight, rir:e.actual_rir, rom_quality:e.rom_quality, pain_score:e.pain_score, completed:e.completed })) }));
     return envelope(start, end, timezone, data, { workouts_returned: data.length }, { has_more: result.hasMore, limit });
   }
 
