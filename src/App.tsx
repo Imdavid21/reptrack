@@ -37,6 +37,9 @@ const LifecycleTracker = lazy(() => import("./pages/LifecycleTracker"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpStatus = lazy(() => import("./pages/McpStatus"));
+const PerformanceLab = lazy(() => import("./pages/PerformanceLab"));
+const AdvancedSimulator = lazy(() => import("./pages/AdvancedSimulator"));
+const GymProfiles = lazy(() => import("./pages/GymProfiles"));
 
 function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
@@ -101,6 +104,10 @@ function AppRoutes() {
         <Route path="/app/dataroom/activity" element={<DataroomActivity />} />
         <Route path="/app/dataroom/records" element={<DataroomRecords />} />
         <Route path="/app/dataroom/explore" element={<DataroomExplore />} />
+
+        <Route path="/app/lab" element={<PerformanceLab />} />
+        <Route path="/app/lab/simulator" element={<AdvancedSimulator />} />
+        <Route path="/app/lab/gyms" element={<GymProfiles />} />
 
         <Route path="/app/settings" element={<SettingsHub />} />
         <Route path="/app/settings/account" element={<SettingsAccount />} />
