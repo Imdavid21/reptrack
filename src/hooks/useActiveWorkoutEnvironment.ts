@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './useAuth';
 
 const TAB_KEY = 'reptrack-active-workout-tab';
@@ -46,10 +46,10 @@ export function formatWorkoutElapsed(seconds: number) {
 }
 
 /**
- * Browser/device-only coordination for the active logger. This never writes
- * fitness history or persistent workout semantics. It only exposes elapsed
- * context and warns when another tab appears to be editing the same local
- * active-workout state.
+ * Device-only coordination for the active logger. One tab owns a short lease.
+ * Other tabs remain readable but should not mutate the workout until the user
+ * explicitly takes over. This avoids two local drafts racing without adding a
+ * database locking model.
  */
 export function useActiveWorkoutEnvironment() {
   const { user } = useAuth();
@@ -76,19 +76,23 @@ export function useActiveWorkoutEnvironment() {
     return () => window.clearInterval(interval);
   }, [user]);
 
-  useEffect(() => {
+  const claim = useCallback((force = false) => {
     const tabId = tabIdRef.current;
-    const checkAndClaim = () => {
-      const existing = parseLease(window.localStorage.getItem(TAB_KEY));
-      const aliveOther = !!existing && existing.tabId !== tabId && Date.now() - existing.updatedAt < STALE_MS;
-      setOtherTabActive(aliveOther);
-      // Do not overwrite a healthy lease owned by another tab. The second tab
-      // remains read/edit-capable but gets a clear conflict warning instead of
-      // silently becoming the authoritative writer.
-      if (!aliveOther) {
-        window.localStorage.setItem(TAB_KEY, JSON.stringify({ tabId, updatedAt: Date.now() } satisfies ActiveTabLease));
-      }
-    };
+    const existing = parseLease(window.localStorage.getItem(TAB_KEY));
+    const aliveOther = !!existing && existing.tabId !== tabId && Date.now() - existing.updatedAt < STALE_MS;
+    if (aliveOther && !force) {
+      setOtherTabActive(true);
+      return false;
+    }
+    window.localStorage.setItem(TAB_KEY, JSON.stringify({ tabId, updatedAt: Date.now() } satisfies ActiveTabLease));
+    setOtherTabActive(false);
+    return true;
+  }, []);
+
+  const takeOver = useCallback(() => claim(true), [claim]);
+
+  useEffect(() => {
+    const checkAndClaim = () => { claim(false); };
     checkAndClaim();
     const interval = window.setInterval(checkAndClaim, 3000);
     const onStorage = (event: StorageEvent) => { if (event.key === TAB_KEY) checkAndClaim(); };
@@ -97,14 +101,16 @@ export function useActiveWorkoutEnvironment() {
       window.clearInterval(interval);
       window.removeEventListener('storage', onStorage);
       const existing = parseLease(window.localStorage.getItem(TAB_KEY));
-      if (existing?.tabId === tabId) window.localStorage.removeItem(TAB_KEY);
+      if (existing?.tabId === tabIdRef.current) window.localStorage.removeItem(TAB_KEY);
     };
-  }, []);
+  }, [claim]);
 
   return useMemo(() => ({
     elapsedSeconds,
     elapsedLabel: formatWorkoutElapsed(elapsedSeconds),
     unusuallyLong: elapsedSeconds >= 4 * 60 * 60,
     otherTabActive,
-  }), [elapsedSeconds, otherTabActive]);
+    canEdit: !otherTabActive,
+    takeOver,
+  }), [elapsedSeconds, otherTabActive, takeOver]);
 }
