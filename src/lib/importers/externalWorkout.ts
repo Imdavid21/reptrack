@@ -55,7 +55,7 @@ function dateKey(value: string) {
   const trimmed = value.trim();
   const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const slash = trimmed.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  const slash = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
   if (slash) {
     const year = slash[3].length === 2 ? `20${slash[3]}` : slash[3];
     const a = Number(slash[1]), b = Number(slash[2]);
