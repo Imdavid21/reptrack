@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { subDays } from 'date-fns';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAdvancedMode } from '@/hooks/useAdvancedMode';
@@ -19,10 +19,19 @@ export default function AdvancedSimulator() {
   const trend = weightTrend(data.metrics.map(point => ({ date: point.date, bodyweight: point.bodyweight })));
   const currentWeight = trend.latest ?? Number(data.preferences?.initial_weight_kg || 70);
   const defaultTarget = Number(data.preferences?.weight_goal || Math.max(40, currentWeight - 4));
+  const defaultDeficit = Number(data.preferences?.daily_deficit_target || 500);
   const [target, setTarget] = useState(defaultTarget);
-  const [deficit, setDeficit] = useState(Number(data.preferences?.daily_deficit_target || 500));
+  const [deficit, setDeficit] = useState(defaultDeficit);
+  const touched = useRef({ target: false, deficit: false });
   const maintenance = energy.model?.personalBaseline ?? Number(data.preferences?.maintenance_calories || 2000);
   const result = simulateCut({ currentWeight, targetWeight: target, dailyDeficit: deficit, maintenance });
+
+  useEffect(() => {
+    if (!touched.current.target && defaultTarget > 0) setTarget(defaultTarget);
+  }, [defaultTarget]);
+  useEffect(() => {
+    if (!touched.current.deficit && defaultDeficit >= 0) setDeficit(defaultDeficit);
+  }, [defaultDeficit]);
 
   if (!settings.enabled) return <MainLayout showBack backTo="/app/settings" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><div className="type-page-title">Advanced Mode is off</div></div></MainLayout>;
 
@@ -37,8 +46,8 @@ export default function AdvancedSimulator() {
       </div>
 
       <section className="rounded-[20px] border border-border bg-card p-5 space-y-7">
-        <div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Goal weight</span><span className="text-lg font-semibold tabular-nums">{target.toFixed(1)} kg</span></div><Slider className="mt-4" min={Math.max(35, Math.floor(currentWeight - 20))} max={Math.ceil(currentWeight + 10)} step={0.5} value={[target]} onValueChange={([value]) => setTarget(value)} /></div>
-        <div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Daily deficit</span><span className="text-lg font-semibold tabular-nums">{deficit} kcal</span></div><Slider className="mt-4" min={0} max={1000} step={50} value={[deficit]} onValueChange={([value]) => setDeficit(value)} /></div>
+        <div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Goal weight</span><span className="text-lg font-semibold tabular-nums">{target.toFixed(1)} kg</span></div><Slider className="mt-4" min={Math.max(35, Math.floor(currentWeight - 20))} max={Math.ceil(currentWeight + 10)} step={0.5} value={[target]} onValueChange={([value]) => { touched.current.target = true; setTarget(value); }} /></div>
+        <div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Daily deficit</span><span className="text-lg font-semibold tabular-nums">{deficit} kcal</span></div><Slider className="mt-4" min={0} max={1000} step={50} value={[deficit]} onValueChange={([value]) => { touched.current.deficit = true; setDeficit(value); }} /></div>
       </section>
 
       <div className="mt-5 grid grid-cols-2 gap-px rounded-xl border border-border bg-border overflow-hidden"><Result label="Current" value={`${currentWeight.toFixed(1)} kg`} /><Result label="Baseline" value={`${Math.round(maintenance)} kcal`} /></div>
