@@ -8,7 +8,7 @@ import { normalizeWaterGoalLiters } from '@/lib/bodyScore';
 import { localDateKey } from '@/lib/dateKey';
 import { useLogDate } from '@/contexts/LogDateContext';
 import { CalorieTrackerCompact } from '@/components/health/CalorieTrackerCompact';
-import { ActivityLogger } from '@/components/health/ActivityLogger';
+import { ActivityLoggerV2 } from '@/components/health/ActivityLoggerV2';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { haptic } from '@/lib/haptics';
@@ -71,7 +71,7 @@ export function TodaySnapshot() {
         {waterExpanded && <div className="mt-2 space-y-1.5">{waterLogs.map(log => <div key={log.id} className="flex items-center justify-between text-sm"><span className="text-muted-foreground tabular-nums">{logTime(log.timestamp)}</span><span className="font-medium tabular-nums">{Number(log.amount).toFixed(2)} L</span></div>)}</div>}
       </div>
 
-      <ActivityLogger compact />
+      <ActivityLoggerV2 />
     </section>
 
     <section id="nutrition" className="mt-3" aria-label="Nutrition"><CalorieTrackerCompact /></section>
