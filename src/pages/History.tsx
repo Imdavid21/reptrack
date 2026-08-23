@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ChevronRight, Dumbbell, Footprints, Moon, Scale, Utensils } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useNavigate } from 'react-router-dom';
@@ -11,16 +11,8 @@ import { EditActivityDialog } from '@/components/health/EditActivityDialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { parseDateKey } from '@/lib/dateKey';
-import { PROGRESS_RANGE_DAYS, type ProgressRangeKey } from '@/lib/progressSummary';
-
-const RANGE_OPTIONS: ProgressRangeKey[] = ['7D', '30D', '3M', '6M', '1Y'];
-const RANGE_KEY = 'reptrack-progress-range';
-
-function readRange(): ProgressRangeKey {
-  if (typeof window === 'undefined') return '30D';
-  const value = window.localStorage.getItem(RANGE_KEY) as ProgressRangeKey | null;
-  return value && RANGE_OPTIONS.includes(value) ? value : '30D';
-}
+import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
+import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
 
 function sleepLabel(hours: number) {
   const whole = Math.floor(hours);
@@ -40,12 +32,10 @@ type MetricEdit = {
   minutes: number;
 };
 
-export default function History() {
+function TimelineContent() {
   const navigate = useNavigate();
-  const [range, setRange] = useState<ProgressRangeKey>(readRange);
-  const days = PROGRESS_RANGE_DAYS[range];
-  const to = useMemo(() => new Date(), []);
-  const from = useMemo(() => subDays(to, days - 1), [to, days]);
+  const { days, dateRange } = useDataroomRange();
+  const { from, to } = dateRange;
   const { workouts } = useWorkouts();
   const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from, to });
   const { data: calories = [] } = useCalorieHistory({ from, to });
@@ -56,11 +46,12 @@ export default function History() {
   const metricsByDate = useMemo(() => new Map((metrics?.dataPoints || []).map(row => [row.date, row])), [metrics?.dataPoints]);
   const caloriesByDate = useMemo(() => new Map(calories.map(row => [row.date, row])), [calories]);
   const burnsByDate = useMemo(() => manualBurns.reduce((map, burn) => {
+    if (burn.date < format(from, 'yyyy-MM-dd') || burn.date > format(to, 'yyyy-MM-dd')) return map;
     const current = map.get(burn.date) || [];
     current.push(burn);
     map.set(burn.date, current);
     return map;
-  }, new Map<string, BurnEntry[]>()), [manualBurns]);
+  }, new Map<string, BurnEntry[]>()), [manualBurns, from, to]);
   const workoutsByDate = useMemo(() => workouts.reduce((map, workout) => {
     if (workout.date < format(from, 'yyyy-MM-dd') || workout.date > format(to, 'yyyy-MM-dd')) return map;
     const current = map.get(workout.date) || [];
@@ -83,13 +74,7 @@ export default function History() {
   const startMetricEdit = (type: 'weight' | 'sleep', date: string) => {
     const metric = metricsByDate.get(date);
     const sleep = Number(metric?.sleep_hours || 0);
-    setMetricEdit({
-      type,
-      date,
-      weight: metric?.bodyweight ? String(metric.bodyweight) : '',
-      hours: Math.floor(sleep),
-      minutes: Math.round((sleep % 1) * 60),
-    });
+    setMetricEdit({ type, date, weight: metric?.bodyweight ? String(metric.bodyweight) : '', hours: Math.floor(sleep), minutes: Math.round((sleep % 1) * 60) });
   };
 
   const saveMetric = async () => {
@@ -106,15 +91,11 @@ export default function History() {
     setMetricEdit(null);
   };
 
-  return <MainLayout wide>
+  return <MainLayout wide showBack backTo="/app/dataroom">
     <div className="mx-auto w-full max-w-[900px] pb-10">
-      <header className="mb-5"><div className="type-eyebrow">Progress</div><h1 className="type-page-title mt-1">Timeline</h1><p className="type-supporting mt-1">A chronological record of training, bodyweight, sleep, food, and activity.</p></header>
+      <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="type-eyebrow">Dataroom</div><h1 className="type-page-title mt-1">Timeline</h1><p className="type-supporting mt-1">What actually happened across training, bodyweight, sleep, food, and recorded activity.</p></div><DataroomRangeSelector /></header>
 
-      <div className="inline-flex p-1 rounded-xl bg-muted mb-5" aria-label="Timeline range">
-        {RANGE_OPTIONS.map(option => <button key={option} onClick={() => { setRange(option); window.localStorage.setItem(RANGE_KEY, option); }} aria-pressed={range === option} className={`min-h-9 px-3 rounded-lg text-xs font-semibold tabular-nums ${range === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>{option}</button>)}
-      </div>
-
-      {daysWithData.length === 0 ? <section className="rounded-[20px] border border-border bg-card px-5 py-12 text-center"><p className="font-semibold">No history in this range.</p><p className="type-supporting mt-1">Complete a workout or log a daily metric to begin the timeline.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">Start workout</button></section> : <div className="border-y border-border divide-y divide-border">
+      {daysWithData.length === 0 ? <section className="rounded-[20px] border border-border bg-card px-5 py-12 text-center"><p className="font-semibold">No records in this range.</p><p className="type-supporting mt-1">Complete a workout or log a daily metric to begin the timeline.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">Start workout</button></section> : <div className="border-y border-border divide-y divide-border">
         {daysWithData.map(date => {
           const metric = metricsByDate.get(date);
           const nutrition = caloriesByDate.get(date);
@@ -122,19 +103,15 @@ export default function History() {
           const dayWorkouts = workoutsByDate.get(date) || [];
           const isToday = date === format(new Date(), 'yyyy-MM-dd');
           return <section key={date} className="py-5">
-            <div className="mb-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold">{isToday ? 'Today' : format(parseDateKey(date), 'EEEE, MMM d')}</div><div className="type-caption mt-0.5">{date}</div></div></div>
+            <div className="mb-3"><div className="text-sm font-semibold">{isToday ? 'Today' : format(parseDateKey(date), 'EEEE, MMM d')}</div><div className="type-caption mt-0.5">{date}</div></div>
             <div className="divide-y divide-border rounded-[18px] border border-border bg-card overflow-hidden">
               {dayWorkouts.map(workout => {
                 const skipped = (workout as typeof workout & { is_skipped?: boolean }).is_skipped;
-                return <button key={workout.id} onClick={() => skipped ? undefined : navigate(`/app/progress/workout/${workout.id}`)} disabled={skipped} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left enabled:hover:bg-muted/30 disabled:cursor-default"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Dumbbell className="h-4 w-4"/></span><span className="flex-1 min-w-0"><span className="block text-sm font-semibold">{workout.day_name}{skipped ? ' · skipped' : ''}</span><span className="block type-caption mt-0.5">{workout.workout_duration_minutes ? `${Math.round(workout.workout_duration_minutes)} min` : skipped ? 'No training logged' : 'Workout'}</span></span>{!skipped && <ChevronRight className="h-4 w-4 text-muted-foreground"/>}</button>;
+                return <button key={workout.id} onClick={() => skipped ? undefined : navigate(`/app/dataroom/workout/${workout.id}`)} disabled={skipped} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left enabled:hover:bg-muted/30 disabled:cursor-default"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Dumbbell className="h-4 w-4"/></span><span className="flex-1 min-w-0"><span className="block text-sm font-semibold">{workout.day_name}{skipped ? ' · skipped' : ''}</span><span className="block type-caption mt-0.5">{workout.workout_duration_minutes ? `${Math.round(workout.workout_duration_minutes)} min` : skipped ? 'No training logged' : 'Workout'}</span></span>{!skipped && <ChevronRight className="h-4 w-4 text-muted-foreground"/>}</button>;
               })}
-
               {metric?.bodyweight != null && metric.bodyweight > 0 && <button onClick={() => startMetricEdit('weight', date)} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/30"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Scale className="h-4 w-4"/></span><span className="flex-1"><span className="block text-sm font-semibold">Bodyweight</span><span className="block type-caption mt-0.5">Tap to correct this entry</span></span><span className="text-sm font-semibold tabular-nums">{weightLabel(metric.bodyweight)}</span></button>}
-
               {metric?.sleep_hours != null && metric.sleep_hours > 0 && <button onClick={() => startMetricEdit('sleep', date)} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/30"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Moon className="h-4 w-4"/></span><span className="flex-1"><span className="block text-sm font-semibold">Sleep</span><span className="block type-caption mt-0.5">Logged duration</span></span><span className="text-sm font-semibold tabular-nums">{sleepLabel(metric.sleep_hours)}</span></button>}
-
-              {nutrition && nutrition.intake > 0 && <button onClick={() => navigate('/app/progress/analytics?tab=nutrition')} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/30"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Utensils className="h-4 w-4"/></span><span className="flex-1"><span className="block text-sm font-semibold">Food logged</span><span className="block type-caption mt-0.5">Logged intake only; completeness is unknown</span></span><span className="text-sm font-semibold tabular-nums">{Math.round(nutrition.intake).toLocaleString()} kcal</span></button>}
-
+              {nutrition && nutrition.intake > 0 && <button onClick={() => navigate('/app/dataroom/nutrition')} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/30"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Utensils className="h-4 w-4"/></span><span className="flex-1"><span className="block text-sm font-semibold">Food logged</span><span className="block type-caption mt-0.5">Logged intake only; completeness is unknown</span></span><span className="text-sm font-semibold tabular-nums">{Math.round(nutrition.intake).toLocaleString()} kcal</span></button>}
               {dayBurns.map(burn => <button key={burn.id} onClick={() => setEditingBurn(burn)} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/30"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center"><Footprints className="h-4 w-4"/></span><span className="flex-1"><span className="block text-sm font-semibold capitalize">{(burn.activity_type || 'Activity').replace(/_/g, ' ')}</span><span className="block type-caption mt-0.5">{burn.distance_km != null ? `${Number(burn.distance_km).toFixed(1)} km` : `${burn.duration_minutes || 0} min`} · tap to edit</span></span><span className="text-sm font-semibold tabular-nums">~{Math.round(burn.calories)} kcal</span></button>)}
             </div>
           </section>;
@@ -142,16 +119,11 @@ export default function History() {
       </div>}
 
       <EditActivityDialog burn={editingBurn} onClose={() => setEditingBurn(null)} onSave={input => updateBurn.mutateAsync(input)} onDelete={id => deleteBurn.mutateAsync(id)} />
-
-      <Drawer open={!!metricEdit} onOpenChange={open => !open && setMetricEdit(null)}>
-        <DrawerContent className="rounded-t-[28px]">
-          <DrawerHeader className="px-5 text-left"><DrawerTitle>{metricEdit?.type === 'weight' ? 'Bodyweight' : 'Sleep'}{metricEdit ? ` · ${format(parseDateKey(metricEdit.date), 'MMM d')}` : ''}</DrawerTitle></DrawerHeader>
-          {metricEdit && <div className="px-5 pb-[max(24px,env(safe-area-inset-bottom))] space-y-5">
-            {metricEdit.type === 'weight' ? <div><label htmlFor="timeline-weight" className="type-caption">Weight (kg)</label><Input id="timeline-weight" autoFocus type="number" inputMode="decimal" step="0.01" value={metricEdit.weight} onChange={event => setMetricEdit(value => value ? { ...value, weight: event.target.value } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div> : <div className="grid grid-cols-2 gap-3"><div><label htmlFor="timeline-sleep-hours" className="type-caption">Hours</label><Input id="timeline-sleep-hours" autoFocus type="number" inputMode="numeric" min="0" max="23" value={metricEdit.hours} onChange={event => setMetricEdit(value => value ? { ...value, hours: Math.max(0, Math.min(23, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div><div><label htmlFor="timeline-sleep-minutes" className="type-caption">Minutes</label><Input id="timeline-sleep-minutes" type="number" inputMode="numeric" min="0" max="59" value={metricEdit.minutes} onChange={event => setMetricEdit(value => value ? { ...value, minutes: Math.max(0, Math.min(59, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div></div>}
-            <button onClick={saveMetric} disabled={isUpserting} className="w-full min-h-14 rounded-2xl bg-foreground text-background font-semibold disabled:opacity-50">{isUpserting ? 'Saving…' : 'Save'}</button>
-          </div>}
-        </DrawerContent>
-      </Drawer>
+      <Drawer open={!!metricEdit} onOpenChange={open => !open && setMetricEdit(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="px-5 text-left"><DrawerTitle>{metricEdit?.type === 'weight' ? 'Bodyweight' : 'Sleep'}{metricEdit ? ` · ${format(parseDateKey(metricEdit.date), 'MMM d')}` : ''}</DrawerTitle></DrawerHeader>{metricEdit && <div className="px-5 pb-[max(24px,env(safe-area-inset-bottom))] space-y-5">{metricEdit.type === 'weight' ? <div><label htmlFor="timeline-weight" className="type-caption">Weight (kg)</label><Input id="timeline-weight" autoFocus type="number" inputMode="decimal" step="0.01" value={metricEdit.weight} onChange={event => setMetricEdit(value => value ? { ...value, weight: event.target.value } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div> : <div className="grid grid-cols-2 gap-3"><div><label htmlFor="timeline-sleep-hours" className="type-caption">Hours</label><Input id="timeline-sleep-hours" autoFocus type="number" inputMode="numeric" min="0" max="23" value={metricEdit.hours} onChange={event => setMetricEdit(value => value ? { ...value, hours: Math.max(0, Math.min(23, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div><div><label htmlFor="timeline-sleep-minutes" className="type-caption">Minutes</label><Input id="timeline-sleep-minutes" type="number" inputMode="numeric" min="0" max="59" value={metricEdit.minutes} onChange={event => setMetricEdit(value => value ? { ...value, minutes: Math.max(0, Math.min(59, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div></div>}<button onClick={saveMetric} disabled={isUpserting} className="w-full min-h-14 rounded-2xl bg-foreground text-background font-semibold disabled:opacity-50">{isUpserting ? 'Saving…' : 'Save'}</button></div>}</DrawerContent></Drawer>
     </div>
   </MainLayout>;
+}
+
+export default function History() {
+  return <DataroomRangeProvider><TimelineContent /></DataroomRangeProvider>;
 }

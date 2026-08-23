@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
 import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
 import { WorkoutCompletionWatcher } from "./components/workout/WorkoutCompletionWatcher";
@@ -19,28 +19,45 @@ import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
 
 const AdaptiveWorkout = lazy(() => import("./pages/AdaptiveWorkout"));
-const Progress = lazy(() => import("./pages/Progress"));
-const Insights = lazy(() => import("./pages/Insights"));
 const Dataroom = lazy(() => import("./pages/Dataroom"));
+const DataroomBody = lazy(() => import("./pages/DataroomBody"));
+const DataroomTraining = lazy(() => import("./pages/DataroomTraining"));
+const DataroomExercise = lazy(() => import("./pages/DataroomExercise"));
+const DataroomNutrition = lazy(() => import("./pages/DataroomNutrition"));
+const DataroomRecovery = lazy(() => import("./pages/DataroomRecovery"));
+const DataroomActivity = lazy(() => import("./pages/DataroomActivity"));
+const DataroomRecords = lazy(() => import("./pages/DataroomRecords"));
+const DataroomExplore = lazy(() => import("./pages/DataroomExplore"));
 const History = lazy(() => import("./pages/History"));
-const Settings = lazy(() => import("./pages/Settings"));
 const SettingsHub = lazy(() => import("./pages/SettingsHub"));
+const SettingsAccount = lazy(() => import("./pages/SettingsAccount"));
+const SettingsData = lazy(() => import("./pages/SettingsData"));
+const SettingsAdvanced = lazy(() => import("./pages/SettingsAdvanced"));
 const LifecycleTracker = lazy(() => import("./pages/LifecycleTracker"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpStatus = lazy(() => import("./pages/McpStatus"));
 
 function RouteFallback() {
-  return (
-    <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite">
-      <span className="type-caption">Loading…</span>
-    </div>
-  );
+  return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
 }
 
-function ProgressWorkoutRedirect() {
+function DataroomWorkoutRedirect() {
   const { workoutId } = useParams();
-  return <Navigate to={`/app/progress/workout/${workoutId}`} replace />;
+  return <Navigate to={`/app/dataroom/workout/${workoutId}`} replace />;
+}
+
+function LegacyAnalyticsRedirect() {
+  const [params] = useSearchParams();
+  const tab = params.get('tab');
+  const target = tab === 'nutrition'
+    ? '/app/dataroom/nutrition'
+    : tab === 'training'
+      ? '/app/dataroom/training'
+      : tab === 'vitals'
+        ? '/app/dataroom/recovery'
+        : '/app/dataroom/explore';
+  return <Navigate to={target} replace />;
 }
 
 function RootRoute() {
@@ -53,9 +70,7 @@ function RootRoute() {
 }
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { refetchOnWindowFocus: false, retry: 1 },
-  },
+  defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
 });
 
 function AppRoutes() {
@@ -74,39 +89,51 @@ function AppRoutes() {
         <Route path="/app" element={<AppIndex />} />
         <Route path="/app/train" element={<AdaptiveWorkout />} />
         <Route path="/app/train/current" element={<AdaptiveWorkout />} />
-        <Route path="/app/progress" element={<Progress />} />
 
-        <Route path="/app/progress/history" element={<History />} />
-        <Route path="/app/progress/workout/:workoutId" element={<WorkoutDetail />} />
-        <Route path="/app/progress/analytics" element={<Insights />} />
-        <Route path="/app/progress/dataroom" element={<Dataroom />} />
-        <Route path="/app/progress/weight" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
-        <Route path="/app/progress/nutrition" element={<Navigate to="/app/progress/analytics?tab=nutrition" replace />} />
-        <Route path="/app/progress/training" element={<Navigate to="/app/progress/analytics?tab=training" replace />} />
-        <Route path="/app/progress/recovery" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
+        <Route path="/app/dataroom" element={<Dataroom />} />
+        <Route path="/app/dataroom/timeline" element={<History />} />
+        <Route path="/app/dataroom/workout/:workoutId" element={<WorkoutDetail />} />
+        <Route path="/app/dataroom/exercise/:exercise" element={<DataroomExercise />} />
+        <Route path="/app/dataroom/body" element={<DataroomBody />} />
+        <Route path="/app/dataroom/training" element={<DataroomTraining />} />
+        <Route path="/app/dataroom/nutrition" element={<DataroomNutrition />} />
+        <Route path="/app/dataroom/recovery" element={<DataroomRecovery />} />
+        <Route path="/app/dataroom/activity" element={<DataroomActivity />} />
+        <Route path="/app/dataroom/records" element={<DataroomRecords />} />
+        <Route path="/app/dataroom/explore" element={<DataroomExplore />} />
 
         <Route path="/app/settings" element={<SettingsHub />} />
-        <Route path="/app/settings/advanced" element={<Settings />} />
-        <Route path="/app/settings/data" element={<Navigate to="/app/settings/advanced" replace />} />
+        <Route path="/app/settings/account" element={<SettingsAccount />} />
+        <Route path="/app/settings/data" element={<SettingsData />} />
+        <Route path="/app/settings/advanced" element={<SettingsAdvanced />} />
         <Route path="/app/settings/mcp" element={<McpStatus />} />
         <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
         <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
-        <Route path="/app/log" element={<AdaptiveWorkout />} />
-        <Route path="/app/history" element={<Navigate to="/app/progress/history" replace />} />
-        <Route path="/app/history/:workoutId" element={<ProgressWorkoutRedirect />} />
-        <Route path="/app/insights" element={<Navigate to="/app/progress/analytics" replace />} />
-        <Route path="/app/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
+        {/* Analytical compatibility routes. Old concepts resolve into the one Dataroom hierarchy. */}
+        <Route path="/app/progress" element={<Navigate to="/app/dataroom" replace />} />
+        <Route path="/app/progress/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/app/progress/workout/:workoutId" element={<DataroomWorkoutRedirect />} />
+        <Route path="/app/progress/analytics" element={<LegacyAnalyticsRedirect />} />
+        <Route path="/app/progress/dataroom" element={<Navigate to="/app/dataroom" replace />} />
+        <Route path="/app/progress/weight" element={<Navigate to="/app/dataroom/body" replace />} />
+        <Route path="/app/progress/nutrition" element={<Navigate to="/app/dataroom/nutrition" replace />} />
+        <Route path="/app/progress/training" element={<Navigate to="/app/dataroom/training" replace />} />
+        <Route path="/app/progress/recovery" element={<Navigate to="/app/dataroom/recovery" replace />} />
+        <Route path="/app/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/app/history/:workoutId" element={<DataroomWorkoutRedirect />} />
+        <Route path="/app/insights" element={<Navigate to="/app/dataroom/explore" replace />} />
         <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
 
+        <Route path="/app/log" element={<AdaptiveWorkout />} />
         <Route path="/log" element={<Navigate to="/app/train" replace />} />
         <Route path="/create" element={<Navigate to="/app/train" replace />} />
-        <Route path="/insights" element={<Navigate to="/app/progress/analytics" replace />} />
-        <Route path="/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
-        <Route path="/analytics" element={<Navigate to="/app/progress/analytics" replace />} />
-        <Route path="/health" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
-        <Route path="/history" element={<Navigate to="/app/progress/history" replace />} />
-        <Route path="/history/:workoutId" element={<ProgressWorkoutRedirect />} />
+        <Route path="/insights" element={<Navigate to="/app/dataroom/explore" replace />} />
+        <Route path="/analytics" element={<LegacyAnalyticsRedirect />} />
+        <Route path="/dataroom" element={<Navigate to="/app/dataroom" replace />} />
+        <Route path="/health" element={<Navigate to="/app/dataroom/recovery" replace />} />
+        <Route path="/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/history/:workoutId" element={<DataroomWorkoutRedirect />} />
         <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
 
         <Route path="*" element={<NotFound />} />

@@ -21,8 +21,20 @@ export interface TrainingSet {
   date: string;
   weight: number;
   reps: number;
+  rir?: number | null;
+  pain?: number | null;
+  rom?: number | null;
+  setKind?: string | null;
 }
-export interface WorkoutObservation { date: string; duration?: number | null }
+export interface WorkoutObservation {
+  date: string;
+  duration?: number | null;
+  completed?: boolean;
+  skipped?: boolean;
+  completionPercent?: number | null;
+  sessionKey?: string | null;
+  readinessBand?: string | null;
+}
 export interface EnergyDay {
   date: string;
   baseline: number;
@@ -52,6 +64,7 @@ export interface ExerciseExposure {
   reps: number;
   e1rm: number;
   volume: number;
+  rir?: number | null;
 }
 export interface ExerciseTrend {
   exercise: string;
@@ -59,7 +72,7 @@ export interface ExerciseTrend {
   confidence: Confidence;
   exposures: ExerciseExposure[];
   deltaPercent: number | null;
-  progressionType: 'load' | 'reps' | 'estimated-strength' | 'stable' | 'possible-decline' | 'unclear';
+  progressionType: 'load' | 'reps' | 'estimated-strength' | 'effort' | 'assistance' | 'duration' | 'stable' | 'possible-decline' | 'unclear';
 }
 
 export interface MuscleExposure {
@@ -87,6 +100,7 @@ export interface RecoveryAnalysis {
   confidence: Confidence;
   averageSleep: number | null;
   sleepNights: number;
+  windowDays: number;
   consecutiveTrainingDays: number;
   recentTrainingDays: number;
   reason: string;
@@ -115,4 +129,3 @@ export interface DataroomAnalysis {
   recovery: RecoveryAnalysis;
   findings: DataroomFinding[];
 }
-

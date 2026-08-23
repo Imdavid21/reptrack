@@ -4,6 +4,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ResumeSessionCard } from '@/components/dashboard/ResumeSessionCard';
 import { TodaySnapshot } from '@/components/dashboard/TodaySnapshot';
+import { DeficitBalanceSummary } from '@/components/dashboard/DeficitBalanceSummary';
 import { LogDateProvider } from '@/contexts/LogDateContext';
 import { DashboardDateBar } from '@/components/dashboard/DashboardDateBar';
 
@@ -17,5 +18,6 @@ export default function Dashboard() {
     <h1 className="sr-only">Today</h1>
     <ResumeSessionCard />
     <TodaySnapshot />
+    <DeficitBalanceSummary />
   </Box></LogDateProvider></MainLayout>;
 }
