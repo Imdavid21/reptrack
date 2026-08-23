@@ -127,6 +127,36 @@ export type Database = {
           },
         ]
       }
+      advanced_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          session_volume_modifier: number
+          specialization_muscles: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          session_volume_modifier?: number
+          specialization_muscles?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          session_volume_modifier?: number
+          specialization_muscles?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_rate_limits: {
         Row: {
           bucket: string
@@ -210,6 +240,36 @@ export type Database = {
           met_estimate?: number | null
           source?: string
           started_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_events: {
+        Row: {
+          created_at: string
+          dedupe_key: string | null
+          event_date: string
+          event_type: string
+          id: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key?: string | null
+          event_date?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          payload?: Json
           user_id?: string
         }
         Relationships: []
@@ -648,6 +708,39 @@ export type Database = {
           id?: string
           user_id?: string
           value?: number
+        }
+        Relationships: []
+      }
+      gym_profiles: {
+        Row: {
+          bar_weight_kg: number
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          plates_kg: number[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bar_weight_kg?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          plates_kg?: number[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bar_weight_kg?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          plates_kg?: number[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1147,6 +1240,84 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           workout_readiness?: number | null
+        }
+        Relationships: []
+      }
+      training_blocks: {
+        Row: {
+          created_at: string
+          ends_on: string | null
+          focus: string | null
+          id: string
+          name: string
+          starts_on: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on?: string | null
+          focus?: string | null
+          id?: string
+          name: string
+          starts_on?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string | null
+          focus?: string | null
+          id?: string
+          name?: string
+          starts_on?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      training_experiments: {
+        Row: {
+          baseline: number | null
+          created_at: string
+          ends_on: string | null
+          id: string
+          metric: string
+          name: string
+          starts_on: string
+          status: string
+          target: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          baseline?: number | null
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          metric: string
+          name: string
+          starts_on?: string
+          status?: string
+          target?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          baseline?: number | null
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          metric?: string
+          name?: string
+          starts_on?: string
+          status?: string
+          target?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
