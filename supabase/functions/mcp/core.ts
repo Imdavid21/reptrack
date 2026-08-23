@@ -8,7 +8,7 @@ export const APPROVED_TOOLS = [
   "get_live_workout", "list_workout_triggers",
 ] as const;
 
-/** Writes are limited to food, water, workouts and activities. No deletes exist. */
+/** Writes are limited to logs and scoped live-workout coaching state. No historical deletes exist. */
 export const WRITE_TOOLS = [
   "log_meal", "update_meal", "log_water",
   "log_workout", "update_workout",
