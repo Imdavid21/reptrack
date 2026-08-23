@@ -1,0 +1,89 @@
+/* RepTrack overhaul refinements. Semantic behavior sits above the existing palette. */
+
+:root {
+  --surface-raised: var(--card);
+  --surface-muted: var(--muted);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-tertiary: 0 0% 48%;
+  --focus: var(--ring);
+}
+
+.dark {
+  --text-tertiary: 0 0% 58%;
+}
+
+button,
+[role='button'],
+a,
+input,
+select,
+textarea {
+  min-inline-size: 0;
+}
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  touch-action: manipulation;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Dynamic viewport sheets must remain usable above mobile keyboards. */
+[role='dialog'] {
+  max-block-size: min(92dvh, 920px);
+}
+
+/* Keep native controls and fixed actions clear of the iOS gesture area. */
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* Utility for calm grouped-list treatment without card nesting. */
+.reptrack-group {
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 20px;
+  background: hsl(var(--card));
+}
+
+.reptrack-group > * + * {
+  border-top: 1px solid hsl(var(--border));
+}
+
+/* Avoid expensive decorative transitions while a workout is running. */
+[data-workout-active='true'] *,
+[data-workout-active='true'] *::before,
+[data-workout-active='true'] *::after {
+  animation-duration: 120ms;
+}
+
+@media (max-width: 374px) {
+  .type-page-title {
+    font-size: 1.75rem;
+  }
+
+  .metric-hero {
+    font-size: 2.1rem;
+  }
+}
+
+@media (min-width: 900px) {
+  body {
+    background: hsl(var(--background));
+  }
+
+  /* Desktop gets breathing room, not stretched mobile controls. */
+  main > div {
+    margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}
