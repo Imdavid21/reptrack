@@ -145,7 +145,7 @@ export default function History() {
           </header>
           {!hasAnyHistory ? (
             <motion.div variants={staggerItem} className="flex flex-col items-center justify-center py-20 px-6 text-center">
-              <Dumbbell size={40} className="text-muted-foreground/30 mb-4" />
+              <Dumbbell size={40} className="mb-4 text-muted-foreground" />
               <p className="text-lg font-semibold text-foreground">No workouts yet</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-[240px]">
                 Your activity will show up here once you log your first session.
@@ -227,8 +227,8 @@ export default function History() {
                     <motion.div key={dateStr} variants={staggerItem}>
                       <div className={cn(
                         'card-brutalist transition-all',
-                        !hasAnyData && !isEditing && 'opacity-40',
-                        isSkipped && 'opacity-60'
+                        !hasAnyData && !isEditing && 'opacity-75',
+                        isSkipped && 'opacity-80'
                       )}>
                         {/* Date Header */}
                         <div className="flex items-center justify-between mb-2">

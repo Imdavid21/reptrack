@@ -269,7 +269,7 @@ export function ExercisePicker({ existingExercises, onAddExercise, dayType, auto
                         className={cn(
                           'shrink-0 px-3 py-1.5 rounded-full text-xs border transition-colors',
                           alreadyAdded
-                            ? 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed border-transparent'
+                            ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent'
                             : 'border-border hover:bg-muted hover:border-foreground/20'
                         )}
                       >

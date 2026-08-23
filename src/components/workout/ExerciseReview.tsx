@@ -148,14 +148,16 @@ function ExerciseItemCard({
             <button
               onClick={onMoveUp}
               disabled={globalIndex === 0}
-              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label={`Move ${exercise.name} up`}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronUp className="h-3 w-3" />
             </button>
             <button
               onClick={onMoveDown}
               disabled={globalIndex === totalExercises - 1}
-              className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label={`Move ${exercise.name} down`}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronDown className="h-3 w-3" />
             </button>

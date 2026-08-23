@@ -54,7 +54,7 @@ export function MuscleBalanceCard({ data, isLoading }: Props) {
           Weekly volume vs hypertrophy landmarks over the selected range.
         </p>
         {ordered.some(b => (b.fromActivity ?? 0) > 0) && (
-          <p className="text-xs text-muted-foreground/70 mt-1 flex items-center gap-1">
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
             <Activity className="h-3 w-3 shrink-0" />
             Includes stimulus from logged activity (walk/run/cycle/boxing), not lifting alone.
           </p>
