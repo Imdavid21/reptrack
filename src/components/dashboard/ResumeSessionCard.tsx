@@ -19,7 +19,7 @@ export function ResumeSessionCard() {
 
   return (
     <button
-      onClick={() => navigate(draft.resumePath || '/app/log')}
+      onClick={() => navigate(draft.resumePath || '/app/train')}
       className="w-full rounded-[24px] bg-foreground text-background p-5 flex items-center gap-3 text-left active:scale-[.99] transition-transform"
     >
       <span className="h-10 w-10 rounded-xl bg-background/15 flex items-center justify-center">
