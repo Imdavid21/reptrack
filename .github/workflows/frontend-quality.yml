@@ -1,0 +1,35 @@
+name: Frontend quality
+
+on:
+  pull_request:
+    branches:
+      - qa/reptrack-overhaul-mainbase
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --package-lock=false --no-audit --no-fund
+      - run: npm run test
+      - run: npm run build
+      - name: Lint changed TypeScript
+        shell: bash
+        run: |
+          base_ref="${GITHUB_BASE_REF}"
+          git fetch origin "$base_ref"
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "origin/$base_ref...HEAD" -- '*.ts' '*.tsx')
+          if (( ${#files[@]} == 0 )); then
+            echo "No changed TypeScript files to lint."
+            exit 0
+          fi
+          printf 'Linting %s changed TypeScript files\n' "${#files[@]}"
+          npx eslint "${files[@]}"
