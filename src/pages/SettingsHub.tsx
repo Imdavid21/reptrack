@@ -15,8 +15,9 @@ function Row({ icon: Icon, title, detail, onClick, trailing }: { icon: typeof Us
 }
 
 function SwitchControl({ checked, label, onChange, disabled = false }: { checked: boolean; label: string; onChange: () => void; disabled?: boolean }) {
-  return <button disabled={disabled} role="switch" aria-label={label} aria-checked={checked} onClick={event => { event.stopPropagation(); onChange(); }} className={cn('relative h-7 w-12 rounded-full transition-colors shrink-0 disabled:opacity-50', checked ? 'bg-foreground' : 'bg-muted')}><span className={cn('absolute top-1 h-5 w-5 rounded-full transition-transform', checked ? 'translate-x-5 bg-background' : 'translate-x-1 bg-foreground')} /></button>;
+  return <button disabled={disabled} role="switch" aria-label={label} aria-checked={checked} onClick={event => { event.stopPropagation(); onChange(); }} className={cn('relative h-7 w-12 rounded-full border transition-colors shrink-0 disabled:opacity-50', checked ? 'bg-foreground border-foreground' : 'bg-muted border-border')}><span className={cn('absolute top-1/2 left-1 h-5 w-5 -translate-y-1/2 rounded-full shadow-sm transition-transform', checked ? 'translate-x-5 bg-background' : 'translate-x-0 bg-foreground')} /></button>;
 }
+
 
 function ChoiceRow({ label, value, options, onChange, disabled = false }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onChange: (value: string | number) => void; disabled?: boolean }) {
   return <div className="px-4 py-3"><div className="text-sm font-semibold mb-2">{label}</div><div className="flex flex-wrap gap-2">{options.map(option => <button disabled={disabled} key={String(option.value)} onClick={() => onChange(option.value)} aria-pressed={value === option.value} className={cn('min-h-10 rounded-xl px-3 text-xs font-semibold transition-colors disabled:opacity-50', value === option.value ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:text-foreground')}>{option.label}</button>)}</div></div>;
