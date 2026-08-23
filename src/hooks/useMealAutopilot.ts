@@ -6,6 +6,8 @@ import { localDateKey } from '@/lib/dateKey';
 import { mealSuggestions, type MealHistoryRow } from '@/lib/advanced/engine';
 import { mealBundleSuggestions } from '@/lib/advanced/meals';
 
+type MealAutopilotRow = MealHistoryRow & { source_metadata?: Record<string, unknown> | null };
+
 export function useMealAutopilot(mealType?: string) {
   const { user } = useAuth();
   const start = localDateKey(subDays(new Date(), 120));
@@ -18,7 +20,7 @@ export function useMealAutopilot(mealType?: string) {
       if (!user) return { foods: [], bundles: [] };
       let query = supabase
         .from('meals')
-        .select('food_name,meal_type,calories,protein,carbs,fat,date')
+        .select('food_name,meal_type,calories,protein,carbs,fat,date,source_metadata')
         .eq('user_id', user.id)
         .gte('date', start)
         .lte('date', end)
@@ -27,7 +29,7 @@ export function useMealAutopilot(mealType?: string) {
       if (mealType) query = query.eq('meal_type', mealType);
       const { data, error } = await query;
       if (error) throw error;
-      const rows = (data || []) as MealHistoryRow[];
+      const rows = ((data || []) as MealAutopilotRow[]).filter(row => row.source_metadata?.advanced_autopilot !== true);
       return { foods: mealSuggestions(rows, mealType, 8), bundles: mealBundleSuggestions(rows, mealType, 6) };
     },
   });
