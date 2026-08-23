@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, History, MoreHorizontal, Plus, SkipForward, Trash2, Undo2 } from 'lucide-react';
 import type { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ interface FamilyRecord extends PersonalRecord {
 
 interface LastUsedSetData { weight: number; reps: number }
 interface LastUsedData { weight: number; reps: number; perSet?: LastUsedSetData[] }
+interface WakeLockSentinelLike { release?: () => Promise<void> | void }
 
 interface SetBySetCardProps {
   exercise: WorkoutExercise;
@@ -114,7 +115,7 @@ export function SetBySetCard({
   const [finishConfirm, setFinishConfirm] = useState(false);
   const [removedSet, setRemovedSet] = useState<{ set: ExerciseSet; index: number } | null>(null);
   const timedRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wakeLockRef = useRef<any>(null);
+  const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const environment = useActiveWorkoutEnvironment();
 
   const exType = exercise.exerciseType || 'weighted';
@@ -133,7 +134,7 @@ export function SetBySetCard({
     if (!readDevicePreference('keepScreenAwake')) return;
     let cancelled = false;
     const request = async () => {
-      const wakeLock = (navigator as Navigator & { wakeLock?: { request: (type: 'screen') => Promise<any> } }).wakeLock;
+      const wakeLock = (navigator as Navigator & { wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinelLike> } }).wakeLock;
       if (!wakeLock || document.visibilityState !== 'visible') return;
       try {
         const sentinel = await wakeLock.request('screen');
@@ -208,6 +209,7 @@ export function SetBySetCard({
   const weightLabel = isWeightedBW ? '+kg' : getWeightLabel(equipment);
 
   const patchSet = (patch: Partial<ExerciseSet>) => {
+    if (!environment.canEdit) return;
     const sets = exercise.sets.map((set, index) => index === currentSetIndex ? { ...set, ...patch } : set);
     onChange({ ...exercise, sets });
   };
@@ -226,6 +228,7 @@ export function SetBySetCard({
   };
 
   const completeSet = () => {
+    if (!environment.canEdit) return;
     haptic('success');
     const finalTime = isTimed ? (currentSet.actualTime || (timedRunning ? timedSeconds : baseTime)) : undefined;
     if (timedRef.current) clearInterval(timedRef.current);
@@ -261,12 +264,13 @@ export function SetBySetCard({
     }
   };
 
-  const advanceAfterRest = useCallback(() => {
+  const advanceAfterRest = () => {
     setRestOpen(false);
     if (!isLastSet) onSetIndexChange(currentSetIndex + 1);
-  }, [currentSetIndex, isLastSet, onSetIndexChange]);
+  };
 
   const addSet = () => {
+    if (!environment.canEdit) return;
     const lastCompleted = [...exercise.sets].reverse().find(set => set.completed);
     const last = exercise.sets[exercise.sets.length - 1];
     const next: ExerciseSet = {
@@ -285,7 +289,7 @@ export function SetBySetCard({
   };
 
   const removeCurrentSet = () => {
-    if (exercise.sets.length <= 1) return;
+    if (!environment.canEdit || exercise.sets.length <= 1) return;
     const removed = exercise.sets[currentSetIndex];
     const nextSets = renumberSets(exercise.sets.filter((_, index) => index !== currentSetIndex));
     setRestOpen(false);
@@ -296,7 +300,7 @@ export function SetBySetCard({
   };
 
   const undoRemoveSet = () => {
-    if (!removedSet) return;
+    if (!environment.canEdit || !removedSet) return;
     const nextSets = [...exercise.sets];
     nextSets.splice(Math.min(removedSet.index, nextSets.length), 0, removedSet.set);
     const renumbered = renumberSets(nextSets);
@@ -307,6 +311,7 @@ export function SetBySetCard({
   };
 
   const toggleTimed = () => {
+    if (!environment.canEdit) return;
     if (timedRunning) {
       if (timedRef.current) clearInterval(timedRef.current);
       timedRef.current = null;
@@ -320,11 +325,11 @@ export function SetBySetCard({
     timedRef.current = setInterval(() => setTimedSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
   };
 
-  const relationshipOptions = useMemo(() => getExerciseRelationships(exercise.name), [exercise.name]);
-  const legacyOptions = useMemo(() => getExerciseVariants(exercise.name).filter(option => option.name !== exercise.name), [exercise.name]);
-  const replacementOptions = relationshipOptions.length ? relationshipOptions : legacyOptions.map(option => ({ name: option.name, kind: 'variation' as const, prTransfer: 'context' as const }));
+  const relationshipOptions = getExerciseRelationships(exercise.name);
+  const legacyOptions = getExerciseVariants(exercise.name).filter(option => option.name !== exercise.name);
 
   const replaceWith = (name: string) => {
+    if (!environment.canEdit) return;
     const transfer = getPrTransferability(exercise.name, name);
     const keepLoad = transfer === 'shared' || transfer === 'comparable';
     const sets = exercise.sets.map(set => ({ ...set, targetWeight: keepLoad ? set.targetWeight : '', actualWeight: keepLoad ? set.actualWeight : '' }));
@@ -354,6 +359,7 @@ export function SetBySetCard({
     : `${showWeight && currentSet.targetWeight ? `${currentSet.targetWeight} ${weightLabel.replace('+', '')} · ` : ''}${currentSet.targetReps || `${baseReps} reps`}`;
 
   const requestFinish = () => {
+    if (!environment.canEdit) return;
     if (remainingAcrossWorkout > 0) {
       setFinishConfirm(true);
       return;
@@ -362,11 +368,27 @@ export function SetBySetCard({
   };
 
   const completeOrAdvance = () => {
+    if (!environment.canEdit) return;
     if (!currentSet.completed) completeSet();
     else if (!isLastSet) advanceAfterRest();
     else if (isLastExercise) requestFinish();
     else onNextExercise();
   };
+
+  if (environment.otherTabActive) {
+    return <div className="w-full min-w-0 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
+        <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>{Array.from({ length: totalExercises }).map((_, index) => <span key={index} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}</div>
+        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
+      </div>
+      <section className="rounded-[22px] border border-warning/40 bg-card p-5" role="status">
+        <div className="flex gap-3"><AlertTriangle className="h-5 w-5 mt-0.5 shrink-0"/><div className="min-w-0 flex-1"><div className="font-semibold">This workout is active in another tab.</div><p className="type-supporting mt-1">Set editing is locked here so two tabs cannot race the same draft. Take over only if this is the tab you want to keep using.</p></div></div>
+        <div className="mt-4 rounded-xl bg-muted/50 p-3"><div className="type-eyebrow">Current set</div><div className="mt-1 text-lg font-semibold">{exercise.name}</div><div className="type-caption mt-1">Set {currentSetIndex + 1} · Previous: {previousLabel} · Target: {targetLabel}</div></div>
+        <button onClick={() => environment.takeOver()} className="mt-4 w-full min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">Take over in this tab</button>
+      </section>
+    </div>;
+  }
 
   return (
     <div className="w-full min-w-0 space-y-4">
@@ -379,7 +401,6 @@ export function SetBySetCard({
         {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums hidden sm:inline">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
       </div>
 
-      {environment.otherTabActive && <div className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5 flex gap-2 text-sm" role="status"><AlertTriangle className="h-4 w-4 mt-0.5 shrink-0"/><div><div className="font-semibold">Workout is open in another tab.</div><div className="text-xs text-muted-foreground mt-0.5">Use one tab for set edits. The same workout ID prevents duplicate final saves, but two local editors can still overwrite draft state.</div></div></div>}
       {environment.unusuallyLong && <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm"><span className="font-semibold">Workout has been running for {environment.elapsedLabel}.</span><span className="text-muted-foreground"> If you are still training, continue normally. RepTrack will not auto-finish it.</span></div>}
 
       <header className="flex items-start gap-3">
@@ -425,7 +446,7 @@ export function SetBySetCard({
         </div>}
       </section>
 
-      {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="alertdialog" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
+      {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="region" aria-live="polite" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
 
       {restOpen && <RestTimer isOpen defaultDuration={restDuration} onDismiss={advanceAfterRest} onComplete={advanceAfterRest} />}
 
