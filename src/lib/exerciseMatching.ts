@@ -74,6 +74,7 @@ export const EXERCISE_ALIASES: Record<string, string> = {
   'rope cable curl': 'Cable Curl',
   'rope curl': 'Cable Curl',
   'cable fly': 'Cable Flyes',
+  'cable crossover': 'Cable Crossover',
   'chest fly': 'Cable Flyes',
   'chest flyes': 'Cable Flyes',
   'machine chest fly': 'Pec Deck',
