@@ -16,6 +16,10 @@ export interface ExerciseSet {
   target_reps: number | null;
   actual_weight: number | null;
   actual_reps: number | null;
+  actual_rir: number | null;
+  pain_score: number | null;
+  rom_quality: number | null;
+  set_kind: string | null;
   completed: boolean;
   created_at: string;
   workout_date?: string;
@@ -61,9 +65,6 @@ function parseReps(reps: string | number | null): number {
   return match ? parseInt(match[0], 10) : 0;
 }
 
-// Chest/Shoulders/Triceps push weight away from the body; Back/Biceps/
-// Forearms pull it toward the body. Core has no clean push/pull/legs home,
-// so it's deliberately excluded - see categorizeExercise's fallback.
 const BODY_PART_TO_PPL: Record<string, 'push' | 'pull' | 'legs'> = {
   Chest: 'push',
   Shoulders: 'push',
@@ -81,18 +82,10 @@ export function categorizeByDayName(dayName: string): 'push' | 'pull' | 'legs' |
   const lower = dayName.toLowerCase();
   if (lower.includes('push')) return 'push';
   if (lower.includes('pull')) return 'pull';
-  // "Lower" (Upper/Lower split) is a leg day but doesn't contain "leg".
   if (lower.includes('leg') || lower.includes('lower')) return 'legs';
-  return null; // Upper / Full Body / custom - day name alone says nothing
+  return null;
 }
 
-// Bucketing an entire workout into one push/pull/legs category by day name
-// alone is wrong for Upper (push+pull combined) and Full Body (everything)
-// days - every exercise in the workout used to get silently misattributed
-// to the same guess. Classify each exercise individually by the muscle it
-// actually trains first; only fall back to the day-level guess (and then
-// the historical default of 'legs') for exercises with no clean push/pull/
-// legs home, like Core.
 export function categorizeExercise(exerciseName: string, dayName: string): 'push' | 'pull' | 'legs' {
   const fromBodyPart = BODY_PART_TO_PPL[getBodyPart(exerciseName)];
   if (fromBodyPart) return fromBodyPart;
@@ -117,8 +110,6 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         };
       }
 
-      // Query from the exercises table (where data actually lives)
-      // joined with workouts for date and day_name
       const baseQuery = () => supabase
         .from('exercises')
         .select(`
@@ -131,15 +122,16 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
           target_reps,
           actual_weight,
           actual_reps,
+          actual_rir,
+          pain_score,
+          rom_quality,
+          set_kind,
           completed,
           workouts!inner (date, user_id, day_name)
         `)
         .eq('workouts.user_id', user.id)
         .eq('completed', true);
 
-      // Paged: a single select is truncated at 1000 rows by PostgREST, which
-      // silently amputated the most recent history from every volume chart
-      // and progression once the account grew past that.
       const data = await fetchAllRows<any>((from, to) => {
         let query = baseQuery();
         if (dateRange) {
@@ -150,13 +142,8 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         return query.order('id', { ascending: true }).range(from, to);
       });
 
-      // Map exercises to ExerciseSet format, deriving push/pull/legs per exercise
       const sets: ExerciseSet[] = (data || []).map((ex: any, idx: number) => {
         const dayName = ex.workouts?.day_name || '';
-        // Insights/Trends must group the same movement logged under different
-        // spellings ("EZ Reverse Curls" vs "Reverse Curl") the way PR tracking
-        // does - stripping the "(Set 2)" suffix alone isn't enough, so resolve
-        // through the same canonical alias map usePersonalRecords uses.
         const exerciseName = getCanonicalName(stripSetSuffix(ex.name));
         return {
           id: ex.id,
@@ -168,13 +155,16 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
           target_reps: parseReps(ex.target_reps),
           actual_weight: parseWeight(ex.actual_weight),
           actual_reps: parseReps(ex.actual_reps),
+          actual_rir: ex.actual_rir == null ? null : Number(ex.actual_rir),
+          pain_score: ex.pain_score == null ? null : Number(ex.pain_score),
+          rom_quality: ex.rom_quality == null ? null : Number(ex.rom_quality),
+          set_kind: ex.set_kind || null,
           completed: ex.completed ?? false,
           created_at: '',
           workout_date: ex.workouts?.date,
         };
       });
 
-      // Calculate volume totals
       const volumeTotals: VolumeByCategory = { push: 0, pull: 0, legs: 0, total: 0 };
       sets.forEach(s => {
         const volume = (s.actual_weight || 0) * (s.actual_reps || 0);
@@ -182,14 +172,12 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         volumeTotals.total += volume;
       });
 
-      // Calculate weekly volume
       const weeklyMap = new Map<string, WeeklyVolume>();
       sets.forEach(s => {
         if (!s.workout_date) return;
         const weekStart = startOfWeek(parseISO(s.workout_date), { weekStartsOn: 1 });
         const weekKey = format(weekStart, 'yyyy-MM-dd');
         const weekLabel = format(weekStart, 'MMM d');
-
         const volume = (s.actual_weight || 0) * (s.actual_reps || 0);
         const existing = weeklyMap.get(weekKey);
 
@@ -213,7 +201,6 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
       const weeklyVolume = Array.from(weeklyMap.values())
         .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
 
-      // Calculate exercise progressions (max weight per week per exercise)
       const progressionMap = new Map<string, Map<string, { weight: number; volume: number }>>();
       sets.forEach(s => {
         if (!s.workout_date || !s.actual_weight) return;
@@ -235,7 +222,6 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
         }
       });
 
-      // Convert to progressions array
       const progressions: ExerciseProgression[] = Array.from(progressionMap.entries())
         .map(([exerciseName, weeks]) => ({
           exerciseName,
@@ -248,7 +234,7 @@ export function useExerciseSets(dateRange?: DateRangeFilter) {
               volume: data.volume,
             })),
         }))
-        .filter(p => p.data.length >= 1) // Show exercises with at least 1 week of data
+        .filter(p => p.data.length >= 1)
         .sort((a, b) => {
           const aMax = Math.max(...a.data.map(d => d.weight));
           const bMax = Math.max(...b.data.map(d => d.weight));
