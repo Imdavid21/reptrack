@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
 import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
+import { WorkoutCompletionWatcher } from "./components/workout/WorkoutCompletionWatcher";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
@@ -119,6 +120,7 @@ function MuiThemedApp() {
       <BrowserRouter>
         <OfflineBanner />
         {isStandalone && <PWAUpdatePrompt />}
+        <WorkoutCompletionWatcher />
         <AppRoutes />
       </BrowserRouter>
     </MuiThemeProvider>
