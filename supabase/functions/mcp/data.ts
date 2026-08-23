@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getLiveWorkout, listWorkoutTriggers } from "./live.ts";
 import { average, assertDateRange, categorizeDbError, classifyMuscle, localDayBounds, movingAverage7, round, setMetrics, withRetry } from "./core.ts";
+import { ADVANCED_TOOL_NAMES, executeAdvancedTool } from "./advanced.ts";
 
 type Client = any;
 type Args = Record<string, any>;
 
 const FALLBACK_PREFS = { timezone: "Asia/Kolkata", units_system: "metric" } as Args;
 
-/** Runs a PostgREST read with retries and surfaces a stable, non-sensitive error category. */
 export async function read<T>(label: string, build: () => any): Promise<T> {
   return await withRetry(label, async () => {
     const { data, error } = await build();
@@ -23,12 +23,11 @@ export async function read<T>(label: string, build: () => any): Promise<T> {
 
 async function prefs(db: Client) {
   try {
-    // limit(1) instead of maybeSingle(): duplicate preference rows must never break a read-only tool.
     const rows = await read<any[]>("user_preferences", () => db.from("user_preferences").select("*").limit(1));
     return rows?.[0] ? { ...FALLBACK_PREFS, ...rows[0] } : { ...FALLBACK_PREFS };
   } catch (error) {
     console.error("[mcp] preferences unavailable, using defaults:", (error as Error).message);
-    return { ...FALLBACK_PREFS }; // failsafe: profile defaults never block data retrieval
+    return { ...FALLBACK_PREFS };
   }
 }
 const envelope = (start: string, end: string, timezone: string, data: unknown, summary: unknown, metadata: unknown = {}) =>
@@ -37,7 +36,7 @@ const envelope = (start: string, end: string, timezone: string, data: unknown, s
 async function workoutRows(db: Client, start: string, end: string, limit = 50, filters: Args = {}) {
   let q = db.from("workouts").select("id,date,day,day_name,completed_at,started_at,workout_duration_minutes,is_skipped,session_key,readiness_band,completion_percent,exercises(id,name,category,actual_reps,actual_weight,target_reps,target_weight,completed,sort_order,actual_rir,rom_quality,pain_score,set_kind,prescription)")
     .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(limit + 1);
-  if (filters.workout_type) q = q.ilike("day_name", `%${String(filters.workout_type).replace(/[,()"]/g, " ")}%`);
+  if (filters.workout_type) q = q.ilike("day_name", `%${String(filters.workout_type).replace(/[,()\"]/g, " ")}%`);
   const data = await read<any[]>("workouts", () => q);
   let rows = data || [];
   if (filters.exercise) rows = rows.filter((w: any) => w.exercises?.some((e: any) => e.name.toLowerCase().includes(filters.exercise.toLowerCase())));
@@ -48,6 +47,7 @@ export async function executeTool(name: string, args: Args, db: Client) {
   const p = await prefs(db), timezone = p.timezone || "Asia/Kolkata";
   if (name === "get_live_workout") return { ...(await getLiveWorkout(db)), timezone };
   if (name === "list_workout_triggers") return { ...(await listWorkoutTriggers(db, args)), timezone };
+  if ((ADVANCED_TOOL_NAMES as readonly string[]).includes(name)) return await executeAdvancedTool(name, args, db, timezone);
 
   if (name === "get_fitness_profile") {
     const latestRows = await read<any[]>("latest_bodyweight", () => db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).order("date", { ascending: false }).limit(1)).catch(() => [] as any[]);
