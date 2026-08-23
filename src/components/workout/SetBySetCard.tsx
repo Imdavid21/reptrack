@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, MoreHorizontal, Plus, SkipForward } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, History, MoreHorizontal, Plus, SkipForward, Trash2, Undo2 } from 'lucide-react';
 import type { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { RestTimer } from './RestTimer';
+import { ExerciseHistorySheet } from './ExerciseHistorySheet';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -75,6 +76,10 @@ function parseTargetReps(value: string) {
   return match ? Number(match[0]) : 8;
 }
 
+function renumberSets(sets: ExerciseSet[]) {
+  return sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
+}
+
 export function SetBySetCard({
   exercise,
   exerciseIndex,
@@ -105,6 +110,9 @@ export function SetBySetCard({
   const [restDuration, setRestDuration] = useState(defaultRestSeconds);
   const [timedRunning, setTimedRunning] = useState(false);
   const [timedSeconds, setTimedSeconds] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [finishConfirm, setFinishConfirm] = useState(false);
+  const [removedSet, setRemovedSet] = useState<{ set: ExerciseSet; index: number } | null>(null);
   const timedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<any>(null);
   const environment = useActiveWorkoutEnvironment();
@@ -117,6 +125,9 @@ export function SetBySetCard({
   const showReps = !isTimed;
   const isFirstSet = currentSetIndex === 0;
   const isLastSet = currentSetIndex === exercise.sets.length - 1;
+  const completedAcrossWorkout = completedWorkoutSets ?? exercise.sets.filter(set => set.completed).length;
+  const totalAcrossWorkout = totalWorkoutSets ?? exercise.sets.length;
+  const remainingAcrossWorkout = Math.max(0, totalAcrossWorkout - completedAcrossWorkout);
 
   useEffect(() => {
     if (!readDevicePreference('keepScreenAwake')) return;
@@ -151,11 +162,19 @@ export function SetBySetCard({
     setRestOpen(false);
     setTimedRunning(false);
     setTimedSeconds(0);
+    setRemovedSet(null);
+    setFinishConfirm(false);
     if (timedRef.current) {
       clearInterval(timedRef.current);
       timedRef.current = null;
     }
   }, [exerciseIndex]);
+
+  useEffect(() => {
+    if (!removedSet) return;
+    const timer = window.setTimeout(() => setRemovedSet(null), 7000);
+    return () => window.clearTimeout(timer);
+  }, [removedSet]);
 
   if (!currentSet) return null;
 
@@ -265,6 +284,28 @@ export function SetBySetCard({
     haptic('light');
   };
 
+  const removeCurrentSet = () => {
+    if (exercise.sets.length <= 1) return;
+    const removed = exercise.sets[currentSetIndex];
+    const nextSets = renumberSets(exercise.sets.filter((_, index) => index !== currentSetIndex));
+    setRestOpen(false);
+    setRemovedSet({ set: removed, index: currentSetIndex });
+    onChange({ ...exercise, sets: nextSets });
+    onSetIndexChange(Math.min(currentSetIndex, nextSets.length - 1));
+    haptic('light');
+  };
+
+  const undoRemoveSet = () => {
+    if (!removedSet) return;
+    const nextSets = [...exercise.sets];
+    nextSets.splice(Math.min(removedSet.index, nextSets.length), 0, removedSet.set);
+    const renumbered = renumberSets(nextSets);
+    onChange({ ...exercise, sets: renumbered });
+    onSetIndexChange(Math.min(removedSet.index, renumbered.length - 1));
+    setRemovedSet(null);
+    haptic('light');
+  };
+
   const toggleTimed = () => {
     if (timedRunning) {
       if (timedRef.current) clearInterval(timedRef.current);
@@ -312,10 +353,18 @@ export function SetBySetCard({
     ? formatTime(baseTime)
     : `${showWeight && currentSet.targetWeight ? `${currentSet.targetWeight} ${weightLabel.replace('+', '')} · ` : ''}${currentSet.targetReps || `${baseReps} reps`}`;
 
+  const requestFinish = () => {
+    if (remainingAcrossWorkout > 0) {
+      setFinishConfirm(true);
+      return;
+    }
+    onComplete();
+  };
+
   const completeOrAdvance = () => {
     if (!currentSet.completed) completeSet();
     else if (!isLastSet) advanceAfterRest();
-    else if (isLastExercise) onComplete();
+    else if (isLastExercise) requestFinish();
     else onNextExercise();
   };
 
@@ -330,7 +379,7 @@ export function SetBySetCard({
         {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums hidden sm:inline">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
       </div>
 
-      {environment.otherTabActive && <div className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5 flex gap-2 text-sm" role="status"><AlertTriangle className="h-4 w-4 mt-0.5 shrink-0"/><div><div className="font-semibold">Workout is open in another tab.</div><div className="text-xs text-muted-foreground mt-0.5">Use one tab for set edits to avoid conflicting local draft state.</div></div></div>}
+      {environment.otherTabActive && <div className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5 flex gap-2 text-sm" role="status"><AlertTriangle className="h-4 w-4 mt-0.5 shrink-0"/><div><div className="font-semibold">Workout is open in another tab.</div><div className="text-xs text-muted-foreground mt-0.5">Use one tab for set edits. The same workout ID prevents duplicate final saves, but two local editors can still overwrite draft state.</div></div></div>}
       {environment.unusuallyLong && <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm"><span className="font-semibold">Workout has been running for {environment.elapsedLabel}.</span><span className="text-muted-foreground"> If you are still training, continue normally. RepTrack will not auto-finish it.</span></div>}
 
       <header className="flex items-start gap-3">
@@ -339,7 +388,18 @@ export function SetBySetCard({
           <h2 className="type-section-title mt-1 break-words">{exercise.name}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 type-caption"><span>{exercise.category}</span><span>·</span><span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>{exercise.rir && <><span>·</span><span>{exercise.rir} RIR target</span></>}</div>
         </div>
-        {(onSwapExercise || replacementOptions.length > 0) && <DropdownMenu><DropdownMenuTrigger asChild><button aria-label="Exercise options" className="h-11 w-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="z-50 max-h-[60dvh] overflow-y-auto min-w-64"><DropdownMenuLabel>Exercise</DropdownMenuLabel>{onSwapExercise && <DropdownMenuItem onClick={onSwapExercise}>Search exercise library</DropdownMenuItem>}{relationshipOptions.filter(option => option.kind === 'variation').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Variations</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'variation').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">{option.prTransfer === 'comparable' ? 'PR comparable' : 'own PR'}</span></DropdownMenuItem>)}</>}{relationshipOptions.filter(option => option.kind === 'alternative').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Alternatives</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'alternative').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">separate PR</span></DropdownMenuItem>)}</>}{!relationshipOptions.length && legacyOptions.map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}>{option.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><button aria-label="Exercise options" className="h-11 w-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="z-50 max-h-[60dvh] overflow-y-auto min-w-64">
+            <DropdownMenuLabel>Exercise</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>View history</DropdownMenuItem>
+            {onSwapExercise && <DropdownMenuItem onClick={onSwapExercise}>Search exercise library</DropdownMenuItem>}
+            {relationshipOptions.filter(option => option.kind === 'variation').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Variations</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'variation').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">{option.prTransfer === 'comparable' ? 'PR comparable' : 'own PR'}</span></DropdownMenuItem>)}</>}
+            {relationshipOptions.filter(option => option.kind === 'alternative').length > 0 && <><DropdownMenuSeparator/><DropdownMenuLabel>Alternatives</DropdownMenuLabel>{relationshipOptions.filter(option => option.kind === 'alternative').map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}><span className="flex-1">{option.name}</span><span className="ml-3 type-meta">separate PR</span></DropdownMenuItem>)}</>}
+            {!relationshipOptions.length && legacyOptions.map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}>{option.name}</DropdownMenuItem>)}
+            {completedAcrossWorkout > 0 && <><DropdownMenuSeparator/><DropdownMenuItem onClick={requestFinish}>Finish workout</DropdownMenuItem></>}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
@@ -354,8 +414,10 @@ export function SetBySetCard({
         <button onClick={addSet} aria-label="Add set" className="h-10 min-w-10 rounded-full border border-dashed border-border text-muted-foreground flex items-center justify-center"><Plus className="h-4 w-4" /></button>
       </div>
 
+      {removedSet && <div role="status" className="rounded-xl border border-border bg-muted/35 px-3 py-2.5 flex items-center gap-3"><span className="text-sm flex-1">Set removed.</span><button onClick={undoRemoveSet} className="min-h-10 px-3 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-muted"><Undo2 className="h-4 w-4"/>Undo</button></div>}
+
       <section className={cn('rounded-[22px] border p-4', currentSet.completed ? 'border-border bg-muted/30' : 'border-border bg-card')}>
-        <div className="flex items-center justify-between gap-3 mb-4"><div><div className="type-eyebrow">Actual</div><div className="text-sm font-semibold mt-0.5">Set {currentSetIndex + 1} of {exercise.sets.length}</div></div>{isNewPR && <span className="rounded-full bg-foreground text-background px-2.5 py-1 text-xs font-bold">New PR</span>}</div>
+        <div className="flex items-center justify-between gap-3 mb-4"><div><div className="type-eyebrow">Actual</div><div className="text-sm font-semibold mt-0.5">Set {currentSetIndex + 1} of {exercise.sets.length}</div></div><div className="flex items-center gap-2">{isNewPR && <span className="rounded-full bg-foreground text-background px-2.5 py-1 text-xs font-bold">New PR</span>}{exercise.sets.length > 1 && <button onClick={removeCurrentSet} aria-label={`Remove set ${currentSetIndex + 1}`} className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-muted flex items-center justify-center"><Trash2 className="h-4 w-4"/></button>}</div></div>
 
         {isTimed ? <div className="space-y-3"><button onClick={toggleTimed} className="w-full rounded-2xl bg-muted py-5 text-center"><div className="text-4xl font-semibold tabular-nums">{formatTime(timedRunning ? timedSeconds : selectedTime)}</div><div className="type-caption mt-1">{timedRunning ? 'Tap to stop timer' : 'Tap to start timer'}</div></button>{editing === 'time' ? <Input autoFocus type="number" inputMode="numeric" value={selectedTime} onChange={event => setTime(Number(event.target.value))} onBlur={() => setEditing(null)} className="h-12 text-center text-lg tabular-nums" /> : <button onClick={() => setEditing('time')} className="w-full min-h-11 text-sm font-semibold text-muted-foreground">Enter another duration</button>}</div> : <div className={cn('grid gap-3', showWeight ? 'grid-cols-2' : 'grid-cols-1')}>
           {showWeight && <div><div className="type-caption text-center mb-2">Weight ({weightLabel})</div>{editing === 'weight' ? <Input autoFocus type="number" inputMode="decimal" step="0.01" value={currentSet.actualWeight !== '' ? currentSet.actualWeight : selectedWeight} onChange={event => patchSet({ actualWeight: event.target.value })} onBlur={() => setEditing(null)} onKeyDown={event => event.key === 'Enter' && setEditing(null)} className="h-14 text-center text-xl font-semibold tabular-nums" /> : <div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setWeight(selectedWeight - 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Decrease weight by 2.5">−</button><button onClick={() => setEditing('weight')} className="h-14 rounded-xl bg-muted text-xl font-semibold tabular-nums">{isWeightedBW ? '+' : ''}{numberLabel(selectedWeight)}</button><button onClick={() => setWeight(selectedWeight + 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Increase weight by 2.5">+</button></div>}</div>}
@@ -363,13 +425,17 @@ export function SetBySetCard({
         </div>}
       </section>
 
+      {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="alertdialog" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
+
       {restOpen && <RestTimer isOpen defaultDuration={restDuration} onDismiss={advanceAfterRest} onComplete={advanceAfterRest} />}
 
       <div className="flex gap-2 pb-[max(4px,env(safe-area-inset-bottom))]">
         {(!isFirstSet || !isFirstExercise) && <button onClick={() => { if (!isFirstSet) onSetIndexChange(currentSetIndex - 1); else onPrevExercise(); }} aria-label="Previous set or exercise" className="h-14 w-12 rounded-xl border border-border flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>}
         {!currentSet.completed && <button onClick={onSkipExercise} className="h-14 px-3 rounded-xl text-sm font-semibold text-muted-foreground flex items-center gap-1"><SkipForward className="h-4 w-4"/>Skip</button>}
-        <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? 'Finish workout' : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
+        <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? (remainingAcrossWorkout > 0 ? 'Review finish' : 'Finish workout') : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
       </div>
+
+      <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );
 }
