@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ChevronRight, Database, Dumbbell, Moon, Settings2, Sun, User, Wrench } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useNavigate } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useDevicePreferences } from '@/hooks/useDevicePreferences';
 
-function Row({ icon: Icon, title, detail, onClick, trailing }: { icon: typeof User; title: string; detail?: string; onClick?: () => void; trailing?: React.ReactNode }) {
+function Row({ icon: Icon, title, detail, onClick, trailing }: { icon: typeof User; title: string; detail?: string; onClick?: () => void; trailing?: ReactNode }) {
   const Component = onClick ? 'button' : 'div';
   return <Component onClick={onClick} className="w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/35 transition-colors"><span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center shrink-0"><Icon className="h-4 w-4" /></span><span className="flex-1 min-w-0"><span className="block text-sm font-semibold">{title}</span>{detail && <span className="block type-caption mt-0.5">{detail}</span>}</span>{trailing ?? (onClick ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : null)}</Component>;
 }
@@ -30,7 +31,7 @@ export default function SettingsHub() {
       <section className="rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border mb-4">
         <Row icon={Dumbbell} title="Program & adaptive training" detail={`${preferences?.training_split?.toUpperCase() || 'Program'} · ${preferences?.adaptive_mode_enabled ? 'Adaptive on' : 'Adaptive off'}`} onClick={() => navigate('/app/settings/advanced')} />
         <Row icon={Dumbbell} title="Rest timer" detail={`${preferences?.default_rest_seconds || 90}s default · ${preferences?.auto_rest_timer === false ? 'Manual' : 'Auto-start'}`} onClick={() => navigate('/app/settings/advanced')} />
-        <Row icon={Dumbbell} title="Keep screen awake" detail="Device-only. Used only while a workout set logger is active." trailing={<button role="switch" aria-checked={device.keepScreenAwake} onClick={() => updateDevicePreference('keepScreenAwake', !device.keepScreenAwake)} className={`relative h-7 w-12 rounded-full transition-colors ${device.keepScreenAwake ? 'bg-foreground' : 'bg-muted'}`}><span className={`absolute top-1 h-5 w-5 rounded-full transition-transform ${device.keepScreenAwake ? 'translate-x-5 bg-background' : 'translate-x-1 bg-foreground'}`} /></button>} />
+        <Row icon={Dumbbell} title="Keep screen awake" detail="Device-only. Used only while a workout set logger is active." trailing={<button role="switch" aria-label="Keep screen awake during workouts" aria-checked={device.keepScreenAwake} onClick={() => updateDevicePreference('keepScreenAwake', !device.keepScreenAwake)} className={`relative h-7 w-12 rounded-full transition-colors ${device.keepScreenAwake ? 'bg-foreground' : 'bg-muted'}`}><span className={`absolute top-1 h-5 w-5 rounded-full transition-transform ${device.keepScreenAwake ? 'translate-x-5 bg-background' : 'translate-x-1 bg-foreground'}`} /></button>} />
       </section>
 
       <div className="type-eyebrow px-1 mb-2">Data & advanced</div>
