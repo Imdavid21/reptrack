@@ -37,6 +37,15 @@ const LifecycleTracker = lazy(() => import("./pages/LifecycleTracker"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const McpStatus = lazy(() => import("./pages/McpStatus"));
+const PerformanceLab = lazy(() => import("./pages/PerformanceLab"));
+const AdvancedSimulator = lazy(() => import("./pages/AdvancedSimulator"));
+const GymProfiles = lazy(() => import("./pages/GymProfiles"));
+const FoodAutopilot = lazy(() => import("./pages/FoodAutopilot"));
+const AdvancedSessionStart = lazy(() => import("./pages/AdvancedSessionStart"));
+const PlateCalculator = lazy(() => import("./pages/PlateCalculator"));
+const FlightRecorder = lazy(() => import("./pages/FlightRecorder"));
+const CoachExport = lazy(() => import("./pages/CoachExport"));
+const ExternalWorkoutImport = lazy(() => import("./pages/ExternalWorkoutImport"));
 
 function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
@@ -102,15 +111,24 @@ function AppRoutes() {
         <Route path="/app/dataroom/records" element={<DataroomRecords />} />
         <Route path="/app/dataroom/explore" element={<DataroomExplore />} />
 
+        <Route path="/app/lab" element={<PerformanceLab />} />
+        <Route path="/app/lab/session" element={<AdvancedSessionStart />} />
+        <Route path="/app/lab/food" element={<FoodAutopilot />} />
+        <Route path="/app/lab/plates" element={<PlateCalculator />} />
+        <Route path="/app/lab/simulator" element={<AdvancedSimulator />} />
+        <Route path="/app/lab/gyms" element={<GymProfiles />} />
+        <Route path="/app/lab/recorder" element={<FlightRecorder />} />
+
         <Route path="/app/settings" element={<SettingsHub />} />
         <Route path="/app/settings/account" element={<SettingsAccount />} />
         <Route path="/app/settings/data" element={<SettingsData />} />
+        <Route path="/app/settings/data/coach-report" element={<CoachExport />} />
+        <Route path="/app/settings/data/import-workouts" element={<ExternalWorkoutImport />} />
         <Route path="/app/settings/advanced" element={<SettingsAdvanced />} />
         <Route path="/app/settings/mcp" element={<McpStatus />} />
         <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
         <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
-        {/* Analytical compatibility routes. Old concepts resolve into the one Dataroom hierarchy. */}
         <Route path="/app/progress" element={<Navigate to="/app/dataroom" replace />} />
         <Route path="/app/progress/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
         <Route path="/app/progress/workout/:workoutId" element={<DataroomWorkoutRedirect />} />

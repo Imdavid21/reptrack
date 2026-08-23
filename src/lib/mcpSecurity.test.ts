@@ -10,8 +10,10 @@ describe('MCP tool policy', () => {
       'get_fitness_profile','get_bodyweight_history','get_workouts','get_exercise_history',
       'get_training_summary','get_nutrition','get_sleep','get_activity',
       'get_progress_summary','get_recent_fitness_data','get_live_workout','list_workout_triggers',
+      'get_advanced_snapshot','get_progression_autopilot','get_cut_control','get_weak_point_radar',
+      'get_weekly_coach_review','get_goal_runway','get_advanced_config','list_coach_events',
     ]);
-    expect(APPROVED_TOOLS.every(name => name.startsWith('get_') || name === 'list_workout_triggers')).toBe(true);
+    expect(APPROVED_TOOLS.every(name => name.startsWith('get_') || name === 'list_workout_triggers' || name === 'list_coach_events')).toBe(true);
   });
 
   it('limits writes to logs and scoped live-workout coaching actions', () => {
@@ -105,9 +107,10 @@ describe('MCP failsafes', () => {
   it('truncates oversized payloads instead of breaking the client', () => {
     const big = { data: Array.from({ length: 500 }, (_, i) => ({ i, blob: 'x'.repeat(1000) })), metadata: {} };
     const { payload, truncated } = capPayload(big, 50_000);
+    const typed = payload as unknown as { data: unknown[]; metadata: { truncated?: boolean } };
     expect(truncated).toBe(true);
-    expect((payload as any).data.length).toBeLessThan(500);
-    expect((payload as any).metadata.truncated).toBe(true);
+    expect(typed.data.length).toBeLessThan(500);
+    expect(typed.metadata.truncated).toBe(true);
     expect(capPayload({ data: [1, 2, 3] }, 50_000).truncated).toBe(false);
   });
 });
