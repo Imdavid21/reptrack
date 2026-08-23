@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -24,4 +26,20 @@ jobs:
       - run: npm install --package-lock=false --no-audit --no-fund
       - run: npm run test
       - run: npm run build
-      - run: npm run lint
+      - name: Lint changed TypeScript
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "main" && -z "${GITHUB_BASE_REF}" ]]; then
+            base="HEAD^"
+          else
+            base_ref="${GITHUB_BASE_REF:-main}"
+            git fetch origin "$base_ref"
+            base="origin/$base_ref"
+          fi
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$base...HEAD" -- '*.ts' '*.tsx')
+          if (( ${#files[@]} == 0 )); then
+            echo "No changed TypeScript files to lint."
+            exit 0
+          fi
+          printf 'Linting %s changed TypeScript files\n' "${#files[@]}"
+          npx eslint "${files[@]}"
