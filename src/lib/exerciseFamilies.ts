@@ -125,8 +125,9 @@ export const EXERCISE_FAMILIES: ExerciseFamily[] = [
     id: 'triceps',
     label: 'Triceps extension',
     members: [
-      'Skull Crushers', 'Overhead Tricep Extension', 'Tricep Pushdown',
-      'Single Arm Dumbbell Extensions', 'Bench Tricep Dips', 'Tricep Kickback',
+      'Skull Crushers', 'Overhead Tricep Extension', 'Overhead Cable Tricep Extension',
+      'Dumbbell Overhead Extension', 'Tricep Pushdown', 'Single Arm Dumbbell Extensions',
+      'Bench Tricep Dips', 'Tricep Kickback',
     ],
   },
   {
