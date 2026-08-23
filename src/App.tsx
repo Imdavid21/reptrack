@@ -44,10 +44,7 @@ function RootRoute() {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
+    queries: { refetchOnWindowFocus: false, retry: 1 },
   },
 });
 
@@ -63,25 +60,27 @@ function AppRoutes() {
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
 
-      {/* Primary authenticated product */}
       <Route path="/app" element={<AppIndex />} />
       <Route path="/app/train" element={<AdaptiveWorkout />} />
+      <Route path="/app/train/current" element={<AdaptiveWorkout />} />
       <Route path="/app/progress" element={<Progress />} />
 
-      {/* Progress drill-downs. Existing feature screens remain intact beneath one mental model. */}
       <Route path="/app/progress/history" element={<History />} />
       <Route path="/app/progress/workout/:workoutId" element={<WorkoutDetail />} />
       <Route path="/app/progress/analytics" element={<Insights />} />
       <Route path="/app/progress/dataroom" element={<Dataroom />} />
+      <Route path="/app/progress/weight" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
+      <Route path="/app/progress/nutrition" element={<Navigate to="/app/progress/analytics?tab=nutrition" replace />} />
+      <Route path="/app/progress/training" element={<Navigate to="/app/progress/analytics?tab=training" replace />} />
+      <Route path="/app/progress/recovery" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
 
-      {/* Administration. Engineering surfaces are intentionally deeper. */}
       <Route path="/app/settings" element={<SettingsHub />} />
       <Route path="/app/settings/advanced" element={<Settings />} />
+      <Route path="/app/settings/data" element={<Navigate to="/app/settings/advanced" replace />} />
       <Route path="/app/settings/mcp" element={<McpStatus />} />
       <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
       <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
-      {/* Authenticated compatibility routes */}
       <Route path="/app/log" element={<AdaptiveWorkout />} />
       <Route path="/app/history" element={<Navigate to="/app/progress/history" replace />} />
       <Route path="/app/history/:workoutId" element={<ProgressWorkoutRedirect />} />
@@ -89,7 +88,6 @@ function AppRoutes() {
       <Route path="/app/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
       <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
 
-      {/* Older public/deep links */}
       <Route path="/log" element={<Navigate to="/app/train" replace />} />
       <Route path="/create" element={<Navigate to="/app/train" replace />} />
       <Route path="/insights" element={<Navigate to="/app/progress/analytics" replace />} />
@@ -140,9 +138,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <MuiThemedApp />
-        </ThemeProvider>
+        <ThemeProvider><MuiThemedApp /></ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
