@@ -5,6 +5,7 @@
  * authenticated user through the user-scoped PostgREST client so RLS applies.
  */
 import { assertWritableDate, boundedNumber, categorizeDbError, round, withRetry } from "./core.ts";
+import { cancelWorkoutTrigger, sendCoachNote, setWorkoutTrigger } from "./live.ts";
 import { ENERGY_MODEL_VERSION, estimateActivityEnergy, estimateWorkoutEnergyMcp, type ActivityKind } from "./energy.ts";
 
 type Client = any;
@@ -326,6 +327,9 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
     case "update_workout": return await updateWorkout(args, db, userId, today, prefs);
     case "log_activity": return await logActivity(args, db, userId, today, prefs);
     case "update_activity": return await updateActivity(args, db, userId, today, prefs);
+    case "set_workout_trigger": return await setWorkoutTrigger(db, userId, args);
+    case "cancel_workout_trigger": return await cancelWorkoutTrigger(db, userId, args);
+    case "send_coach_note": return await sendCoachNote(db, args);
     default: throw new Error("UNKNOWN_TOOL");
   }
   };

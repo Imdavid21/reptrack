@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getLiveWorkout, listWorkoutTriggers } from "./live.ts";
 import { average, assertDateRange, categorizeDbError, classifyMuscle, localDayBounds, movingAverage7, round, setMetrics, withRetry } from "./core.ts";
 
 type Client = any;
@@ -45,6 +46,9 @@ async function workoutRows(db: Client, start: string, end: string, limit = 50, f
 
 export async function executeTool(name: string, args: Args, db: Client) {
   const p = await prefs(db), timezone = p.timezone || "Asia/Kolkata";
+  if (name === "get_live_workout") return { ...(await getLiveWorkout(db)), timezone };
+  if (name === "list_workout_triggers") return { ...(await listWorkoutTriggers(db, args)), timezone };
+
   if (name === "get_fitness_profile") {
     const latestRows = await read<any[]>("latest_bodyweight", () => db.from("daily_metrics").select("date,bodyweight").not("bodyweight", "is", null).order("date", { ascending: false }).limit(1)).catch(() => [] as any[]);
     const latest = latestRows?.[0] ?? null;
