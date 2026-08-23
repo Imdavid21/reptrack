@@ -9,32 +9,26 @@ interface MainLayoutProps {
   showBack?: boolean;
   backTo?: string;
   hideNav?: boolean;
+  /** Wider analytical layouts without changing the mobile mental model. */
+  wide?: boolean;
 }
 
-export function MainLayout({ children, showBack, backTo, hideNav = false }: MainLayoutProps) {
+export function MainLayout({ children, showBack, backTo, hideNav = false, wide = false }: MainLayoutProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    if (backTo) {
-      navigate(backTo);
-    } else {
-      navigate(-1);
-    }
+    if (backTo) navigate(backTo);
+    else navigate(-1);
   };
 
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', pb: hideNav ? 2 : 'calc(60px + env(safe-area-inset-bottom))' }}>
+    <Box sx={{
+      minHeight: '100dvh',
+      bgcolor: 'background.default',
+      pb: hideNav ? 'max(16px, env(safe-area-inset-bottom))' : 'calc(60px + env(safe-area-inset-bottom))',
+    }}>
       {showBack && (
-        <Box
-          component="header"
-          sx={{
-            px: 2,
-            py: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
+        <Box component="header" sx={{ px: { xs: 2, md: 3 }, py: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
           <button
             onClick={handleBack}
             aria-label="Go back"
@@ -44,8 +38,8 @@ export function MainLayout({ children, showBack, backTo, hideNav = false }: Main
           </button>
         </Box>
       )}
-      <Box component="main" sx={{ px: 2, py: 2, width: '100%', minWidth: 0, overflowX: 'hidden' }}>
-        <Box sx={{ width: '100%', maxWidth: 680, mx: 'auto' }}>
+      <Box component="main" sx={{ px: { xs: 2, sm: 2.5, md: 3 }, py: { xs: 2, md: 3 }, width: '100%', minWidth: 0, overflowX: 'hidden' }}>
+        <Box sx={{ width: '100%', maxWidth: wide ? 1040 : 680, mx: 'auto' }}>
           {children}
         </Box>
       </Box>
