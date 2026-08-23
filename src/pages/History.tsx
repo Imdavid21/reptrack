@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { parseDateKey } from '@/lib/dateKey';
 import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
+import { TimelineTracks, VisualSection } from '@/components/dataroom/MobileDataVisuals';
 
 function sleepLabel(hours: number) {
   const whole = Math.floor(hours);
@@ -42,6 +43,7 @@ function TimelineContent() {
   const { data: manualBurns = [], updateBurn, deleteBurn } = useManualBurns(days);
   const [editingBurn, setEditingBurn] = useState<BurnEntry | null>(null);
   const [metricEdit, setMetricEdit] = useState<MetricEdit | null>(null);
+  const [viewMode, setViewMode] = useState<'visual' | 'list'>('visual');
 
   const metricsByDate = useMemo(() => new Map((metrics?.dataPoints || []).map(row => [row.date, row])), [metrics?.dataPoints]);
   const caloriesByDate = useMemo(() => new Map(calories.map(row => [row.date, row])), [calories]);
@@ -71,6 +73,20 @@ function TimelineContent() {
     return [...dates].sort((a, b) => b.localeCompare(a));
   }, [metricsByDate, caloriesByDate, burnsByDate, workoutsByDate]);
 
+  const ascendingDates = useMemo(() => [...daysWithData].sort(), [daysWithData]);
+  const visualTracks = useMemo(() => [
+    { label: 'Weight', values: ascendingDates.map(date => ({ date, value: Number(metricsByDate.get(date)?.bodyweight || 0) || null })) },
+    { label: 'Sleep', values: ascendingDates.map(date => ({ date, value: Number(metricsByDate.get(date)?.sleep_hours || 0) || null })) },
+    { label: 'Food', values: ascendingDates.map(date => ({ date, value: Number(caloriesByDate.get(date)?.intake || 0) || null })) },
+    { label: 'Workout', values: ascendingDates.map(date => ({ date, value: (workoutsByDate.get(date) || []).filter(workout => Boolean(workout.completed_at)).length || null })) },
+    { label: 'Activity', values: ascendingDates.map(date => ({ date, value: (burnsByDate.get(date) || []).reduce((sum, burn) => sum + Number(burn.duration_minutes || 0), 0) || null })) },
+  ], [ascendingDates, metricsByDate, caloriesByDate, workoutsByDate, burnsByDate]);
+
+  const openDateInList = (date: string) => {
+    setViewMode('list');
+    window.setTimeout(() => document.getElementById(`timeline-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
+
   const startMetricEdit = (type: 'weight' | 'sleep', date: string) => {
     const metric = metricsByDate.get(date);
     const sleep = Number(metric?.sleep_hours || 0);
@@ -93,16 +109,25 @@ function TimelineContent() {
 
   return <MainLayout wide showBack backTo="/app/dataroom">
     <div className="mx-auto w-full max-w-[900px] pb-10">
-      <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="type-eyebrow">Dataroom</div><h1 className="type-page-title mt-1">Timeline</h1><p className="type-supporting mt-1">What actually happened across training, bodyweight, sleep, food, and recorded activity.</p></div><DataroomRangeSelector /></header>
+      <header className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="type-eyebrow">Dataroom</div><h1 className="type-page-title mt-1">Timeline</h1><p className="type-supporting mt-1">What actually happened across training, bodyweight, sleep, food, and recorded activity.</p></div><DataroomRangeSelector /></header>
+      <div className="mb-6 inline-flex rounded-xl bg-muted p-1" role="group" aria-label="Timeline view">
+        <button onClick={() => setViewMode('visual')} aria-pressed={viewMode === 'visual'} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${viewMode === 'visual' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>Visual</button>
+        <button onClick={() => setViewMode('list')} aria-pressed={viewMode === 'list'} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${viewMode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>List</button>
+      </div>
 
-      {daysWithData.length === 0 ? <section className="rounded-[20px] border border-border bg-card px-5 py-12 text-center"><p className="font-semibold">No records in this range.</p><p className="type-supporting mt-1">Complete a workout or log a daily metric to begin the timeline.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">Start workout</button></section> : <div className="border-y border-border divide-y divide-border">
+      {daysWithData.length === 0 ? <section className="rounded-[20px] border border-border bg-card px-5 py-12 text-center"><p className="font-semibold">No records in this range.</p><p className="type-supporting mt-1">Complete a workout or log a daily metric to begin the timeline.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">Start workout</button></section> : viewMode === 'visual' ? <div className="space-y-8">
+        <VisualSection eyebrow="Aligned history" title="Everything on the same dates" description="Drag horizontally to inspect a day. Release to open that date in the detailed list.">
+          <TimelineTracks tracks={visualTracks} onDateOpen={openDateInList} />
+        </VisualSection>
+        <div className="rounded-2xl border border-border bg-card p-4"><div className="text-sm font-semibold">How to read this</div><p className="type-caption mt-1">Track heights are normalized within each metric so the view emphasizes timing and pattern. Open List for exact values and editable records.</p></div>
+      </div> : <div className="border-y border-border divide-y divide-border">
         {daysWithData.map(date => {
           const metric = metricsByDate.get(date);
           const nutrition = caloriesByDate.get(date);
           const dayBurns = burnsByDate.get(date) || [];
           const dayWorkouts = workoutsByDate.get(date) || [];
           const isToday = date === format(new Date(), 'yyyy-MM-dd');
-          return <section key={date} className="py-5">
+          return <section id={`timeline-${date}`} key={date} className="py-5 scroll-mt-20">
             <div className="mb-3"><div className="text-sm font-semibold">{isToday ? 'Today' : format(parseDateKey(date), 'EEEE, MMM d')}</div><div className="type-caption mt-0.5">{date}</div></div>
             <div className="divide-y divide-border rounded-[18px] border border-border bg-card overflow-hidden">
               {dayWorkouts.map(workout => {

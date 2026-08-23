@@ -25,6 +25,7 @@ export function MainLayout({ children, showBack, backTo, hideNav = false, wide =
     <Box sx={{
       minHeight: '100dvh',
       bgcolor: 'background.default',
+      pt: 'env(safe-area-inset-top)',
       pb: hideNav ? 'max(16px, env(safe-area-inset-bottom))' : 'calc(60px + env(safe-area-inset-bottom))',
     }}>
       {showBack && (
