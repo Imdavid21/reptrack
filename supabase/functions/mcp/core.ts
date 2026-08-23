@@ -1,11 +1,14 @@
 export const MCP_MODE = "read_write" as const;
-export const MCP_VERSION = "1.2.0";
+export const MCP_VERSION = "1.3.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
   "get_exercise_history", "get_training_summary", "get_nutrition",
   "get_sleep", "get_activity", "get_progress_summary", "get_recent_fitness_data",
   "get_live_workout", "list_workout_triggers",
+  "get_advanced_snapshot", "get_progression_autopilot", "get_cut_control",
+  "get_weak_point_radar", "get_weekly_coach_review", "get_goal_runway",
+  "get_advanced_config", "list_coach_events",
 ] as const;
 
 /** Writes are limited to logs and scoped live-workout coaching state. No historical deletes exist. */
@@ -43,7 +46,6 @@ export function boundedNumber(label: string, value: unknown, min: number, max: n
   if (!Number.isFinite(n) || n < min || n > max) throw new Error(`INVALID_${label.toUpperCase()}`);
   return n;
 }
-
 
 export function parseNumberList(value: unknown): number[] {
   if (typeof value !== "string") return [];
@@ -107,7 +109,6 @@ export function assertDateRange(start: string, end: string, maxDays = Number.POS
 }
 
 export function localDayBounds(date: string, timezone: string) {
-  // Determine the UTC instant corresponding to midnight in an IANA zone without mutating history.
   const guess = new Date(`${date}T00:00:00Z`);
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit",
@@ -119,8 +120,6 @@ export function localDayBounds(date: string, timezone: string) {
   return { start: start.toISOString(), end: new Date(start.getTime() + 86400000).toISOString() };
 }
 
-/* ---------- resilience helpers ---------- */
-
 const TRANSIENT = /fetch failed|network|timeout|timed out|socket|connection|502|503|504|ECONNRESET|EOF/i;
 
 export function isTransientDbError(error: unknown): boolean {
@@ -131,7 +130,6 @@ export function isTransientDbError(error: unknown): boolean {
   return TRANSIENT.test(`${e.message ?? ""}`);
 }
 
-/** Stable, non-sensitive category used for audit rows and client-visible errors. */
 export function categorizeDbError(error: unknown): string {
   const e = error as { code?: string; message?: string } | null;
   if (!e) return "DATABASE_READ_FAILED";
@@ -142,7 +140,6 @@ export function categorizeDbError(error: unknown): string {
   return e.code ? `DATABASE_READ_FAILED:${e.code}` : "DATABASE_READ_FAILED";
 }
 
-/** Retries transient failures with backoff; deterministic failures fail fast. */
 export async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -159,7 +156,6 @@ export async function withRetry<T>(label: string, fn: () => Promise<T>, attempts
   throw lastError;
 }
 
-/** Guards MCP clients against oversized payloads that break tool responses. */
 export function capPayload<T>(payload: T, maxBytes = 400_000): { payload: T; truncated: boolean } {
   const size = JSON.stringify(payload)?.length ?? 0;
   if (size <= maxBytes) return { payload, truncated: false };
