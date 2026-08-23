@@ -43,6 +43,9 @@ const GymProfiles = lazy(() => import("./pages/GymProfiles"));
 const FoodAutopilot = lazy(() => import("./pages/FoodAutopilot"));
 const AdvancedSessionStart = lazy(() => import("./pages/AdvancedSessionStart"));
 const PlateCalculator = lazy(() => import("./pages/PlateCalculator"));
+const FlightRecorder = lazy(() => import("./pages/FlightRecorder"));
+const CoachExport = lazy(() => import("./pages/CoachExport"));
+const ExternalWorkoutImport = lazy(() => import("./pages/ExternalWorkoutImport"));
 
 function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
@@ -114,10 +117,13 @@ function AppRoutes() {
         <Route path="/app/lab/plates" element={<PlateCalculator />} />
         <Route path="/app/lab/simulator" element={<AdvancedSimulator />} />
         <Route path="/app/lab/gyms" element={<GymProfiles />} />
+        <Route path="/app/lab/recorder" element={<FlightRecorder />} />
 
         <Route path="/app/settings" element={<SettingsHub />} />
         <Route path="/app/settings/account" element={<SettingsAccount />} />
         <Route path="/app/settings/data" element={<SettingsData />} />
+        <Route path="/app/settings/data/coach-report" element={<CoachExport />} />
+        <Route path="/app/settings/data/import-workouts" element={<ExternalWorkoutImport />} />
         <Route path="/app/settings/advanced" element={<SettingsAdvanced />} />
         <Route path="/app/settings/mcp" element={<McpStatus />} />
         <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
