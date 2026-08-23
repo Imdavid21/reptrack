@@ -5,7 +5,7 @@ import { MuiCard } from '@/components/ui/MuiCard';
 import { useExerciseSets } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
+import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts';
 import { haptic } from '@/lib/haptics';
 import { getMuscleGroup, stripSetSuffix } from '@/lib/exerciseClassification';
 
@@ -73,11 +73,11 @@ export function VolumeSankeyChart() {
     const categoryMap: Record<string, { volume: number; exercises: { name: string; volume: number }[] }> = {};
     MUSCLE_GROUP_LABELS.forEach(g => { categoryMap[g] = { volume: 0, exercises: [] }; });
 
-    exerciseVolumes.forEach((data, name) => {
-      const group = data.muscleGroup;
+    exerciseVolumes.forEach((exerciseData, name) => {
+      const group = exerciseData.muscleGroup;
       if (!categoryMap[group]) categoryMap[group] = { volume: 0, exercises: [] };
-      categoryMap[group].volume += data.volume;
-      categoryMap[group].exercises.push({ name, volume: data.volume });
+      categoryMap[group].volume += exerciseData.volume;
+      categoryMap[group].exercises.push({ name, volume: exerciseData.volume });
     });
 
     // Sort exercises by volume
@@ -164,16 +164,21 @@ export function VolumeSankeyChart() {
   return (
     <MuiCard>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <Box sx={{
-          p: 1,
-          borderRadius: 2,
-          bgcolor: 'action.hover',
-        }}>
-          <Layers size={14} />
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{
+            p: 1,
+            borderRadius: 2,
+            bgcolor: 'action.hover',
+          }}>
+            <Layers size={14} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Volume Breakdown
+          </Typography>
         </Box>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          Volume Breakdown
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+          {formatVolume(totalVolume)} kg
         </Typography>
       </Box>
 
@@ -193,12 +198,29 @@ export function VolumeSankeyChart() {
               startAngle={90}
               endAngle={-270}
             >
+              <Tooltip
+                cursor={false}
+                contentStyle={{
+                  background: theme.palette.background.paper,
+                  color: theme.palette.text.primary,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 12,
+                  fontSize: 12,
+                  padding: '8px 10px',
+                  boxShadow: theme.shadows[3],
+                }}
+                labelStyle={{ color: theme.palette.text.secondary, fontSize: 12 }}
+                formatter={(value: number, _name, item) => {
+                  const volume = Number(item?.payload?.volume || 0);
+                  return [`${value}% · ${formatVolume(volume)} kg`, 'Share'];
+                }}
+              />
               <RadialBar
                 dataKey="value"
                 cornerRadius={4}
                 background={{ fill: theme.palette.action.hover }}
-                onClick={(data) => {
-                  if (data?.name) toggleCategory(data.name);
+                onClick={(chartData) => {
+                  if (chartData?.name) toggleCategory(chartData.name);
                 }}
                 style={{ cursor: 'pointer' }}
               />
@@ -376,7 +398,7 @@ export function VolumeSankeyChart() {
                 display: 'block',
               }}
             >
-              Tap a category to see exercises
+              Hover or tap a category
             </Typography>
           )}
         </Box>
