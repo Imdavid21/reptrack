@@ -87,12 +87,13 @@ export const ADVANCED_TOOL_NAMES = [
 ] as const;
 
 export async function executeAdvancedTool(name: string, args: Args, db: Client, timezone: string) {
-  if (name === "get_advanced_config") return { timezone, data: await advancedConfig(db), summary: {}, metadata: { advanced_mode: true } };
+  if (name === "get_advanced_config") return { start_date: null, end_date: null, timezone, data: await advancedConfig(db), summary: {}, metadata: { advanced_mode: true } };
   if (name === "list_coach_events") {
-    let query = db.from("coach_events").select("id,event_type,event_date,payload,consumed_at,created_at").order("created_at", { ascending: false }).limit(Math.min(args.limit ?? 50, 100));
+    let query = db.from("coach_events").select("id,event_type,event_date,payload,consumed_at,created_at").order("id", { ascending: true }).limit(Math.min(args.limit ?? 50, 100));
     if (!args.include_consumed) query = query.is("consumed_at", null);
+    if (Number.isFinite(Number(args.after_id)) && Number(args.after_id) > 0) query = query.gt("id", Number(args.after_id));
     const data = await read<any[]>("coach_events", () => query);
-    return { timezone, data, summary: { events: data.length, unconsumed: data.filter((row: any) => !row.consumed_at).length }, metadata: { trigger_queue: true } };
+    return { start_date: null, end_date: null, timezone, data, summary: { events: data.length, unconsumed: data.filter((row: any) => !row.consumed_at).length, last_event_id: data.at(-1)?.id ?? null }, metadata: { trigger_queue: true, poll_with_after_id: true } };
   }
 
   const start = args.start_date, end = args.end_date;
