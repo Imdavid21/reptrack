@@ -37,7 +37,7 @@ export function TodaySnapshot() {
   const [sheet, setSheet] = useState<'sleep' | 'weight' | null>(null);
   const [waterExpanded, setWaterExpanded] = useState(false);
   const todayMetric = metrics?.dataPoints.find(point => point.date === today);
-  const lastWeight = [...(metrics?.dataPoints || [])].reverse().find(point => point.bodyweight && point.bodyweight > 0)?.bodyweight ?? preferences?.weight_goal ?? 70;
+  const lastWeight = [...(metrics?.dataPoints || [])].reverse().find(point => point.bodyweight && point.bodyweight > 0)?.bodyweight ?? preferences?.initial_weight_kg ?? preferences?.weight_goal ?? 70;
   const [weight, setWeight] = useState(Number(lastWeight));
   const [hours, setHours] = useState(7);
   const [minutes, setMinutes] = useState(0);
