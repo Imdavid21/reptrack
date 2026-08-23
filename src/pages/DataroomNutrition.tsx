@@ -27,44 +27,44 @@ function NutritionContent() {
   }), [dates, byDate]);
 
   const macroSeries = [
-    { label: 'Protein', values: daily.map(day => Number(day.protein || 0)), value: nutrition?.averageProtein == null ? '—' : `${nutrition.averageProtein} g` },
-    { label: 'Carbs', values: daily.map(day => Number(day.carbs || 0)), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.carbs, 0) / data.meals.length)} g` : '—' },
-    { label: 'Fat', values: daily.map(day => Number(day.fat || 0)), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.fat, 0) / data.meals.length)} g` : '—' },
-    { label: 'Fibre', values: daily.map(day => Number(day.fiber || 0)), value: nutrition?.averageFiber == null ? '—' : `${nutrition.averageFiber} g` },
+    { label: 'Protein', values: daily.map(day => day.protein == null ? null : Number(day.protein)), value: nutrition?.averageProtein == null ? '—' : `${nutrition.averageProtein} g` },
+    { label: 'Carbs', values: daily.map(day => day.carbs == null ? null : Number(day.carbs)), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.carbs, 0) / data.meals.length)} g` : '—' },
+    { label: 'Fat', values: daily.map(day => day.fat == null ? null : Number(day.fat)), value: data.meals.length ? `${Math.round(data.meals.reduce((sum, day) => sum + day.fat, 0) / data.meals.length)} g` : '—' },
+    { label: 'Fibre', values: daily.map(day => day.fiber == null ? null : Number(day.fiber)), value: nutrition?.averageFiber == null ? '—' : `${nutrition.averageFiber} g` },
   ];
 
   return <div className="space-y-9">
-    <section className="grid grid-cols-2 gap-4 rounded-2xl border border-border bg-card p-4">
-      <div><div className="type-caption">Days containing logs</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.loggedDays ?? 0} / {Math.min(days, nutrition?.windowDays ?? days)}</div><div className="type-caption mt-0.5">not assumed complete</div></div>
-      <div><div className="type-caption">Protein</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.averageProtein == null ? 'Need data' : `${nutrition.averageProtein} g`}</div><div className="type-caption mt-0.5">{proteinTarget ? `target ${proteinTarget} g` : 'logged-day average'}</div></div>
+    <section className="grid grid-cols-2 gap-4 border-y border-border py-4">
+      <div><div className="type-caption">Days containing logs</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.loggedDays ?? 0} / {Math.min(days, nutrition?.windowDays ?? days)}</div><div className="type-caption mt-0.5">completeness unknown</div></div>
+      <div><div className="type-caption">Protein</div><div className="mt-1 text-xl font-semibold tabular-nums text-fuel-ink">{nutrition?.averageProtein == null ? 'Need data' : `${nutrition.averageProtein} g`}</div><div className="type-caption mt-0.5">{proteinTarget ? `target ${proteinTarget} g` : 'logged-day average'}</div></div>
       <div><div className="type-caption">Calories</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.averageCalories == null ? 'Need data' : `${nutrition.averageCalories.toLocaleString()} kcal`}</div><div className="type-caption mt-0.5">logged-day average</div></div>
       <div><div className="type-caption">Fibre</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.averageFiber == null ? 'Need data' : `${nutrition.averageFiber} g`}</div><div className="type-caption mt-0.5">logged-day average</div></div>
     </section>
 
-    <VisualSection eyebrow="Evidence" title="Nutrition logging coverage" description="A filled cell means food exists in the log. It does not prove the day is complete.">
+    <VisualSection title="Logging coverage" description="Filled periods contain food records. Blank periods are unknown, not zero intake.">
       <EvidenceMatrix dates={dates} rows={[{ label: 'Food', observed: loggedDates }]} />
     </VisualSection>
 
-    <VisualSection eyebrow="Protein" title="Protein consistency" description="Daily logged protein against the current target. Missing days remain blank rather than becoming zero.">
-      <DailyBars data={daily} valueKey="protein" label="Protein" goal={proteinTarget || null} suffix=" g" />
+    <VisualSection title="Protein consistency" description="Recorded protein against the current target. Missing days remain gaps.">
+      <DailyBars data={daily} valueKey="protein" label="Protein" goal={proteinTarget || null} suffix=" g" tone="nutrition" />
     </VisualSection>
 
-    <VisualSection eyebrow="Energy" title="Logged calories by day" description="These bars show recorded intake only. RepTrack does not claim true daily intake when the log may be incomplete.">
-      <DailyBars data={daily} valueKey="calories" label="Logged calories" suffix=" kcal" />
+    <VisualSection title="Logged calories" description="Recorded intake only. RepTrack does not treat an incomplete log as a complete day.">
+      <DailyBars data={daily} valueKey="calories" label="Logged calories" suffix=" kcal" tone="nutrition" />
     </VisualSection>
 
-    <VisualSection eyebrow="Macros" title="Small trends, separate scales" description="Each nutrient keeps its own scale so one large macro does not flatten the rest.">
-      <div className="grid grid-cols-2 gap-3">{macroSeries.map(macro => <div key={macro.label} className="rounded-2xl border border-border bg-card p-3"><div className="type-meta">{macro.label}</div><div className="mt-1 text-lg font-semibold tabular-nums">{macro.value}</div><div className="mt-2 text-foreground/80"><MiniSparkline values={macro.values} /></div></div>)}</div>
+    <VisualSection title="Macro patterns" description="Each nutrient keeps its own scale. Gaps mean the day has no nutrition record.">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-5">{macroSeries.map(macro => <div key={macro.label} className="border-t border-border pt-3"><div className="type-meta">{macro.label}</div><div className="mt-1 text-lg font-semibold tabular-nums">{macro.value}</div><div className="mt-2 text-fuel-ink"><MiniSparkline values={macro.values} tone="nutrition" /></div></div>)}</div>
     </VisualSection>
 
-    {nutrition?.modelDisagreesWithWeight && <section className="rounded-2xl border border-border bg-card p-4"><div className="type-eyebrow">Possible mismatch</div><h2 className="type-section-title mt-1">Logged energy and scale direction disagree</h2><p className="type-supporting mt-2">This can happen because intake is incomplete, expenditure is estimated, the window is short, or water and glycogen shift bodyweight. RepTrack does not recommend changing calories from this mismatch alone.</p></section>}
+    {nutrition?.modelDisagreesWithWeight && <section className="border-y border-border py-4"><div className="type-eyebrow">Possible mismatch</div><h2 className="type-section-title mt-1">Logged energy and scale direction disagree</h2><p className="type-supporting mt-2">The log may be incomplete, expenditure is estimated, the window may be short, or water and glycogen may be shifting scale weight. RepTrack does not recommend changing calories from this mismatch alone.</p></section>}
 
-    <VisualSection eyebrow="Recorded days" title="Raw nutrition evidence" description="Use this when you need exact logged-day totals rather than the visual summary.">
-      {data.meals.length ? <div className="divide-y divide-border rounded-2xl border border-border bg-card px-3">{[...data.meals].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30).map(day => <div key={day.date} className="py-3 grid grid-cols-[76px_1fr] gap-3"><div><div className="text-sm font-semibold tabular-nums">{format(parseISO(day.date), 'd MMM')}</div></div><div className="grid grid-cols-2 gap-2 text-right"><div><div className="type-caption">Calories</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.calories).toLocaleString()}</div></div><div><div className="type-caption">Protein</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.protein)} g</div></div></div></div>)}</div> : <div className="rounded-2xl border border-border bg-card py-8 text-center type-caption">No nutrition records in this range.</div>}
+    <VisualSection title="Recorded days" description="Exact logged-day totals remain available below the visual summary.">
+      {data.meals.length ? <div className="divide-y divide-border border-y border-border">{[...data.meals].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30).map(day => <div key={day.date} className="grid grid-cols-[76px_1fr] gap-3 py-3"><div><div className="text-sm font-semibold tabular-nums">{format(parseISO(day.date), 'd MMM')}</div></div><div className="grid grid-cols-2 gap-2 text-right"><div><div className="type-caption">Calories</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.calories).toLocaleString()}</div></div><div><div className="type-caption">Protein</div><div className="text-sm font-semibold tabular-nums text-fuel-ink">{Math.round(day.protein)} g</div></div></div></div>)}</div> : <div className="border-y border-border py-8 text-center type-caption">No nutrition records in this range.</div>}
     </VisualSection>
   </div>;
 }
 
 export default function DataroomNutrition() {
-  return <DataroomPageShell eyebrow="Dataroom" title="Nutrition" description="Protein consistency, logged calories, macro patterns, and the limits of incomplete food history."><NutritionContent /></DataroomPageShell>;
+  return <DataroomPageShell eyebrow="Dataroom" title="Nutrition" description="Protein consistency, logged energy, macro patterns, and the limits of incomplete food history."><NutritionContent /></DataroomPageShell>;
 }
