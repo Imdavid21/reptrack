@@ -1,880 +1,406 @@
-# HEALTH/OS – Personal Health Operating System
+# Reptrack Fitness - Personal Health Operating System
 
-> **Version:** 4.0.0 | **Platform:** Progressive Web App (PWA) + Capacitor Native  
-> **Production:** https://reps-and-reminders.lovable.app  
-> **Last Updated:** June 2026
+> **App version:** 5.0 | **MCP server:** 1.2.0 | **Platform:** React PWA + Capacitor native shell
+> **Production:** https://reptrack.fitness (also https://reps-and-reminders.lovable.app)
+> **Last updated:** 23 August 2026
+
+Reptrack is a single-user-per-account health operating system: training, nutrition,
+hydration, bodyweight, sleep and energy balance in one mobile-first app, with a
+private MCP server so ChatGPT can read your data, log on your behalf, and coach
+you live during a session.
 
 ---
 
-## Table of Contents
+## Table of contents
 
-1. [Project Overview](#project-overview)
-2. [Technology Stack](#technology-stack)
+1. [Feature inventory](#feature-inventory)
+2. [Technology stack](#technology-stack)
 3. [Architecture](#architecture)
-4. [Database Schema](#database-schema)
-5. [Authentication Flow](#authentication-flow)
-6. [User Flows](#user-flows)
-7. [Core Hooks](#core-hooks)
-8. [Components](#components)
-9. [Edge Functions](#edge-functions)
-10. [Design System](#design-system)
-11. [API Reference](#api-reference)
-12. [Development](#development)
-13. [Deployment](#deployment)
+4. [Database schema](#database-schema)
+5. [Energy model](#energy-model)
+6. [Workout engine](#workout-engine)
+7. [Session durability: every scenario](#session-durability-every-scenario)
+8. [MCP server](#mcp-server)
+9. [Live coaching: conditions, outcomes and timing](#live-coaching-conditions-outcomes-and-timing)
+10. [Edge functions](#edge-functions)
+11. [Failure modes and outcomes](#failure-modes-and-outcomes)
+12. [Design system](#design-system)
+13. [Testing](#testing)
+14. [Development and deployment](#development-and-deployment)
 
 ---
 
-## Project Overview
+## Feature inventory
 
-**HEALTH/OS** is a comprehensive personal health operating system that centralizes fitness tracking, nutrition logging, vitals monitoring, and workout planning into a single mobile-first PWA.
+### Training
+| Feature | Behaviour |
+|---|---|
+| Adaptive PPL engine | Six-day Push/Pull/Legs rotation with heavy and volume days; the next session is resolved from `training_state` plus your last completed workout, with a local fallback. |
+| Readiness adaptation | "Feeling rough?" adjusts sets, load targets and rest for the session (green/amber/red band stored on the workout). |
+| Set-by-set logging | Tap-based weight and rep chips prefilled from your prescription and last-used loads. No typing required for a normal set. |
+| Warm-up stage | Optional prep block, selectable per session, skipped automatically when nothing is selected. |
+| Rest timer | `Date.now()` baseline plus `visibilitychange` recovery so backgrounding the app never drifts the timer. |
+| PR detection | Detected on weight increase, rep increase at equal weight, and first-ever log of a movement. Shared across exercise families. |
+| Exercise families | ~190 aliases normalise to canonical names, so "Neutral-Grip Lat Pulldown" shares PRs and trend lines with "Lat Pulldown". |
+| Backdating | A subtle pill on the prepare screen exposes date, start time and duration for logging a past session. |
+| Live sync | While training, the session mirrors to `live_workout_sessions` for MCP readers. |
+| Coach cues | Conditions armed by ChatGPT fire in-app the moment they are met. |
+| History editing | Add, rename, edit and delete exercises and individual sets; edits recompute burn and refresh Insights. |
+| Skip | Records a zero-duration skipped workout and advances the rotation. |
 
-### Core Features
-- **Workout Logging** – Set-by-set exercise tracking with progressive overload, draft persistence, and explicit finish flow
-- **Adaptive Next Workout** – The Today screen picks your next split day and suggests evidence-based progression (double progression) from your own history
-- **Flexible Routines** – Split-based programs (Full Body, Upper/Lower, PPL5, PPL6) with AI generation
-- **Nutrition Tracking** – AI-powered food analysis from photos + text + manual calorie logging
-- **Hydration** – Water intake tracking with visual progress
-- **Daily Check-ins** – Morning/night vitals (sleep, energy, weight, steps)
-- **Analytics** – Strength progression, body composition, ML insights, correlation analysis
-- **Personal Records** – Automatic PR detection across all exercises
-- **AI Coach** – Context-aware coaching insights (Lovable AI Gateway)
-- **Account control** – Full data export/import (CSV) and one-tap account deletion (GDPR)
+### Nutrition and energy
+| Feature | Behaviour |
+|---|---|
+| Photo food logging | Multiple images analysed sequentially by gpt-4o vision; macro breakdown is shown for review before saving. |
+| Text food logging | Natural-language parsing via gpt-4o-mini with the same review step. |
+| Tracked nutrients | Calories, protein, carbs, fat, fiber, sugar, sodium, potassium (3,400 mg default), caffeine (400 mg default). |
+| Deficit mode | Toggle in Settings; the dashboard switches to calories remaining, net deficit against a fixed target, and protein-first emphasis. |
+| Maintenance tile | Headlines maintenance, expands to the full calculation chain, and shows a resting-burn ticker that updates every 15 seconds. |
+| Activity logging | Walk, run and cycling with distance and optional time; time wins for burn when both are given. |
+| Water | 250 ml, 500 ml, 750 ml and 1 L increments only. |
+| Net calories | History and Insights show intake minus burn, with a Net/Split toggle. |
 
-> Note: the previously documented public REST API and MCP server edge functions
-> have been removed; the app no longer exposes API-key access.
+### Insights
+Daily vitals (bodyweight and sleep), energy balance, hydration, macro charts,
+volume Sankey by muscle group, exercise progression ranked by improvement,
+personal records, muscle balance, body overview, correlation analysis and
+AI coach insights (collapsed by default, refreshed on demand).
+
+### Platform
+PWA with prompt-style updates, IndexedDB offline mutation queue with replay,
+NetworkFirst caching, haptics, safe-area handling, CSV export of the full
+account, and one-tap account deletion.
 
 ---
 
-## Technology Stack
+## Technology stack
 
-### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **React** | ^18.3.1 | UI library |
-| **TypeScript** | ^5.x | Type safety |
-| **Vite** | ^5.x | Build tool & dev server |
-| **Material UI (MUI)** | ^7.3.7 | UI component framework |
-| **Tailwind CSS** | ^3.x | Utility CSS |
-| **Framer Motion** | ^12.29.2 | Animations |
-| **React Router** | ^6.30.1 | Client-side routing |
-| **TanStack React Query** | ^5.83.0 | Server state management |
-| **Recharts** | ^2.15.4 | Data visualization |
+**Frontend:** React 18.3, TypeScript 5, Vite 5, MUI 7, Tailwind 3, Framer Motion 12,
+React Router 6, TanStack Query 5, Recharts 2.
 
-### Backend (Lovable Cloud / Supabase)
-| Technology | Purpose |
-|------------|---------|
-| **Supabase Auth** | Email/password authentication |
-| **Supabase Database** | PostgreSQL with RLS policies |
-| **Supabase Storage** | Meal photo uploads |
-| **Edge Functions (Deno)** | AI integration, API, MCP |
+**Backend (Lovable Cloud):** Postgres with RLS on every table, Supabase Auth
+(email/password plus Google and Apple), private `meal-photos` storage bucket,
+Deno edge functions, Supabase OAuth 2.1 authorization server with dynamic client
+registration.
 
-### AI Models
-| Model | Used By |
-|-------|---------|
-| **OpenAI gpt-4o** | analyze-food (vision — most accurate for food photos) |
-| **OpenAI gpt-4o-mini** | generate-workout, parse-food-text |
-| **Lovable AI Gateway (gemini-2.5-flash)** | ai-coach insights |
+**AI:** OpenAI gpt-4o (food vision), gpt-4o-mini (workout generation, food text),
+Lovable AI Gateway gemini-2.5-flash (coach insights).
 
-All AI edge functions are JWT-protected and per-user rate limited server-side
-via the `check_rate_limit` RPC (ai-coach 10/min, analyze-food 15/min,
-generate-workout 5/min, parse-food-text 20/min).
-
-### Native (Capacitor)
-| Package | Version | Purpose |
-|---------|---------|---------|
-| **@capacitor/core** | ^8.0.1 | Native bridge |
-| **@capacitor/ios** | ^8.0.1 | iOS platform |
-| **@capacitor/android** | ^8.0.1 | Android platform |
-
-### Key Dependencies
-```json
-{
-  "@emotion/react": "^11.14.0",
-  "@emotion/styled": "^11.14.1",
-  "@supabase/supabase-js": "^2.90.0",
-  "date-fns": "^3.6.0",
-  "lucide-react": "^0.462.0",
-  "sonner": "^1.7.4",
-  "zod": "^3.25.76",
-  "react-hook-form": "^7.61.1",
-  "vaul": "^0.9.9"
-}
-```
+**Native:** Capacitor 8 for iOS and Android shells.
 
 ---
 
 ## Architecture
 
-### Directory Structure
+```mermaid
+flowchart TB
+    subgraph Client["React PWA"]
+        UI[Pages and components]
+        Hooks[Hooks]
+        RQ[React Query]
+        LS[localStorage draft]
+        IDB[(IndexedDB sync queue)]
+    end
+    subgraph Cloud["Lovable Cloud"]
+        Auth[Auth + OAuth 2.1]
+        DB[(Postgres + RLS)]
+        Store[meal-photos bucket]
+        Edge[Edge functions]
+    end
+    subgraph Ext["External"]
+        OAI[OpenAI]
+        LAI[Lovable AI Gateway]
+        RE[Resend]
+        GPT[ChatGPT / MCP client]
+    end
+    UI --> Hooks --> RQ --> DB
+    Hooks --> LS
+    Hooks --> IDB --> DB
+    RQ --> Edge
+    Edge --> OAI & LAI & RE
+    GPT -->|OAuth bearer| Edge
+    Edge --> DB
+```
+
+### Directory map
+
 ```
 src/
-├── App.tsx                    # Root component with providers
-├── main.tsx                   # Entry point
-├── index.css                  # Global styles & CSS variables
-│
-├── pages/                     # Route components
-│   ├── AppIndex.tsx           # Auth gate → onboarding → dashboard
-│   ├── Landing.tsx            # Public landing page
-│   ├── Auth.tsx               # Auth wrapper
-│   ├── SignIn.tsx              # Sign-in page
-│   ├── SignUp.tsx              # Sign-up page
-│   ├── Dashboard.tsx          # Main dashboard view
-│   ├── LogWorkout.tsx         # Workout logging wizard
-│   ├── Insights.tsx           # Analytics & charts
-│   ├── History.tsx            # Workout history list
-│   ├── WorkoutDetail.tsx      # Single workout view
-│   ├── Settings.tsx           # User preferences
-│   ├── Privacy.tsx            # Privacy policy
-│   └── NotFound.tsx           # 404 page
-│
-├── components/
-│   ├── auth/                  # Auth forms
-│   ├── dashboard/             # Dashboard widgets
-│   ├── health/                # Calorie tracking, nutrition insights
-│   ├── analytics/             # Charts & insights
-│   ├── workout/               # Exercise logging components
-│   ├── onboarding/            # Onboarding flow
-│   ├── landing/               # Landing page sections
-│   ├── layout/                # Header, BottomNav, MainLayout
-│   ├── settings/              # Settings sections
-│   ├── pwa/                   # PWA install prompt
-│   └── ui/                    # shadcn/ui primitives
-│
-├── hooks/                     # Custom React hooks (26 files)
-├── contexts/                  # React contexts (Theme, DateRange)
-├── integrations/supabase/     # Auto-generated Supabase types
-├── lib/                       # Utilities (exercise library, haptics, etc.)
-└── theme/                     # MUI theme configuration
+├── pages/          Dashboard, AdaptiveWorkout, LogWorkout, Insights, History,
+│                   WorkoutDetail, Settings, Dataroom, LifecycleTracker,
+│                   McpStatus, OAuthConsent, Landing, Changelog, Privacy
+├── components/     dashboard, health, workout, analytics, adaptive, layout,
+│                   settings, landing, pwa, ui
+├── hooks/          37 hooks (data, drafts, energy, live session, offline sync)
+├── lib/            energy engine, exercise matching/families/library,
+│                   programming engine, workout triggers, calories, export
+├── contexts/       Theme, DateRange, LogDate
+└── theme/          MUI theme
 
-supabase/
-├── config.toml                # Supabase configuration
-└── functions/                 # Edge functions (Deno)
-    ├── ai-coach/              # AI workout coaching
-    ├── analyze-food/          # AI food image analysis
-    ├── generate-workout/      # AI workout generation
-    ├── parse-food-text/       # Natural language food parsing
-    ├── api-key/               # User API key management
-    ├── api/                   # Public REST API
-    ├── mcp/                   # Model Context Protocol server
-    └── send-auth-email/       # Custom auth emails via Resend
+supabase/functions/
+├── mcp/            MCP server: index, core, data, writes, live, energy
+├── ai-coach/       Gemini coaching insights
+├── analyze-food/   gpt-4o vision macro extraction
+├── parse-food-text/ gpt-4o-mini text macro extraction
+├── generate-workout/ AI routine builder
+├── send-auth-email/ Resend transactional email
+└── _shared/        rate limiting helper
 ```
 
-### High-Level System Architecture
+---
+
+## Database schema
+
+All tables are RLS-scoped to `auth.uid()`. No table is readable by `anon`.
+
+| Table | Purpose |
+|---|---|
+| `profiles` | Minimal profile row created by the `handle_new_user` trigger. No PII. |
+| `user_preferences` | Goals, targets, split, deficit mode, macro goals, locks. |
+| `workouts` | Sessions: date, day, session_key, duration, started/completed, pause seconds, energy fields, readiness band, completion percent. |
+| `exercises` | Per-exercise rows with string weight/rep lists and prescription JSON. |
+| `exercise_sets` | Normalised set rows with template linkage and muscle metadata. |
+| `exercise_templates` | User exercise library with canonical names and movement patterns. |
+| `live_workout_sessions` | One row per user mirroring the in-progress session, plus `coach_note`. |
+| `workout_triggers` | Assistant-armed in-session cues with condition, threshold, comparator, status. |
+| `workout_pauses` | Explicit pause intervals for accurate duration. |
+| `daily_metrics` | Bodyweight, sleep, rest-day flag, notes. |
+| `meals` | Calories and nine tracked nutrients, photo URL, AI confidence, source metadata. |
+| `water_logs` | Hydration events. |
+| `calorie_burns` | Workout and activity burn with MET, intensity band, model version and inputs. |
+| `energy_model_states` | Point-in-time snapshot of the personal energy model. |
+| `energy_targets` | Generated calorie and protein targets with basis and reason. |
+| `goal_history` | Point-in-time goal values so past days are never rewritten. |
+| `adaptive_lifecycles` / `adaptive_session_logs` | Variation lifecycles and progression logs. |
+| `readiness_checkins`, `post_workout_checkins`, `physique_checkins`, `mobility_assessments`, `recovery_metrics`, `deload_weeks` | Check-in and recovery data. |
+| `custom_routines` | User routines; a trigger enforces a single active routine. |
+| `training_state` | Next session pointer and deload flag. |
+| `mcp_audit_logs` | Sanitised MCP call log: tool, duration, success, error category. Insert-only from the server, read-only to the user. |
+| `api_rate_limits` | Rate-limit buckets for AI functions. |
+
+Security-definer functions: `has_role`-style access is not used (single-user
+data model); `check_rate_limit`, `check_email_exists`, `delete_my_account`,
+`handle_new_user`, `ensure_single_active_routine`, `update_updated_at_column`.
+
+---
+
+## Energy model
+
+Version 3, computed in `src/lib/energyEngineV3.ts` and mirrored in
+`supabase/functions/mcp/energy.ts` so app-side and MCP-side writes agree.
+
+```
+REE          = Mifflin-St Jeor from age, sex, height, effective weight
+baseline     = REE × nonexercise lifestyle factor
+maintenance  = baseline + calibration adjustment (multi-week, quality gated)
+activity     = MET × effective weight kg × hours, counted net of rest
+net calories = intake − (maintenance + activity burn)
+```
+
+MET values: walking 3.5, running scaled by pace, cycling by intensity,
+resistance training banded by session intensity (roughly 4.0 accessory,
+5.0 push/pull, 6.0 legs). Every burn row stores its inputs and model version,
+so recalculating history is reproducible and edits stay consistent.
+
+Calibration only runs when data quality gates pass (enough logged days,
+plausible intake, stable weight trend); otherwise the formula baseline stands
+and confidence is reported as low.
+
+---
+
+## Workout engine
 
 ```mermaid
-flowchart TB
-    subgraph Client["Frontend (React PWA)"]
-        UI[UI Components]
-        Hooks[Custom Hooks]
-        RQ[React Query Cache]
-        LS[localStorage]
-    end
-
-    subgraph Backend["Lovable Cloud (Supabase)"]
-        Auth[Supabase Auth]
-        DB[(PostgreSQL + RLS)]
-        Storage[Storage Buckets]
-        Edge[Edge Functions]
-    end
-
-    subgraph External["External Services"]
-        OAI[OpenAI API]
-        RE[Resend Email]
-    end
-
-    UI --> Hooks
-    Hooks --> RQ
-    Hooks --> LS
-    RQ <--> Auth
-    RQ <--> DB
-    RQ <--> Storage
-    RQ <--> Edge
-    Edge --> OAI
-    Edge --> RE
+stateDiagram-v2
+    [*] --> prepare
+    prepare --> warmup: prep selected
+    prepare --> train: no prep
+    warmup --> train
+    train --> saved: finish (>=1 completed set)
+    train --> paused: pause and exit
+    paused --> train: resume
+    train --> discarded: discard
+    saved --> [*]
 ```
 
-### Data Flow: Workout Logging
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant UI as LogWorkout.tsx
-    participant Draft as useDraftWorkout
-    participant LS as localStorage
-    participant WH as useWorkouts
-    participant RQ as React Query
-    participant DB as Supabase DB
-
-    U->>UI: Select workout day
-    UI->>UI: Review exercises (mandatory)
-    UI->>Draft: saveDraft(exercises)
-    Draft->>LS: Store in-progress
-    
-    loop For each set
-        U->>UI: Tap weight/reps (click-based)
-        UI->>Draft: Update draft
-        Draft->>LS: Persist changes (+ 5s auto-save)
-    end
-
-    Note over UI: Last set → transitions to Overview
-    U->>UI: Tap "Finish Workout"
-    UI->>WH: createWorkout(data)
-    WH->>DB: INSERT workouts
-    WH->>DB: INSERT exercise_sets
-    DB-->>RQ: Success
-    RQ->>RQ: Invalidate queries
-    WH->>Draft: clearDraft()
-    Draft->>LS: Remove draft
-    UI->>UI: Navigate to Dashboard
-```
-
-### Data Flow: AI Food Analysis
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant UI as CalorieTracker
-    participant SB as Supabase Storage
-    participant EF as analyze-food Function
-    participant AI as OpenAI gpt-4o-mini
-    participant DB as Supabase DB
-
-    U->>UI: Take food photo
-    UI->>SB: Upload image
-    SB-->>UI: Public URL
-    UI->>EF: invoke(imageUrl)
-    EF->>AI: Analyze image
-    AI-->>EF: {foods, calories, confidence}
-    EF-->>UI: Analysis result
-    U->>UI: Confirm/adjust
-    UI->>DB: INSERT meals
-```
-
-### Component-Hook-Database Relationships
-
-```mermaid
-flowchart LR
-    subgraph Pages
-        D[Dashboard]
-        L[LogWorkout]
-        I[Insights]
-        H[History]
-    end
-
-    subgraph Hooks
-        uW[useWorkouts]
-        uDM[useDailyMetrics]
-        uM[useMeals]
-        uWL[useWaterLogs]
-        uPR[usePersonalRecords]
-        uES[useExerciseSets]
-        uDraft[useDraftWorkout]
-    end
-
-    subgraph Tables
-        workouts[(workouts)]
-        exercise_sets[(exercise_sets)]
-        daily_metrics[(daily_metrics)]
-        meals[(meals)]
-        water_logs[(water_logs)]
-    end
-
-    D --> uDM --> daily_metrics
-    D --> uWL --> water_logs
-    D --> uPR --> exercise_sets
-    D --> uDraft
-
-    L --> uW --> workouts
-    L --> uW --> exercise_sets
-    L --> uDraft
-
-    I --> uES --> exercise_sets
-    I --> uDM --> daily_metrics
-    I --> uM --> meals
-
-    H --> uW --> workouts
-```
-
-### Authentication & Authorization Flow
-
-```mermaid
-flowchart TD
-    Start([App Launch]) --> Check{Session exists?}
-    Check -->|No| Landing[Landing Page]
-    Landing --> Auth[Sign In / Sign Up]
-    Check -->|Yes| Prefs{Preferences exist?}
-    
-    Auth -->|Sign Up| Create[Create Account]
-    Auth -->|Sign In| Login[Authenticate]
-    Create --> Prefs
-    Login --> Prefs
-
-    Prefs -->|No/Not Complete| Onboard[OnboardingFlow]
-    Prefs -->|Yes| Dashboard[Dashboard]
-    Onboard --> SavePrefs[Save Preferences]
-    SavePrefs --> Dashboard
-
-    subgraph RLS["Row Level Security"]
-        Dashboard -->|All Queries| RLSCheck{auth.uid() = user_id?}
-        RLSCheck -->|Yes| Data[(User's Data)]
-        RLSCheck -->|No| Denied[Access Denied]
-    end
-```
-
-### Edge Function Architecture
-
-```mermaid
-flowchart TB
-    subgraph Client
-        App[React App]
-    end
-
-    subgraph EdgeFunctions["Edge Functions (Deno)"]
-        AC[ai-coach]
-        AF[analyze-food]
-        GW[generate-workout]
-        PF[parse-food-text]
-        AK[api-key]
-        API[api]
-        MCP[mcp]
-        SAE[send-auth-email]
-    end
-
-    subgraph Services
-        OAI[OpenAI API]
-        RE[Resend API]
-    end
-
-    App --> AC & AF & GW & PF & AK
-    
-    AC & AF & GW & PF --> OAI
-    SAE --> RE
-    API & MCP --> DB[(Database)]
-```
+- **Finish** appears only on the last set of the current last exercise, and
+  re-evaluates when the exercise list is edited mid-session.
+- **Save is idempotent.** A stable `clientId` is generated per session and
+  reused on retry, so a failed save that partially wrote never duplicates.
+- **Rotation** advances only after a successful save; a failed save keeps the
+  draft and the current session key.
 
 ---
 
-## Database Schema
+## Session durability: every scenario
 
-### Tables Overview
-
-| Table | Purpose | Key Columns |
-|-------|---------|-------------|
-| `profiles` | User profile (minimal, no PII) | id |
-| `user_preferences` | Onboarding & goals | training_split, rest_days, calorie_goal, water_goal, sleep_goal |
-| `workouts` | Workout sessions | date, day, day_name, started_at, completed_at, duration |
-| `exercises` | Legacy exercise records | name, category, weight, reps |
-| `exercise_sets` | Normalized set data | exercise_name, set_number, weight, reps, template_id |
-| `exercise_templates` | User exercise library | canonical_name, muscles, equipment, movement_pattern |
-| `habits` | Workout-linked habits | pullups, water, sleep, supplements |
-| `daily_metrics` | Daily health data | sleep, energy, bodyweight, supplements |
-| `morning_checkins` | AM vitals | sleep_time, wake_time, energy, heart_rate, oxygen_level |
-| `night_checkins` | PM vitals | performance, steps, is_rest_day |
-| `meals` | Food logs | calories, protein, carbs, fat, photo_url, ai_confidence |
-| `calorie_burns` | Exercise calories | source, calories, duration |
-| `water_logs` | Hydration tracking | amount, timestamp, method |
-| `blood_pressure_readings` | BP vitals | systolic, diastolic, pulse |
-| `blood_sugar_readings` | Glucose vitals | glucose_level, reading_type |
-| `custom_routines` | AI-generated routines | routine_name, routine_data (JSON) |
-| `recovery_metrics` | Recovery tracking | hrv, sleep_quality, fatigue, workout_readiness |
-| `deload_weeks` | Deload scheduling | week_start, week_end, reduction % |
-| `api_keys` | User API keys | api_key, last_used_at |
-
-### Row-Level Security (RLS)
-
-All tables use RLS with policies following this pattern:
-```sql
-CREATE POLICY "Users can view own [table]"
-ON public.[table]
-FOR SELECT
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create own [table]"
-ON public.[table]
-FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-```
-
-### Security Notes
-- The `profiles` table stores **no PII** (email column removed)
-- The `handle_new_user` trigger does not sync email from `auth.users`
-- All user data is scoped via `auth.uid() = user_id` RLS policies
-
-### Key Relationships
-```
-workouts (1) ──────┬──── (N) exercises (legacy)
-                   ├──── (N) exercise_sets
-                   └──── (1) habits
-
-user (1) ──────────┬──── (N) workouts
-                   ├──── (N) daily_metrics
-                   ├──── (N) meals
-                   ├──── (N) water_logs
-                   ├──── (N) morning_checkins
-                   ├──── (N) night_checkins
-                   ├──── (1) user_preferences
-                   └──── (1) profiles
-
-exercise_sets (N) ──── (1) exercise_templates
-```
+| Scenario | Outcome |
+|---|---|
+| Navigate to another tab mid-set | Leave prompt: Pause and exit (saves draft, ends the live row, returns you to the app), Keep going, or Discard. |
+| Tap Resume on the dashboard card | Returns to the exact screen, exercise index and set index you left, with the timer reconstructed from `workoutStartTime`. |
+| App backgrounded on iOS | `visibilitychange` flushes the draft immediately; the timer recomputes from wall-clock on return. |
+| Tab or browser closed | `pagehide` and `beforeunload` flush the draft; a confirmation dialog appears during an active session. |
+| Force-killed app | A 5-second interval flush means at most 5 seconds of taps are lost. |
+| Offline mid-session | Sets stay in the local draft; the save is queued in IndexedDB and replayed when connectivity returns. |
+| Save fails (network or server) | Draft is preserved, an explicit error toast names the reason, and tapping finish again retries with the same `clientId`. |
+| Draft older than 24 hours | Discarded on load; staleness is measured from `lastSavedAt`, never from a backdated workout date. |
+| Backdated session | Start time and duration are taken from the manual inputs; burn is scaled to that duration. |
+| Two devices | The draft is per-device local storage; the live session row is per-user and last-write-wins. |
 
 ---
 
-## Authentication Flow
+## MCP server
 
-### Implementation: `src/hooks/useAuth.ts`
+Endpoint: `https://<project>.supabase.co/functions/v1/mcp`
+Transport: Streamable HTTP. Auth: Supabase OAuth 2.1 with PKCE and dynamic
+client registration; consent is served in-app at `/.lovable/oauth/consent`.
+Health: `GET /mcp/health`.
 
-```typescript
-interface AuthAPI {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUp(email: string, password: string): Promise<AuthResponse>;
-  signIn(email: string, password: string): Promise<AuthResponse>;
-  signOut(): Promise<void>;
-  resetPassword(email: string): Promise<void>;
-}
-```
+### Read tools (12)
+`get_fitness_profile`, `get_bodyweight_history`, `get_workouts`,
+`get_exercise_history`, `get_training_summary`, `get_nutrition`, `get_sleep`,
+`get_activity`, `get_progress_summary`, `get_recent_fitness_data`,
+`get_live_workout`, `list_workout_triggers`.
 
-### Flow Sequence
-```
-App Launch → Check Session → No Auth → Landing Page → Sign In/Up
-                           ↓
-                        Has Auth → Check Preferences → Onboarding (if needed) → Dashboard
-```
+### Write tools (10)
+`log_meal`, `update_meal`, `log_water`, `log_workout`, `update_workout`,
+`log_activity`, `update_activity`, `set_workout_trigger`,
+`cancel_workout_trigger`, `send_coach_note`.
 
-- Authenticated users on `/` are auto-redirected to Dashboard
-- Password reset: Uses Supabase + Resend fallback via `send-auth-email`
-
----
-
-## User Flows
-
-### 1. New User Onboarding
-```
-Step 1: Goal Selection (Lose Weight / Maintain / Build Muscle)
-Step 2: Hydration Goal (1L – 5L slider)
-Step 3: Training & Nutrition (workouts/week, daily calories)
-Step 4: Recovery (sleep goal hours)
-→ Save to user_preferences → Redirect to Dashboard
-```
-
-### 2. Workout Logging Flow
-```
-Select Day (from active split)
-  → Exercise Review (mandatory – add/remove/reorder exercises)
-    → Set-by-Set Logging (click-based weight/rep entry, no typing)
-      → Last set completes → Overview screen (review all exercises)
-        → "Finish Workout" button → Save to DB → Dashboard
-```
-
-**Key behaviors:**
-- Warmup exercises are auto-excluded from the logging flow
-- Completing the last set transitions to Overview (does NOT auto-finish)
-- Users must explicitly tap "Finish Workout" to persist
-- Double-tap protection prevents duplicate submissions
-- Draft auto-saved every 5 seconds + on visibility change / page hide
-- 24-hour draft recovery window survives force-closes
-
-### 3. Resume Workout
-```
-Dashboard shows "Resume Workout" banner if draft exists with progress
-  → One tap returns to exact exercise/set position
-```
-
-### 4. Meal Logging Flow
-```
-Photo Method: Take photo → Upload → AI analyze → Confirm/adjust → Save
-Text Method: Enter text ("2 tacos") → AI parse → Save
-Manual Method: Enter food name + macros → Save
-```
-
-### 5. Routine Setup
-```
-Choose Split (Full Body / Upper-Lower / PPL5 / PPL6)
-  → AI generates exercises per day (optional)
-  → Review & customize → Save as custom_routine
-```
+### Rules and guarantees
+- No date-range limits on reads or writes. Future dates are rejected; malformed
+  dates are rejected. There is no backdating cap.
+- No rate limits, so long ChatGPT sessions are not cut off.
+- No delete tools and no goal mutation. The worst case for a write is an
+  incorrect row you can edit in History.
+- `log_workout` accepts any string as `client_key` and hashes it to a stable
+  UUID, making retries idempotent.
+- Writes reuse the app energy model, so burn totals agree with the UI.
+- Responses are capped at 400 KB, truncating the `data` array and flagging
+  `metadata.truncated` rather than breaking the client.
+- Transient database errors retry with backoff; deterministic errors fail fast
+  with a stable category (`PERMISSION_DENIED`, `QUERY_TIMEOUT`,
+  `DATABASE_UNAVAILABLE`, and so on).
+- Every call writes a sanitised row to `mcp_audit_logs`, visible on the MCP
+  status page.
 
 ---
 
-## Core Hooks
+## Live coaching: conditions, outcomes and timing
 
-### Authentication & User
-| Hook | Purpose |
-|------|---------|
-| `useAuth` | Auth state, signIn/signUp/signOut |
-| `useUserPreferences` | Goals, onboarding status, training split |
+While a session is running the app publishes current exercise, exercise and set
+index, completed sets, total sets, session volume, elapsed seconds and the full
+exercise list. Publishing is de-duplicated by payload fingerprint and elapsed
+time is bucketed to 15 seconds, so a quiet session writes rarely.
 
-### Workout Data
-| Hook | Purpose |
-|------|---------|
-| `useWorkouts` | CRUD workouts + exercise_sets, list history |
-| `useExerciseSets` | Query normalized set data |
-| `useDraftWorkout` | localStorage persistence for in-progress workouts |
-| `useLastUsedWeights` | Pre-fill weights from last session |
-| `usePersonalRecords` | Calculate and track PRs |
-| `useWorkoutDetails` | Single workout with exercises |
-| `useRoutineInference` | Infer routine from workout history |
+### Trigger conditions
 
-### Health Data
-| Hook | Purpose |
-|------|---------|
-| `useDailyMetrics` | Daily health data (sleep, weight, etc.) |
-| `useMeals` | Meal/nutrition CRUD |
-| `useCalorieBurn` | Calorie expenditure tracking |
-| `useCalorieHistory` | Historical calorie trends |
-| `useWaterLogs` | Water intake tracking |
-| `useHydrationData` | Aggregated hydration analytics |
-| `useHealthInsights` | AI-generated health insights |
+| Condition | Fires when | Needs |
+|---|---|---|
+| `exercise_started` | You reach a matching exercise | exercise name |
+| `weight_at_least` | Last completed set on that exercise meets the threshold | exercise name, threshold |
+| `reps_at_least` | Last completed set on that exercise meets the threshold | exercise name, threshold |
+| `elapsed_minutes` | Session elapsed time crosses the threshold | threshold |
+| `completed_sets` | Completed set count crosses the threshold | threshold |
+| `session_volume` | Total volume crosses the threshold | threshold |
 
-### Analytics
-| Hook | Purpose |
-|------|---------|
-| `useCorrelationAnalysis` | Sleep/energy correlations |
-| `useVolumeData` | Volume trends over time |
-| `useBodyPartsProgress` | Muscle group progression |
-| `useMLInsights` | Machine learning predictions |
+Each trigger carries a comparator (`gte` or `lte`), a `repeat_mode`
+(`once` or `always`), an optional expiry up to 72 hours, and a message.
+Exercise matching is fuzzy in both directions, so a cue on "Lat Pulldown"
+matches "Neutral-Grip Lat Pulldown" and vice versa.
 
-### Utilities
-| Hook | Purpose |
-|------|---------|
-| `useTheme` | Dark/light mode toggle |
-| `useTimezone` | User timezone handling |
-| `useAutoMetrics` | Auto-calculate workout duration |
-| `useDataExport` | Export data as JSON/CSV |
-| `useSEO` | Dynamic page title/meta tags |
-| `use-mobile` | Mobile viewport detection |
+### Timing and cases
+
+| Case | Outcome |
+|---|---|
+| Pre-armed cue met | Evaluated locally against every set change. Banner appears immediately, with no network round trip, and works if ChatGPT is closed. |
+| Cue already fired, `repeat_mode: once` | Never fires again; status becomes `fired`. |
+| Cue with `repeat_mode: always` | Fires on every subsequent match. |
+| Cue expired or cancelled | Never fires. |
+| Ad-hoc `send_coach_note` | The app polls every 20 seconds, so the note lands within that window. |
+| Note dismissed | Cleared from the live row so it does not reappear. |
+| No active session | `get_live_workout` returns `live: false`; `send_coach_note` fails rather than queuing. |
+| Session ends (save, discard, pause and exit) | The live row is marked `ended` and stops being readable as live. |
+| Two cues match at once | Both are evaluated; one banner is shown at a time, the next appears after dismissal. |
+
+The important limitation: ChatGPT does not watch on its own. It reads the
+session only when prompted. Arm cues up front for genuinely instant reactions;
+ad-hoc notes need someone to poke the assistant.
 
 ---
 
-## Components
+## Edge functions
 
-### Dashboard Widgets
-| Component | Purpose |
-|-----------|---------|
-| `ProgressHeader` | Weekly progress ring + streak |
-| `QuickActionsBar` | Quick log buttons |
-| `StatsGrid` | Key stats overview |
-| `WeeklyProgress` | Week progress visualization |
-| `WaterTracker` | Hydration progress + log |
-| `CalorieTrackerCompact` | Calorie in/out summary |
-| `PersonalRecords` | Latest PRs list |
-| `RecentActivity` | Last 5 workouts |
-| `Heatmap` | Workout frequency calendar |
-| `EditDailyLogDialog` | Edit daily metrics inline |
+| Function | Auth | Purpose |
+|---|---|---|
+| `mcp` | OAuth 2.1 bearer, validated in code (`verify_jwt = false`) | The MCP server. |
+| `analyze-food` | JWT validated in code | gpt-4o vision macro extraction, 15/min. |
+| `parse-food-text` | JWT validated in code | gpt-4o-mini text macros, 20/min. |
+| `generate-workout` | JWT validated in code | AI routine builder, 5/min. |
+| `ai-coach` | JWT validated in code | Gemini insight generation, 10/min. |
+| `send-auth-email` | Webhook | Resend transactional email. |
 
-### Analytics Charts
-| Component | Purpose |
-|-----------|---------|
-| `StrengthOverviewChart` | Muscle group sparkline grid |
-| `BodyweightChart` | Weight trend line |
-| `BodyPartsSpline` | Per-muscle progression spline |
-| `SleepChart` | Sleep hours trend |
-| `SleepEnergyChart` | Sleep + energy correlation |
-| `HydrationChart` | Water intake bar chart |
-| `DailyVitalsChart` | Combined daily vitals view |
-| `VolumeSankeyChart` | Volume flow diagram |
-| `EfficiencyChart` | Workout efficiency metrics |
-| `PullupAccumulator` | Pullup volume accumulation |
-| `MLCoachInsights` | AI recommendations |
-| `RealCorrelationCard` | Statistical correlation display |
-| `WeeklySummaryCard` | Weekly aggregate stats |
-| `MonthlySummaryCard` | Monthly aggregate stats |
-| `DateRangeSelector` | Time period filter |
-
-### Workout Components
-| Component | Purpose |
-|-----------|---------|
-| `DaySelectorWithCheckin` | Workout day picker |
-| `SplitSelector` | Training split chooser |
-| `ExerciseReview` | Pre-workout exercise review/edit |
-| `ExerciseList` | Exercise grid with sets |
-| `SetBySetCard` | Individual exercise set-by-set logging |
-| `SingleExerciseCard` | Quick single-exercise mode |
-| `ExerciseOverview` | Post-workout review before finishing |
-| `ExercisePicker` | Add exercise modal |
-| `AddExerciseSheet` | Exercise addition bottom sheet |
-| `EditExerciseDialog` | Edit exercise details |
-| `WorkoutEditSheet` | Edit workout metadata |
-| `WorkoutCoachCard` | AI coaching suggestions |
-| `AIGoalPrompt` | AI goal-based routine generation |
-| `RoutineSetup` | Initial routine configuration |
-
-### Layout
-| Component | Purpose |
-|-----------|---------|
-| `MainLayout` | App shell with bottom nav |
-| `BottomNav` | Fixed bottom navigation |
-| `Header` | Page header with actions |
-| `Logo` | App logo component |
-| `AnimatedPage` | Page transition wrapper |
-
-### Landing Page
-| Component | Purpose |
-|-----------|---------|
-| `FeatureCard` | Feature showcase card |
-| `HowItWorksSection` | Step-by-step explanation |
-| `InsightCard` | Insight preview card |
-| `LiveStatTicker` | Animated statistics |
-| `MiniWorkoutDemo` | Interactive workout demo |
-| `MiniCalorieDemo` | Interactive calorie demo |
-| `MiniWaterDemo` | Interactive water demo |
-| `PwaFeature` | PWA install feature card |
+Auth is validated by a direct call to `/auth/v1/user` rather than the SDK
+`getUser()`, which proved unstable under the signing-keys system.
 
 ---
 
-## Edge Functions
+## Failure modes and outcomes
 
-### `ai-coach`
-**Purpose**: AI-powered workout coaching advice  
-**Model**: OpenAI `gpt-4o-mini`  
-**Input**: User context, workout history  
-**Output**: Personalized coaching recommendations
-
-### `analyze-food`
-**Purpose**: AI-powered food image analysis  
-**Model**: OpenAI `gpt-4o-mini`  
-**Input**: `{ imageUrl: string }`  
-**Output**:
-```json
-{
-  "foods": [{ "name": "...", "portion": "...", "calories": 300 }],
-  "total_calories": 650,
-  "confidence": 0.85
-}
-```
-
-### `generate-workout`
-**Purpose**: AI workout routine generation  
-**Model**: OpenAI `gpt-4o-mini`  
-**Input**: `{ goals: string }`  
-**Output**: Split-based routine with exercises, sets, target weights
-
-### `parse-food-text`
-**Purpose**: Natural language food parsing  
-**Model**: OpenAI `gpt-4o-mini`  
-**Input**: `{ text: "2 tacos and a coke" }`  
-**Output**: Parsed food items with estimated macros
-
-### `api-key`
-**Purpose**: User API key management  
-**Methods**: GET (retrieve), POST (regenerate)  
-**Format**: `ftrk_[32 alphanumeric chars]`
-
-### `api`
-**Purpose**: Read-only REST API for external access  
-**Endpoints**: `/api/workouts`, `/api/meals`, `/api/metrics`  
-**Auth**: API key via `x-api-key` header
-
-### `mcp`
-**Purpose**: Model Context Protocol server for AI assistants  
-**Protocol**: JSON-RPC 2.0 with SSE transport  
-**Tools**: 9 tools including `get_today_summary`, `get_workouts`, `get_personal_records`
-
-### `send-auth-email`
-**Purpose**: Custom auth emails via Resend  
-**Required Secret**: `RESEND_API_KEY`
+| Failure | What the user sees | Data outcome |
+|---|---|---|
+| Food photo analysis fails | Retry after 1.5 s, then a clear error | Nothing written; the photo stays queued for retry |
+| AI returns incomplete macros | Rejected by strict validation | Nothing written |
+| Workout save fails | Error toast naming the cause, sets preserved | Draft retained, retry is idempotent |
+| Partial workout write | Sets kept, save retried | No duplicate workout thanks to `clientId` |
+| Offline mutation | Queued silently, offline banner shown | Replayed in order on reconnect |
+| MCP database error | Tool returns `isError` with a stable category and `retryable` flag | Nothing written on failure |
+| MCP oversized response | `metadata.truncated: true` with a returned count | Client stays functional |
+| OAuth consent declined | Redirect back to the client with a denial | No token issued |
+| Rate limit hit on AI functions | Explicit JSON error surfaced in the UI | Nothing written |
+| Account deletion | Immediate sign-out | Every user row and the auth user are deleted in one transaction |
 
 ---
 
-## API Reference
+## Design system
 
-### Base URL
-```
-https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1
-```
+Dark-first "Dark AF" palette: `#050505` background, `#0f0f0f` surfaces,
+high-contrast text, muted coral and mint accents reserved for charts.
+Space Grotesk for headings and branding, Inter for body. Global `rounded-xl`,
+headerless layouts, brutalist buttons, no em dashes, no ALL-CAPS body copy.
+All colours are semantic tokens in `src/index.css`; contrast was audited across
+both themes for legibility.
 
-### Authentication
+---
+
+## Testing
+
+Vitest covers the pure logic layers: energy engine v3, workout calories, energy
+sync, exercise classification, matching, families, variants, preferences,
+personal records, exercise sets, adaptive engine and roster, programming engine,
+body score, history calories, day activity, data export, draft workout, workout
+saving, dataroom analysis and temporal logic, MCP security, and workout triggers.
+
 ```bash
-# API Key header
-curl -H "x-api-key: ftrk_your_api_key" \
-  https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/api/workouts
-
-# Bearer token
-curl -H "Authorization: Bearer ftrk_your_api_key" \
-  https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1/api/workouts
-```
-
-### REST API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/workouts` | GET | List recent workouts |
-| `/api/workouts/:id` | GET | Get single workout with exercises |
-| `/api/meals` | GET | List meals for date range |
-| `/api/metrics` | GET | Get daily metrics |
-
-### MCP Server Tools
-
-| Tool | Description |
-|------|-------------|
-| `get_today_summary` | Today's health summary |
-| `get_workouts` | Recent workout history |
-| `get_personal_records` | PRs across all exercises |
-| `get_weekly_stats` | Current week statistics |
-| `get_daily_metrics` | Metrics for specific date |
-| `get_meals` | Meals for date range |
-| `get_water_logs` | Water intake logs |
-| `get_performance_insights` | AI-generated insights |
-| `get_body_metrics` | Body composition data |
-
-### Rate Limits
-
-| Function | Limit |
-|----------|-------|
-| ai-coach | 10/min |
-| analyze-food | 10/min |
-| generate-workout | 5/min |
-| parse-food-text | 20/min |
-| api | 100/min |
-| mcp | 60/min |
-
----
-
-## Design System
-
-### Philosophy
-- **Minimal, headerless** – No page titles; maximum vertical space
-- **Monochrome** – Pure black & white with subtle grays; no color accents
-- **Typography** – Space Grotesk for headings, Inter for body
-- **Border radius** – Global `rounded-xl` on all cards, inputs, chips
-- **No em dashes** – En dashes or rewritten phrases only
-
-### Color Tokens (index.css)
-```css
-:root {
-  --background: 0 0% 98%;      /* near white */
-  --foreground: 0 0% 9%;       /* near black */
-  --primary: 0 0% 9%;          /* black */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 93%;       /* light gray */
-  --muted: 0 0% 93%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 0 0% 96%;
-  --destructive: 0 0% 25%;
-  --border: 0 0% 90%;
-  --radius: 12px;
-}
-
-.dark {
-  --background: 0 0% 7%;
-  --foreground: 0 0% 93%;
-}
-```
-
-### MUI Theme (`src/theme/muiTheme.ts`)
-```typescript
-const lightTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#171717' },
-    background: { default: '#ffffff', paper: '#ffffff' },
-  },
-  shape: { borderRadius: 16 },
-});
-```
-
-### Animation Presets
-```typescript
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const staggerItem = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
-};
+bunx vitest run
 ```
 
 ---
 
-## Development
+## Development and deployment
 
-### Prerequisites
-- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm))
-
-### Local Setup
 ```bash
-# Clone repository
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
+npm run dev        # http://localhost:8080
+npm run build
 ```
 
-### Environment Variables
-```env
-VITE_SUPABASE_URL=https://[project-id].supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=[anon-key]
-VITE_SUPABASE_PROJECT_ID=[project-id]
-```
+Environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
+`VITE_SUPABASE_PROJECT_ID`) are managed automatically. Edge function secrets
+live in Lovable Cloud: `OPENAI_API_KEY`, `LOVABLE_API_KEY`, `RESEND_API_KEY`.
 
-### Required Secrets (Edge Functions)
-| Secret | Purpose |
-|--------|---------|
-| `OPENAI_API_KEY` | OpenAI API for all AI features |
-| `RESEND_API_KEY` | Custom auth emails |
+Deploy the web app by publishing from Lovable. Native builds use Capacitor
+(`npx cap sync`). Custom domain: reptrack.fitness.
 
----
-
-## Deployment
-
-### Lovable
-Simply open [Lovable](https://lovable.dev/projects/9d7c1917-e764-4257-aaef-b1c47bb26f77) and click **Share → Publish**.
-
-### Capacitor Native
-```bash
-# iOS
-npx cap sync ios
-npx cap open ios
-
-# Android  
-npx cap sync android
-npx cap open android
-```
-
-### Custom Domain
-Navigate to **Project > Settings > Domains** and click **Connect Domain**.
-
----
-
-## Session Durability & Draft System
-
-The `useDraftWorkout` hook provides multi-layer persistence for in-progress workouts:
-
-| Layer | Trigger | Purpose |
-|-------|---------|---------|
-| Immediate save | Every set completion | `localStorage.setItem()` |
-| Background interval | Every 5 seconds | Safety net against force-kills |
-| Visibility change | App backgrounded (iOS) | `document.visibilitychange` |
-| Page hide | Tab/browser closing | `window.pagehide` |
-| Before unload | Desktop tab close | `window.beforeunload` + confirmation dialog |
-
-**Recovery**: Drafts survive for 24 hours. The Dashboard shows a "Resume Workout" banner when a draft with completed sets exists.
-
----
-
-## Missing / Future Enhancements
-
-### Not Yet Implemented
-1. **HealthKit Integration** – Capacitor plugin installed but not integrated
-2. **Offline Support** – No service worker / offline data sync
-3. **Push Notifications** – No push notification system
-4. **Social Features** – No sharing or community features
-
-### Recommended Additions
-1. **Real-time Sync** – Supabase realtime for multi-device
-2. **Data Migration** – Import from other fitness apps
-3. **Wearable Sync** – Apple Watch / Fitbit integration
-4. **Export Reports** – PDF progress reports
-5. **Telegram Water Reminders** – Edge function exists but not deployed
-
----
-
-*Documentation last updated: June 2026*
+After any change to the MCP server, redeploy the `mcp` edge function; the live
+endpoint reflects nothing until it is redeployed.
