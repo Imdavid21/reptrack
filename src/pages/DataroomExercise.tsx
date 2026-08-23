@@ -35,6 +35,19 @@ function ExerciseContent({ exerciseName }: { exerciseName: string }) {
     return [...best.entries()].sort((a, b) => a[0] - b[0]).slice(0, 10).map(([reps, weight]) => ({ label: `${reps} rep${reps === 1 ? '' : 's'}`, value: weight, detail: `${weight} kg` }));
   }, [trend?.exposures]);
 
+  const setMatrix = useMemo(() => {
+    const matching = data.sets.filter(set => resolveCanonicalName(set.exercise_name) === resolveCanonicalName(exerciseName) && set.workout_date);
+    const byDate = new Map<string, typeof matching>();
+    matching.forEach(set => {
+      const rows = byDate.get(set.workout_date || '') || [];
+      rows.push(set);
+      byDate.set(set.workout_date || '', rows);
+    });
+    return [...byDate.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 8).map(([date, sets]) => ({ date, sets }));
+  }, [data.sets, exerciseName]);
+
+  const maxSets = Math.max(0, ...setMatrix.map(session => session.sets.length));
+
   return <div className="space-y-9">
     <section className="rounded-3xl border border-border bg-card p-4">
       <div className="type-eyebrow">Latest comparable exposure</div>
@@ -51,6 +64,22 @@ function ExerciseContent({ exerciseName }: { exerciseName: string }) {
 
     {chart.length > 0 && <VisualSection eyebrow="Load" title="Working load over time" description="A separate view avoids mixing load and estimated strength on two y-axes.">
       <TrendLineChart data={chart} lines={[{ key: 'load', label: 'Load' }]} height={210} />
+    </VisualSection>}
+
+    {setMatrix.length > 0 && <VisualSection eyebrow="Set matrix" title="How each session unfolded" description="The progression headline can hide back-off sets and within-session drop-off. This view keeps the last eight raw sessions visible.">
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+        <div className="min-w-max p-3">
+          <div className="grid gap-2" style={{ gridTemplateColumns: `76px repeat(${Math.max(1, maxSets)}, 72px)` }}>
+            <div className="type-meta">Date</div>{Array.from({ length: maxSets }, (_, index) => <div key={`head-${index}`} className="type-meta text-center">S{index + 1}</div>)}
+            {setMatrix.map(session => <div key={session.date} className="contents"><div className="self-center text-xs font-semibold tabular-nums">{format(parseISO(session.date), 'd MMM')}</div>{Array.from({ length: maxSets }, (_, index) => {
+              const set = session.sets[index];
+              const weight = Number(set?.actual_weight || 0);
+              const reps = Number(set?.actual_reps || 0);
+              return <div key={`${session.date}-${index}`} className="rounded-xl border border-border bg-muted/20 px-2 py-2 text-center"><div className="text-xs font-semibold tabular-nums">{set ? (weight > 0 ? `${Number(weight.toFixed(2))}×${Number(reps.toFixed(0))}` : `${Number(reps.toFixed(0))} reps`) : '—'}</div>{set?.actual_rir != null && <div className="type-meta mt-0.5">{set.actual_rir} RIR</div>}</div>;
+            })}</div>)}
+          </div>
+        </div>
+      </div>
     </VisualSection>}
 
     {repLadder.length > 0 && <VisualSection eyebrow="Recorded bests" title="Rep ladder" description="Best recorded load at each rep count in the selected range. These are observed performances, not inferred rep maxes.">
