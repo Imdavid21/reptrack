@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdvancedMode, enqueueCoachEvent } from '@/hooks/useAdvancedMode';
 import { supabase } from '@/integrations/supabase/client';
 import { getQueuedItems } from '@/lib/offlineSyncQueue';
+import { sessionQuality } from '@/lib/advanced/engine';
 import type { DraftWorkout } from '@/hooks/useDraftWorkout';
 
 const SNAPSHOT_PREFIX = 'reptrack-workout-completion:';
@@ -20,14 +22,46 @@ function hasLoggedWork(draft: DraftWorkout | null) {
   return !!draft?.exercises?.some(exercise => exercise.sets.some(set => set.completed));
 }
 
-/**
- * AdaptiveWorkout deliberately owns the workout transaction and draft. This
- * small route-level observer adds a completion screen without duplicating that
- * transaction: a draft only becomes a completion when the same saveId exists
- * either on the server or in the existing offline queue.
- */
+function numeric(value: unknown) {
+  const parsed = Number.parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function completionPayload(draft: DraftWorkout) {
+  const allSets = draft.exercises.flatMap(exercise => exercise.sets.map(set => ({ exercise: exercise.name, set })));
+  const completed = allSets.filter(row => row.set.completed);
+  const changed = completed.filter(({ set }) => {
+    const targetWeight = numeric(set.targetWeight), actualWeight = numeric(set.actualWeight);
+    const targetReps = numeric(set.targetReps), actualReps = numeric(set.actualReps);
+    return (targetWeight > 0 && actualWeight > 0 && Math.abs(targetWeight - actualWeight) > 0.001)
+      || (targetReps > 0 && actualReps > 0 && targetReps !== actualReps);
+  });
+  const quality = sessionQuality({
+    completedSets: completed.length,
+    plannedSets: allSets.length,
+    progressionWins: 0,
+    regressions: 0,
+    durationMinutes: Math.max(1, Math.round((draft.elapsedSeconds || 0) / 60)),
+  });
+  return {
+    workout_id: draft.saveId,
+    session: draft.dayName,
+    workout_date: draft.date,
+    duration_minutes: Math.max(1, Math.round((draft.elapsedSeconds || 0) / 60)),
+    planned_sets: allSets.length,
+    completed_sets: completed.length,
+    completion_percent: quality.completion,
+    changed_sets: changed.length,
+    changed_exercises: [...new Set(changed.map(row => row.exercise))],
+    flags: quality.flags,
+    review: quality.review,
+    source: 'reptrack_advanced_mode',
+  };
+}
+
 export function WorkoutCompletionWatcher() {
   const { user } = useAuth();
+  const advanced = useAdvancedMode();
   const location = useLocation();
   const navigate = useNavigate();
   const previousDraft = useRef<DraftWorkout | null>(null);
@@ -57,11 +91,18 @@ export function WorkoutCompletionWatcher() {
         ]);
         const queuedWorkout = queued.some(item => item.table === 'workouts' && item.operation === 'insert' && item.payload?.id === finished.saveId);
         if (!stored && !queuedWorkout) {
-          // A draft can also disappear when the user deliberately discards it.
-          // No matching server/queue transaction means this was not a finish.
           previousDraft.current = null;
           return;
         }
+
+        if (advanced.settings.enabled) {
+          const payload = completionPayload(finished);
+          const eventType = payload.review ? 'session_review_required' : 'workout_completed';
+          void enqueueCoachEvent(user.id, eventType, payload, `workout:${finished.saveId}`).catch(error => {
+            console.warn('[WorkoutCompletionWatcher] coach event unavailable', error);
+          });
+        }
+
         window.sessionStorage.setItem(`${SNAPSHOT_PREFIX}${finished.saveId}`, JSON.stringify(finished));
         previousDraft.current = null;
         navigate(`/app/progress/workout/${finished.saveId}?completed=1${queuedWorkout && !stored ? '&pending=1' : ''}`, { replace: true });
@@ -73,7 +114,7 @@ export function WorkoutCompletionWatcher() {
     void check();
     const timer = window.setInterval(() => { void check(); }, 500);
     return () => window.clearInterval(timer);
-  }, [user, location.pathname, navigate]);
+  }, [user, advanced.settings.enabled, location.pathname, navigate]);
 
   return null;
 }
