@@ -156,13 +156,20 @@ export async function withRetry<T>(label: string, fn: () => Promise<T>, attempts
   throw lastError;
 }
 
+type PayloadRecord = Record<string, unknown> & { data: unknown[]; metadata?: Record<string, unknown> };
+
 export function capPayload<T>(payload: T, maxBytes = 400_000): { payload: T; truncated: boolean } {
   const size = JSON.stringify(payload)?.length ?? 0;
   if (size <= maxBytes) return { payload, truncated: false };
-  const any = payload as any;
-  if (any && Array.isArray(any.data)) {
-    const keep = Math.max(1, Math.floor(any.data.length * (maxBytes / size)));
-    return { payload: { ...any, data: any.data.slice(0, keep), metadata: { ...(any.metadata ?? {}), truncated: true, truncated_reason: "payload_size_limit", returned: keep, original_count: any.data.length } }, truncated: true };
+  if (payload && typeof payload === "object" && "data" in payload && Array.isArray((payload as { data?: unknown }).data)) {
+    const record = payload as unknown as PayloadRecord;
+    const keep = Math.max(1, Math.floor(record.data.length * (maxBytes / size)));
+    const truncatedPayload = {
+      ...record,
+      data: record.data.slice(0, keep),
+      metadata: { ...(record.metadata ?? {}), truncated: true, truncated_reason: "payload_size_limit", returned: keep, original_count: record.data.length },
+    };
+    return { payload: truncatedPayload as unknown as T, truncated: true };
   }
   return { payload, truncated: true };
 }
