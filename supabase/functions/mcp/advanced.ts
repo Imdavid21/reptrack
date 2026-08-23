@@ -22,7 +22,7 @@ const e1rm = (weight: unknown, reps: unknown) => {
   const r = Number(String(reps ?? "").match(/\d+/)?.[0] || 0);
   return w > 0 && r > 0 ? w * (1 + Math.min(r, 15) / 30) : 0;
 };
-
+const baseExerciseName = (name: unknown) => String(name ?? "").replace(/ \(Set \d+\)$/i, "").trim();
 const daysBetween = (a: string, b: string) => Math.max(1, Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000));
 
 async function advancedConfig(db: Client) {
@@ -39,16 +39,17 @@ async function completedSets(db: Client, start: string, end: string) {
   const workouts = await read<any[]>("advanced_workouts", () => db.from("workouts")
     .select("id,date,day_name,workout_duration_minutes,is_skipped,completion_percent,readiness_band,exercises(name,actual_weight,actual_reps,actual_rir,pain_score,completed,set_kind)")
     .gte("date", start).lte("date", end).not("completed_at", "is", null).order("date"));
-  const sets = (workouts || []).flatMap((workout: any) => (workout.exercises || []).filter((set: any) => set.completed !== false).map((set: any) => ({ ...set, date: workout.date, workout_id: workout.id, workout_name: workout.day_name })));
+  const sets = (workouts || []).flatMap((workout: any) => (workout.exercises || []).filter((set: any) => set.completed !== false).map((set: any) => ({ ...set, name: baseExerciseName(set.name), date: workout.date, workout_id: workout.id, workout_name: workout.day_name })));
   return { workouts: (workouts || []).filter((workout: any) => !workout.is_skipped), sets };
 }
 
 function progressionFromSets(sets: any[]) {
   const groups = new Map<string, any[]>();
   for (const set of sets) {
-    const list = groups.get(set.name) ?? [];
+    const exercise = baseExerciseName(set.name);
+    const list = groups.get(exercise) ?? [];
     list.push(set);
-    groups.set(set.name, list);
+    groups.set(exercise, list);
   }
   return [...groups.entries()].map(([exercise, rows]) => {
     const dates = [...new Set(rows.map(row => row.date))].sort();
