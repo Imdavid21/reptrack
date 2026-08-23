@@ -1,6 +1,8 @@
 import { AlertCircle } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
 import { ArachnidRead, ChangesNext, DataroomDeepDives, TrajectoryConsole } from '@/components/dataroom/DataRoomVisuals';
+import { DateRangeProvider, useDateRange } from '@/contexts/DateRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
 
 function LoadingState() {
@@ -14,15 +16,19 @@ function LoadingState() {
   );
 }
 
-export default function Dataroom() {
-  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData();
+function DataroomContent() {
+  const { dateRange } = useDateRange();
+  const { analysis, meals, energy, hydration, preferences, isLoading, error } = useDataroomData(dateRange);
 
   return (
     <MainLayout>
       <div className="pb-6">
-        <header className="mb-5">
-          <p className="type-eyebrow">Analysis</p>
-          <h1 className="type-page-title">Data Room</h1>
+        <header className="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="type-eyebrow">Analysis</p>
+            <h1 className="type-page-title">Data Room</h1>
+          </div>
+          <DateRangeSelector />
         </header>
         {isLoading && <LoadingState />}
         {error && (
@@ -69,5 +75,13 @@ export default function Dataroom() {
         )}
       </div>
     </MainLayout>
+  );
+}
+
+export default function Dataroom() {
+  return (
+    <DateRangeProvider storageKey="dataroom-date-range-preset" defaultPreset="14d">
+      <DataroomContent />
+    </DateRangeProvider>
   );
 }
