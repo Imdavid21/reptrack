@@ -5,13 +5,34 @@ import { APP_VERSION } from '@/lib/version';
 
 const changelogEntries = [
   {
+    date: '2026-08-23',
+    title: 'Live coaching and a complete documentation refresh',
+    items: [
+      'ChatGPT can now read your live workout, set in-session cues, and send notes while you train.',
+      'Cues fire the moment their condition is met - weight, reps, elapsed time, completed sets, or session volume.',
+      'MCP write access now covers meals, water, workouts, and activities; all writes use the same energy model as the app.',
+      'MCP status page shows a real-time history of recent requests and an "Operational" health indicator.',
+      'Updated README and this changelog to cover every feature, scenario, and failure mode for the current app state.',
+    ],
+  },
+  {
+    date: '2026-08-20',
+    title: 'Smarter exercise identity and PR tracking',
+    items: [
+      'Exercise families now group grip and equipment variations, so Neutral-Grip Lat Pulldown shares PRs with Lat Pulldown.',
+      'PR detection now recognises weight increases, rep increases at equal weight, and first-ever logs of a movement.',
+      'Duplicate exercise entries were merged and backfilled across workout history.',
+      'History editing can now add, rename, edit, or delete individual sets and exercises; edits automatically refresh Insights and calorie burn.',
+    ],
+  },
+  {
     date: '2026-08-18',
     title: 'ChatGPT connection can now log for you',
     items: [
       'The ChatGPT connection can now log and edit meals, water, workouts, and walk, run, or cycling activities, alongside the existing read access.',
       'Written workouts and activities use the same energy model as the app, so burn totals stay consistent across Today, Timeline, and Insights.',
-      'Writes are limited to today and the last 30 days, use idempotency keys to avoid duplicates, and cannot delete records or change goals.',
-      'Removed request rate limits from the connection so long ChatGPT sessions no longer get cut off.',
+      'Writes use idempotency keys to avoid duplicates and cannot delete records or change goals.',
+      'Removed request rate limits from the connection so long ChatGPT sessions are not cut off.',
     ],
   },
   {
@@ -19,13 +40,13 @@ const changelogEntries = [
     title: 'Adaptive training and personal energy',
     items: [
       'Today, Train, and Timeline now make up the primary navigation; Settings is available from the Today header.',
-      'Today now keeps sleep, bodyweight, water, food, and activity logging within one or two taps.',
-      'Training starts with a single primary action, with optional warm-up, session selection, and “Feeling rough?” adaptation controls.',
-      'Sets prefill from your prescription and history for quicker tap-based logging; completion no longer requires a post-workout form.',
-      'Weekly physique and mobility check-ins now appear on Mondays and remain visible until completed; bodyweight uses your logged average.',
-      'Energy estimates now use historical weight, dynamic resting expenditure, net activity above rest, and broad workout-intensity bands instead of fixed Push/Pull/Legs values.',
-      'Maintenance and nutrition targets now adapt gradually from multi-week, quality-gated evidence while retaining uncertainty and calculation provenance.',
-      'Workout timing now survives backgrounding and subtracts only explicit pauses; activity, food, targets, and model state remain exportable and versioned.',
+      'Today keeps sleep, bodyweight, water, food, and activity logging within one or two taps.',
+      'Training starts with a single primary action, with optional warm-up, session selection, and "Feeling rough?" adaptation controls.',
+      'Sets prefill from prescription and history for quicker tap-based logging; completion no longer requires a post-workout form.',
+      'Weekly physique check-ins now appear on Mondays and remain visible until completed; bodyweight uses your logged average.',
+      'Energy estimates use historical weight, dynamic resting expenditure, net activity above rest, and broad workout-intensity bands.',
+      'Maintenance and nutrition targets adapt gradually from multi-week, quality-gated evidence.',
+      'Workout timing survives backgrounding and subtracts only explicit pauses; activity, food, targets, and model state remain exportable and versioned.',
     ],
   },
   {
@@ -33,7 +54,7 @@ const changelogEntries = [
     title: 'Private ChatGPT fitness-data connection',
     items: [
       'Added an authenticated, read-only MCP connection for accessing your fitness records through ChatGPT.',
-      'Added OAuth consent, scoped access, rate limits, and production health checks for the connection.',
+      'Added OAuth consent, scoped access, and production health checks for the connection.',
       'Removed the redundant in-app chat route in favor of the connected ChatGPT experience.',
     ],
   },
@@ -94,8 +115,8 @@ const changelogEntries = [
 export default function Changelog() {
   useSEO({ title: 'Changelog - Reps & Reminders', description: 'See what is new in Reps & Reminders.', canonical: '/changelog' });
   return <div className="min-h-screen bg-background text-foreground">
-    <header className="py-6 px-4 border-b border-border"><div className="max-w-3xl mx-auto flex items-center justify-between"><Link to="/"><Logo size="sm" /></Link><Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back</Link></div></header>
-    <main className="max-w-3xl mx-auto px-4 py-10"><div className="flex items-center gap-2 mb-8"><h1 className="type-section-title">Changelog</h1><span className="badge-energy">v{APP_VERSION}</span></div><div className="space-y-8">{changelogEntries.map(entry => <article key={entry.date} className="relative pl-6 border-l-2 border-border"><div className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-energy"/><time className="type-caption">{new Date(`${entry.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time><h2 className="type-card-title mt-1 mb-2">{entry.title}</h2><ul className="space-y-1">{entry.items.map(item => <li key={item} className="type-supporting leading-relaxed">• {item}</li>)}</ul></article>)}</div></main>
+    <header className="py-6 px-4 border-b border-border"><div className="max-w-3xl mx-auto flex items-center justify-between"><Link to="/"><Logo size="sm" /></Link><Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Back</Link></div></header>
+    <main className="max-w-3xl mx-auto px-4 py-10"><div className="flex items-center gap-2 mb-8"><h1 className="type-section-title">Changelog</h1><span className="badge-energy">v{APP_VERSION}</span></div><div className="space-y-8">{changelogEntries.map(entry => <article key={entry.date} className="relative pl-6 border-l-2 border-border"><div className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-energy"/><time className="type-caption">{new Date(`${entry.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time><h2 className="type-card-title mt-1 mb-2">{entry.title}</h2><ul className="space-y-1">{entry.items.map(item => <li key={item} className="type-supporting leading-relaxed">{item}</li>)}</ul></article>)}</div></main>
     <footer className="py-8 px-4 border-t border-border"><div className="max-w-3xl mx-auto flex justify-between items-center"><Logo size="sm"/><Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link></div></footer>
   </div>;
 }
