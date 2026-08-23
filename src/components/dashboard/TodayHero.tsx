@@ -34,25 +34,9 @@ export function TodayHero() {
     queryFn: async () => {
       if (!user) return null;
       const [state, latest, completedToday] = await Promise.all([
-        (supabase.from('training_state' as any) as any)
-          .select('next_session,updated_at')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        (supabase.from('workouts') as any)
-          .select('id,date,session_key,day_name,completed_at,workout_duration_minutes')
-          .eq('user_id', user.id)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        (supabase.from('workouts') as any)
-          .select('id,date,session_key,day_name,completed_at,workout_duration_minutes,exercises(completed)')
-          .eq('user_id', user.id)
-          .eq('date', dateStr)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        (supabase.from('training_state' as any) as any).select('next_session,updated_at').eq('user_id', user.id).maybeSingle(),
+        (supabase.from('workouts') as any).select('id,date,session_key,day_name,completed_at,workout_duration_minutes').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }).limit(1).maybeSingle(),
+        (supabase.from('workouts') as any).select('id,date,session_key,day_name,completed_at,workout_duration_minutes,exercises(completed)').eq('user_id', user.id).eq('date', dateStr).not('completed_at', 'is', null).order('completed_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
 
       const latestSession = sessionKeyFromWorkout(latest.data?.session_key, latest.data?.day_name);
@@ -64,10 +48,7 @@ export function TodayHero() {
         localFallback: storedSession(user.id),
       });
 
-      return {
-        key: resolved,
-        completed: completedToday.data || null,
-      };
+      return { key: resolved, completed: completedToday.data || null };
     },
   });
 
@@ -86,34 +67,21 @@ export function TodayHero() {
             <p className="mt-1 text-sm text-background/65">Set {(draft.currentSetIndex || 0) + 1} · {draft.dayName} · {completed}/{total} sets</p>
           </div>
         </div>
-        <button
-          onClick={() => { haptic('medium'); navigate(draft.resumePath || '/app/train/current'); }}
-          className="mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-background px-4 text-sm font-semibold text-foreground active:scale-[.99]"
-        >
-          Resume workout <ChevronRight className="h-4 w-4" />
-        </button>
+        <button onClick={() => { haptic('medium'); navigate(draft.resumePath || '/app/train/current'); }} className="mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-background px-4 text-sm font-semibold text-foreground active:scale-[.99]">Resume workout <ChevronRight className="h-4 w-4" /></button>
       </section>
     );
   }
 
-  if (isLoading || !data) {
-    return <div className="h-36 animate-pulse rounded-[24px] bg-muted" aria-label="Loading today's training" />;
-  }
+  if (isLoading || !data) return <div className="h-36 animate-pulse rounded-[24px] bg-muted" aria-label="Loading today's training" />;
 
   if (data.completed) {
-    const completedSets = Array.isArray(data.completed.exercises)
-      ? data.completed.exercises.filter((exercise: any) => exercise.completed !== false).length
-      : 0;
+    const completedSets = Array.isArray(data.completed.exercises) ? data.completed.exercises.filter((exercise: any) => exercise.completed !== false).length : 0;
     const duration = Number(data.completed.workout_duration_minutes || 0);
     return (
       <section className="rounded-[24px] border border-border bg-card p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-muted"><Check className="h-5 w-5" /></div>
-          <div className="min-w-0 flex-1">
-            <div className="type-eyebrow">Complete</div>
-            <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.025em]">{data.completed.day_name || 'Workout complete'}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{[duration > 0 ? `${Math.round(duration)} min` : null, completedSets > 0 ? `${completedSets} sets` : null].filter(Boolean).join(' · ') || 'Logged today'}</p>
-          </div>
+          <div className="min-w-0 flex-1"><div className="type-eyebrow">Complete</div><h2 className="mt-1 text-[24px] font-semibold tracking-[-0.025em]">{data.completed.day_name || 'Workout complete'}</h2><p className="mt-1 text-sm text-muted-foreground">{[duration > 0 ? `${Math.round(duration)} min` : null, completedSets > 0 ? `${completedSets} sets` : null].filter(Boolean).join(' · ') || 'Logged today'}</p></div>
         </div>
         <button onClick={() => navigate(`/app/progress/workout/${data.completed.id}`)} className="mt-4 flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">View workout <ChevronRight className="h-4 w-4" /></button>
       </section>
@@ -127,11 +95,7 @@ export function TodayHero() {
       <section className="rounded-[24px] border border-border bg-card p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-muted"><RotateCcw className="h-5 w-5" /></div>
-          <div>
-            <div className="type-eyebrow">Recovery day</div>
-            <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.025em]">Nothing required.</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Next: {PPL_PROGRAM[tomorrow].name}</p>
-          </div>
+          <div><div className="type-eyebrow">Recovery day</div><h2 className="mt-1 text-[24px] font-semibold tracking-[-0.025em]">Nothing required.</h2><p className="mt-1 text-sm text-muted-foreground">Next: {PPL_PROGRAM[tomorrow].name}</p></div>
         </div>
         <button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-medium text-muted-foreground hover:text-foreground">Optional mobility or conditioning</button>
       </section>
@@ -147,15 +111,8 @@ export function TodayHero() {
       <p className="mt-1 text-sm text-muted-foreground">{session.objective}</p>
       <p className="mt-4 text-sm tabular-nums text-muted-foreground">~{summary.minutes} min · {summary.exercises} exercises · {summary.sets} working sets</p>
       {!isBackDated ? (
-        <button
-          onClick={() => { haptic('medium'); navigate('/app/train'); }}
-          className="mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-4 text-sm font-semibold text-background active:scale-[.99]"
-        >
-          Start workout <ChevronRight className="h-4 w-4" />
-        </button>
-      ) : (
-        <p className="mt-4 text-xs text-muted-foreground">Historical day selected. Training starts from Today.</p>
-      )}
+        <button onClick={() => { haptic('medium'); navigate('/app/train?start=1'); }} className="mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-4 text-sm font-semibold text-background active:scale-[.99]">Start workout <ChevronRight className="h-4 w-4" /></button>
+      ) : <p className="mt-4 text-xs text-muted-foreground">Historical day selected. Training starts from Today.</p>}
     </section>
   );
 }
