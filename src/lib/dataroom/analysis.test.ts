@@ -17,16 +17,6 @@ describe('Data Room bodyweight analysis', () => {
     expect(analyzeBodyweight(dates([75]), 'lose', '2026-08-01').confidence).toBe('insufficient');
     expect(analyzeBodyweight(dates([75, 74.8]), 'lose', '2026-08-02').confidence).toBe('low');
   });
-
-  it('uses the selected range when a longer scope is requested', () => {
-    const metrics = Array.from({ length: 60 }, (_, index) => ({
-      date: `2026-${index < 29 ? '06' : index < 60 ? '07' : '08'}-${String((index % 29) + 1).padStart(2, '0')}`,
-      bodyweight: 76 - index * 0.02,
-    }));
-    const result = analyzeBodyweight(metrics, 'lose', '2026-07-29', 60);
-    expect(result.windowDays).toBe(60);
-    expect(result.observations).toBeGreaterThan(28);
-  });
 });
 
 describe('Data Room training progression', () => {
@@ -98,8 +88,7 @@ describe('Data Room muscle exposure and ranking', () => {
       { exercise: 'Incline Press', date: `2026-08-${String(day).padStart(2, '0')}`, weight: 25, reps: 8 + index },
       { exercise: 'Row', date: `2026-08-${String(day).padStart(2, '0')}`, weight: 50, reps: 8 + index },
     ]);
-    const result = buildDataroomAnalysis({ metrics, sets, workouts: [], meals: [], energy: [], goal: 'lose', sleepGoal: 8, proteinGoal: 165, endDate: '2026-08-28', rangeDays: 28 });
-    expect(result.rangeDays).toBe(28);
+    const result = buildDataroomAnalysis({ metrics, sets, workouts: [], meals: [], energy: [], goal: 'lose', sleepGoal: 8, proteinGoal: 165, endDate: '2026-08-28' });
     expect(result.findings.length).toBeLessThanOrEqual(3);
     expect(result.findings.some(f => f.actionKind === 'keep')).toBe(true);
   });

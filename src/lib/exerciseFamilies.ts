@@ -1,17 +1,14 @@
 /**
- * Canonical Exercise → Exercise Family → Variant.
+ * Canonical Exercise → Exercise Family.
  *
- * `exerciseMatching` already unifies spellings of the *same* movement into
- * one canonical name (identity). This module sits one level above that: it
- * groups canonical movements that share a training pattern into a family, so
- * related variations can share progression context without ever merging
- * their records.
+ * `exerciseMatching` unifies spellings of the same physical lift into one
+ * canonical identity. Families sit one level above identity: they group
+ * related movements for progression context without implying that raw PR
+ * numbers are interchangeable across different implements or machines.
  *
- * The contract everything downstream relies on:
- *  - Exact PR   → keyed by canonical name. Never overwritten by a sibling.
- *  - Family PR  → best performance anywhere in the family, used purely as
- *                 context ("you pulled 140 kg conventional") when the exact
- *                 variation has little or no history.
+ * PR comparability is intentionally handled separately in
+ * exerciseRelationships.ts. A 160 kg leg press does not become a 160 kg squat
+ * PR merely because both live in the squat family.
  */
 import { resolveCanonicalName } from './exerciseMatching';
 
@@ -25,19 +22,20 @@ export interface ExerciseFamily {
 export const EXERCISE_FAMILIES: ExerciseFamily[] = [
   {
     id: 'deadlift',
-    label: 'Deadlift',
+    label: 'Hinge',
     members: [
-      'Conventional Deadlift', 'Sumo Deadlift', 'Romanian Deadlift', 'Stiff Leg Deadlift',
-      'Trap Bar Deadlift', 'Rack Pull', 'Deficit Deadlift', 'Deadlift Technique Work',
-      'Single Leg Romanian Deadlift', 'Good Mornings',
+      'Conventional Deadlift', 'Sumo Deadlift', 'Romanian Deadlift', 'Smith Romanian Deadlift',
+      'Dumbbell Romanian Deadlift', 'Stiff Leg Deadlift', 'Trap Bar Deadlift', 'Rack Pull',
+      'Deficit Deadlift', 'Deadlift Technique Work', 'Single Leg Romanian Deadlift', 'Good Mornings',
     ],
   },
   {
     id: 'squat',
-    label: 'Squat',
+    label: 'Squat / leg press',
     members: [
       'Barbell Squat', 'Front Squat', 'Goblet Squats', 'Hack Squat', 'Bodyweight Squats',
-      'Box Squat', 'Pause Squat', 'Smith Machine Squat', 'Leg Press',
+      'Box Squat', 'Pause Squat', 'Smith Machine Squat', 'Leg Press', 'Single Leg Press',
+      'Cyclist Squat', 'Heel Elevated Goblet Squat',
     ],
   },
   {
@@ -58,64 +56,89 @@ export const EXERCISE_FAMILIES: ExerciseFamily[] = [
     label: 'Incline press',
     members: [
       'Incline Barbell Bench Press', 'Incline Dumbbell Press', 'Incline Chest Press',
-      'Incline Push-ups', 'Incline Machine Press',
+      'Smith Machine Incline Press', 'Incline Push-ups', 'Incline Machine Press',
     ],
   },
   {
     id: 'chest-fly',
     label: 'Chest fly',
-    members: ['Cable Flyes', 'Incline Dumbbell Flyes', 'Dumbbell Flyes', 'Pec Deck'],
+    members: [
+      'Cable Flyes', 'Cable Crossover', 'Low-to-High Cable Fly', 'High-to-Low Cable Fly',
+      'Incline Dumbbell Flyes', 'Dumbbell Flyes', 'Pec Deck',
+    ],
   },
   {
     id: 'vertical-press',
     label: 'Overhead press',
     members: [
       'Overhead Press', 'Dumbbell Shoulder Press', 'Arnold Press',
-      'Smith Machine Overhead Press', 'Machine Shoulder Press', 'Push Press',
+      'Smith Machine Overhead Press', 'Machine Shoulder Press', 'Push Press', 'Landmine Press',
     ],
   },
   {
     id: 'vertical-pull',
     label: 'Vertical pull',
     members: [
-      'Pull-ups', 'Chin-ups', 'Lat Pulldown', 'Single-Arm Lat Pulldown',
-      'Assisted Pull-ups', 'Neutral Grip Pulldown',
+      'Pull-ups', 'Weighted Pull-ups', 'Chin-ups', 'Lat Pulldown', 'Single-Arm Lat Pulldown',
+      'Single-Arm Kneeling Lat Pulldown', 'Assisted Pull-ups', 'Neutral Grip Pulldown',
+      'Close Grip Lat Pulldown', 'Wide Grip Lat Pulldown', 'Reverse Grip Lat Pulldown',
+      'Iso-Lateral Plate-Loaded Pulldown',
     ],
   },
   {
     id: 'horizontal-pull',
     label: 'Row',
     members: [
-      'Barbell Row', 'Seated Cable Row', 'Single Arm Dumbbell Row',
-      'Lever Seated Row Machine', 'T-Bar Row', 'Chest Supported Row', 'Machine Row',
+      'Barbell Row', 'Pendlay Row', 'Seated Cable Row', 'Single Arm Dumbbell Row',
+      'Lever Seated Row Machine', 'Low Row Machine', 'Plate Loaded Row', 'T-Bar Row',
+      'Chest Supported Row', 'Chest-Supported Machine Row', 'Machine Row',
     ],
   },
   {
     id: 'biceps',
-    label: 'Curl',
+    label: 'Supinated curl',
     members: [
-      'Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Cable Curl', 'Incline Dumbbell Curl',
+      'Barbell Curl', 'EZ Bar Curl', 'Dumbbell Curl', 'Cable Curl', 'Incline Dumbbell Curl',
       'EZ Bar Preacher Curls', 'Cable Preacher Curl', 'Machine Preacher Curl', 'Spider Curls',
-      'Concentration Curls', 'Reverse Curls', 'Close Grip Barbell Curl',
+      'Concentration Curls', 'Close Grip Barbell Curl',
     ],
+  },
+  {
+    id: 'forearm-curl',
+    label: 'Brachioradialis / forearm curl',
+    members: [
+      'Hammer Curl', 'Cross-Body Hammer Curl', 'Reverse Curls', 'Barbell Reverse Curls',
+      'EZ Bar Reverse Curls', 'Dumbbell Reverse Curls', 'Cable Reverse Curls', 'Zottman Curls',
+    ],
+  },
+  {
+    id: 'wrist-flexion',
+    label: 'Wrist flexion',
+    members: ['Wrist Curls', 'Dumbbell Wrist Curls', 'Behind-the-Back Wrist Curls', 'Cable Wrist Curl'],
+  },
+  {
+    id: 'wrist-extension',
+    label: 'Wrist extension',
+    members: ['Reverse Wrist Curls', 'Cable Wrist Extension'],
   },
   {
     id: 'triceps',
     label: 'Triceps extension',
     members: [
-      'Skull Crushers', 'Overhead Tricep Extension', 'Tricep Pushdown',
-      'Single Arm Dumbbell Extensions', 'Bench Tricep Dips', 'Tricep Kickback',
+      'Skull Crushers', 'Overhead Tricep Extension', 'Overhead Cable Tricep Extension',
+      'Dumbbell Overhead Extension', 'Tricep Pushdown', 'Single Arm Dumbbell Extensions',
+      'Bench Tricep Dips', 'Tricep Kickback',
     ],
   },
   {
     id: 'lateral-raise',
     label: 'Lateral raise',
-    members: ['Lateral Raises', 'Cable Lateral Raise', 'Machine Lateral Raise'],
+    members: ['Lateral Raises', 'Cable Lateral Raise', 'Lean-Away Cable Lateral Raise', 'Machine Lateral Raise'],
   },
   {
     id: 'rear-delt',
     label: 'Rear delt',
-    members: ['Reverse Fly', 'Bent Over Rear Delt Flyes', 'Reverse Pec Deck', 'Face Pulls'],
+    members: ['Reverse Fly', 'Bent Over Rear Delt Flyes', 'Cable Rear-Delt Fly', 'Reverse Pec Deck', 'Face Pulls'],
   },
   {
     id: 'quad-isolation',
@@ -125,7 +148,7 @@ export const EXERCISE_FAMILIES: ExerciseFamily[] = [
   {
     id: 'hamstring-isolation',
     label: 'Leg curl',
-    members: ['Leg Curl', 'Nordic Curl'],
+    members: ['Leg Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Nordic Curl'],
   },
   {
     id: 'calf',
@@ -135,17 +158,20 @@ export const EXERCISE_FAMILIES: ExerciseFamily[] = [
   {
     id: 'glute-bridge',
     label: 'Hip extension',
-    members: ['Hip Thrust', 'Glute Bridge', 'Back Extension 90 Degree', 'Hyperextension'],
+    members: [
+      'Hip Thrust', 'Smith Machine Hip Thrust', 'Glute Bridge', 'Cable Pull Through',
+      'Back Extension 90 Degree', 'Hyperextension',
+    ],
   },
   {
     id: 'shrug',
     label: 'Shrug',
-    members: ['Barbell Shrugs', 'Dumbbell Shrugs'],
+    members: ['Barbell Shrugs', 'Dumbbell Shrugs', 'Smith Machine Shrugs', 'Cable Shrugs'],
   },
   {
     id: 'lat-isolation',
     label: 'Straight arm pull',
-    members: ['Straight Arm Pulldown', 'Pullover'],
+    members: ['Straight Arm Pulldown', 'Cable Pullover', 'Dumbbell Pullover', 'Pullover'],
   },
 ];
 

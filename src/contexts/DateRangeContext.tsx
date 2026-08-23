@@ -15,59 +15,51 @@ interface DateRangeContextType {
 
 const DateRangeContext = createContext<DateRangeContextType | undefined>(undefined);
 
+// Presets for quick selection
 export const DATE_PRESETS = [
-  { label: 'Last 7 days', value: '7d', days: 6 },
+  { label: 'Last 7 days', value: '7d', days: 6 }, // 6 days ago + today = 7 days
   { label: 'Last 14 days', value: '14d', days: 13 },
   { label: 'Last 30 days', value: '30d', days: 29 },
   { label: 'Last 60 days', value: '60d', days: 59 },
   { label: 'Last 90 days', value: '90d', days: 89 },
-  { label: 'Last 2 years', value: 'all', days: 365 * 2 - 1 },
-] as const;
+  { label: 'All time', value: 'all', days: 365 * 2 },
+];
 
-interface DateRangeProviderProps {
-  children: ReactNode;
-  storageKey?: string;
-  defaultPreset?: string;
-}
-
-export function DateRangeProvider({
-  children,
-  storageKey = 'insights-date-range-preset',
-  defaultPreset = '30d',
-}: DateRangeProviderProps) {
-  const resolvePreset = () => {
-    const saved = localStorage.getItem(storageKey);
-    return DATE_PRESETS.some(p => p.value === saved) ? saved! : defaultPreset;
-  };
-
-  const [preset, setPreset] = useState(resolvePreset);
+export function DateRangeProvider({ children }: { children: ReactNode }) {
+  // Load saved preset from localStorage
+  const [preset, setPreset] = useState(() => {
+    const saved = localStorage.getItem('insights-date-range-preset');
+    return saved || '30d';
+  });
+  
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const selected = resolvePreset();
-    const presetConfig = DATE_PRESETS.find(p => p.value === selected) ?? DATE_PRESETS[2];
+    const saved = localStorage.getItem('insights-date-range-preset');
+    const presetConfig = DATE_PRESETS.find(p => p.value === (saved || '30d'));
     return {
-      from: startOfDay(subDays(new Date(), presetConfig.days)),
+      from: startOfDay(subDays(new Date(), presetConfig?.days || 6)),
       to: endOfDay(new Date()),
     };
   });
 
   const handleSetPreset = (newPreset: string) => {
-    const presetConfig = DATE_PRESETS.find(p => p.value === newPreset);
-    if (!presetConfig) return;
     setPreset(newPreset);
-    localStorage.setItem(storageKey, newPreset);
-    setDateRange({
-      from: startOfDay(subDays(new Date(), presetConfig.days)),
-      to: endOfDay(new Date()),
-    });
+    localStorage.setItem('insights-date-range-preset', newPreset);
+    const presetConfig = DATE_PRESETS.find(p => p.value === newPreset);
+    if (presetConfig) {
+      setDateRange({
+        from: startOfDay(subDays(new Date(), presetConfig.days)),
+        to: endOfDay(new Date()),
+      });
+    }
   };
 
   return (
-    <DateRangeContext.Provider
-      value={{
-        dateRange,
-        setDateRange,
-        preset,
-        setPreset: handleSetPreset,
+    <DateRangeContext.Provider 
+      value={{ 
+        dateRange, 
+        setDateRange, 
+        preset, 
+        setPreset: handleSetPreset 
       }}
     >
       {children}

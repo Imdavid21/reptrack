@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { getExerciseType, type ExerciseType } from '@/lib/exerciseLibrary';
+import { getExerciseType } from '@/lib/exerciseLibrary';
 import { getCanonicalName, resolveCanonicalName, EXERCISE_ALIASES } from '@/lib/exerciseMatching';
 import { fetchAllRows } from '@/lib/supabasePaging';
 import { getExerciseFamily, getFamilyKey } from '@/lib/exerciseFamilies';
+import { getComparablePrGroup } from '@/lib/exerciseRelationships';
 
 export interface PersonalRecord {
   exerciseName: string;
@@ -21,15 +22,13 @@ export interface PersonalRecord {
 }
 
 export interface FamilyRecord extends PersonalRecord {
-  /** Human label for the family, e.g. "Deadlift". */
+  /** Human label for the family, e.g. "Vertical pull". */
   familyLabel: string;
+  /** Family records are only returned when raw loading is deliberately comparable. */
+  transferability: 'comparable';
 }
 
-// Re-exported for usePersonalRecords.test.ts and any other historical
-// importer - the canonical name resolution itself now lives in
-// exerciseMatching.ts, shared with last-used-weight and workout-logging
-// matching so a lift can't unify for one and split into two PR lines for
-// the other.
+// Re-exported for usePersonalRecords.test.ts and historical importers.
 export { getCanonicalName, EXERCISE_ALIASES };
 
 export function usePersonalRecords() {
@@ -41,10 +40,8 @@ export function usePersonalRecords() {
     queryFn: async () => {
       if (!user) return [];
 
-      // PostgREST caps a single response at 1000 rows. This account already
-      // holds thousands of set rows, so an unpaged select silently dropped the
-      // most recent history - which is exactly why new PRs stopped appearing.
-      // Page through the whole table instead.
+      // PostgREST caps a single response at 1000 rows. Page through the full
+      // set history so recent records cannot disappear from PR calculation.
       const exercises = await fetchAllRows<{
         id: string; workout_id: string; name: string;
         actual_weight: string | null; actual_reps: string | null;
@@ -69,17 +66,8 @@ export function usePersonalRecords() {
           .range(from, to),
       );
 
-      // Find PRs per exercise - NO whitelist, track ALL exercises.
-      //
-      // Bucketed by resolveCanonicalName (lowercased), NOT getCanonicalName
-      // (case-preserved): getCanonicalName only rewrites *known* aliases and
-      // otherwise returns the input exactly as typed, so two loggings of the
-      // same lift that differ only in casing/whitespace (e.g. logged once via
-      // a split template as "Conventional Deadlift" and once via a swap/AI
-      // parse as "conventional deadlift") would silently form two separate
-      // object keys - splitting a lifter's real max across two buckets and
-      // showing a lower PR than they've actually hit. The display name still
-      // uses the nicely-cased getCanonicalName of whichever entry is winning.
+      // Exact PRs are bucketed by true exercise identity only. Same-family
+      // machine/free-weight alternatives remain separate records.
       const prMap: Record<string, PersonalRecord> = {};
 
       for (const ex of exercises || []) {
@@ -94,7 +82,6 @@ export function usePersonalRecords() {
         };
 
         if (exType === 'timed') {
-          // Timed: PR = longest duration (stored in actual_reps as seconds)
           const duration = parseFloat(ex.actual_reps || '0');
           if (isNaN(duration) || duration === 0) continue;
 
@@ -111,7 +98,6 @@ export function usePersonalRecords() {
             };
           }
         } else if (exType === 'bodyweight') {
-          // Bodyweight: PR = max reps
           const reps = parseFloat(ex.actual_reps || '0');
           if (isNaN(reps) || reps === 0) continue;
 
@@ -128,7 +114,9 @@ export function usePersonalRecords() {
             };
           }
         } else {
-          // Weighted / weighted_bw: PR = heaviest weight; same weight + more reps also counts
+          // Weighted / weighted_bw: exact-lift PR = heaviest weight; same
+          // weight + more reps also counts. Machine alternatives never enter
+          // this bucket unless they are a true alias of the same lift.
           const weight = parseFloat(ex.actual_weight || '0');
           const reps = parseInt(ex.actual_reps || '0');
           if (isNaN(weight) || weight === 0) continue;
@@ -171,9 +159,6 @@ export function usePersonalRecords() {
         ? { actual_weight: String(weight ?? record.maxWeight), actual_reps: String(reps), completed: true }
         : { actual_reps: String(reps), completed: true };
 
-      // Update the exact source set. The row ID is authoritative; the workout
-      // timestamp is retained on the PR for deterministic tie-breaking when
-      // identical performances exist on different days.
       const { error } = await supabase
         .from('exercises')
         .update(update)
@@ -189,32 +174,43 @@ export function usePersonalRecords() {
     },
   });
 
-  // Helper to get PR for a specific exercise - same case-insensitive
-  // resolution as the aggregation above, so a differently-cased lookup name
-  // still finds the bucket its sets were actually grouped into.
   const getPRForExercise = (exerciseName: string): PersonalRecord | undefined => {
     const target = resolveCanonicalName(exerciseName);
     return query.data?.find(pr => resolveCanonicalName(pr.exerciseName) === target);
   };
 
   /**
-   * Best relevant performance anywhere in the movement family, used purely as
-   * progression *context* when a variation has little or no history of its
-   * own. It never replaces or overwrites the exact-variation PR: pulling
-   * 140 kg conventional informs a Romanian deadlift session without becoming
-   * the Romanian deadlift record.
+   * Return a sibling PR only when the two exercises share a deliberately
+   * comparable loading system. This prevents nonsense such as a leg-press PR
+   * being presented as a squat "best", or a selectorized chest press load
+   * being compared numerically with a barbell bench.
+   *
+   * Same-family but non-comparable lifts still remain linked through
+   * exerciseRelationships for substitutions/progression context; they simply
+   * do not masquerade as transferable PRs in the workout logger.
    */
   const getFamilyPRForExercise = (exerciseName: string): FamilyRecord | undefined => {
     const family = getExerciseFamily(exerciseName);
-    if (!family) return undefined;
+    const comparableGroup = getComparablePrGroup(exerciseName);
+    if (!family || !comparableGroup) return undefined;
+
     const target = resolveCanonicalName(exerciseName);
     const siblings = (query.data || []).filter(pr =>
       pr.familyKey === family.id &&
       resolveCanonicalName(pr.exerciseName) !== target &&
-      // Only comparable record types belong in the same context line.
-      pr.prType === 'weight');
-    const best = siblings.sort((a, b) => b.maxWeight - a.maxWeight)[0];
-    return best ? { ...best, familyLabel: family.label } : undefined;
+      pr.prType === 'weight' &&
+      getComparablePrGroup(pr.exerciseName) === comparableGroup,
+    );
+
+    const best = [...siblings].sort((a, b) => {
+      if (b.maxWeight !== a.maxWeight) return b.maxWeight - a.maxWeight;
+      const aReps = parseInt(a.reps) || 0;
+      const bReps = parseInt(b.reps) || 0;
+      if (bReps !== aReps) return bReps - aReps;
+      return b.sourceTimestamp.localeCompare(a.sourceTimestamp);
+    })[0];
+
+    return best ? { ...best, familyLabel: family.label, transferability: 'comparable' } : undefined;
   };
 
   return {
