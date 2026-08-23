@@ -1,9 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { average, classifyMuscle, round } from "./core.ts";
-import { read } from "./data.ts";
+import { assertDateRange, average, categorizeDbError, classifyMuscle, round, withRetry } from "./core.ts";
 
 type Client = any;
 type Args = Record<string, any>;
+
+async function read<T>(label: string, build: () => any): Promise<T> {
+  return await withRetry(label, async () => {
+    const { data, error } = await build();
+    if (error) {
+      const err = new Error(categorizeDbError(error));
+      (err as any).code = error?.code;
+      (err as any).status = error?.status;
+      throw err;
+    }
+    return data as T;
+  });
+}
 
 const e1rm = (weight: unknown, reps: unknown) => {
   const w = Number(String(weight ?? "").match(/[\d.]+/)?.[0] || 0);
@@ -84,6 +96,7 @@ export async function executeAdvancedTool(name: string, args: Args, db: Client, 
   }
 
   const start = args.start_date, end = args.end_date;
+  assertDateRange(start, end, 730);
   const config = await advancedConfig(db);
 
   if (name === "get_progression_autopilot") {
