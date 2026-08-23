@@ -10,10 +10,29 @@ export interface SessionTemplate { key:SessionKey; name:string; objective:string
 export type ConditioningOptionKey='cindy'|'annie'|'chelsea'|'bodyweight_emom'|'mobility';
 const e=(name:string,phase:Phase,sets:number,reps:string,extra:Partial<PrescriptionExercise>={}):PrescriptionExercise=>({name,phase,sets,reps,...extra});
 
-const upperPrep=[e('Wall Slides','mobility',2,'10'),e('Band Pull-Aparts','mobility',2,'15'),e('Band External Rotation','mobility',2,'12/side'),e('Scapular Push-Ups','mobility',2,'10'),e('Thoracic Extension','mobility',1,'8')];
-const pullPrep=[e('Cat-Cow','mobility',1,'8'),e('Open-Book Rotation','mobility',1,'8/side'),e('Dead Hang','mobility',1,'30-45 sec',{timed:true}),e('Scapular Pull-Up','activation',2,'8'),e('Band Straight-Arm Pulldown','activation',2,'15')];
-const legPrep=[e('90/90 Hip Switch','mobility',2,'8/side'),e('Hip CAR','mobility',1,'5/side'),e('Adductor Rock-Back','mobility',2,'10/side'),e("World's Greatest Stretch",'mobility',1,'5/side'),e('Knee-to-Wall Ankle Mobilization','mobility',2,'10/side'),e('Glute Bridge','activation',2,'12')];
-const cool=(names:string[])=>names.map(n=>e(n,'cooldown',1,n.includes('breath')?'5 slow breaths':'45 sec/side',{timed:true}));
+// Prep is deliberately brief: enough joint/position work to preserve movement
+// quality without turning a calorie-deficit bodybuilding session into another
+// 10+ sets of fatigue before the first working set.
+const upperPrep=[
+ e('Wall Slides','mobility',1,'10'),
+ e('Band Pull-Aparts','mobility',1,'15'),
+ e('Band External Rotation','mobility',1,'12/side'),
+ e('Scapular Push-Ups','activation',1,'10'),
+];
+const pullPrep=[
+ e('Cat-Cow','mobility',1,'8'),
+ e('Dead Hang','mobility',1,'30-45 sec',{timed:true}),
+ e('Scapular Pull-Up','activation',1,'8'),
+ e('Band Straight-Arm Pulldown','activation',1,'15'),
+];
+const legPrep=[
+ e('90/90 Hip Switch','mobility',1,'8/side'),
+ e('Hip CAR','mobility',1,'5/side'),
+ e('Adductor Rock-Back','mobility',1,'10/side'),
+ e('Knee-to-Wall Ankle Mobilization','mobility',1,'10/side'),
+ e('Glute Bridge','activation',1,'12'),
+];
+const cool=(names:string[])=>names.map(n=>e(n,'cooldown',1,n.includes('Breathing')?'5 slow breaths':'45 sec/side',{timed:true}));
 const recoveryMobility:SessionTemplate={key:'recovery',name:'Recovery',objective:'Mobility and easy movement',duration:25,exercises:[e('Cat-Cow','mobility',1,'10'),e('Open Book','mobility',1,'10/side'),e('Wall Slide','mobility',2,'10'),e('90/90 Hip Switch','mobility',2,'10/side'),e('Hip CAR','mobility',2,'5/side'),e('Adductor Rock-Back','mobility',2,'10/side'),e('Couch Stretch','mobility',2,'45 sec/side',{timed:true}),e('Active Hamstring Mobilization','mobility',2,'10/side'),e('Knee-to-Wall','mobility',2,'10/side'),e('Deep Squat Hold','mobility',2,'45 sec',{timed:true}),e('Dead Hang','mobility',2,'30 sec',{timed:true}),e('Glute Bridge','activation',2,'15'),e('Bird Dog','core',2,'8/side'),e('Dead Bug','core',2,'8/side'),e('Diaphragmatic Breathing','cooldown',1,'2 min',{timed:true})]};
 
 export const CONDITIONING_OPTIONS:Record<ConditioningOptionKey,SessionTemplate>={
@@ -34,13 +53,89 @@ export const CONDITIONING_SPLITS:Record<ConditioningOptionKey,Array<{name:string
 
 export const PPL_SEQUENCE:SessionKey[]=['push_a','pull_a','legs_a','push_b','pull_b','legs_b','recovery'];
 export const isSessionKey=(value:unknown):value is SessionKey=>typeof value==='string'&&PPL_SEQUENCE.includes(value as SessionKey);
+
+/**
+ * 45-day bodybuilding block: maximum productive stimulus under a calorie-
+ * deficit recovery ceiling, not maximum possible set count. The six A/B
+ * sessions are intended to roll continuously; a five-day schedule changes
+ * cadence, not the exercise templates or the order of the six sessions.
+ */
 export const PPL_PROGRAM:Record<SessionKey,SessionTemplate>={
- push_a:{key:'push_a',name:'Push A',objective:'Upper-chest strength, chest, shoulders, triceps and abs',duration:105,exercises:[e('Arm Circles','mobility',1,'15 each direction'),...upperPrep,e('Light Cable Lateral Raise','activation',1,'20'),e('Light Cable Fly','activation',1,'15'),e('Incline Barbell Bench Press','primary',4,'5-8',{rir:'1-2',rest:210,focus:'upper chest',progression:'Double progression; +2.5 kg after all sets reach 8 at target RIR',substitutions:['Incline Dumbbell Press','Smith Machine Incline Press','Machine Chest Press']}),e('Flat Barbell Bench Press','compound',3,'6-10',{rir:'1-2',rest:180,substitutions:['Machine Chest Press','Dumbbell Bench Press']}),e('Dips','compound',3,'8-12',{rir:'1-2',progression:'Add external load after all sets exceed 12 clean reps',substitutions:['Assisted Dips','Machine Chest Press']}),e('Low-to-High Cable Fly','specialization',3,'10-15',{focus:'upper chest'}),e('Seated Shoulder Press','compound',3,'6-10',{rir:'1-2'}),e('Cable Lateral Raise','specialization',4,'12-20',{focus:'side delts'}),e('Lean-Away Cable Lateral Raise','specialization',2,'15-25',{focus:'side delts'}),e('Overhead Cable Extension','accessory',3,'10-15'),e('Rope Pushdown','accessory',2,'10-15'),e('Cable Crunch','core',4,'8-15',{progression:'Add load or reps with controlled spinal flexion'}),e('Hanging Knee Raise','core',3,'8-15',{progression:'Bent knees → knee-to-chest → straighter legs → straight-leg → weighted'}),...cool(['Doorway Pec Stretch','Lat Stretch','Triceps Stretch','Deep Breathing'])]},
- pull_a:{key:'pull_a',name:'Pull A',objective:'Back strength, thickness, lat width, rear delts and biceps',duration:110,exercises:[...pullPrep,e('Barbell Row','primary',4,'6-10',{rir:'1-2',rest:180,substitutions:['Chest-Supported Row','One-Arm Cable Row']}),e('Pull-Ups','compound',4,'6-12',{rir:'1-2',progression:'Add weight after 3+ sets reach 10-12 clean reps',substitutions:['Assisted Pull-Up','Lat Pulldown']}),e('Chest-Supported Row','compound',3,'8-12'),e('Lat Pulldown','compound',3,'8-12'),e('Seated Cable Row','compound',3,'10-15'),e('Single-Arm Lat Pulldown','specialization',2,'10-15/side',{focus:'lats',unilateral:true}),e('Reverse Pec Deck','specialization',3,'12-20',{focus:'rear delts'}),e('Face Pull','specialization',2,'15-20',{focus:'rear delts'}),e('Barbell Curl','accessory',3,'6-10'),e('Incline Dumbbell Curl','accessory',3,'8-12'),e('Hammer Curl','accessory',2,'10-15'),...cool(['Dead Hang','Lat Stretch','Biceps Stretch','Thoracic Rotation'])]},
- legs_a:{key:'legs_a',name:'Legs A',objective:'Lower-body strength, quads, posterior chain, glutes, calves and core',duration:115,exercises:[...legPrep,e('Bodyweight Squat','activation',2,'10'),e('Back Squat or Hack Squat','primary',4,'5-8',{rir:'1-2',rest:210,progression:'Use the pain-free variation with best depth and stability',substitutions:['Hack Squat','Smith Squat','Leg Press']}),e('Romanian Deadlift','primary',4,'6-10',{rir:'1-2',rest:210,substitutions:['Dumbbell RDL','Smith RDL']}),e('Leg Press','compound',3,'8-12'),e('Bulgarian Split Squat','compound',3,'8-12/leg',{unilateral:true}),e('Seated Leg Curl','accessory',4,'8-15'),e('Leg Extension','accessory',3,'10-15'),e('Standing Calf Raise','accessory',4,'8-15',{progression:'Hold the stretched position for 2 seconds'}),e('Hip Abduction','accessory',2,'15-25'),e('Cable Crunch','core',3,'8-15'),e('Ab Wheel','core',3,'6-12'),...cool(['Couch Stretch','90/90 Hold','Adductor Stretch','Hamstring Stretch','Deep Squat Hold','Calf Stretch'])]},
- push_b:{key:'push_b',name:'Push B',objective:'Shoulder and upper-chest hypertrophy, chest volume, triceps and core',duration:100,exercises:[...upperPrep,e('Incline Dumbbell Press','primary',4,'8-12',{rir:'1-2',rest:180}),e('Machine Chest Press','compound',3,'8-12'),e('Cable Crossover','specialization',3,'10-15',{focus:'upper chest'}),e('Smith Machine Overhead Press','compound',3,'6-10',{rir:'1-2'}),e('Dumbbell Lateral Raise','specialization',4,'12-20',{focus:'side delts'}),e('Cable Lateral Raise','specialization',3,'12-20',{focus:'side delts'}),e('Mechanical Lateral-Raise Drop Set','specialization',1,'strict reps → controlled partials',{rir:'0-1',focus:'side delts',progression:'One round only; disabled on yellow/red readiness'}),e('Reverse Cable Fly','specialization',3,'15-20',{focus:'rear delts'}),e('Skull Crusher','accessory',3,'8-12'),e('Cable Pushdown','accessory',2,'10-15'),e('Cable Woodchopper','core',3,'10-15/side',{unilateral:true}),...cool(['Pec Stretch','Cross-Body Shoulder Stretch','Lat Stretch','Triceps Stretch'])]},
- pull_b:{key:'pull_b',name:'Pull B',objective:'V-taper, lat width, upper back, rear delts, biceps and core',duration:105,exercises:[...pullPrep,e('Neutral-Grip Lat Pulldown','primary',4,'8-12',{rir:'1-2',rest:180}),e('Single-Arm Kneeling Lat Pulldown','specialization',3,'10-15/side',{focus:'lats',unilateral:true}),e('Chest-Supported Machine Row','compound',3,'8-12'),e('One-Arm Cable Row','compound',3,'10-15/side',{unilateral:true}),e('Straight-Arm Pulldown','specialization',3,'12-15',{focus:'lats'}),e('Reverse Pec Deck','specialization',4,'12-20',{focus:'rear delts'}),e('Cable Rear-Delt Fly','specialization',2,'15-25',{focus:'rear delts'}),e('Preacher Curl','accessory',3,'8-12'),e('Cable Curl','accessory',3,'10-15'),e('Cross-Body Hammer Curl','accessory',2,'10-15'),e('Hanging Leg Raise','core',3,'8-15'),e('Pallof Press','core',2,'10-15/side',{unilateral:true,progression:'Hold extension for 1 second'}),...cool(['Dead Hang','Lat Stretch','Rear-Delt Stretch','Biceps Stretch','Thoracic Rotation'])]},
- legs_b:{key:'legs_b',name:'Legs B',objective:'Lower-body hypertrophy, posterior chain, hip stability, calves and abs',duration:115,exercises:[...legPrep,e('Reverse Bodyweight Lunge','activation',1,'8/side'),e('Deep Squat Hold','mobility',1,'30 sec',{timed:true}),e('Hack Squat','primary',4,'8-12',{rir:'1-2',rest:180,substitutions:['Smith Squat','Leg Press']}),e('Hip Thrust','compound',3,'8-12',{progression:'Pause at peak contraction'}),e('Bulgarian Split Squat','compound',3,'10-15/leg',{unilateral:true}),e('Seated Leg Curl','accessory',4,'10-15'),e('Leg Extension','accessory',3,'12-20'),e('45-Degree Back Extension','compound',3,'10-15',{focus:'glutes/hamstrings'}),e('Walking Lunge','compound',2,'10-15 steps/leg',{unilateral:true}),e('Seated Calf Raise','accessory',4,'10-20'),e('Hip Abduction','accessory',2,'15-25'),e('Hip Adduction','accessory',2,'12-20'),e('Reverse Crunch','core',3,'10-20',{progression:'Posterior pelvic tilt and controlled lowering'}),e('Cable Crunch','core',3,'8-15'),...cool(['Couch Stretch','90/90 Hold','Frog/Adductor Stretch','Hamstring Stretch','Deep Squat Hold','Calf Stretch'])]},
+ push_a:{key:'push_a',name:'Push A',objective:'Upper-chest priority, chest strength, shoulder width, triceps and abs',duration:75,exercises:[
+  ...upperPrep,
+  e('Incline Barbell Bench Press','primary',4,'5-8',{rir:'1-2',rest:210,focus:'upper chest',progression:'Double progression; add 2.5 kg after all four sets reach 8 at target RIR',substitutions:['Smith Machine Incline Press','Incline Dumbbell Press','Incline Machine Press']}),
+  e('Barbell Bench Press','compound',2,'6-10',{rir:'1-2',rest:180,focus:'chest',substitutions:['Machine Chest Press','Smith Machine Bench Press','Dumbbell Bench Press']}),
+  e('Low-to-High Cable Fly','specialization',2,'10-15',{rir:'1-2',focus:'upper chest',substitutions:['Cable Crossover','Pec Deck','Cable Flyes']}),
+  e('Dumbbell Shoulder Press','compound',2,'6-10',{rir:'1-2',rest:150,substitutions:['Smith Machine Overhead Press','Machine Shoulder Press','Overhead Press']}),
+  e('Cable Lateral Raise','specialization',3,'12-20',{rir:'1-2',focus:'side delts',substitutions:['Lateral Raises','Machine Lateral Raise']}),
+  e('Lean-Away Cable Lateral Raise','specialization',2,'15-25',{rir:'1-2',focus:'side delts',substitutions:['Cable Lateral Raise','Lateral Raises']}),
+  e('Overhead Cable Tricep Extension','accessory',2,'10-15',{rir:'1-2',substitutions:['Dumbbell Overhead Extension','Skull Crushers','Tricep Pushdown']}),
+  e('Cable Crunch','core',2,'8-15',{rir:'1-2',progression:'Add load or reps with controlled spinal flexion'}),
+  ...cool(['Doorway Pec Stretch','Deep Breathing'])
+ ]},
+ pull_a:{key:'pull_a',name:'Pull A',objective:'Back thickness, lat width, rear delts, biceps and brachioradialis',duration:70,exercises:[
+  ...pullPrep,
+  e('Barbell Row','primary',3,'6-10',{rir:'1-2',rest:180,focus:'back thickness',substitutions:['T-Bar Row','Lever Seated Row Machine','Chest Supported Row']}),
+  e('Pull-ups','compound',3,'6-12',{rir:'1-2',rest:180,focus:'lat width',progression:'Add external load after clean bodyweight sets consistently reach the top of the range',substitutions:['Assisted Pull-ups','Lat Pulldown','Neutral Grip Pulldown']}),
+  e('T-Bar Row','compound',2,'8-12',{rir:'1-2',focus:'mid-back',substitutions:['Lever Seated Row Machine','Chest Supported Row','Seated Cable Row']}),
+  e('Single-Arm Lat Pulldown','specialization',2,'10-15/side',{rir:'1-2',focus:'lats',unilateral:true,substitutions:['Single-Arm Kneeling Lat Pulldown','Lat Pulldown']}),
+  e('Reverse Pec Deck','specialization',2,'12-20',{rir:'1-2',focus:'rear delts',substitutions:['Cable Rear-Delt Fly','Reverse Fly','Face Pulls']}),
+  e('Barbell Curl','accessory',2,'6-10',{rir:'1-2',substitutions:['EZ Bar Curl','Cable Curl','Dumbbell Curl']}),
+  e('Hammer Curl','accessory',2,'10-15',{rir:'1-2',focus:'brachioradialis/forearms',substitutions:['Cross-Body Hammer Curl','Cable Reverse Curls']}),
+  ...cool(['Lat Stretch','Biceps Stretch'])
+ ]},
+ legs_a:{key:'legs_a',name:'Legs A',objective:'Lower-body strength, quads, posterior chain, unilateral control, calves and core',duration:80,exercises:[
+  ...legPrep,
+  e('Bodyweight Squats','activation',1,'10'),
+  e('Barbell Squat','primary',3,'5-8',{rir:'1-2',rest:210,focus:'quads/strength',progression:'Keep depth and bracing consistent; add load only after all sets reach the top of range',substitutions:['Smith Machine Squat','Leg Press']}),
+  e('Romanian Deadlift','primary',3,'6-10',{rir:'1-2',rest:210,focus:'hamstrings/glutes',substitutions:['Smith Romanian Deadlift','Dumbbell Romanian Deadlift']}),
+  e('Leg Press','compound',2,'8-12',{rir:'1-2',rest:150,focus:'quads',substitutions:['Single Leg Press','Smith Machine Squat']}),
+  e('Bulgarian Split Squat','compound',2,'8-12/leg',{rir:'1-2',unilateral:true,focus:'quads/glutes/stability',substitutions:['Split Squat','Reverse Lunge','Single Leg Press']}),
+  e('Seated Leg Curl','accessory',2,'8-15',{rir:'1-2',focus:'hamstrings',substitutions:['Lying Leg Curl','Nordic Curl']}),
+  e('Leg Extension','accessory',2,'10-15',{rir:'1-2',focus:'quads',substitutions:['Cyclist Squat','Heel Elevated Goblet Squat']}),
+  e('Standing Calf Raise','accessory',2,'8-15',{rir:'1-2',progression:'Use the Smith machine if available; hold the stretched position for 2 seconds',substitutions:['Seated Calf Raise','Leg Press Calf Raise']}),
+  e('Cable Crunch','core',2,'8-15',{rir:'1-2'}),
+  ...cool(['Couch Stretch','90/90 Hold','Calf Stretch'])
+ ]},
+ push_b:{key:'push_b',name:'Push B',objective:'Upper-chest hypertrophy, stable chest volume, shoulder width, rear delts and triceps',duration:70,exercises:[
+  ...upperPrep,
+  e('Incline Dumbbell Press','primary',3,'8-12',{rir:'1-2',rest:180,focus:'upper chest',substitutions:['Smith Machine Incline Press','Incline Barbell Bench Press','Incline Machine Press']}),
+  e('Machine Chest Press','compound',2,'8-12',{rir:'1-2',rest:150,focus:'chest',substitutions:['Smith Machine Bench Press','Dumbbell Bench Press','Barbell Bench Press']}),
+  e('Pec Deck','specialization',2,'10-15',{rir:'1-2',focus:'chest',substitutions:['Cable Crossover','Cable Flyes','Low-to-High Cable Fly']}),
+  e('Smith Machine Overhead Press','compound',2,'6-10',{rir:'1-2',rest:150,focus:'shoulders',substitutions:['Dumbbell Shoulder Press','Machine Shoulder Press','Overhead Press']}),
+  e('Lateral Raises','specialization',3,'12-20',{rir:'1-2',focus:'side delts',substitutions:['Cable Lateral Raise','Machine Lateral Raise']}),
+  e('Cable Lateral Raise','specialization',2,'12-20',{rir:'1-2',focus:'side delts',substitutions:['Lateral Raises','Lean-Away Cable Lateral Raise']}),
+  e('Cable Rear-Delt Fly','specialization',2,'15-20',{rir:'1-2',focus:'rear delts',substitutions:['Reverse Pec Deck','Reverse Fly']}),
+  e('Skull Crushers','accessory',2,'8-12',{rir:'1-2',focus:'triceps',substitutions:['Overhead Cable Tricep Extension','Tricep Pushdown']}),
+  ...cool(['Pec Stretch','Cross-Body Shoulder Stretch'])
+ ]},
+ pull_b:{key:'pull_b',name:'Pull B',objective:'V-taper, stable back volume, rear delts, biceps and direct forearm specialization',duration:75,exercises:[
+  ...pullPrep,
+  e('Neutral Grip Pulldown','primary',3,'8-12',{rir:'1-2',rest:180,focus:'lat width',substitutions:['Lat Pulldown','Close Grip Lat Pulldown','Wide Grip Lat Pulldown']}),
+  e('Lever Seated Row Machine','compound',3,'8-12',{rir:'1-2',rest:150,focus:'back thickness',substitutions:['T-Bar Row','Chest Supported Row','Barbell Row']}),
+  e('Single-Arm Kneeling Lat Pulldown','specialization',2,'10-15/side',{rir:'1-2',focus:'lats',unilateral:true,substitutions:['Single-Arm Lat Pulldown','Lat Pulldown']}),
+  e('Straight Arm Pulldown','specialization',2,'12-15',{rir:'1-2',focus:'lats',substitutions:['Cable Pullover','Dumbbell Pullover']}),
+  e('Reverse Pec Deck','specialization',2,'12-20',{rir:'1-2',focus:'rear delts',substitutions:['Cable Rear-Delt Fly','Reverse Fly']}),
+  e('EZ Bar Preacher Curls','accessory',2,'8-12',{rir:'1-2',focus:'biceps',substitutions:['Cable Preacher Curl','Machine Preacher Curl','Barbell Curl']}),
+  e('Cable Reverse Curls','accessory',2,'10-15',{rir:'1-2',focus:'brachioradialis/forearms',substitutions:['EZ Bar Reverse Curls','Dumbbell Reverse Curls','Hammer Curl']}),
+  e('Cable Wrist Curl','accessory',2,'12-20',{rir:'1-2',focus:'forearm flexors',substitutions:['Wrist Curls','Dumbbell Wrist Curls']}),
+  e('Cable Wrist Extension','accessory',2,'15-25',{rir:'1-2',focus:'forearm extensors',substitutions:['Reverse Wrist Curls']}),
+  ...cool(['Dead Hang','Lat Stretch'])
+ ]},
+ legs_b:{key:'legs_b',name:'Legs B',objective:'Lower-body hypertrophy, hamstrings/glutes, unilateral control, calves and abs',duration:80,exercises:[
+  ...legPrep,
+  e('Reverse Bodyweight Lunge','activation',1,'8/side'),
+  e('Deep Squat Hold','mobility',1,'30 sec',{timed:true}),
+  e('Leg Press','primary',3,'10-15',{rir:'1-2',rest:180,focus:'quads',progression:'Controlled depth; add load only after all sets own the top of the range',substitutions:['Smith Machine Squat','Single Leg Press']}),
+  e('Smith Machine Hip Thrust','compound',2,'8-12',{rir:'1-2',rest:150,focus:'glutes',progression:'Pause at peak contraction',substitutions:['Hip Thrust','Glute Bridge']}),
+  e('Bulgarian Split Squat','compound',2,'10-15/leg',{rir:'1-2',unilateral:true,focus:'quads/glutes/stability',substitutions:['Reverse Lunge','Split Squat','Single Leg Press']}),
+  e('Seated Leg Curl','accessory',3,'10-15',{rir:'1-2',focus:'hamstrings',substitutions:['Lying Leg Curl','Nordic Curl']}),
+  e('Leg Extension','accessory',2,'12-20',{rir:'1-2',focus:'quads',substitutions:['Cyclist Squat','Heel Elevated Goblet Squat']}),
+  e('Cable Pull Through','compound',2,'12-15',{rir:'1-2',focus:'glutes/hamstrings',substitutions:['Romanian Deadlift','Hip Thrust']}),
+  e('Seated Calf Raise','accessory',2,'10-20',{rir:'1-2',focus:'calves',substitutions:['Standing Calf Raise','Leg Press Calf Raise']}),
+  e('Reverse Crunch','core',2,'10-20',{rir:'1-2',progression:'Posterior pelvic tilt and controlled lowering'}),
+  ...cool(['Couch Stretch','90/90 Hold','Frog/Adductor Stretch','Calf Stretch'])
+ ]},
  recovery:{...CONDITIONING_OPTIONS.cindy,name:'Optional conditioning'}
 };
 
