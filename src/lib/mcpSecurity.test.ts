@@ -107,9 +107,10 @@ describe('MCP failsafes', () => {
   it('truncates oversized payloads instead of breaking the client', () => {
     const big = { data: Array.from({ length: 500 }, (_, i) => ({ i, blob: 'x'.repeat(1000) })), metadata: {} };
     const { payload, truncated } = capPayload(big, 50_000);
+    const typed = payload as unknown as { data: unknown[]; metadata: { truncated?: boolean } };
     expect(truncated).toBe(true);
-    expect((payload as any).data.length).toBeLessThan(500);
-    expect((payload as any).metadata.truncated).toBe(true);
+    expect(typed.data.length).toBeLessThan(500);
+    expect(typed.metadata.truncated).toBe(true);
     expect(capPayload({ data: [1, 2, 3] }, 50_000).truncated).toBe(false);
   });
 });
