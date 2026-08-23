@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
@@ -17,17 +17,26 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
-import AdaptiveWorkout from "./pages/AdaptiveWorkout";
-import Progress from "./pages/Progress";
-import Insights from "./pages/Insights";
-import Dataroom from "./pages/Dataroom";
-import History from "./pages/History";
-import Settings from "./pages/Settings";
-import SettingsHub from "./pages/SettingsHub";
-import LifecycleTracker from "./pages/LifecycleTracker";
-import WorkoutDetail from "./pages/WorkoutDetail";
-import OAuthConsent from "./pages/OAuthConsent";
-import McpStatus from "./pages/McpStatus";
+
+const AdaptiveWorkout = lazy(() => import("./pages/AdaptiveWorkout"));
+const Progress = lazy(() => import("./pages/Progress"));
+const Insights = lazy(() => import("./pages/Insights"));
+const Dataroom = lazy(() => import("./pages/Dataroom"));
+const History = lazy(() => import("./pages/History"));
+const Settings = lazy(() => import("./pages/Settings"));
+const SettingsHub = lazy(() => import("./pages/SettingsHub"));
+const LifecycleTracker = lazy(() => import("./pages/LifecycleTracker"));
+const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const McpStatus = lazy(() => import("./pages/McpStatus"));
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite">
+      <span className="type-caption">Loading…</span>
+    </div>
+  );
+}
 
 function ProgressWorkoutRedirect() {
   const { workoutId } = useParams();
@@ -53,54 +62,56 @@ function AppRoutes() {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
   const routes = (
-    <Routes location={location} key={location.pathname}>
-      <Route path="/" element={<RootRoute />} />
-      <Route path="/signin" element={<Auth />} />
-      <Route path="/signup" element={<Auth />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/changelog" element={<Changelog />} />
-      <Route path="/oauth/consent" element={<OAuthConsent />} />
+    <Suspense fallback={<RouteFallback />}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/signin" element={<Auth />} />
+        <Route path="/signup" element={<Auth />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/changelog" element={<Changelog />} />
+        <Route path="/oauth/consent" element={<OAuthConsent />} />
 
-      <Route path="/app" element={<AppIndex />} />
-      <Route path="/app/train" element={<AdaptiveWorkout />} />
-      <Route path="/app/train/current" element={<AdaptiveWorkout />} />
-      <Route path="/app/progress" element={<Progress />} />
+        <Route path="/app" element={<AppIndex />} />
+        <Route path="/app/train" element={<AdaptiveWorkout />} />
+        <Route path="/app/train/current" element={<AdaptiveWorkout />} />
+        <Route path="/app/progress" element={<Progress />} />
 
-      <Route path="/app/progress/history" element={<History />} />
-      <Route path="/app/progress/workout/:workoutId" element={<WorkoutDetail />} />
-      <Route path="/app/progress/analytics" element={<Insights />} />
-      <Route path="/app/progress/dataroom" element={<Dataroom />} />
-      <Route path="/app/progress/weight" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
-      <Route path="/app/progress/nutrition" element={<Navigate to="/app/progress/analytics?tab=nutrition" replace />} />
-      <Route path="/app/progress/training" element={<Navigate to="/app/progress/analytics?tab=training" replace />} />
-      <Route path="/app/progress/recovery" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
+        <Route path="/app/progress/history" element={<History />} />
+        <Route path="/app/progress/workout/:workoutId" element={<WorkoutDetail />} />
+        <Route path="/app/progress/analytics" element={<Insights />} />
+        <Route path="/app/progress/dataroom" element={<Dataroom />} />
+        <Route path="/app/progress/weight" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
+        <Route path="/app/progress/nutrition" element={<Navigate to="/app/progress/analytics?tab=nutrition" replace />} />
+        <Route path="/app/progress/training" element={<Navigate to="/app/progress/analytics?tab=training" replace />} />
+        <Route path="/app/progress/recovery" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
 
-      <Route path="/app/settings" element={<SettingsHub />} />
-      <Route path="/app/settings/advanced" element={<Settings />} />
-      <Route path="/app/settings/data" element={<Navigate to="/app/settings/advanced" replace />} />
-      <Route path="/app/settings/mcp" element={<McpStatus />} />
-      <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
-      <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
+        <Route path="/app/settings" element={<SettingsHub />} />
+        <Route path="/app/settings/advanced" element={<Settings />} />
+        <Route path="/app/settings/data" element={<Navigate to="/app/settings/advanced" replace />} />
+        <Route path="/app/settings/mcp" element={<McpStatus />} />
+        <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
+        <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
-      <Route path="/app/log" element={<AdaptiveWorkout />} />
-      <Route path="/app/history" element={<Navigate to="/app/progress/history" replace />} />
-      <Route path="/app/history/:workoutId" element={<ProgressWorkoutRedirect />} />
-      <Route path="/app/insights" element={<Navigate to="/app/progress/analytics" replace />} />
-      <Route path="/app/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
-      <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
+        <Route path="/app/log" element={<AdaptiveWorkout />} />
+        <Route path="/app/history" element={<Navigate to="/app/progress/history" replace />} />
+        <Route path="/app/history/:workoutId" element={<ProgressWorkoutRedirect />} />
+        <Route path="/app/insights" element={<Navigate to="/app/progress/analytics" replace />} />
+        <Route path="/app/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
+        <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
 
-      <Route path="/log" element={<Navigate to="/app/train" replace />} />
-      <Route path="/create" element={<Navigate to="/app/train" replace />} />
-      <Route path="/insights" element={<Navigate to="/app/progress/analytics" replace />} />
-      <Route path="/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
-      <Route path="/analytics" element={<Navigate to="/app/progress/analytics" replace />} />
-      <Route path="/health" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
-      <Route path="/history" element={<Navigate to="/app/progress/history" replace />} />
-      <Route path="/history/:workoutId" element={<ProgressWorkoutRedirect />} />
-      <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
+        <Route path="/log" element={<Navigate to="/app/train" replace />} />
+        <Route path="/create" element={<Navigate to="/app/train" replace />} />
+        <Route path="/insights" element={<Navigate to="/app/progress/analytics" replace />} />
+        <Route path="/dataroom" element={<Navigate to="/app/progress/dataroom" replace />} />
+        <Route path="/analytics" element={<Navigate to="/app/progress/analytics" replace />} />
+        <Route path="/health" element={<Navigate to="/app/progress/analytics?tab=vitals" replace />} />
+        <Route path="/history" element={<Navigate to="/app/progress/history" replace />} />
+        <Route path="/history/:workoutId" element={<ProgressWorkoutRedirect />} />
+        <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 
   return reduceMotion ? routes : <AnimatePresence mode="wait">{routes}</AnimatePresence>;
