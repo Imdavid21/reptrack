@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,11 +55,14 @@ export function NextWorkoutCard() {
 
   const session = PPL_PROGRAM[key];
   const working = session.exercises.filter(ex => WORKING_PHASES.includes(ex.phase));
-  const workingSets = working.reduce((sum, exercise) => sum + exercise.sets, 0);
-  const focus = session.objective.split(',').slice(0, 2).join(',');
+  const preview = session.exercises.filter(ex => ['primary', 'compound', 'specialization'].includes(ex.phase)).slice(0, 4).map(ex => ex.name).join(' · ');
 
   const startNow = () => {
-    if (!user || key === 'recovery') { navigate('/app/train'); return; }
+    if (!user || key === 'recovery') {
+      navigate('/app/train');
+      return;
+    }
+
     const startedAt = new Date();
     const exercises: WorkoutExercise[] = working.map((item, exerciseIndex) => {
       const last = getLastUsed(item.name);
@@ -108,15 +112,20 @@ export function NextWorkoutCard() {
     navigate('/app/train');
   };
 
-  if (key === 'recovery') {
-    return <section className="rounded-[24px] border border-border bg-card p-5"><div className="type-eyebrow">Recovery day</div><h2 className="type-section-title mt-1">Nothing required.</h2><p className="type-supporting mt-2">Easy movement or mobility is available in Train if you want it.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">View recovery options</button></section>;
-  }
-
-  return <section className="rounded-[24px] border border-border bg-card overflow-hidden">
+  return <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card overflow-hidden">
     <div className="p-5">
-      <div className="type-eyebrow">Next workout</div>
-      <div className="mt-1 flex items-start justify-between gap-4"><div><h2 className="type-section-title">{session.name}</h2><p className="type-supporting mt-1">{focus}</p></div><div className="text-right type-caption shrink-0"><div>~{session.duration} min</div><div className="mt-1">{working.length} exercises · {workingSets} sets</div></div></div>
+      <div className="type-eyebrow">{key === 'recovery' ? 'Recovery day' : 'Next workout'}</div>
+      <div className="flex items-end justify-between gap-3 mt-1">
+        <div>
+          <div className="type-section-title">{session.name}</div>
+          <div className="type-supporting mt-1">About {session.duration} min</div>
+        </div>
+        <span className="type-caption">Next in sequence</span>
+      </div>
+      <p className="type-supporting mt-4 line-clamp-2">{preview || session.objective}</p>
     </div>
-    <button onClick={startNow} className="w-full min-h-14 bg-foreground text-background px-4 flex items-center justify-center gap-2 font-bold text-sm active:opacity-80"><Play className="h-4 w-4" fill="currentColor"/>Start {session.name}<ArrowRight className="h-4 w-4"/></button>
-  </section>;
+    <button onClick={startNow} className="w-full bg-foreground text-background py-4 flex items-center justify-center gap-2 font-bold text-sm active:opacity-80">
+      <Play className="h-4 w-4" fill="currentColor" />{key === 'recovery' ? 'View recovery options' : 'Start workout'}<ArrowRight className="h-4 w-4" />
+    </button>
+  </motion.div>;
 }
