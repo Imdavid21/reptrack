@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { GlobalRestTimerBar } from '@/components/workout/GlobalRestTimerBar';
+import { LiveWorkoutCoachBridge } from '@/components/workout/LiveWorkoutCoachBridge';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -41,6 +42,7 @@ export function MainLayout({ children, showBack, backTo, hideNav = false, wide =
       <Box component="main" sx={{ px: { xs: 2, sm: 2.5, md: 3 }, pt: showBack ? 1 : { xs: 2, md: 3 }, pb: 2, width: '100%', minWidth: 0, overflowX: 'clip' }}>
         <Box sx={{ width: '100%', maxWidth: wide ? 1120 : 760, mx: 'auto' }}>{children}</Box>
       </Box>
+      <LiveWorkoutCoachBridge />
       <GlobalRestTimerBar />
       {!hideNav && <BottomNav />}
     </Box>
