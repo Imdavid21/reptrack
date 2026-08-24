@@ -67,7 +67,7 @@ export default function SettingsHub() {
       <div className="type-eyebrow px-1 mb-2">Nutrition & energy</div>
       <section className="rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border mb-5">
         <Row icon={TrendingDown} title="Deficit mode" detail={deficitMode ? `${preferences?.daily_deficit_target ?? 500} kcal` : 'Off'} trailing={<SwitchControl disabled={pending} checked={deficitMode} label="Deficit mode" onChange={() => update({ deficit_mode_enabled: !deficitMode })} />} />
-        {deficitMode && <ChoiceRow disabled={pending} label="Daily deficit" value={preferences?.daily_deficit_target ?? 500} options={[{ label: '250', value: 250 }, { label: '500', value: 500 }, { label: '750', value: 750 }]} onChange={value => update({ daily_deficit_target: Number(value) })} />}
+        {deficitMode && <ChoiceRow disabled={pending} label="Daily deficit" value={preferences?.daily_deficit_target ?? 500} options={[{ label: '250', value: 250 }, { label: '500', value: 500 }, { label: '750', value: 750 }, { label: '1000', value: 1000 }]} onChange={value => update({ daily_deficit_target: Number(value) })} />}
         <Row icon={Settings2} title="Energy & nutrition goals" detail={`${calorieMode} · ${proteinMode}`} onClick={() => navigate('/app/settings/account#nutrition')} />
       </section>
 

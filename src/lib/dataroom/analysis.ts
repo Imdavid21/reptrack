@@ -8,13 +8,13 @@ import type {
   NutritionAnalysis, RecoveryAnalysis, TrainingSet, TrendState, WorkoutObservation,
 } from './types';
 
-export const DATAROOM_WINDOWS = {
+export const DATAROOM_WINDOWS: Record<'immediateRecoveryDays' | 'bodyweightDays' | 'nutritionDays' | 'resistanceVolumeDays' | 'exerciseExposureCount', number> = {
   immediateRecoveryDays: 14,
   bodyweightDays: 28,
   nutritionDays: 14,
   resistanceVolumeDays: 42,
   exerciseExposureCount: 6,
-} as const;
+};
 
 export const DATAROOM_HEURISTICS = {
   stableWeightPercentPerWeek: 0.15,
