@@ -50,7 +50,7 @@ export default function AdvancedSessionStart() {
 
   const warmups = useMemo(() => plan.filter(item => ['primary','compound'].includes(item.phase)).slice(0,2).map(item => {
     const last = getLastUsed(item.name);
-    const target = last?.weight || Number(item.weight?.match(/[\d.]+/)?.[0] || 0);
+    const target = last?.weight || 0;
     const reps = Number(item.reps.match(/\d+/)?.[0] || 8);
     return { name: item.name, sets: warmupAutopilot(target, reps) };
   }).filter(item => item.sets.length), [plan, getLastUsed]);
