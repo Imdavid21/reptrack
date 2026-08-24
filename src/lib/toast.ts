@@ -1,10 +1,11 @@
-// App-wide toast helper backed by `sonner`. The <Toaster /> is mounted once in
-// App.tsx. `sonner`'s `toast` is a plain function (not a hook), so importing it
-// anywhere - including outside React components - is safe.
+// App-wide feedback helper backed by `sonner` for actionable failures.
+// Routine success/info confirmations are intentionally silent: the resulting
+// UI state is the confirmation. Keeping the API stable avoids coupling this
+// presentation policy to workout, nutrition, settings, or logging behavior.
 import { toast as sonnerToast } from 'sonner';
 
 export const toast = {
-  success: (message: string) => sonnerToast.success(message),
+  success: (_message: string) => undefined,
   error: (message: string) => sonnerToast.error(message),
-  info: (message: string) => sonnerToast(message),
+  info: (_message: string) => undefined,
 };
