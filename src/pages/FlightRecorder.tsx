@@ -54,7 +54,7 @@ export default function FlightRecorder() {
         <div className="divide-y divide-border">{events.events.slice(0, 8).map(event => {
           const payload = event.payload || {};
           const review = Boolean(payload.review);
-          return <div key={event.id} className="px-4 py-3 flex items-start gap-3"><div className="mt-0.5">{review ? <TriangleAlert className="h-4 w-4"/> : <CircleCheck className="h-4 w-4"/>}</div><div className="min-w-0 flex-1"><div className="text-sm font-semibold">{event.event_type.replaceAll('_',' ')}</div><div className="type-caption mt-0.5">{event.event_date}{number(payload.completed_sets) ? ` · ${number(payload.completed_sets)} sets` : ''}{number(payload.duration_minutes) ? ` · ${number(payload.duration_minutes)} min` : ''}</div></div>{!event.consumed_at && <span className="rounded-lg bg-muted px-2 py-1 type-meta">new</span>}</div>;
+          return <div key={event.id} className="px-4 py-3 flex items-start gap-3"><div className="mt-0.5">{review ? <TriangleAlert className="h-4 w-4"/> : <CircleCheck className="h-4 w-4"/>}</div><div className="min-w-0 flex-1"><div className="text-sm font-semibold">{event.event_type.replace(/_/g,' ')}</div><div className="type-caption mt-0.5">{event.event_date}{number(payload.completed_sets) ? ` · ${number(payload.completed_sets)} sets` : ''}{number(payload.duration_minutes) ? ` · ${number(payload.duration_minutes)} min` : ''}</div></div>{!event.consumed_at && <span className="rounded-lg bg-muted px-2 py-1 type-meta">new</span>}</div>;
         })}</div>
       </section>}
 
