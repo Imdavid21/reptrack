@@ -29,13 +29,13 @@ function BodyContent() {
     <section className="grid grid-cols-2 md:grid-cols-4 gap-5 border-y border-border py-5">
       <Value label="Trend" value={weight?.trendWeight == null ? 'Not enough data' : `${weight.trendWeight.toFixed(1)} kg`} />
       <Value label="Latest" value={weight?.latest == null ? 'Not logged' : `${weight.latest.toFixed(1)} kg`} />
-      <Value label="Recent change" value={weight?.change == null ? 'Need more data' : `${weight.change > 0 ? '+' : ''}${weight.change.toFixed(2)} kg`} detail={`${weight?.observations || 0} measurements`} />
-      <Value label="Rate" value={weight?.percentPerWeek == null ? 'Need more data' : `${weight.percentPerWeek > 0 ? '+' : ''}${weight.percentPerWeek.toFixed(2)}% / week`} detail="Scale trend, not body-fat change" />
+      <Value label="Change" value={weight?.change == null ? 'Need more data' : `${weight.change > 0 ? '+' : ''}${weight.change.toFixed(2)} kg`} detail={`${weight?.observations || 0} measurements`} />
+      <Value label="Rate" value={weight?.percentPerWeek == null ? 'Need more data' : `${weight.percentPerWeek > 0 ? '+' : ''}${weight.percentPerWeek.toFixed(2)}% / week`} />
     </section>
 
     <section><div className="mb-3"><h2 className="type-section-title">Bodyweight Trend</h2></div><WeightTrendChart key={`${range}-${data.startDate}-${data.endDate}`} metrics={rangedMetrics} target={data.preferences?.weight_goal} /></section>
 
-    <section><div className="mb-3"><h2 className="type-section-title">Measurement Change</h2><p className="type-caption mt-1">First versus latest recorded measurement in the selected range. No interpolation.</p></div><PhysiqueChangeChart first={chartValues(firstPhysique)} latest={chartValues(latestPhysique)} /></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Measurement Change</h2></div><PhysiqueChangeChart first={chartValues(firstPhysique)} latest={chartValues(latestPhysique)} /></section>
 
     <section><div className="mb-3"><h2 className="type-section-title">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
       {[
@@ -47,13 +47,13 @@ function BodyContent() {
         ['Right calf', latestPhysique.calf_right_cm, firstPhysique?.calf_right_cm, 'cm'],
       ].map(([label, current, previous, unit]) => {
         const change = delta(current as number | null, previous as number | null);
-        return <div key={label as string} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold">{label}</div><div className="type-caption mt-0.5">Latest recorded measurement</div></div><div className="text-right"><div className="text-sm font-semibold tabular-nums">{current == null ? 'Not measured' : `${current} ${unit}`}</div>{change != null && data.physique.length > 1 && <div className="type-caption tabular-nums">{change > 0 ? '+' : ''}{change} {unit} in selected range</div>}</div></div>;
+        return <div key={label as string} className="py-3 flex items-center justify-between gap-3"><div className="text-sm font-semibold">{label}</div><div className="text-right"><div className="text-sm font-semibold tabular-nums">{current == null ? 'Not measured' : `${current} ${unit}`}</div>{change != null && data.physique.length > 1 && <div className="type-caption tabular-nums">{change > 0 ? '+' : ''}{change} {unit}</div>}</div></div>;
       })}
-      {latestPhysique.body_fat_percentage != null && <div className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold">Body-fat entry</div><div className="type-caption mt-0.5">User-recorded measurement; RepTrack does not interpolate it</div></div><div className="text-sm font-semibold tabular-nums">{latestPhysique.body_fat_percentage}%</div></div>}
-    </div> : <div className="border-y border-border py-6"><p className="text-sm font-semibold">No physique check-ins in this range.</p><p className="type-caption mt-1">Bodyweight can still be interpreted independently. Measurements are not inferred between check-ins.</p></div>}</section>
+      {latestPhysique.body_fat_percentage != null && <div className="py-3 flex items-center justify-between gap-3"><div className="text-sm font-semibold">Body fat</div><div className="text-sm font-semibold tabular-nums">{latestPhysique.body_fat_percentage}%</div></div>}
+    </div> : <div className="border-y border-border py-6 type-caption">No physique check-ins in this range.</div>}</section>
   </div>;
 }
 
 export default function DataroomBody() {
-  return <DataroomPageShell eyebrow="Dataroom" title="Body & Physique" description="Scale trend first, slower physique measurements second. No inferred body-fat or muscle change."><BodyContent /></DataroomPageShell>;
+  return <DataroomPageShell title="Body & Physique"><BodyContent /></DataroomPageShell>;
 }
