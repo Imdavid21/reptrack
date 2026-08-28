@@ -110,14 +110,21 @@ function AppRoutes() {
         <Route path="/app/dataroom/activity" element={<DataroomActivity />} />
         <Route path="/app/dataroom/records" element={<DataroomRecords />} />
         <Route path="/app/dataroom/explore" element={<DataroomExplore />} />
+        <Route path="/app/dataroom/lab" element={<PerformanceLab />} />
+        <Route path="/app/dataroom/lab/session" element={<AdvancedSessionStart />} />
+        <Route path="/app/dataroom/lab/food" element={<FoodAutopilot />} />
+        <Route path="/app/dataroom/lab/plates" element={<PlateCalculator />} />
+        <Route path="/app/dataroom/lab/simulator" element={<AdvancedSimulator />} />
+        <Route path="/app/dataroom/lab/gyms" element={<GymProfiles />} />
+        <Route path="/app/dataroom/lab/recorder" element={<FlightRecorder />} />
 
-        <Route path="/app/lab" element={<PerformanceLab />} />
-        <Route path="/app/lab/session" element={<AdvancedSessionStart />} />
-        <Route path="/app/lab/food" element={<FoodAutopilot />} />
-        <Route path="/app/lab/plates" element={<PlateCalculator />} />
-        <Route path="/app/lab/simulator" element={<AdvancedSimulator />} />
-        <Route path="/app/lab/gyms" element={<GymProfiles />} />
-        <Route path="/app/lab/recorder" element={<FlightRecorder />} />
+        <Route path="/app/lab" element={<Navigate to="/app/dataroom/lab" replace />} />
+        <Route path="/app/lab/session" element={<Navigate to="/app/dataroom/lab/session" replace />} />
+        <Route path="/app/lab/food" element={<Navigate to="/app/dataroom/lab/food" replace />} />
+        <Route path="/app/lab/plates" element={<Navigate to="/app/dataroom/lab/plates" replace />} />
+        <Route path="/app/lab/simulator" element={<Navigate to="/app/dataroom/lab/simulator" replace />} />
+        <Route path="/app/lab/gyms" element={<Navigate to="/app/dataroom/lab/gyms" replace />} />
+        <Route path="/app/lab/recorder" element={<Navigate to="/app/dataroom/lab/recorder" replace />} />
 
         <Route path="/app/settings" element={<SettingsHub />} />
         <Route path="/app/settings/account" element={<SettingsAccount />} />
