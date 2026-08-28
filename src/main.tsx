@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import "./mobile-screenshot-fixes.css";
+import "./alignment.css";
 
 // Dismiss the HTML splash screen once React has mounted
 function dismissSplash() {
