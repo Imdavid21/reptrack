@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "RepTrack Quick Log",
-  "version": "0.1.0",
-  "description": "Log food and water to RepTrack without leaving the page.",
-  "permissions": ["storage", "tabs"],
+  "name": "RepTrack",
+  "version": "0.2.0",
+  "description": "Quick food and water logging for RepTrack.",
+  "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [
     "https://reptrack.fitness/*",
     "https://*.reptrack.fitness/*",
     "https://kfifgbqkykyvnrirxwze.supabase.co/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_title": "RepTrack Quick Log",
+    "default_title": "RepTrack",
     "default_popup": "popup.html"
   },
   "content_scripts": [
