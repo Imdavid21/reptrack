@@ -2,6 +2,7 @@ const SUPABASE_BASE = 'https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1';
 const MCP_URL = `${SUPABASE_BASE}/mcp`;
 const PARSE_FOOD_URL = `${SUPABASE_BASE}/parse-food-text`;
 const ANALYZE_FOOD_URL = `${SUPABASE_BASE}/analyze-food`;
+const CONNECT_URL = 'https://reptrack.fitness/auth?redirect=/app';
 
 const $ = (id) => document.getElementById(id);
 const state = { token: null, photoDataUrl: null, busy: false };
@@ -29,8 +30,18 @@ function setBusy(busy) {
   state.busy = busy;
   $('logFood').disabled = busy;
   $('logWater').disabled = busy;
-  $('refreshButton').disabled = busy;
-  document.querySelectorAll('.water-button').forEach((b) => { b.disabled = busy; });
+  document.querySelectorAll('.water-button').forEach((button) => { button.disabled = busy; });
+}
+
+function updateConnectionUi() {
+  const button = $('connectButton');
+  if (state.token) {
+    button.textContent = 'Connected';
+    button.classList.add('connected');
+  } else {
+    button.textContent = 'Connect';
+    button.classList.remove('connected');
+  }
 }
 
 function parseRpcPayload(text) {
@@ -48,7 +59,7 @@ function parseRpcPayload(text) {
 }
 
 async function postMcp(body, sessionId = null) {
-  if (!state.token) throw new Error('Open RepTrack and sign in first.');
+  if (!state.token) throw new Error('Connect RepTrack first.');
   const headers = {
     Authorization: `Bearer ${state.token}`,
     'Content-Type': 'application/json',
@@ -64,9 +75,10 @@ async function postMcp(body, sessionId = null) {
   if (response.status === 401) {
     await chrome.storage.local.remove(['reptrackAccessToken', 'reptrackAuthCapturedAt']);
     state.token = null;
-    throw new Error('RepTrack session expired. Open the app and sign in again.');
+    updateConnectionUi();
+    throw new Error('Connection expired. Connect RepTrack again.');
   }
-  if (!response.ok) throw new Error(`RepTrack MCP request failed (${response.status}).`);
+  if (!response.ok) throw new Error(`RepTrack request failed (${response.status}).`);
   return {
     payload: parseRpcPayload(await response.text()),
     sessionId: response.headers.get('mcp-session-id') || sessionId,
@@ -81,7 +93,7 @@ async function callTool(name, args) {
     params: {
       protocolVersion: '2025-03-26',
       capabilities: {},
-      clientInfo: { name: 'reptrack-chrome-extension', version: '0.1.0' },
+      clientInfo: { name: 'reptrack-chrome-extension', version: '0.2.0' },
     },
   });
   const sessionId = init.sessionId;
@@ -104,7 +116,7 @@ async function callTool(name, args) {
 }
 
 async function authenticatedJson(url, body) {
-  if (!state.token) throw new Error('Open RepTrack and sign in first.');
+  if (!state.token) throw new Error('Connect RepTrack first.');
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -114,69 +126,51 @@ async function authenticatedJson(url, body) {
     body: JSON.stringify(body),
   });
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401) throw new Error('RepTrack session expired. Open the app and sign in again.');
+  if (response.status === 401) {
+    await chrome.storage.local.remove(['reptrackAccessToken', 'reptrackAuthCapturedAt']);
+    state.token = null;
+    updateConnectionUi();
+    throw new Error('Connection expired. Connect RepTrack again.');
+  }
   if (!response.ok) throw new Error(data?.error || `Request failed (${response.status}).`);
   return data;
 }
 
 function mealPayload(parsed, mealType, sourceText) {
   const foods = Array.isArray(parsed.foods) ? parsed.foods : [];
-  const name = parsed.description || foods.map((f) => f.name).filter(Boolean).join(', ') || sourceText || 'Meal';
+  const name = parsed.description || foods.map((food) => food.name).filter(Boolean).join(', ') || sourceText || 'Meal';
   return {
     date: todayLocal(),
     meal_type: mealType,
     food_name: name.slice(0, 200),
     calories: Number(parsed.total_calories ?? 0),
-    protein: Number(parsed.total_protein ?? foods.reduce((n, f) => n + Number(f.protein || 0), 0)),
-    carbs: Number(parsed.total_carbs ?? foods.reduce((n, f) => n + Number(f.carbs || 0), 0)),
-    fat: Number(parsed.total_fat ?? foods.reduce((n, f) => n + Number(f.fat || 0), 0)),
-    fiber: Number(parsed.total_fiber ?? foods.reduce((n, f) => n + Number(f.fiber || 0), 0)),
-    sugar: Number(parsed.total_sugar ?? foods.reduce((n, f) => n + Number(f.sugar || 0), 0)),
-    sodium: Number(parsed.total_sodium ?? foods.reduce((n, f) => n + Number(f.sodium || 0), 0)),
-    potassium: Number(parsed.total_potassium ?? foods.reduce((n, f) => n + Number(f.potassium || 0), 0)),
-    caffeine: Number(parsed.total_caffeine ?? foods.reduce((n, f) => n + Number(f.caffeine || 0), 0)),
-    notes: parsed.confidence != null ? `Quick Log estimate. Confidence ${Math.round(Number(parsed.confidence) * 100)}%.` : 'Quick Log estimate.',
+    protein: Number(parsed.total_protein ?? foods.reduce((n, food) => n + Number(food.protein || 0), 0)),
+    carbs: Number(parsed.total_carbs ?? foods.reduce((n, food) => n + Number(food.carbs || 0), 0)),
+    fat: Number(parsed.total_fat ?? foods.reduce((n, food) => n + Number(food.fat || 0), 0)),
+    fiber: Number(parsed.total_fiber ?? foods.reduce((n, food) => n + Number(food.fiber || 0), 0)),
+    sugar: Number(parsed.total_sugar ?? foods.reduce((n, food) => n + Number(food.sugar || 0), 0)),
+    sodium: Number(parsed.total_sodium ?? foods.reduce((n, food) => n + Number(food.sodium || 0), 0)),
+    potassium: Number(parsed.total_potassium ?? foods.reduce((n, food) => n + Number(food.potassium || 0), 0)),
+    caffeine: Number(parsed.total_caffeine ?? foods.reduce((n, food) => n + Number(food.caffeine || 0), 0)),
+    notes: parsed.confidence != null ? `Extension estimate. Confidence ${Math.round(Number(parsed.confidence) * 100)}%.` : 'Extension estimate.',
     client_key: `chrome-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
   };
-}
-
-async function refreshTotals() {
-  if (!state.token) {
-    $('caloriesValue').textContent = '—';
-    $('proteinValue').textContent = '—';
-    $('waterValue').textContent = '—';
-    $('statusLine').textContent = 'Open RepTrack to connect';
-    return;
-  }
-  try {
-    const date = todayLocal();
-    const result = await callTool('get_nutrition', { start_date: date, end_date: date, limit: 1 });
-    const today = Array.isArray(result?.data) ? result.data[0] : null;
-    $('caloriesValue').textContent = `${Math.round(Number(today?.calories || 0))}`;
-    $('proteinValue').textContent = `${Math.round(Number(today?.protein || 0))} g`;
-    $('waterValue').textContent = `${Number(today?.water_l || 0).toFixed(1)} L`;
-    $('statusLine').textContent = 'Today';
-  } catch (error) {
-    $('statusLine').textContent = 'Connection issue';
-    feedback(error.message, 'error');
-  }
 }
 
 async function logFood() {
   if (state.busy) return;
   const text = $('foodInput').value.trim();
   if (!text && !state.photoDataUrl) {
-    feedback('Describe the food or attach a photo.', 'error');
+    feedback('Add food text or a photo.', 'error');
     return;
   }
   setBusy(true);
   clearFeedback();
-  $('logFood').textContent = 'Analyzing…';
+  $('logFood').textContent = 'Working…';
   try {
     const parsed = state.photoDataUrl
       ? await authenticatedJson(ANALYZE_FOOD_URL, { imageUrl: state.photoDataUrl, context: text || undefined })
       : await authenticatedJson(PARSE_FOOD_URL, { text });
-    $('logFood').textContent = 'Logging…';
     const payload = mealPayload(parsed, $('mealType').value, text);
     await callTool('log_meal', payload);
     feedback(`Logged ${Math.round(payload.calories)} kcal · ${Math.round(payload.protein || 0)} g protein`, 'success');
@@ -184,11 +178,10 @@ async function logFood() {
     state.photoDataUrl = null;
     $('foodPhoto').value = '';
     $('photoChip').classList.add('hidden');
-    await refreshTotals();
   } catch (error) {
     feedback(error.message, 'error');
   } finally {
-    $('logFood').textContent = 'Log food';
+    $('logFood').textContent = 'Log';
     setBusy(false);
   }
 }
@@ -197,7 +190,7 @@ async function logWater(amount) {
   if (state.busy) return;
   const ml = Number(amount);
   if (!Number.isFinite(ml) || ml < 50 || ml > 10000) {
-    feedback('Enter water between 50 and 10,000 ml.', 'error');
+    feedback('Enter 50 to 10,000 ml.', 'error');
     return;
   }
   setBusy(true);
@@ -206,7 +199,6 @@ async function logWater(amount) {
     await callTool('log_water', { date: todayLocal(), milliliters: ml });
     feedback(`Logged ${ml} ml water`, 'success');
     $('waterInput').value = '';
-    await refreshTotals();
   } catch (error) {
     feedback(error.message, 'error');
   } finally {
@@ -225,13 +217,45 @@ function selectTab(tab) {
 async function loadToken() {
   const stored = await chrome.storage.local.get(['reptrackAccessToken']);
   state.token = stored.reptrackAccessToken || null;
+  updateConnectionUi();
+}
+
+async function connect() {
+  if (state.token) {
+    feedback('RepTrack is connected.', 'success');
+    return;
+  }
+  await chrome.tabs.create({ url: CONNECT_URL });
+  window.close();
+}
+
+async function loadReminderSettings() {
+  const settings = await chrome.storage.local.get([
+    'waterReminderEnabled',
+    'waterReminderIntervalMinutes',
+  ]);
+  const enabled = settings.waterReminderEnabled ?? true;
+  const interval = String(settings.waterReminderIntervalMinutes || 60);
+  $('reminderToggle').checked = enabled;
+  $('reminderInterval').value = interval;
+  $('reminderLabel').textContent = enabled ? `Every ${interval === '120' ? '2 hours' : `${interval} min`}` : 'Off';
+}
+
+async function saveReminderSettings() {
+  const enabled = $('reminderToggle').checked;
+  const interval = Number($('reminderInterval').value);
+  await chrome.storage.local.set({
+    waterReminderEnabled: enabled,
+    waterReminderIntervalMinutes: interval,
+  });
+  $('reminderLabel').textContent = enabled ? `Every ${interval === 120 ? '2 hours' : `${interval} min`}` : 'Off';
 }
 
 $('foodTab').addEventListener('click', () => selectTab('food'));
 $('waterTab').addEventListener('click', () => selectTab('water'));
+$('connectButton').addEventListener('click', connect);
 $('logFood').addEventListener('click', logFood);
 $('logWater').addEventListener('click', () => logWater($('waterInput').value));
-$('refreshButton').addEventListener('click', refreshTotals);
 document.querySelectorAll('.water-button').forEach((button) => button.addEventListener('click', () => logWater(button.dataset.ml)));
 $('foodInput').addEventListener('keydown', (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') logFood();
@@ -257,8 +281,9 @@ $('clearPhoto').addEventListener('click', () => {
   $('foodPhoto').value = '';
   $('photoChip').classList.add('hidden');
 });
+$('reminderToggle').addEventListener('change', saveReminderSettings);
+$('reminderInterval').addEventListener('change', saveReminderSettings);
 
 (async function init() {
-  await loadToken();
-  await refreshTotals();
+  await Promise.all([loadToken(), loadReminderSettings()]);
 })();
