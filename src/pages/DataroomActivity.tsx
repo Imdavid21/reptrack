@@ -18,7 +18,7 @@ function MobilityBalance({ left, right, label, unit = '' }: { left: number | nul
       <circle cx={x(left)} cy="12" r="4" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="2" />
       <circle cx={x(right)} cy="12" r="4" fill="currentColor" />
     </svg>
-    <div className="flex justify-between type-caption tabular-nums"><span>Left {left}{unit ? ` ${unit}` : ''}</span><span>Right {right}{unit ? ` ${unit}` : ''}</span></div>
+    <div className="flex justify-between type-caption tabular-nums"><span>L {left}{unit ? ` ${unit}` : ''}</span><span>R {right}{unit ? ` ${unit}` : ''}</span></div>
   </div>;
 }
 
@@ -39,13 +39,13 @@ function ActivityContent() {
   const movementDelta = (latest: number | null, first: number | null) => latest != null && first != null && data.mobility.length > 1 ? Number((latest - first).toFixed(1)) : null;
 
   return <div className="space-y-8">
-    <section><div className="mb-3"><h2 className="type-section-title">Weekly Activity</h2><p className="type-caption mt-1">Recorded minutes by activity type, grouped by week.</p></div><ActivityTimeline activities={data.activities} /></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Weekly Activity</h2></div><ActivityTimeline activities={data.activities} /></section>
 
-    <section><div className="mb-3"><h2 className="type-section-title">Time by Activity Type</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} recorded session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No manual activities in this range.</div>}</section>
+    <section><div className="mb-3"><h2 className="type-section-title">Activity Totals</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No activities in this range.</div>}</section>
 
-    {latestMobility && <section><div className="mb-3"><h2 className="type-section-title">Left vs Right</h2><p className="type-caption mt-1">Latest recorded mobility assessment. Hollow dot is left; filled dot is right.</p></div><div className="grid gap-3 md:grid-cols-2"><MobilityBalance label="Knee-to-wall" left={latestMobility.knee_to_wall_left_cm} right={latestMobility.knee_to_wall_right_cm} unit="cm"/><MobilityBalance label="Hip 90/90" left={latestMobility.hip_90_90_left} right={latestMobility.hip_90_90_right}/></div></section>}
+    {latestMobility && <section><div className="mb-3"><h2 className="type-section-title">Left vs Right</h2><p className="type-caption mt-1">Hollow = left · filled = right</p></div><div className="grid gap-3 md:grid-cols-2"><MobilityBalance label="Knee-to-wall" left={latestMobility.knee_to_wall_left_cm} right={latestMobility.knee_to_wall_right_cm} unit="cm"/><MobilityBalance label="Hip 90/90" left={latestMobility.hip_90_90_left} right={latestMobility.hip_90_90_right}/></div></section>}
 
-    <section><div className="mb-3"><h2 className="type-section-title">Mobility Assessments</h2><p className="type-caption mt-1">Assessments are compared only when they were actually recorded. RepTrack does not interpolate between tests.</p></div>{latestMobility ? <div className="divide-y divide-border border-y border-border">
+    <section><div className="mb-3"><h2 className="type-section-title">Mobility Assessments</h2></div>{latestMobility ? <div className="divide-y divide-border border-y border-border">
       {[
         ['Knee-to-wall · left', latestMobility.knee_to_wall_left_cm, firstMobility?.knee_to_wall_left_cm, 'cm'],
         ['Knee-to-wall · right', latestMobility.knee_to_wall_right_cm, firstMobility?.knee_to_wall_right_cm, 'cm'],
@@ -53,11 +53,11 @@ function ActivityContent() {
         ['Hip 90/90 · right', latestMobility.hip_90_90_right, firstMobility?.hip_90_90_right, ''],
       ].map(([label, latest, first, unit]) => { const change = movementDelta(latest as number | null, first as number | null); return <div key={String(label)} className="py-3 flex items-center justify-between gap-3"><div className="text-sm font-semibold">{label}</div><div className="text-right"><div className="text-sm font-semibold tabular-nums">{latest == null ? 'Not recorded' : `${latest}${unit ? ` ${unit}` : ''}`}</div>{change != null && <div className="type-caption tabular-nums">{change > 0 ? '+' : ''}{change}{unit ? ` ${unit}` : ''}</div>}</div></div>; })}
       <div className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold">Deep squat</div><div className="type-caption mt-0.5">{latestMobility.heels_down == null ? 'Heel position not recorded' : latestMobility.heels_down ? 'Heels down' : 'Heels not down'}</div></div><div className="text-sm font-semibold capitalize">{latestMobility.deep_squat_depth || 'Not recorded'}</div></div>
-      {latestMobility.discomfort && <div className="py-3"><div className="text-sm font-semibold">Recorded discomfort</div><p className="type-caption mt-1">{latestMobility.discomfort}</p></div>}
+      {latestMobility.discomfort && <div className="py-3"><div className="text-sm font-semibold">Discomfort</div><p className="type-caption mt-1">{latestMobility.discomfort}</p></div>}
     </div> : <div className="border-y border-border py-5 type-caption">No mobility assessments in this range.</div>}</section>
   </div>;
 }
 
 export default function DataroomActivity() {
-  return <DataroomPageShell eyebrow="Dataroom" title="Activity & Movement" description="Recorded walking, running, cycling, and structured mobility assessments without an arbitrary activity score."><ActivityContent /></DataroomPageShell>;
+  return <DataroomPageShell title="Activity & Movement"><ActivityContent /></DataroomPageShell>;
 }
