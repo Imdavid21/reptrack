@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SEPARATOR = /\s*·\s*/g;
+// A metadata separator has whitespace on at least one side. Keep compact
+// semantic multiplication such as kg·reps intact.
+const SEPARATOR = /(?:\s+·\s*|\s*·\s+)/g;
 const SKIP_SELECTOR = 'script, style, code, pre, textarea';
 
 function normalizeNode(node: Node) {
