@@ -203,7 +203,10 @@ export function useOfflineSync() {
   }, [belongsToActiveUser, processItem, queryClient, refreshCount, user]);
 
   useEffect(() => {
-    if (isOnline && user && pendingCount > 0) void processQueue();
+    // Always perform one ownership-checked pass after sign-in/reconnect. Legacy
+    // v1 child rows may be recoverable even though the per-user visible count
+    // cannot identify them until their parent is checked through RLS.
+    if (isOnline && user) void processQueue();
   }, [isOnline, user, pendingCount, processQueue]);
 
   return { isOnline, pendingCount, isSyncing, processQueue, refreshCount };
