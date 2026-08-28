@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
@@ -11,6 +11,7 @@ import { AnimatePresence, useReducedMotion } from "framer-motion";
 import { Toaster } from "sonner";
 import { lightTheme, darkTheme } from "./theme/muiTheme";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
+import { useAuth } from "./hooks/useAuth";
 
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -52,6 +53,14 @@ function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
 }
 
+function AuthenticatedRoute({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <RouteFallback />;
+  if (!user) return <Navigate to="/signin" replace state={{ from: `${location.pathname}${location.search}` }} />;
+  return <>{children}</>;
+}
+
 function DataroomWorkoutRedirect() {
   const { workoutId } = useParams();
   return <Navigate to={`/app/dataroom/workout/${workoutId}`} replace />;
@@ -86,6 +95,7 @@ const queryClient = new QueryClient({
 function AppRoutes() {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
+  const secure = (element: ReactNode) => <AuthenticatedRoute>{element}</AuthenticatedRoute>;
   const routes = (
     <Suspense fallback={<RouteFallback />}>
       <Routes location={location} key={location.pathname}>
@@ -96,63 +106,63 @@ function AppRoutes() {
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
 
-        <Route path="/app" element={<AppIndex />} />
-        <Route path="/app/train" element={<AdaptiveWorkout />} />
-        <Route path="/app/train/current" element={<AdaptiveWorkout />} />
+        <Route path="/app" element={secure(<AppIndex />)} />
+        <Route path="/app/train" element={secure(<AdaptiveWorkout />)} />
+        <Route path="/app/train/current" element={secure(<AdaptiveWorkout />)} />
 
-        <Route path="/app/dataroom" element={<Dataroom />} />
-        <Route path="/app/dataroom/history" element={<History />} />
-        <Route path="/app/dataroom/timeline" element={<Navigate to="/app/dataroom/history" replace />} />
-        <Route path="/app/dataroom/workout/:workoutId" element={<WorkoutDetail />} />
-        <Route path="/app/dataroom/exercise/:exercise" element={<DataroomExercise />} />
-        <Route path="/app/dataroom/body" element={<DataroomBody />} />
-        <Route path="/app/dataroom/training" element={<DataroomTraining />} />
-        <Route path="/app/dataroom/nutrition" element={<DataroomNutrition />} />
-        <Route path="/app/dataroom/recovery" element={<DataroomRecovery />} />
-        <Route path="/app/dataroom/activity" element={<DataroomActivity />} />
-        <Route path="/app/dataroom/records" element={<DataroomRecords />} />
-        <Route path="/app/dataroom/explore" element={<DataroomExplore />} />
-        <Route path="/app/dataroom/lab" element={<PerformanceLab />} />
-        <Route path="/app/dataroom/lab/session" element={<AdvancedSessionStart />} />
-        <Route path="/app/dataroom/lab/food" element={<FoodAutopilot />} />
-        <Route path="/app/dataroom/lab/plates" element={<PlateCalculator />} />
-        <Route path="/app/dataroom/lab/simulator" element={<AdvancedSimulator />} />
-        <Route path="/app/dataroom/lab/gyms" element={<GymProfiles />} />
-        <Route path="/app/dataroom/lab/recorder" element={<FlightRecorder />} />
+        <Route path="/app/dataroom" element={secure(<Dataroom />)} />
+        <Route path="/app/dataroom/history" element={secure(<History />)} />
+        <Route path="/app/dataroom/timeline" element={secure(<Navigate to="/app/dataroom/history" replace />)} />
+        <Route path="/app/dataroom/workout/:workoutId" element={secure(<WorkoutDetail />)} />
+        <Route path="/app/dataroom/exercise/:exercise" element={secure(<DataroomExercise />)} />
+        <Route path="/app/dataroom/body" element={secure(<DataroomBody />)} />
+        <Route path="/app/dataroom/training" element={secure(<DataroomTraining />)} />
+        <Route path="/app/dataroom/nutrition" element={secure(<DataroomNutrition />)} />
+        <Route path="/app/dataroom/recovery" element={secure(<DataroomRecovery />)} />
+        <Route path="/app/dataroom/activity" element={secure(<DataroomActivity />)} />
+        <Route path="/app/dataroom/records" element={secure(<DataroomRecords />)} />
+        <Route path="/app/dataroom/explore" element={secure(<DataroomExplore />)} />
+        <Route path="/app/dataroom/lab" element={secure(<PerformanceLab />)} />
+        <Route path="/app/dataroom/lab/session" element={secure(<AdvancedSessionStart />)} />
+        <Route path="/app/dataroom/lab/food" element={secure(<FoodAutopilot />)} />
+        <Route path="/app/dataroom/lab/plates" element={secure(<PlateCalculator />)} />
+        <Route path="/app/dataroom/lab/simulator" element={secure(<AdvancedSimulator />)} />
+        <Route path="/app/dataroom/lab/gyms" element={secure(<GymProfiles />)} />
+        <Route path="/app/dataroom/lab/recorder" element={secure(<FlightRecorder />)} />
 
-        <Route path="/app/lab" element={<Navigate to="/app/dataroom/lab" replace />} />
-        <Route path="/app/lab/session" element={<Navigate to="/app/dataroom/lab/session" replace />} />
-        <Route path="/app/lab/food" element={<Navigate to="/app/dataroom/lab/food" replace />} />
-        <Route path="/app/lab/plates" element={<Navigate to="/app/dataroom/lab/plates" replace />} />
-        <Route path="/app/lab/simulator" element={<Navigate to="/app/dataroom/lab/simulator" replace />} />
-        <Route path="/app/lab/gyms" element={<Navigate to="/app/dataroom/lab/gyms" replace />} />
-        <Route path="/app/lab/recorder" element={<Navigate to="/app/dataroom/lab/recorder" replace />} />
+        <Route path="/app/lab" element={secure(<Navigate to="/app/dataroom/lab" replace />)} />
+        <Route path="/app/lab/session" element={secure(<Navigate to="/app/dataroom/lab/session" replace />)} />
+        <Route path="/app/lab/food" element={secure(<Navigate to="/app/dataroom/lab/food" replace />)} />
+        <Route path="/app/lab/plates" element={secure(<Navigate to="/app/dataroom/lab/plates" replace />)} />
+        <Route path="/app/lab/simulator" element={secure(<Navigate to="/app/dataroom/lab/simulator" replace />)} />
+        <Route path="/app/lab/gyms" element={secure(<Navigate to="/app/dataroom/lab/gyms" replace />)} />
+        <Route path="/app/lab/recorder" element={secure(<Navigate to="/app/dataroom/lab/recorder" replace />)} />
 
-        <Route path="/app/settings" element={<SettingsHub />} />
-        <Route path="/app/settings/account" element={<SettingsAccount />} />
-        <Route path="/app/settings/data" element={<SettingsData />} />
-        <Route path="/app/settings/data/coach-report" element={<CoachExport />} />
-        <Route path="/app/settings/data/import-workouts" element={<ExternalWorkoutImport />} />
-        <Route path="/app/settings/advanced" element={<SettingsAdvanced />} />
-        <Route path="/app/settings/mcp" element={<McpStatus />} />
-        <Route path="/app/settings/advanced/lifecycle" element={<LifecycleTracker />} />
-        <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
+        <Route path="/app/settings" element={secure(<SettingsHub />)} />
+        <Route path="/app/settings/account" element={secure(<SettingsAccount />)} />
+        <Route path="/app/settings/data" element={secure(<SettingsData />)} />
+        <Route path="/app/settings/data/coach-report" element={secure(<CoachExport />)} />
+        <Route path="/app/settings/data/import-workouts" element={secure(<ExternalWorkoutImport />)} />
+        <Route path="/app/settings/advanced" element={secure(<SettingsAdvanced />)} />
+        <Route path="/app/settings/mcp" element={secure(<McpStatus />)} />
+        <Route path="/app/settings/advanced/lifecycle" element={secure(<LifecycleTracker />)} />
+        <Route path="/app/chat" element={secure(<Navigate to="/app/settings/mcp" replace />)} />
 
-        <Route path="/app/progress" element={<Navigate to="/app/dataroom" replace />} />
-        <Route path="/app/progress/history" element={<Navigate to="/app/dataroom/history" replace />} />
-        <Route path="/app/progress/workout/:workoutId" element={<DataroomWorkoutRedirect />} />
-        <Route path="/app/progress/analytics" element={<LegacyAnalyticsRedirect />} />
-        <Route path="/app/progress/dataroom" element={<Navigate to="/app/dataroom" replace />} />
-        <Route path="/app/progress/weight" element={<Navigate to="/app/dataroom/body" replace />} />
-        <Route path="/app/progress/nutrition" element={<Navigate to="/app/dataroom/nutrition" replace />} />
-        <Route path="/app/progress/training" element={<Navigate to="/app/dataroom/training" replace />} />
-        <Route path="/app/progress/recovery" element={<Navigate to="/app/dataroom/recovery" replace />} />
-        <Route path="/app/history" element={<Navigate to="/app/dataroom/history" replace />} />
-        <Route path="/app/history/:workoutId" element={<DataroomWorkoutRedirect />} />
-        <Route path="/app/insights" element={<Navigate to="/app/dataroom/explore" replace />} />
-        <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
+        <Route path="/app/progress" element={secure(<Navigate to="/app/dataroom" replace />)} />
+        <Route path="/app/progress/history" element={secure(<Navigate to="/app/dataroom/history" replace />)} />
+        <Route path="/app/progress/workout/:workoutId" element={secure(<DataroomWorkoutRedirect />)} />
+        <Route path="/app/progress/analytics" element={secure(<LegacyAnalyticsRedirect />)} />
+        <Route path="/app/progress/dataroom" element={secure(<Navigate to="/app/dataroom" replace />)} />
+        <Route path="/app/progress/weight" element={secure(<Navigate to="/app/dataroom/body" replace />)} />
+        <Route path="/app/progress/nutrition" element={secure(<Navigate to="/app/dataroom/nutrition" replace />)} />
+        <Route path="/app/progress/training" element={secure(<Navigate to="/app/dataroom/training" replace />)} />
+        <Route path="/app/progress/recovery" element={secure(<Navigate to="/app/dataroom/recovery" replace />)} />
+        <Route path="/app/history" element={secure(<Navigate to="/app/dataroom/history" replace />)} />
+        <Route path="/app/history/:workoutId" element={secure(<DataroomWorkoutRedirect />)} />
+        <Route path="/app/insights" element={secure(<Navigate to="/app/dataroom/explore" replace />)} />
+        <Route path="/app/lifecycle" element={secure(<Navigate to="/app/settings/advanced/lifecycle" replace />)} />
 
-        <Route path="/app/log" element={<AdaptiveWorkout />} />
+        <Route path="/app/log" element={secure(<AdaptiveWorkout />)} />
         <Route path="/log" element={<Navigate to="/app/train" replace />} />
         <Route path="/create" element={<Navigate to="/app/train" replace />} />
         <Route path="/insights" element={<Navigate to="/app/dataroom/explore" replace />} />
