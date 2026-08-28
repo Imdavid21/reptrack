@@ -1,8 +1,9 @@
 import { ReactNode } from 'react';
 import { Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from './BottomNav';
+import { DataroomSubnav } from '@/components/dataroom/DataroomSubnav';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -13,8 +14,23 @@ interface MainLayoutProps {
   wide?: boolean;
 }
 
+const DATAROOM_TOP_LEVEL = new Set([
+  '/app/dataroom',
+  '/app/dataroom/body',
+  '/app/dataroom/training',
+  '/app/dataroom/nutrition',
+  '/app/dataroom/recovery',
+  '/app/dataroom/activity',
+  '/app/dataroom/history',
+  '/app/dataroom/records',
+  '/app/dataroom/explore',
+  '/app/dataroom/lab',
+]);
+
 export function MainLayout({ children, showBack, backTo, hideNav = false, wide = false }: MainLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const showDataroomSubnav = DATAROOM_TOP_LEVEL.has(location.pathname);
 
   const handleBack = () => {
     if (backTo) navigate(backTo);
@@ -39,6 +55,7 @@ export function MainLayout({ children, showBack, backTo, hideNav = false, wide =
         </Box>
       )}
       <Box component="main" sx={{ px: { xs: 2, sm: 2.5, md: 3 }, py: { xs: 2, md: 3 }, width: '100%', minWidth: 0, overflowX: 'hidden' }}>
+        {showDataroomSubnav && <Box sx={{ width: '100%', maxWidth: 1040, mx: 'auto' }}><DataroomSubnav /></Box>}
         <Box sx={{ width: '100%', maxWidth: wide ? 1040 : 680, mx: 'auto' }}>
           {children}
         </Box>
