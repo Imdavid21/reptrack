@@ -17,11 +17,11 @@ export default function GymProfiles() {
   const parsedPlates = form.plates.split(',').map(value => Number(value.trim())).filter(value => Number.isFinite(value) && value > 0);
   const preview = plateLoad(100, Number(form.bar) || 20, parsedPlates.length ? parsedPlates : undefined);
 
-  if (!settings.enabled) return <MainLayout showBack backTo="/app/settings" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Advanced Mode is off</h1></div></MainLayout>;
+  if (!settings.enabled) return <MainLayout showBack backTo="/app/dataroom/lab" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Performance Lab is off</h1></div></MainLayout>;
 
-  return <MainLayout showBack backTo="/app/lab" hideNav>
+  return <MainLayout showBack backTo="/app/dataroom/lab" hideNav>
     <div className="mx-auto max-w-[700px] pb-12">
-      <header className="mb-5 flex items-end justify-between gap-4"><div><div className="type-eyebrow">Advanced</div><h1 className="type-page-title mt-1">Gyms</h1></div><button onClick={openNew} className="h-11 w-11 rounded-full bg-foreground text-background flex items-center justify-center" aria-label="Add gym"><Plus className="h-5 w-5"/></button></header>
+      <header className="mb-5 flex items-end justify-between gap-4"><h1 className="type-page-title">Gyms</h1><button onClick={openNew} className="h-11 w-11 rounded-full bg-foreground text-background flex items-center justify-center" aria-label="Add gym"><Plus className="h-5 w-5"/></button></header>
 
       <div className="rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border mb-6">{lab.gyms.map(gym => <button key={gym.id} onClick={() => openEdit(gym.id)} className="w-full p-4 text-left hover:bg-muted/30"><div className="flex items-center justify-between gap-3"><div className="text-sm font-semibold">{gym.name}</div>{gym.isDefault && <span className="inline-flex items-center gap-1 type-caption"><Check className="h-3.5 w-3.5"/>Default</span>}</div><div className="type-caption mt-1">{gym.barWeightKg} kg bar · {gym.platesKg.join(' / ')}</div></button>)}{!lab.gyms.length && <button onClick={openNew} className="w-full p-5 text-left type-caption">Add your first gym.</button>}</div>
 
