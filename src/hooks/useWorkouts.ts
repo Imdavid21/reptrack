@@ -128,7 +128,7 @@ export function useWorkouts() {
           const { error: habitsError } = await supabase.from('habits').insert({ workout_id: workoutData.id, ...habitsPayload });
           if (habitsError) {
             console.error('[useWorkouts] habits insert failed, queued for retry', habitsError);
-            await enqueueOperation({ table: 'habits', operation: 'insert', payload: { workout_id: workoutData.id, ...habitsPayload } }).catch(() => {});
+            await enqueueOperation({ ownerUserId: user.id, table: 'habits', operation: 'insert', payload: { workout_id: workoutData.id, ...habitsPayload } }).catch(() => {});
           }
         }
 
@@ -137,7 +137,7 @@ export function useWorkouts() {
           const { error: pausesError } = await (supabase.from('workout_pauses' as any) as any).insert(pauseRows);
           if (pausesError) {
             console.error('[useWorkouts] pause intervals insert failed, queued for retry', pausesError);
-            for (const row of pauseRows) await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: row }).catch(() => {});
+            for (const row of pauseRows) await enqueueOperation({ ownerUserId: user.id, table: 'workout_pauses', operation: 'insert', payload: row }).catch(() => {});
           }
         }
 
@@ -146,7 +146,7 @@ export function useWorkouts() {
           const { error: burnError } = await (supabase.from('calorie_burns') as any).upsert(burnPayload, { onConflict: 'user_id,date,source,activity_type' });
           if (burnError) {
             console.error('[useWorkouts] burn upsert failed, queued for retry', burnError);
-            await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: burnPayload }).catch(() => {});
+            await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'insert', payload: burnPayload }).catch(() => {});
           }
         }
 
@@ -158,14 +158,14 @@ export function useWorkouts() {
         console.log('[OfflineSync] Network unavailable, queuing workout');
         const groupId = crypto.randomUUID();
         const tempWorkoutId = workoutId;
-        await enqueueOperation({ table: 'workouts', operation: 'insert', payload: { id: tempWorkoutId, ...workoutPayload }, groupId, groupOrder: 0 });
-        for (let i = 0; i < exerciseRows.length; i++) await enqueueOperation({ table: 'exercises', operation: 'insert', payload: { workout_id: tempWorkoutId, ...exerciseRows[i] }, groupId, groupOrder: i + 1 });
-        if (habitsPayload) await enqueueOperation({ table: 'habits', operation: 'insert', payload: { workout_id: tempWorkoutId, ...habitsPayload }, groupId, groupOrder: exerciseRows.length + 1 });
+        await enqueueOperation({ ownerUserId: user.id, table: 'workouts', operation: 'insert', payload: { id: tempWorkoutId, ...workoutPayload }, groupId, groupOrder: 0 });
+        for (let i = 0; i < exerciseRows.length; i++) await enqueueOperation({ ownerUserId: user.id, table: 'exercises', operation: 'insert', payload: { workout_id: tempWorkoutId, ...exerciseRows[i] }, groupId, groupOrder: i + 1 });
+        if (habitsPayload) await enqueueOperation({ ownerUserId: user.id, table: 'habits', operation: 'insert', payload: { workout_id: tempWorkoutId, ...habitsPayload }, groupId, groupOrder: exerciseRows.length + 1 });
         if (workout.pauseIntervals?.length) {
-          for (let i = 0; i < workout.pauseIntervals.length; i++) await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: { user_id: user.id, workout_id: tempWorkoutId, paused_at: workout.pauseIntervals[i].pausedAt, resumed_at: workout.pauseIntervals[i].resumedAt || workout.completedAt?.toISOString() || null }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + i });
+          for (let i = 0; i < workout.pauseIntervals.length; i++) await enqueueOperation({ ownerUserId: user.id, table: 'workout_pauses', operation: 'insert', payload: { user_id: user.id, workout_id: tempWorkoutId, paused_at: workout.pauseIntervals[i].pausedAt, resumed_at: workout.pauseIntervals[i].resumedAt || workout.completedAt?.toISOString() || null }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + i });
         }
         if (burnCalories > 0) {
-          await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${tempWorkoutId}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + (workout.pauseIntervals?.length || 0) });
+          await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'insert', payload: { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${tempWorkoutId}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + (workout.pauseIntervals?.length || 0) });
         }
         return { id: tempWorkoutId, ...workoutPayload } as any;
       }
@@ -213,7 +213,7 @@ export function useWorkouts() {
           const { error: burnUpdateError } = await supabase.from('calorie_burns').update(burnPatch).eq('id', burn.id).eq('user_id', user.id);
           if (burnUpdateError) {
             console.error('[useWorkouts] linked burn update failed, queued for retry', burnUpdateError);
-            await enqueueOperation({ table: 'calorie_burns', operation: 'update', payload: { id: burn.id, user_id: user.id, ...burnPatch } }).catch(() => {});
+            await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'update', payload: { id: burn.id, user_id: user.id, ...burnPatch } }).catch(() => {});
           }
         }
       }
@@ -236,8 +236,6 @@ export function useWorkouts() {
       const { data: linkedBurn, error: burnLookupError } = await supabase.from('calorie_burns').select('id').eq('user_id', user.id).eq('source', 'workout').eq('activity_type', `workout:${workoutId}`).maybeSingle();
       if (burnLookupError) throw burnLookupError;
 
-      // Delete the authoritative workout first. Never destroy its supporting
-      // burn row if the workout deletion itself fails.
       const { error } = await supabase.from('workouts').delete().eq('id', workoutId).eq('user_id', user.id);
       if (error) throw error;
 
@@ -245,7 +243,7 @@ export function useWorkouts() {
         const { error: burnDeleteError } = await supabase.from('calorie_burns').delete().eq('id', linkedBurn.id).eq('user_id', user.id);
         if (burnDeleteError) {
           console.error('[useWorkouts] linked burn cleanup failed, queued for retry', burnDeleteError);
-          await enqueueOperation({ table: 'calorie_burns', operation: 'delete', payload: { id: linkedBurn.id, user_id: user.id } }).catch(() => {});
+          await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'delete', payload: { id: linkedBurn.id, user_id: user.id } }).catch(() => {});
         }
       }
     },
