@@ -26,7 +26,7 @@ export default function FoodAutopilot() {
   const [logged, setLogged] = useState<string | null>(null);
   const todayCalories = useMemo(() => meals.reduce((sum, meal) => sum + Number(meal.calories || 0), 0), [meals]);
 
-  if (!settings.enabled) return <MainLayout showBack backTo="/app/settings" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Advanced Mode is off</h1></div></MainLayout>;
+  if (!settings.enabled) return <MainLayout showBack backTo="/app/dataroom/lab" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Performance Lab is off</h1></div></MainLayout>;
 
   const logOption = async (option: { label: string; calories: number; protein: number; carbs: number; fat: number }) => {
     try {
@@ -36,9 +36,9 @@ export default function FoodAutopilot() {
     } catch { toast.error('Meal was not logged.'); }
   };
 
-  return <MainLayout showBack backTo="/app/lab" hideNav>
+  return <MainLayout showBack backTo="/app/dataroom/lab" hideNav>
     <div className="mx-auto max-w-[720px] pb-12">
-      <header className="mb-5 flex items-end justify-between gap-4"><div><div className="type-eyebrow">Advanced</div><h1 className="type-page-title mt-1">Food Autopilot</h1></div><div className="text-right"><div className="text-lg font-semibold tabular-nums">{Math.round(todayCalories)}</div><div className="type-caption">today</div></div></header>
+      <header className="mb-5 flex items-end justify-between gap-4"><h1 className="type-page-title">Food Autopilot</h1><div className="text-right"><div className="text-lg font-semibold tabular-nums">{Math.round(todayCalories)}</div><div className="type-caption">today</div></div></header>
 
       <div className="flex gap-2 overflow-x-auto pb-1 mb-5">{TYPES.map(item => <button key={item} onClick={() => setType(item)} className={cn('min-h-10 rounded-xl px-3 text-xs font-semibold capitalize shrink-0', item === type ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')}>{item}</button>)}</div>
 
