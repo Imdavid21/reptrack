@@ -1,4 +1,5 @@
 import { DATAROOM_RANGE_OPTIONS, useDataroomRange } from '@/contexts/DataroomRangeContext';
+import './dataroom-charts.css';
 
 export function DataroomRangeSelector() {
   const { range, setRange } = useDataroomRange();
