@@ -3,6 +3,7 @@ import { Activity, ChevronRight, Database, Dumbbell, Footprints, Gauge, Moon, Sc
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
+import { WorkoutConsistencyMap } from '@/components/dataroom/WorkoutConsistencyMap';
 import { WeightTrendChart } from '@/components/progress/WeightTrendChart';
 import { ConfidenceMark } from '@/components/dataroom/DataRoomVisuals';
 import { useDataroomData } from '@/hooks/useDataroomData';
@@ -155,6 +156,8 @@ function DataroomContent() {
           <MetricCard label="Sleep" value={recoveryValue} detail={`${currentSummary.sleepNights} nights`} values={sleepSeries} onClick={() => navigate('/app/dataroom/recovery')} />
         </div>
       </section>
+
+      <div className="mb-8"><WorkoutConsistencyMap /></div>
 
       <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-8 items-start">
         <div className="space-y-8">
