@@ -188,7 +188,7 @@ function DataroomContent() {
           </div></section>
 
           <section aria-labelledby="more-title"><div className="mb-3"><h2 id="more-title" className="type-section-title">More</h2></div><div className="divide-y divide-border border-y border-border">
-            <DomainRow icon={Activity} title="Timeline" value="History" detail="Chronological log" onClick={() => navigate('/app/dataroom/timeline')} />
+            <DomainRow icon={Activity} title="History" value="Log" detail="Chronological log" onClick={() => navigate('/app/dataroom/history')} />
             <DomainRow icon={Database} title="Records" value="PRs" detail="Exercise bests" onClick={() => navigate('/app/dataroom/records')} />
             <DomainRow icon={Gauge} title="Performance Lab" value="Advanced" detail="Blocks, experiments, simulator, and tools" onClick={() => navigate('/app/dataroom/lab')} />
             <DomainRow icon={Activity} title="Explore" value="Analysis" detail="Correlations and deeper charts" onClick={() => navigate('/app/dataroom/explore')} />
