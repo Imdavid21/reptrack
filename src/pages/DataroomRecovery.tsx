@@ -1,4 +1,5 @@
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
+import { RecoveryTimeline } from '@/components/dataroom/DataroomCharts';
 import { ConfidenceMark } from '@/components/dataroom/DataRoomVisuals';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
@@ -12,7 +13,7 @@ function RecoveryContent() {
   const painSets = data.sets.filter(set => Number(set.pain_score || 0) > 0);
 
   return <div className="space-y-8">
-    <section className="border-y border-border py-5"><div className="flex items-start justify-between gap-4"><div><div className="type-eyebrow">Status</div><h2 className="type-section-title mt-1 capitalize">{recovery?.state === 'insufficient' || !recovery ? 'Not enough evidence' : recovery.state}</h2><p className="type-supporting mt-2 max-w-2xl">{recovery?.reason || 'Log sleep and training context to build a useful recovery read.'}</p></div>{recovery && <ConfidenceMark value={recovery.confidence} compact />}</div></section>
+    <section className="border-y border-border py-5"><div className="flex items-start justify-between gap-4"><div><h2 className="type-section-title capitalize">{recovery?.state === 'insufficient' || !recovery ? 'Not enough evidence' : recovery.state}</h2><p className="type-supporting mt-2 max-w-2xl">{recovery?.reason || 'Log sleep and training context to build a useful recovery read.'}</p></div>{recovery && <ConfidenceMark value={recovery.confidence} compact />}</div></section>
 
     <section className="grid grid-cols-2 md:grid-cols-4 gap-5 border-y border-border py-5">
       <div><div className="type-caption">Sleep</div><div className="mt-1 text-xl font-semibold tabular-nums">{recovery?.averageSleep == null ? 'Not enough data' : `${recovery.averageSleep} h`}</div><div className="type-caption mt-0.5">{recovery ? `${recovery.sleepNights}/${recovery.windowDays} recent nights` : undefined}</div></div>
@@ -21,12 +22,14 @@ function RecoveryContent() {
       <div><div className="type-caption">Readiness check-ins</div><div className="mt-1 text-xl font-semibold tabular-nums">{data.readiness.length}</div></div>
     </section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Readiness</div><h2 className="type-section-title mt-1">Readiness Check-Ins</h2></div>{latestReadiness ? <div className="divide-y divide-border border-y border-border">
+    <section><div className="mb-3"><h2 className="type-section-title">Sleep & Readiness Timeline</h2><p className="type-caption mt-1">Sleep and readiness are separate lines; slim bars mark training days.</p></div><RecoveryTimeline metrics={data.metrics} readiness={data.readiness} workouts={data.workouts} /></section>
+
+    <section><div className="mb-3"><h2 className="type-section-title">Readiness Check-Ins</h2></div>{latestReadiness ? <div className="divide-y divide-border border-y border-border">
       {[['Date', latestReadiness.checkin_date], ['Fatigue', latestReadiness.fatigue], ['Soreness', latestReadiness.soreness], ['Motivation', latestReadiness.motivation], ['Joint discomfort', latestReadiness.joint_discomfort], ['Resting HR', latestReadiness.resting_hr == null ? null : `${latestReadiness.resting_hr} bpm`]].map(([label, value]) => <div key={String(label)} className="py-3 flex items-center justify-between gap-3 text-sm"><span>{label}</span><span className="font-semibold tabular-nums">{value == null ? 'Not recorded' : String(value)}</span></div>)}
       {latestReadiness.sharp_pain && <div className="py-3"><div className="text-sm font-semibold">Sharp pain was reported in this check-in.</div><p className="type-caption mt-1">RepTrack treats this as context, not a diagnosis.</p></div>}
     </div> : <div className="border-y border-border py-5 type-caption">No readiness check-ins in this range.</div>}</section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Discomfort</div><h2 className="type-section-title mt-1">Pain & Discomfort</h2></div><div className="divide-y divide-border border-y border-border"><div className="py-3 flex justify-between gap-3 text-sm"><span>Sets with pain recorded</span><span className="font-semibold tabular-nums">{painSets.length}</span></div><div className="py-3 flex justify-between gap-3 text-sm"><span>Post-workout joint-discomfort entries</span><span className="font-semibold tabular-nums">{jointRows.length}</span></div></div><p className="type-caption mt-2">Repeated discomfort may change a training decision. It is never converted into an injury probability or diagnosis.</p></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Pain & Discomfort</h2></div><div className="divide-y divide-border border-y border-border"><div className="py-3 flex justify-between gap-3 text-sm"><span>Sets with pain recorded</span><span className="font-semibold tabular-nums">{painSets.length}</span></div><div className="py-3 flex justify-between gap-3 text-sm"><span>Post-workout joint-discomfort entries</span><span className="font-semibold tabular-nums">{jointRows.length}</span></div></div><p className="type-caption mt-2">Repeated discomfort may change a training decision. It is never converted into an injury probability or diagnosis.</p></section>
   </div>;
 }
 
