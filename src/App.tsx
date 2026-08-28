@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
 import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
@@ -51,6 +51,24 @@ const ExternalWorkoutImport = lazy(() => import("./pages/ExternalWorkoutImport")
 
 function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
+}
+
+function QueryAccountBoundary({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  // React Query is process-wide. Clear it before paint whenever the auth
+  // identity changes so an unscoped legacy key can never flash data from the
+  // previous account while its replacement query starts.
+  useLayoutEffect(() => {
+    if (loading) return;
+    const currentUserId = user?.id ?? null;
+    if (previousUserId.current !== undefined && previousUserId.current !== currentUserId) queryClient.clear();
+    previousUserId.current = currentUserId;
+  }, [loading, queryClient, user?.id]);
+
+  return <>{children}</>;
 }
 
 function AuthenticatedRoute({ children }: { children: ReactNode }) {
@@ -216,7 +234,9 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider><MuiThemedApp /></ThemeProvider>
+        <QueryAccountBoundary>
+          <ThemeProvider><MuiThemedApp /></ThemeProvider>
+        </QueryAccountBoundary>
       </QueryClientProvider>
     </ErrorBoundary>
   );
