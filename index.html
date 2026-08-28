@@ -52,6 +52,12 @@
       @media (prefers-color-scheme: dark) {
         body { background: #0d0d0d; }
       }
+      /* Eyebrow/overline headings are retired app-wide. Existing semantic
+         eyebrow markup stays hidden while screens migrate naturally. */
+      .type-eyebrow,
+      [data-ui-role="eyebrow"] {
+        display: none !important;
+      }
       /* PWA splash screen - visible before any JS loads */
       #splash {
         position: fixed;
