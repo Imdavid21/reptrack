@@ -50,6 +50,22 @@ section[aria-labelledby="pulse-title"] > .grid > button > div:last-child {
   padding-top: 0.75rem;
 }
 
+/* A three-part chart footer must keep its middle item geometrically centered,
+   independent of the width of the dates on either side. */
+section[aria-label="Bodyweight trend"] > div:last-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+section[aria-label="Bodyweight trend"] > div:last-child > :nth-child(2) {
+  text-align: center;
+}
+
+section[aria-label="Bodyweight trend"] > div:last-child > :last-child {
+  text-align: right;
+}
+
 /* Repeated data rows keep the icon/value columns rigid while the label column
    absorbs wrapping. This prevents long labels from nudging trailing values. */
 [data-app-layout] button > .shrink-0,
