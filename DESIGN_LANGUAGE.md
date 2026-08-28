@@ -34,7 +34,7 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 - Lead with the user's action or result. Buttons start with a verb.
 - Name the object: `Save workout`, not `Save`; `Cancel workout`, not `Cancel` when the consequence matters.
 - Do not narrate what is already visible. Prefer `Protein 27 / 165 g` over a paragraph explaining it.
-- Use a middle dot (`·`) for compact, related metadata. Use a vertical divider (`|`) only in dense tabular-style summaries. Do not use decorative dots as separators.
+- Use a vertical divider (`|`) for compact inline metadata and dense summaries. Do not use middle dots or decorative dots as separators.
 - Use an em dash only for a deliberate interruption or contrast; otherwise write a separate sentence.
 - Errors say what failed and what the user can do next. Success feedback is short and factual.
 
