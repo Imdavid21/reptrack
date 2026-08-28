@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -46,6 +47,19 @@ export function useMeals(date?: Date) {
     staleTime: 2 * 60_000,
     gcTime: 30 * 60_000,
   });
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`meals-realtime-${user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'meals', filter: `user_id=eq.${user.id}` }, () => {
+      // Meals may arrive from MCP, the extension, another tab, or a backdated
+      // edit. Keep every derived nutrition surface coherent immediately.
+      queryClient.invalidateQueries({ queryKey: ['meals'] });
+      queryClient.invalidateQueries({ queryKey: ['dataroom-meals'] });
+      queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
+      queryClient.invalidateQueries({ queryKey: ['energy-model-v3-inputs'] });
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
 
   const addMeal = useMutation({
     mutationFn: async (meal: {
