@@ -1,0 +1,37 @@
+/* Dataroom chart interaction contrast.
+   Recharts injects tooltip item colors inline from the series. That can make
+   labels or values disappear against theme-aware popover surfaces, especially
+   in dark mode. Keep hover text semantic and let the chart itself carry color. */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 12px !important;
+  color: hsl(var(--popover-foreground)) !important;
+  box-shadow: var(--elevation-overlay);
+}
+
+.recharts-tooltip-wrapper .recharts-tooltip-label,
+.recharts-tooltip-wrapper .recharts-tooltip-item,
+.recharts-tooltip-wrapper .recharts-tooltip-item-name,
+.recharts-tooltip-wrapper .recharts-tooltip-item-separator,
+.recharts-tooltip-wrapper .recharts-tooltip-item-value {
+  color: hsl(var(--popover-foreground)) !important;
+}
+
+/* Keep the hover locator visible without masking bars or points. */
+.recharts-tooltip-cursor {
+  stroke: hsl(var(--border)) !important;
+  fill: hsl(var(--muted)) !important;
+  fill-opacity: 0.28 !important;
+}
+
+/* Give active points a surface-colored halo so they stay visible on either theme. */
+.recharts-active-dot circle,
+.recharts-active-dot {
+  stroke: hsl(var(--card)) !important;
+  stroke-width: 2px !important;
+}
