@@ -31,6 +31,14 @@ export function useCalorieHistory(dateRange: DateRange) {
         supabase.from('daily_metrics').select('date, bodyweight').eq('user_id', user.id).not('bodyweight', 'is', null).order('date', { ascending: true }),
         (supabase.from('energy_model_states' as any) as any).select('effective_date,personal_baseline').eq('user_id', user.id).gte('effective_date', format(subDays(dateRange.from, 365), 'yyyy-MM-dd')).lte('effective_date', endDateStr).order('effective_date', { ascending: true }),
       ]);
+
+      // Core energy inputs must fail loudly. Treating a failed read as an empty
+      // array produces believable but wrong zero-intake/zero-burn days.
+      for (const response of [mealsRes, burnsRes, workoutsRes, weightsRes]) {
+        if (response.error) throw response.error;
+      }
+      // The personalized-baseline table is optional for older deployments; only
+      // that known absence is allowed to fall back to the formula baseline.
       if (statesRes.error && !/schema cache|does not exist/i.test(statesRes.error.message || '')) throw statesRes.error;
 
       const weightByDate: Record<string, number> = {};
