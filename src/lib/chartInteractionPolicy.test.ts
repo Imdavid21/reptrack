@@ -25,7 +25,7 @@ describe('chart interaction policy', () => {
     expect(source).toContain('onPointerMove={inspectPointer}');
     expect(source).toContain('onPointerDown={inspectPointer}');
     expect(source).toContain("event.key === 'ArrowLeft'");
-    expect(source).toContain('7-day avg');
-    expect(source).toContain('Weigh-in');
+    expect(source).toContain('Trend');
+    expect(source).toContain('Actual');
   });
 });
