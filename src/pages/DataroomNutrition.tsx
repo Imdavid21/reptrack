@@ -1,4 +1,5 @@
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
+import { NutritionTrendCharts } from '@/components/dataroom/DataroomCharts';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
 
@@ -7,6 +8,7 @@ function NutritionContent() {
   const data = useDataroomData(dateRange);
   const nutrition = data.analysis?.nutrition;
   const proteinTarget = Number(data.preferences?.daily_protein_goal || 0);
+  const calorieTarget = Number(data.preferences?.daily_calorie_goal || 0);
   const byDay = [...data.meals].sort((a, b) => b.date.localeCompare(a.date));
 
   return <div className="space-y-8">
@@ -17,11 +19,13 @@ function NutritionContent() {
       <div><div className="type-caption">Fibre</div><div className="mt-1 text-xl font-semibold tabular-nums">{nutrition?.averageFiber == null ? 'Not enough data' : `${nutrition.averageFiber} g`}</div><div className="type-caption mt-0.5">average / logged day</div></div>
     </section>
 
-    <section className="border-y border-border py-5"><div className="type-eyebrow">Note</div><h2 className="type-section-title mt-1">Logging Completeness</h2><p className="type-supporting mt-2 max-w-2xl">RepTrack can calculate what is present in the log. The current database does not reliably mark a day as fully logged, so this view does not claim true average intake or calorie-target adherence across missing days.</p></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Intake Trends</h2><p className="type-caption mt-1">Only logged days are plotted. Dashed lines are current targets when available.</p></div><NutritionTrendCharts meals={data.meals} calorieTarget={calorieTarget || null} proteinTarget={proteinTarget || null} /></section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Log</div><h2 className="type-section-title mt-1">Recent Logged Days</h2></div>{byDay.length ? <div className="divide-y divide-border border-y border-border">{byDay.slice(0, 30).map(day => <div key={day.date} className="py-3 grid grid-cols-[96px_1fr] gap-3"><div><div className="text-sm font-semibold tabular-nums">{day.date}</div></div><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-right"><div><div className="type-caption">Calories</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.calories).toLocaleString()}</div></div><div><div className="type-caption">Protein</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.protein)} g</div></div><div><div className="type-caption">Carbs</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.carbs)} g</div></div><div><div className="type-caption">Fat</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.fat)} g</div></div></div></div>)}</div> : <div className="border-y border-border py-6 type-caption">No nutrition records in this range.</div>}</section>
+    <section className="border-y border-border py-5"><h2 className="type-section-title">Logging Completeness</h2><p className="type-supporting mt-2 max-w-2xl">RepTrack can calculate what is present in the log. The current database does not reliably mark a day as fully logged, so this view does not claim true average intake or calorie-target adherence across missing days.</p></section>
 
-    {nutrition?.modelDisagreesWithWeight && <section className="border-y border-border py-5"><div className="type-eyebrow">Energy</div><h2 className="type-section-title mt-1">Energy Balance Mismatch</h2><p className="type-supporting mt-2">This can happen because intake is incomplete, expenditure is estimated, the window is short, or water and glycogen shift bodyweight. Dataroom does not recommend changing calories from this mismatch alone.</p></section>}
+    <section><div className="mb-3"><h2 className="type-section-title">Recent Logged Days</h2></div>{byDay.length ? <div className="divide-y divide-border border-y border-border">{byDay.slice(0, 30).map(day => <div key={day.date} className="py-3 grid grid-cols-[96px_1fr] gap-3"><div><div className="text-sm font-semibold tabular-nums">{day.date}</div></div><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-right"><div><div className="type-caption">Calories</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.calories).toLocaleString()}</div></div><div><div className="type-caption">Protein</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.protein)} g</div></div><div><div className="type-caption">Carbs</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.carbs)} g</div></div><div><div className="type-caption">Fat</div><div className="text-sm font-semibold tabular-nums">{Math.round(day.fat)} g</div></div></div></div>)}</div> : <div className="border-y border-border py-6 type-caption">No nutrition records in this range.</div>}</section>
+
+    {nutrition?.modelDisagreesWithWeight && <section className="border-y border-border py-5"><h2 className="type-section-title">Energy Balance Mismatch</h2><p className="type-supporting mt-2">This can happen because intake is incomplete, expenditure is estimated, the window is short, or water and glycogen shift bodyweight. Dataroom does not recommend changing calories from this mismatch alone.</p></section>}
   </div>;
 }
 
