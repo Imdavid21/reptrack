@@ -19,6 +19,10 @@ function GoalBar({ value, goal }: { value: number; goal: number }) {
   return <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-foreground transition-[width] duration-300" style={{ width: `${progress}%` }} /></div>;
 }
 
+function LoadingRow() {
+  return <div className="flex min-h-14 items-center justify-between px-4 py-3" aria-hidden="true"><div className="h-4 w-24 animate-pulse rounded bg-muted"/><div className="h-5 w-20 animate-pulse rounded bg-muted"/></div>;
+}
+
 function logTime(timestamp?: string | null) {
   const date = timestamp ? new Date(timestamp) : null;
   return date && !Number.isNaN(date.getTime()) ? format(date, 'h:mm a') : 'Time unavailable';
@@ -32,8 +36,8 @@ export function TodaySnapshot() {
   const { logDate, isBackDated } = useLogDate();
   const today = localDateKey(logDate);
   const { preferences } = useUserPreferences();
-  const { data: metrics, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(logDate.getTime() - 30 * 86400000), to: logDate });
-  const { totalToday, waterLogs, addWaterLog, isAdding } = useWaterLogs(logDate);
+  const { data: metrics, isLoading: metricsLoading, upsertMetrics, isUpserting } = useDailyMetrics({ from: new Date(logDate.getTime() - 30 * 86400000), to: logDate });
+  const { totalToday, waterLogs, isLoading: waterLoading, addWaterLog, isAdding } = useWaterLogs(logDate);
   const [sheet, setSheet] = useState<'sleep' | 'weight' | null>(null);
   const [waterExpanded, setWaterExpanded] = useState(false);
   const todayMetric = metrics?.dataPoints.find(point => point.date === today);
@@ -43,6 +47,7 @@ export function TodaySnapshot() {
   const [minutes, setMinutes] = useState(0);
   const sleepGoal = preferences?.sleep_goal ?? 8;
   const waterGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal ?? 3);
+  const firstVitalsLoad = (metricsLoading && !metrics) || (waterLoading && waterLogs.length === 0);
 
   useEffect(() => { if (sheet === 'weight') setWeight(Number(todayMetric?.bodyweight ?? lastWeight)); }, [sheet, todayMetric?.bodyweight, lastWeight]);
   useEffect(() => { if (sheet === 'sleep') { const value = todayMetric?.sleep_hours ?? 7; setHours(Math.floor(value)); setMinutes(Math.round((value % 1) * 60)); } }, [sheet, todayMetric?.sleep_hours]);
@@ -52,11 +57,11 @@ export function TodaySnapshot() {
   const logWater = async (amount: number) => { try { await addWaterLog({ amount, ...(isBackDated ? { loggedAt: logDate } : {}) }); } catch { toast.error('Water was not saved. Try again.'); } };
 
   return <>
-    <section className="daily-snapshot rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border">
+    {firstVitalsLoad ? <section className="daily-snapshot overflow-hidden rounded-[20px] border border-border bg-card divide-y divide-border" role="status" aria-label="Loading today snapshot"><LoadingRow/><LoadingRow/><LoadingRow/><span className="sr-only">Loading bodyweight, sleep, and water</span></section> : <section className="daily-snapshot rounded-[20px] border border-border bg-card overflow-hidden divide-y divide-border">
       <button onClick={() => setSheet('weight')} className="w-full px-4 py-3 hover:bg-muted/30 transition-colors text-left"><div className="flex items-center justify-between"><span className="text-sm">Bodyweight</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.bodyweight ? `${formatWeight(todayMetric.bodyweight)} kg` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></div></button>
       <button onClick={() => setSheet('sleep')} className="w-full px-4 py-3 hover:bg-muted/30 transition-colors text-left"><div className="flex items-center justify-between"><span className="text-sm">Sleep</span><span className="text-sm font-semibold tabular-nums">{todayMetric?.sleep_hours ? `${Math.floor(todayMetric.sleep_hours)} h ${Math.round((todayMetric.sleep_hours % 1) * 60)} m` : 'Add'} <span className="text-muted-foreground" aria-hidden>›</span></span></div>{todayMetric?.sleep_hours != null && <><GoalBar value={todayMetric.sleep_hours} goal={sleepGoal}/><div className="mt-1 text-xs text-muted-foreground tabular-nums">{todayMetric.sleep_hours.toFixed(1)} / {sleepGoal} h goal</div></>}</button>
       <div className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-sm flex-1">Water</span><span className="text-sm font-semibold tabular-nums mr-1">{totalToday.toFixed(2)} L</span><button aria-label="Add 250 millilitres of water" disabled={isAdding} onClick={() => logWater(.25)} className="h-10 px-3 rounded-full bg-muted text-xs font-bold disabled:opacity-50">+250</button><button aria-label="Add 500 millilitres of water" disabled={isAdding} onClick={() => logWater(.5)} className="h-10 px-3 rounded-full bg-foreground text-background text-xs font-bold disabled:opacity-50">+500</button></div><GoalBar value={totalToday} goal={waterGoal}/><div className="mt-1 text-xs text-muted-foreground tabular-nums">{totalToday.toFixed(2)} / {waterGoal.toFixed(2)} L goal</div><button onClick={() => setWaterExpanded(open => !open)} className="mt-2 text-xs text-muted-foreground hover:text-foreground">{waterExpanded ? 'Hide water entries' : `Show ${waterLogs.length} water entries`}</button>{waterExpanded && <div className="mt-2 space-y-1.5">{waterLogs.length ? waterLogs.map(log => <div key={log.id} className="flex items-center justify-between text-sm"><span className="text-muted-foreground tabular-nums">{logTime(log.timestamp)}</span><span className="font-medium tabular-nums">{Number(log.amount).toFixed(2)} L</span></div>) : <p className="text-xs text-muted-foreground">No water logged yet.</p>}</div>}</div>
-    </section>
+    </section>}
     <section id="nutrition" className="mt-3"><CalorieTrackerCompact /></section>
     <div className="mt-3 rounded-[20px] border border-border bg-card overflow-hidden"><ActivityLogger compact /></div>
 
