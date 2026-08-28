@@ -2,7 +2,7 @@ const SUPABASE_BASE = 'https://kfifgbqkykyvnrirxwze.supabase.co/functions/v1';
 const MCP_URL = `${SUPABASE_BASE}/mcp`;
 const PARSE_FOOD_URL = `${SUPABASE_BASE}/parse-food-text`;
 const ANALYZE_FOOD_URL = `${SUPABASE_BASE}/analyze-food`;
-const CONNECT_URL = 'https://reptrack.fitness/auth?redirect=/app';
+const CONNECT_URL = 'https://reptrack.fitness/signin?redirect=/app';
 
 const $ = (id) => document.getElementById(id);
 const state = { token: null, photoDataUrl: null, busy: false };
