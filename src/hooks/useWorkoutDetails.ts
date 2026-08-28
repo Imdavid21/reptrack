@@ -85,6 +85,7 @@ export function useWorkoutDetails(workoutId: string | null) {
       return { ...workout, exercises: exercises || [], habits: habits || null } as WorkoutWithDetails;
     },
     enabled: !!workoutId && !!user,
+    throwOnError: true,
   });
 
   const invalidateDetail = () => {
