@@ -5,7 +5,7 @@
 
 const DB_NAME = 'reptrack_offline';
 const STORE_NAME = 'sync_queue';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface SyncQueueItem {
   id: string;
@@ -13,6 +13,8 @@ export interface SyncQueueItem {
   table: string;
   operation: 'insert' | 'update' | 'delete';
   payload: Record<string, unknown>;
+  /** Account that created this queued write. Optional only for legacy v1 rows. */
+  ownerUserId?: string;
   /** For multi-step flows (workout + exercises + habits), group items together */
   groupId?: string;
   /** Order within group */
@@ -26,11 +28,15 @@ function openDB(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
+      let store: IDBObjectStore;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('timestamp', 'timestamp', { unique: false });
         store.createIndex('groupId', 'groupId', { unique: false });
+      } else {
+        store = request.transaction!.objectStore(STORE_NAME);
       }
+      if (!store.indexNames.contains('ownerUserId')) store.createIndex('ownerUserId', 'ownerUserId', { unique: false });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -40,12 +46,7 @@ function openDB(): Promise<IDBDatabase> {
 export async function enqueueOperation(item: Omit<SyncQueueItem, 'id' | 'timestamp' | 'retries'>): Promise<string> {
   const db = await openDB();
   const id = crypto.randomUUID();
-  const entry: SyncQueueItem = {
-    ...item,
-    id,
-    timestamp: Date.now(),
-    retries: 0,
-  };
+  const entry: SyncQueueItem = { ...item, id, timestamp: Date.now(), retries: 0 };
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -93,13 +94,24 @@ export async function updateItemRetries(id: string, retries: number): Promise<vo
   });
 }
 
-export async function getQueueCount(): Promise<number> {
+export async function getQueueCount(userId?: string): Promise<number> {
   const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const request = tx.objectStore(STORE_NAME).count();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
+  if (!userId) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const request = tx.objectStore(STORE_NAME).count();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
 
+  // New rows are indexed by owner. Legacy v1 rows have no owner field, so add
+  // only legacy rows whose payload explicitly identifies this account. Unknown
+  // legacy child rows remain replay-protected but are not shown to another user.
+  const items = await getQueuedItems();
+  return items.filter(item => {
+    if (item.ownerUserId) return item.ownerUserId === userId;
+    const payloadOwner = item.payload.user_id;
+    return typeof payloadOwner === 'string' && payloadOwner === userId;
+  }).length;
+}
