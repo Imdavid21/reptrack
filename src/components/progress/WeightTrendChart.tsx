@@ -152,6 +152,11 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
         {target != null && <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">To target</span><span className="text-sm font-semibold tabular-nums">{Math.abs(active.average.value - target).toFixed(2)} kg</span></div>}
       </div>}
     </div>
+    <div className="mt-3 flex items-center gap-4 type-caption" aria-hidden>
+      <span className="flex items-center gap-1.5"><svg width="18" height="6" viewBox="0 0 18 6"><line x1="0" y1="3" x2="18" y2="3" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" /></svg>7-day average</span>
+      <span className="flex items-center gap-1.5 text-muted-foreground"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.5" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="1.5" /></svg>Weigh-in</span>
+      <span className="ml-auto hidden sm:inline text-muted-foreground">Hover or drag to inspect</span>
+    </div>
     <div className="mt-2 flex items-center justify-between type-caption tabular-nums"><span>{data[0].date}</span>{target ? <span>Target {Number(target.toFixed(2))} kg</span> : <span>{data.length} weigh-ins</span>}<span>{latest.date}</span></div>
   </section>;
 }
