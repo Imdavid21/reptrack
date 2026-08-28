@@ -112,7 +112,7 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
     <p className="sr-only">Latest weigh-in {Number(latest.value.toFixed(2))} kilograms. Seven-day average {Number(latestAvg.value.toFixed(2))} kilograms. Trend is {direction} across this range.</p>
     <div
       ref={chartRef}
-      className="relative mt-4 overflow-visible rounded-xl bg-muted/20 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="relative mt-4 cursor-crosshair overflow-visible rounded-xl bg-muted/20 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-muted/30"
       style={{ touchAction: 'pan-y' }}
       tabIndex={0}
       role="group"
@@ -128,13 +128,14 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
         <line x1={padX} y1={yFor(low + (high - low) * .25)} x2={width - padX} y2={yFor(low + (high - low) * .25)} stroke="currentColor" opacity="0.08" />
         <line x1={padX} y1={yFor(low + (high - low) * .75)} x2={width - padX} y2={yFor(low + (high - low) * .75)} stroke="currentColor" opacity="0.08" />
         {target && target >= low && target <= high && <line x1={padX} y1={yFor(target)} x2={width - padX} y2={yFor(target)} stroke="currentColor" opacity="0.28" strokeDasharray="6 5" />}
-        <path d={pathFor(rawPoints)} fill="none" stroke="currentColor" opacity="0.16" strokeWidth="1.5" />
-        {rawPoints.map((point, index) => <circle key={data[index].date} cx={point.x} cy={point.y} r={activeIndex === index ? 4.5 : 3} fill="currentColor" opacity={activeIndex === index ? 0.75 : 0.28} />)}
-        <path d={pathFor(avgPoints)} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {avgPoints.map((point, index) => <circle key={`avg-${averages[index].date}`} cx={point.x} cy={point.y} r={activeIndex === index ? 5 : index === avgPoints.length - 1 ? 4 : 2.5} fill="currentColor" />)}
+        <path d={pathFor(rawPoints)} fill="none" stroke="currentColor" opacity="0.10" strokeWidth="1" strokeDasharray="2 4" />
+        {rawPoints.map((point, index) => <circle key={data[index].date} cx={point.x} cy={point.y} r={activeIndex === index ? 5 : 3.5} fill="hsl(var(--background))" stroke="currentColor" strokeWidth={activeIndex === index ? 2 : 1.5} opacity={activeIndex == null || activeIndex === index ? 0.6 : 0.35} style={{ transition: 'r .15s ease, opacity .15s ease' }} />)}
+        <path d={pathFor(avgPoints)} fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+        {avgPoints.map((point, index) => <circle key={`avg-${averages[index].date}`} cx={point.x} cy={point.y} r={activeIndex === index ? 5.5 : index === avgPoints.length - 1 ? 4.5 : 2.5} fill="currentColor" style={{ transition: 'r .15s ease' }} />)}
         {active && <>
           <line x1={active.avgPoint.x} y1={padY} x2={active.avgPoint.x} y2={height - padY} stroke="currentColor" strokeWidth="1" opacity="0.22" strokeDasharray="3 4" pointerEvents="none" />
-          <circle cx={active.avgPoint.x} cy={active.avgPoint.y} r="8" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" pointerEvents="none" />
+          <circle cx={active.avgPoint.x} cy={active.avgPoint.y} r="10" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" pointerEvents="none" />
+          <circle cx={active.rawPoint.x} cy={active.rawPoint.y} r="9" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.25" strokeDasharray="2 3" pointerEvents="none" />
         </>}
         <rect x={0} y={0} width={width} height={height} fill="transparent" />
       </svg>
@@ -150,6 +151,11 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
         <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">Weigh-in</span><span className="text-sm font-semibold tabular-nums">{active.raw.value.toFixed(2)} kg</span></div>
         {target != null && <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">To target</span><span className="text-sm font-semibold tabular-nums">{Math.abs(active.average.value - target).toFixed(2)} kg</span></div>}
       </div>}
+    </div>
+    <div className="mt-3 flex items-center gap-4 type-caption" aria-hidden>
+      <span className="flex items-center gap-1.5"><svg width="18" height="6" viewBox="0 0 18 6"><line x1="0" y1="3" x2="18" y2="3" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" /></svg>7-day average</span>
+      <span className="flex items-center gap-1.5 text-muted-foreground"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.5" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="1.5" /></svg>Weigh-in</span>
+      <span className="ml-auto hidden sm:inline text-muted-foreground">Hover or drag to inspect</span>
     </div>
     <div className="mt-2 flex items-center justify-between type-caption tabular-nums"><span>{data[0].date}</span>{target ? <span>Target {Number(target.toFixed(2))} kg</span> : <span>{data.length} weigh-ins</span>}<span>{latest.date}</span></div>
   </section>;
