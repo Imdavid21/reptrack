@@ -8,12 +8,13 @@ function Value({ label, value, detail }: { label: string; value: string; detail?
 }
 
 function BodyContent() {
-  const { dateRange } = useDataroomRange();
+  const { range, dateRange } = useDataroomRange();
   const data = useDataroomData(dateRange);
   const weight = data.analysis?.weight;
   const firstPhysique = data.physique.at(0);
   const latestPhysique = data.physique.at(-1);
   const delta = (current: number | null, previous: number | null) => current != null && previous != null ? Number((current - previous).toFixed(1)) : null;
+  const rangedMetrics = data.metrics.filter(metric => metric.date >= data.startDate && metric.date <= data.endDate);
 
   return <div className="space-y-8">
     <section className="grid grid-cols-2 md:grid-cols-4 gap-5 border-y border-border py-5">
@@ -23,7 +24,7 @@ function BodyContent() {
       <Value label="Rate" value={weight?.percentPerWeek == null ? 'Need more data' : `${weight.percentPerWeek > 0 ? '+' : ''}${weight.percentPerWeek.toFixed(2)}% / week`} detail="Scale trend, not body-fat change" />
     </section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Bodyweight</div><h2 className="type-section-title mt-1">Bodyweight Trend</h2></div><WeightTrendChart metrics={data.metrics} target={data.preferences?.weight_goal} /></section>
+    <section><div className="mb-3"><div className="type-eyebrow">Bodyweight</div><h2 className="type-section-title mt-1">Bodyweight Trend</h2></div><WeightTrendChart key={`${range}-${data.startDate}-${data.endDate}`} metrics={rangedMetrics} target={data.preferences?.weight_goal} /></section>
 
     <section><div className="mb-3"><div className="type-eyebrow">Physique</div><h2 className="type-section-title mt-1">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
       {[
