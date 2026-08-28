@@ -163,6 +163,15 @@ export function CalorieTrackerCompact() {
       meals.reduce((s, m) => s + Number(m[key] || 0), 0);
     return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium'), potassium: sum('potassium') };
   }, [meals]);
+  const macroGoalPreferences = preferences as unknown as Record<string, number | null | undefined>;
+  const macroTargets = {
+    carbs: macroGoalPreferences?.daily_carbs_goal ?? 250,
+    fat: macroGoalPreferences?.daily_fat_goal ?? 70,
+    fiber: macroGoalPreferences?.daily_fiber_goal ?? 30,
+    sugar: macroGoalPreferences?.daily_sugar_goal ?? 50,
+    sodium: macroGoalPreferences?.daily_sodium_goal ?? 2300,
+    potassium: macroGoalPreferences?.daily_potassium_goal ?? 3400,
+  };
   const netDeficit = energy.model ? -energy.model.energyBalance : maintenance - totalCalories + totalBurned; // positive = under maintenance
 
   useEffect(() => {
@@ -844,7 +853,7 @@ export function CalorieTrackerCompact() {
                 { key: 'potassium', label: 'Potassium', unit: 'mg' },
               ] as const).map(m => (
                 <div key={m.key} className="min-w-0 p-3 text-center">
-                  <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
+                  <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}/{Math.round(macroTargets[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
                   <div className="type-caption">{m.label}</div>
                 </div>
               ))}
