@@ -3,6 +3,25 @@ import { ActivityTimeline } from '@/components/dataroom/DataroomCharts';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
 
+function MobilityBalance({ left, right, label, unit = '' }: { left: number | null; right: number | null; label: string; unit?: string }) {
+  if (left == null || right == null) return null;
+  const low = Math.min(left, right);
+  const high = Math.max(left, right);
+  const span = Math.max(1, high - low);
+  const min = low - span * 0.35;
+  const max = high + span * 0.35;
+  const x = (value: number) => 14 + (value - min) / Math.max(0.01, max - min) * 72;
+  return <div className="rounded-xl border border-border bg-card p-3">
+    <div className="flex items-baseline justify-between gap-3"><div className="text-sm font-semibold">{label}</div><div className="type-caption tabular-nums">Δ {Math.abs(left - right).toFixed(1)}{unit ? ` ${unit}` : ''}</div></div>
+    <svg viewBox="0 0 100 24" className="mt-2 h-8 w-full" role="img" aria-label={`${label}: left ${left}${unit}, right ${right}${unit}`}>
+      <line x1={x(left)} y1="12" x2={x(right)} y2="12" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+      <circle cx={x(left)} cy="12" r="4" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="2" />
+      <circle cx={x(right)} cy="12" r="4" fill="currentColor" />
+    </svg>
+    <div className="flex justify-between type-caption tabular-nums"><span>Left {left}{unit ? ` ${unit}` : ''}</span><span>Right {right}{unit ? ` ${unit}` : ''}</span></div>
+  </div>;
+}
+
 function ActivityContent() {
   const { dateRange } = useDataroomRange();
   const data = useDataroomData(dateRange);
@@ -23,6 +42,8 @@ function ActivityContent() {
     <section><div className="mb-3"><h2 className="type-section-title">Weekly Activity</h2><p className="type-caption mt-1">Recorded minutes by activity type, grouped by week.</p></div><ActivityTimeline activities={data.activities} /></section>
 
     <section><div className="mb-3"><h2 className="type-section-title">Time by Activity Type</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} recorded session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No manual activities in this range.</div>}</section>
+
+    {latestMobility && <section><div className="mb-3"><h2 className="type-section-title">Left vs Right</h2><p className="type-caption mt-1">Latest recorded mobility assessment. Hollow dot is left; filled dot is right.</p></div><div className="grid gap-3 md:grid-cols-2"><MobilityBalance label="Knee-to-wall" left={latestMobility.knee_to_wall_left_cm} right={latestMobility.knee_to_wall_right_cm} unit="cm"/><MobilityBalance label="Hip 90/90" left={latestMobility.hip_90_90_left} right={latestMobility.hip_90_90_right}/></div></section>}
 
     <section><div className="mb-3"><h2 className="type-section-title">Mobility Assessments</h2><p className="type-caption mt-1">Assessments are compared only when they were actually recorded. RepTrack does not interpolate between tests.</p></div>{latestMobility ? <div className="divide-y divide-border border-y border-border">
       {[
