@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RepTrack Quick Log</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Quick Log</h1>
+          <p id="statusLine">RepTrack</p>
+        </div>
+        <button id="refreshButton" class="icon-button" aria-label="Refresh today totals" title="Refresh">↻</button>
+      </header>
+
+      <section class="summary" aria-label="Today's totals">
+        <div class="metric">
+          <span>Calories</span>
+          <strong id="caloriesValue">—</strong>
+        </div>
+        <div class="metric">
+          <span>Protein</span>
+          <strong id="proteinValue">—</strong>
+        </div>
+        <div class="metric water-metric">
+          <span>Water</span>
+          <strong id="waterValue">—</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="segmented" role="tablist" aria-label="Log type">
+          <button id="foodTab" class="segment active" type="button">Food</button>
+          <button id="waterTab" class="segment" type="button">Water</button>
+        </div>
+
+        <div id="foodPanel">
+          <textarea id="foodInput" rows="3" maxlength="500" placeholder="2 eggs, toast, and a cappuccino"></textarea>
+          <div class="meal-row">
+            <select id="mealType" aria-label="Meal type">
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+              <option value="snack" selected>Snack</option>
+            </select>
+            <label class="photo-button" for="foodPhoto">Photo</label>
+            <input id="foodPhoto" type="file" accept="image/*" hidden />
+          </div>
+          <div id="photoChip" class="photo-chip hidden">
+            <span id="photoName"></span>
+            <button id="clearPhoto" type="button" aria-label="Remove photo">×</button>
+          </div>
+          <button id="logFood" class="primary-button" type="button">Log food</button>
+        </div>
+
+        <div id="waterPanel" class="hidden">
+          <div class="water-grid">
+            <button class="water-button" data-ml="250" type="button">+250 ml</button>
+            <button class="water-button" data-ml="500" type="button">+500 ml</button>
+            <button class="water-button" data-ml="750" type="button">+750 ml</button>
+          </div>
+          <div class="custom-water">
+            <input id="waterInput" type="number" min="50" max="10000" step="50" inputmode="numeric" placeholder="Custom ml" />
+            <button id="logWater" class="primary-button" type="button">Log</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="feedback" class="feedback hidden" role="status"></div>
+      <p class="footer-note">Uses your signed-in RepTrack session.</p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
