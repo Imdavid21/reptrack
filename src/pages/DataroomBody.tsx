@@ -1,4 +1,5 @@
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
+import { PhysiqueChangeChart } from '@/components/dataroom/DataroomCharts';
 import { WeightTrendChart } from '@/components/progress/WeightTrendChart';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
@@ -24,9 +25,11 @@ function BodyContent() {
       <Value label="Rate" value={weight?.percentPerWeek == null ? 'Need more data' : `${weight.percentPerWeek > 0 ? '+' : ''}${weight.percentPerWeek.toFixed(2)}% / week`} detail="Scale trend, not body-fat change" />
     </section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Bodyweight</div><h2 className="type-section-title mt-1">Bodyweight Trend</h2></div><WeightTrendChart key={`${range}-${data.startDate}-${data.endDate}`} metrics={rangedMetrics} target={data.preferences?.weight_goal} /></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Bodyweight Trend</h2></div><WeightTrendChart key={`${range}-${data.startDate}-${data.endDate}`} metrics={rangedMetrics} target={data.preferences?.weight_goal} /></section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Physique</div><h2 className="type-section-title mt-1">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
+    <section><div className="mb-3"><h2 className="type-section-title">Measurement Change</h2><p className="type-caption mt-1">First versus latest recorded measurement in the selected range. No interpolation.</p></div><PhysiqueChangeChart first={firstPhysique} latest={latestPhysique} /></section>
+
+    <section><div className="mb-3"><h2 className="type-section-title">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
       {[
         ['Waist', latestPhysique.waist_cm, firstPhysique?.waist_cm, 'cm'],
         ['Chest', latestPhysique.chest_cm, firstPhysique?.chest_cm, 'cm'],
