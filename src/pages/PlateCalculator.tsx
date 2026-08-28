@@ -32,11 +32,11 @@ export default function PlateCalculator() {
     return [...map.values()].sort((a, b) => b.lastDate.localeCompare(a.lastDate)).slice(0, 20);
   }, [exerciseSets.data?.sets, bar]);
 
-  if (!settings.enabled) return <MainLayout showBack backTo="/app/settings" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Advanced Mode is off</h1></div></MainLayout>;
+  if (!settings.enabled) return <MainLayout showBack backTo="/app/dataroom/lab" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><h1 className="type-page-title">Performance Lab is off</h1></div></MainLayout>;
 
-  return <MainLayout showBack backTo="/app/lab" hideNav>
+  return <MainLayout showBack backTo="/app/dataroom/lab" hideNav>
     <div className="mx-auto max-w-[720px] pb-12">
-      <header className="mb-5"><div className="type-eyebrow">Advanced</div><h1 className="type-page-title mt-1">Plates</h1><p className="type-caption mt-1">{gym?.name || 'Default'} · {bar} kg bar</p></header>
+      <header className="mb-5"><h1 className="type-page-title">Plates</h1><p className="type-caption mt-1">{gym?.name || 'Default'} · {bar} kg bar</p></header>
 
       <section className="rounded-[20px] border border-border bg-card p-5 mb-5"><div className="grid grid-cols-[1fr_auto] gap-4 items-end"><div><div className="type-caption mb-1">Total load</div><Input type="number" inputMode="decimal" step="0.5" value={target} onChange={event => setTarget(Number(event.target.value) || 0)} className="h-14 text-2xl font-semibold tabular-nums"/></div><div className="pb-3 text-sm font-semibold">kg</div></div><div className="mt-5 border-y border-border py-4"><div className="type-caption mb-2">Each side</div><Plates value={result.perSide}/></div><div className="mt-4 grid grid-cols-2 gap-4"><div><div className="type-caption">Loaded</div><div className="text-xl font-semibold tabular-nums">{result.loadedKg} kg</div></div><div><div className="type-caption">Delta</div><div className="text-xl font-semibold tabular-nums">{result.deltaKg > 0 ? '+' : ''}{result.deltaKg} kg</div></div></div></section>
 
