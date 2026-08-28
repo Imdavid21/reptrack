@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Activity, ChevronDown, ChevronRight, Database, Dumbbell, Footprints, Moon, Scale, Settings2, Utensils } from 'lucide-react';
+import { useMemo } from 'react';
+import { Activity, ChevronRight, Database, Dumbbell, Footprints, Moon, Scale, Settings2, Utensils } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
@@ -8,10 +8,33 @@ import { ConfidenceMark } from '@/components/dataroom/DataRoomVisuals';
 import { useDataroomData } from '@/hooks/useDataroomData';
 import { useNavigate } from 'react-router-dom';
 import { absoluteDelta, evidenceCoverage, previousComparableRange, summarizeDataroomPeriod } from '@/lib/dataroom/overview';
-import { cn } from '@/lib/utils';
+import type { DataroomFinding } from '@/lib/dataroom/types';
 
-function Metric({ label, value, detail }: { label: string; value: string; detail?: string }) {
-  return <div className="min-w-0"><div className="type-caption">{label}</div><div className="mt-1 text-xl font-semibold tabular-nums tracking-tight">{value}</div>{detail && <div className="mt-0.5 type-caption">{detail}</div>}</div>;
+function MiniTrend({ values }: { values: number[] }) {
+  const clean = values.filter(value => Number.isFinite(value));
+  if (clean.length < 2) return <div className="h-14 border-b border-dashed border-border" />;
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  const span = max - min || 1;
+  const points = clean.map((value, index) => ({
+    x: 4 + index / Math.max(1, clean.length - 1) * 152,
+    y: 44 - (value - min) / span * 36,
+  }));
+  const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+  const last = points.at(-1)!;
+  return <svg viewBox="0 0 160 48" preserveAspectRatio="none" className="h-14 w-full" aria-hidden>
+    <path d={path} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx={last.x} cy={last.y} r="3.5" fill="currentColor" />
+  </svg>;
+}
+
+function MetricCard({ label, value, detail, values, onClick }: { label: string; value: string; detail?: string; values: number[]; onClick: () => void }) {
+  return <button onClick={onClick} className="min-w-0 rounded-[18px] border border-border bg-card p-4 text-left hover:bg-muted/20 transition-colors">
+    <div className="flex items-start justify-between gap-3"><span className="type-caption">{label}</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></div>
+    <div className="mt-1 text-xl font-semibold tabular-nums tracking-tight">{value}</div>
+    {detail && <div className="type-caption mt-0.5">{detail}</div>}
+    <div className="mt-3 text-muted-foreground"><MiniTrend values={values} /></div>
+  </button>;
 }
 
 function DomainRow({ icon: Icon, title, value, detail, onClick }: { icon: typeof Scale; title: string; value: string; detail: string; onClick: () => void }) {
@@ -22,18 +45,27 @@ function ChangeRow({ label, current, previous, delta, detail }: { label: string;
   return <div className="py-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center"><div className="min-w-0"><div className="text-sm font-semibold">{label}</div><div className="type-caption mt-0.5">{previous ? `${previous} → ${current}` : current}{detail ? ` · ${detail}` : ''}</div></div>{delta && <div className="text-sm font-semibold tabular-nums">{delta}</div>}</div>;
 }
 
-function Finding({ finding }: { finding: NonNullable<ReturnType<typeof useDataroomData>['analysis']>['findings'][number] }) {
-  const [open, setOpen] = useState(false);
-  return <article className="py-4 first:pt-0 last:pb-0">
-    <button onClick={() => setOpen(value => !value)} aria-expanded={open} className="w-full text-left">
-      <div className="flex items-start gap-3"><span className={cn('mt-0.5 min-w-[4.5rem] rounded-lg px-2 py-1 text-center type-meta uppercase', finding.actionKind === 'keep' ? 'bg-muted text-foreground' : finding.actionKind === 'change' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')}>{finding.actionKind}</span><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><h3 className="text-sm font-semibold leading-5">{finding.title}</h3><ConfidenceMark value={finding.confidence} compact /></div><p className="type-caption mt-1">{finding.signal}</p></div><ChevronDown className={cn('h-4 w-4 mt-1 text-muted-foreground transition-transform', open && 'rotate-180')} /></div>
-    </button>
-    {open && <div className="ml-[5.25rem] mt-3 border-l-2 border-border pl-3 space-y-3"><div><div className="type-meta">Decision</div><p className="text-sm mt-1">{finding.action}</p></div><div><div className="type-meta">Evidence</div><ul className="mt-1 space-y-1">{finding.evidence.map(item => <li key={item} className="type-caption">{item}</li>)}</ul></div><div><div className="type-meta">Interpretation</div><p className="type-caption mt-1">{finding.interpretation}</p></div></div>}
-  </article>;
+function findingPath(domain: DataroomFinding['domain']) {
+  if (domain === 'bodyweight') return '/app/dataroom/body';
+  if (domain === 'training') return '/app/dataroom/training';
+  if (domain === 'nutrition') return '/app/dataroom/nutrition';
+  if (domain === 'recovery') return '/app/dataroom/recovery';
+  return '/app/dataroom/explore';
+}
+
+function AttentionCard({ finding, values, onClick }: { finding: DataroomFinding; values: number[]; onClick: () => void }) {
+  const action = finding.actionKind === 'keep' ? 'On track' : finding.actionKind;
+  return <button onClick={onClick} className="rounded-[20px] border border-border bg-card p-4 text-left hover:bg-muted/20 transition-colors">
+    <div className="flex items-center justify-between gap-3"><span className="rounded-md bg-muted px-2 py-1 type-meta uppercase">{action}</span><ConfidenceMark value={finding.confidence} compact /></div>
+    <h3 className="mt-3 text-base font-semibold leading-5">{finding.title}</h3>
+    <p className="mt-1 type-caption line-clamp-2">{finding.signal}</p>
+    <div className="mt-4 text-foreground"><MiniTrend values={values} /></div>
+    <div className="mt-3 flex items-start justify-between gap-3 border-t border-border pt-3"><p className="text-sm font-medium leading-5 line-clamp-2">{finding.action}</p><ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></div>
+  </button>;
 }
 
 function LoadingLine() {
-  return <div className="h-20 animate-pulse rounded-xl bg-muted/70" aria-hidden="true" />;
+  return <div className="h-24 animate-pulse rounded-xl bg-muted/70" aria-hidden="true" />;
 }
 
 function DataroomContent() {
@@ -83,6 +115,19 @@ function DataroomContent() {
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }, [current.activities]);
 
+  const actionFindings = (current.analysis?.findings || []).filter(finding => finding.actionKind !== 'keep');
+  const attentionFindings = (actionFindings.length ? actionFindings : current.analysis?.findings || []).slice(0, 3);
+  const primaryTrainingTrend = (current.analysis?.exercises || []).find(exercise => exercise.state === 'declining')
+    || (current.analysis?.exercises || []).find(exercise => exercise.state === 'progressing')
+    || current.analysis?.exercises[0];
+
+  const weightSeries = current.analysis?.weight.points.map(point => point.trend) || [];
+  const proteinSeries = [...current.meals].sort((a, b) => a.date.localeCompare(b.date)).map(day => day.protein);
+  const sleepSeries = current.metrics.filter(metric => Number(metric.sleep_hours) > 0).sort((a, b) => a.date.localeCompare(b.date)).map(metric => Number(metric.sleep_hours));
+  const trainingSeries = primaryTrainingTrend?.exposures.map(exposure => exposure.e1rm || exposure.weight || exposure.reps) || [];
+  const coverageSeries = [coverage.weight.count / Math.max(days, 1), coverage.training.count / Math.max(days / 7, 1), coverage.nutrition.count / Math.max(days, 1), coverage.sleep.count / Math.max(days, 1), coverage.activity.count / Math.max(days / 7, 1)];
+  const seriesFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? weightSeries : finding.domain === 'training' ? trainingSeries : finding.domain === 'nutrition' ? proteinSeries : finding.domain === 'recovery' ? sleepSeries : coverageSeries;
+
   const weightValue = current.analysis?.weight.trendWeight != null ? `${current.analysis.weight.trendWeight.toFixed(1)} kg` : currentSummary.weightLatest != null ? `${currentSummary.weightLatest} kg` : 'No data';
   const trainingValue = currentSummary.workouts ? `${currentSummary.workouts} workouts` : 'No sessions';
   const nutritionValue = currentSummary.proteinPerLoggedDay != null ? `${currentSummary.proteinPerLoggedDay} g` : 'No logs';
@@ -90,32 +135,30 @@ function DataroomContent() {
   const activityValue = currentSummary.activityMinutes ? `${currentSummary.activityMinutes} min` : 'No activity';
 
   return <MainLayout wide>
-    <div className="mx-auto w-full max-w-[1000px] pb-12">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-5">
+    <div className="mx-auto w-full max-w-[1100px] pb-12">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <h1 className="type-page-title">Dataroom</h1>
         <div className="flex items-center gap-2"><DataroomRangeSelector /><button onClick={() => navigate('/app/settings')} aria-label="Open settings" className="h-11 w-11 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"><Settings2 className="h-5 w-5" /></button></div>
       </header>
 
-      <section className="border-y border-border py-5 mb-7" aria-labelledby="current-read-title">
-        <div className="flex items-start justify-between gap-4"><h2 id="current-read-title" className="text-xl sm:text-2xl font-semibold leading-tight max-w-2xl">{current.analysis?.headline || (current.isLoading ? 'Reading…' : 'Not enough evidence yet.')}</h2>{current.analysis && <ConfidenceMark value={current.analysis.confidence} compact />}</div>
-        <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-x-5 gap-y-5">
-          <Metric label="Bodyweight" value={current.analysis?.weight.trendWeight == null ? 'No data' : `${current.analysis.weight.trendWeight.toFixed(1)} kg`} detail={current.analysis?.weight.percentPerWeek == null ? undefined : `${current.analysis.weight.percentPerWeek > 0 ? '+' : ''}${current.analysis.weight.percentPerWeek}% / week`} />
-          <Metric label="Training" value={`${currentSummary.workouts} workouts`} detail={currentSummary.workouts ? `${(currentSummary.workouts / days * 7).toFixed(1)}/wk · ${currentSummary.sets} sets` : undefined} />
-          <Metric label="Key lifts" value={current.analysis ? `${progressing} improving` : 'Loading…'} detail={current.analysis ? `${stable} stable` : undefined} />
-          <Metric label="Protein" value={currentSummary.proteinPerLoggedDay == null ? 'No data' : `${currentSummary.proteinPerLoggedDay} g`} detail={currentSummary.proteinPerLoggedDay == null ? undefined : 'avg / logged day'} />
-          <Metric label="Sleep" value={currentSummary.sleepAverage == null ? 'No data' : `${currentSummary.sleepAverage.toFixed(1)} h`} detail={currentSummary.sleepNights ? `${currentSummary.sleepNights} nights` : undefined} />
+      <section className="mb-8" aria-labelledby="attention-title">
+        <div className="mb-3 flex items-end justify-between gap-3"><div><h2 id="attention-title" className="type-section-title">{actionFindings.length ? 'Needs Attention' : 'Current Read'}</h2>{current.analysis?.headline && <p className="type-caption mt-1 line-clamp-1">{current.analysis.headline}</p>}</div>{current.analysis && <ConfidenceMark value={current.analysis.confidence} compact />}</div>
+        {current.isLoading && !current.analysis ? <LoadingLine /> : attentionFindings.length ? <div className="grid gap-3 md:grid-cols-3">{attentionFindings.map(finding => <AttentionCard key={finding.id} finding={finding} values={seriesFor(finding)} onClick={() => navigate(findingPath(finding.domain))} />)}</div> : <div className="border-y border-border py-5 text-sm font-semibold">Not enough evidence yet.</div>}
+      </section>
+
+      <section className="mb-8" aria-labelledby="pulse-title">
+        <div className="mb-3"><h2 id="pulse-title" className="type-section-title">Pulse</h2></div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <MetricCard label="Bodyweight" value={weightValue} detail={current.analysis?.weight.percentPerWeek == null ? undefined : `${current.analysis.weight.percentPerWeek > 0 ? '+' : ''}${current.analysis.weight.percentPerWeek}% / week`} values={weightSeries} onClick={() => navigate('/app/dataroom/body')} />
+          <MetricCard label="Training" value={`${progressing} improving`} detail={`${stable} stable · ${currentSummary.workouts} workouts`} values={trainingSeries} onClick={() => navigate('/app/dataroom/training')} />
+          <MetricCard label="Protein" value={nutritionValue} detail={current.preferences?.daily_protein_goal ? `${current.preferences.daily_protein_goal} g target` : `${currentSummary.nutritionLoggedDays} logged days`} values={proteinSeries} onClick={() => navigate('/app/dataroom/nutrition')} />
+          <MetricCard label="Sleep" value={recoveryValue} detail={`${currentSummary.sleepNights} nights`} values={sleepSeries} onClick={() => navigate('/app/dataroom/recovery')} />
         </div>
       </section>
 
-      <div className="grid lg:grid-cols-[1.15fr_.85fr] gap-7 items-start">
+      <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-8 items-start">
         <div className="space-y-8">
-          <section aria-labelledby="coverage-title"><div className="mb-3"><h2 id="coverage-title" className="type-section-title">Coverage</h2></div><div className="divide-y divide-border border-y border-border">
-            <div className="py-3 flex justify-between gap-3 text-sm"><span>Bodyweight</span><span className="font-semibold tabular-nums">{coverage.weight.count} / {days}D</span></div>
-            <div className="py-3 flex justify-between gap-3 text-sm"><span>Training</span><span className="font-semibold tabular-nums">{coverage.training.count} workouts</span></div>
-            <div className="py-3 flex justify-between gap-3 text-sm"><span>Nutrition</span><span className="font-semibold tabular-nums">{coverage.nutrition.count} days</span></div>
-            <div className="py-3 flex justify-between gap-3 text-sm"><span>Sleep</span><span className="font-semibold tabular-nums">{coverage.sleep.count} nights</span></div>
-            <div className="py-3 flex justify-between gap-3 text-sm"><span>Activity</span><span className="font-semibold tabular-nums">{coverage.activity.count} sessions</span></div>
-          </div><p className="type-caption mt-2">Food days may be incomplete.</p></section>
+          <section aria-labelledby="body-title"><div className="mb-3 flex items-end justify-between gap-3"><h2 id="body-title" className="type-section-title">Bodyweight</h2><button onClick={() => navigate('/app/dataroom/body')} className="type-action text-muted-foreground hover:text-foreground">Open</button></div><WeightTrendChart metrics={current.metrics} target={current.preferences?.weight_goal} />{latestPhysique && <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border-y border-border py-3"><div><div className="type-caption">Waist</div><div className="mt-1 text-lg font-semibold tabular-nums">{latestPhysique.waist_cm == null ? '—' : `${latestPhysique.waist_cm} cm`}</div></div><div><div className="type-caption">Chest</div><div className="mt-1 text-lg font-semibold tabular-nums">{latestPhysique.chest_cm == null ? '—' : `${latestPhysique.chest_cm} cm`}</div></div><div><div className="type-caption">Left arm</div><div className="mt-1 text-lg font-semibold tabular-nums">{latestPhysique.upper_arm_left_cm == null ? '—' : `${latestPhysique.upper_arm_left_cm} cm`}</div></div><div><div className="type-caption">Right arm</div><div className="mt-1 text-lg font-semibold tabular-nums">{latestPhysique.upper_arm_right_cm == null ? '—' : `${latestPhysique.upper_arm_right_cm} cm`}</div></div></div>}</section>
 
           <section aria-labelledby="changed-title"><div className="mb-3"><h2 id="changed-title" className="type-section-title">vs Previous {days} Days</h2></div>{previous.isLoading && current.isLoading ? <LoadingLine /> : <div className="divide-y divide-border border-y border-border">
             <ChangeRow label="Bodyweight" current={currentSummary.weightLatest == null ? 'No data' : `${currentSummary.weightLatest} kg`} previous={previousSummary.weightLatest == null ? undefined : `${previousSummary.weightLatest} kg`} delta={currentSummary.weightChange == null ? null : `${currentSummary.weightChange > 0 ? '+' : ''}${currentSummary.weightChange} kg`} detail={`${currentSummary.weightMeasurements} measurements`} />
@@ -124,8 +167,10 @@ function DataroomContent() {
             <ChangeRow label="Protein" current={currentSummary.proteinPerLoggedDay == null ? 'No data' : `${currentSummary.proteinPerLoggedDay} g`} previous={previousSummary.proteinPerLoggedDay == null ? undefined : `${previousSummary.proteinPerLoggedDay} g`} delta={proteinDelta == null || proteinDelta === 0 ? null : `${proteinDelta > 0 ? '+' : ''}${proteinDelta} g`} detail={`${currentSummary.nutritionLoggedDays} days`} />
           </div>}</section>
 
-          <section aria-labelledby="body-title"><div className="mb-3 flex items-end justify-between gap-3"><h2 id="body-title" className="type-section-title">Bodyweight</h2><button onClick={() => navigate('/app/dataroom/body')} className="type-action text-muted-foreground hover:text-foreground">Open</button></div><WeightTrendChart metrics={current.metrics} target={current.preferences?.weight_goal} />{latestPhysique && <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border-y border-border py-3"><Metric label="Waist" value={latestPhysique.waist_cm == null ? '—' : `${latestPhysique.waist_cm} cm`} /><Metric label="Chest" value={latestPhysique.chest_cm == null ? '—' : `${latestPhysique.chest_cm} cm`} /><Metric label="Left arm" value={latestPhysique.upper_arm_left_cm == null ? '—' : `${latestPhysique.upper_arm_left_cm} cm`} /><Metric label="Right arm" value={latestPhysique.upper_arm_right_cm == null ? '—' : `${latestPhysique.upper_arm_right_cm} cm`} /></div>}</section>
+          <section aria-labelledby="progression-title"><div className="mb-3 flex items-end justify-between gap-3"><h2 id="progression-title" className="type-section-title">Exercise Progress</h2><button onClick={() => navigate('/app/dataroom/training')} className="type-action text-muted-foreground hover:text-foreground">All</button></div><div className="divide-y divide-border border-y border-border">{(current.analysis?.exercises || []).slice(0, 5).map(exercise => { const last = exercise.exposures.at(-1); return <button key={exercise.exercise} onClick={() => navigate(`/app/dataroom/exercise/${encodeURIComponent(exercise.exercise)}`)} className="w-full py-3 flex items-center gap-3 text-left hover:bg-muted/20"><span className="min-w-0 flex-1"><span className="block text-sm font-semibold truncate">{exercise.exercise}</span><span className="block type-caption mt-0.5">{last ? (last.weight > 0 ? `${last.weight} × ${last.reps}` : `${last.reps} reps`) : 'No comparable set'}</span></span><span className="text-xs font-semibold capitalize">{exercise.state === 'unclear' ? 'Needs data' : exercise.state}</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></button>; })}{!current.analysis?.exercises.length && <div className="py-5 type-caption">Not enough comparable history.</div>}</div></section>
+        </div>
 
+        <div className="space-y-8 lg:sticky lg:top-6">
           <section aria-labelledby="domains-title"><div className="mb-3"><h2 id="domains-title" className="type-section-title">Sections</h2></div><div className="divide-y divide-border border-y border-border">
             <DomainRow icon={Scale} title="Body & physique" value={weightValue} detail={latestPhysique ? `${current.physique.length} check-in${current.physique.length === 1 ? '' : 's'}` : 'Weight and measurements'} onClick={() => navigate('/app/dataroom/body')} />
             <DomainRow icon={Dumbbell} title="Training" value={trainingValue} detail={topMuscles.length ? topMuscles.map(muscle => muscle.muscle).join(', ') : 'Volume and progression'} onClick={() => navigate('/app/dataroom/training')} />
@@ -133,12 +178,14 @@ function DataroomContent() {
             <DomainRow icon={Moon} title="Recovery" value={recoveryValue} detail={`${current.readiness.length} readiness log${current.readiness.length === 1 ? '' : 's'}`} onClick={() => navigate('/app/dataroom/recovery')} />
             <DomainRow icon={Footprints} title="Activity & movement" value={activityValue} detail={activityKinds.length ? activityKinds.slice(0, 2).map(([kind, mins]) => `${kind} ${Math.round(mins)} min`).join(' · ') : latestMobility ? 'Mobility available' : 'Activity and mobility'} onClick={() => navigate('/app/dataroom/activity')} />
           </div></section>
-        </div>
 
-        <div className="space-y-8 lg:sticky lg:top-6">
-          <section aria-labelledby="matters-title"><div className="mb-3"><h2 id="matters-title" className="type-section-title">Findings</h2></div>{current.analysis?.findings.length ? <div className="divide-y divide-border border-y border-border">{current.analysis.findings.map(finding => <Finding key={finding.id} finding={finding} />)}</div> : current.isLoading ? <LoadingLine /> : <div className="border-y border-border py-5"><p className="text-sm font-semibold">No supported change yet.</p><p className="type-caption mt-1">Keep logging.</p></div>}</section>
-
-          <section aria-labelledby="progression-title"><div className="mb-3 flex items-end justify-between gap-3"><h2 id="progression-title" className="type-section-title">Exercise Progress</h2><button onClick={() => navigate('/app/dataroom/training')} className="type-action text-muted-foreground hover:text-foreground">All</button></div><div className="divide-y divide-border border-y border-border">{(current.analysis?.exercises || []).slice(0, 5).map(exercise => { const last = exercise.exposures.at(-1); return <button key={exercise.exercise} onClick={() => navigate(`/app/dataroom/exercise/${encodeURIComponent(exercise.exercise)}`)} className="w-full py-3 flex items-center gap-3 text-left hover:bg-muted/20"><span className="min-w-0 flex-1"><span className="block text-sm font-semibold truncate">{exercise.exercise}</span><span className="block type-caption mt-0.5">{last ? (last.weight > 0 ? `${last.weight} × ${last.reps}` : `${last.reps} reps`) : 'No comparable set'}</span></span><span className="text-xs font-semibold capitalize">{exercise.state === 'unclear' ? 'Needs data' : exercise.state}</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></button>; })}{!current.analysis?.exercises.length && <div className="py-5 type-caption">Not enough comparable history.</div>}</div></section>
+          <section aria-labelledby="coverage-title"><div className="mb-3"><h2 id="coverage-title" className="type-section-title">Coverage</h2></div><div className="divide-y divide-border border-y border-border">
+            <div className="py-3 flex justify-between gap-3 text-sm"><span>Bodyweight</span><span className="font-semibold tabular-nums">{coverage.weight.count}</span></div>
+            <div className="py-3 flex justify-between gap-3 text-sm"><span>Training</span><span className="font-semibold tabular-nums">{coverage.training.count}</span></div>
+            <div className="py-3 flex justify-between gap-3 text-sm"><span>Nutrition</span><span className="font-semibold tabular-nums">{coverage.nutrition.count} days</span></div>
+            <div className="py-3 flex justify-between gap-3 text-sm"><span>Sleep</span><span className="font-semibold tabular-nums">{coverage.sleep.count} nights</span></div>
+            <div className="py-3 flex justify-between gap-3 text-sm"><span>Activity</span><span className="font-semibold tabular-nums">{coverage.activity.count}</span></div>
+          </div></section>
 
           <section aria-labelledby="more-title"><div className="mb-3"><h2 id="more-title" className="type-section-title">More</h2></div><div className="divide-y divide-border border-y border-border">
             <DomainRow icon={Activity} title="Timeline" value="History" detail="Chronological log" onClick={() => navigate('/app/dataroom/timeline')} />
