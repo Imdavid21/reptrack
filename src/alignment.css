@@ -18,31 +18,27 @@
 
 /* Equal-height overview cards should align their internal baselines even when
    one finding or metric needs an extra line of copy. */
-section[aria-labelledby="attention-title"] > .grid > button {
-  display: flex;
-  height: 100%;
-  min-width: 0;
-  flex-direction: column;
-}
-
-section[aria-labelledby="attention-title"] > .grid > button > h3 {
-  min-height: 2.5rem;
-}
-
-section[aria-labelledby="attention-title"] > .grid > button > h3 + p {
-  min-height: 2rem;
-}
-
-section[aria-labelledby="attention-title"] > .grid > button > div:last-child {
-  margin-top: auto;
-  min-height: 3.25rem;
-}
-
+section[aria-labelledby="attention-title"] > .grid > button,
 section[aria-labelledby="pulse-title"] > .grid > button {
   display: flex;
   height: 100%;
   min-width: 0;
   flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  section[aria-labelledby="attention-title"] > .grid > button > h3 {
+    min-height: 2.5rem;
+  }
+
+  section[aria-labelledby="attention-title"] > .grid > button > h3 + p {
+    min-height: 2rem;
+  }
+
+  section[aria-labelledby="attention-title"] > .grid > button > div:last-child {
+    margin-top: auto;
+    min-height: 3.25rem;
+  }
 }
 
 section[aria-labelledby="pulse-title"] > .grid > button > div:last-child {
