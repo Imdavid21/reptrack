@@ -33,11 +33,11 @@ export default function AdvancedSimulator() {
     if (!touched.current.deficit && defaultDeficit >= 0) setDeficit(defaultDeficit);
   }, [defaultDeficit]);
 
-  if (!settings.enabled) return <MainLayout showBack backTo="/app/settings" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><div className="type-page-title">Advanced Mode is off</div></div></MainLayout>;
+  if (!settings.enabled) return <MainLayout showBack backTo="/app/dataroom/lab" hideNav><div className="mx-auto max-w-[680px] py-16 text-center"><div className="type-page-title">Performance Lab is off</div></div></MainLayout>;
 
-  return <MainLayout showBack backTo="/app/lab" hideNav>
+  return <MainLayout showBack backTo="/app/dataroom/lab" hideNav>
     <div className="mx-auto max-w-[680px] pb-12">
-      <header className="mb-6"><div className="type-eyebrow">Advanced</div><h1 className="type-page-title mt-1">What if</h1></header>
+      <header className="mb-6"><h1 className="type-page-title">What if</h1></header>
 
       <div className="grid grid-cols-3 gap-px rounded-[20px] overflow-hidden border border-border bg-border mb-6">
         <Result label="Calories" value={`${result.calories}`} />
