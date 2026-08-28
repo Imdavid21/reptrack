@@ -58,9 +58,6 @@ function QueryAccountBoundary({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const previousUserId = useRef<string | null | undefined>(undefined);
 
-  // React Query is process-wide. Clear it before paint whenever the auth
-  // identity changes so an unscoped legacy key can never flash data from the
-  // previous account while its replacement query starts.
   useLayoutEffect(() => {
     if (loading) return;
     const currentUserId = user?.id ?? null;
@@ -75,7 +72,10 @@ function AuthenticatedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <RouteFallback />;
-  if (!user) return <Navigate to="/signin" replace state={{ from: `${location.pathname}${location.search}` }} />;
+  if (!user) {
+    const destination = `${location.pathname}${location.search}`;
+    return <Navigate to={`/signin?redirect=${encodeURIComponent(destination)}`} replace />;
+  }
   return <>{children}</>;
 }
 
