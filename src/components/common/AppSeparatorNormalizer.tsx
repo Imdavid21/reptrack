@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SEPARATOR = /\s·\s/g;
+const SEPARATOR = /\s*·\s*/g;
 const SKIP_SELECTOR = 'script, style, code, pre, textarea';
 
 function normalizeNode(node: Node) {
