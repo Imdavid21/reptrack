@@ -10,7 +10,7 @@ function ExploreContent() {
   if (!data.analysis) return <div className="border-y border-border py-6"><p className="text-sm font-semibold">Deeper analysis is not available yet.</p><p className="type-caption mt-1">The main Dataroom remains usable; complete more logs or retry this view later.</p></div>;
 
   return <div className="space-y-6">
-    <section className="border-y border-border py-5"><div className="type-eyebrow">Explore</div><h2 className="type-section-title mt-1">Advanced evidence, not another dashboard</h2><p className="type-supporting mt-2 max-w-2xl">These views expose the calculations beneath Dataroom. Population volume bands remain references, nutrition is limited to logged evidence, and correlations are not treated as causation.</p></section>
+    <section className="border-y border-border py-5"><div className="type-eyebrow">Explore</div><h2 className="type-section-title mt-1">Advanced Charts</h2><p className="type-supporting mt-2 max-w-2xl">These views expose the calculations beneath Dataroom. Population volume bands remain references, nutrition is limited to logged evidence, and correlations are not treated as causation.</p></section>
     <DataroomDeepDives
       analysis={data.analysis}
       meals={data.meals}

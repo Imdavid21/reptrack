@@ -19,9 +19,9 @@ function ActivityContent() {
   const movementDelta = (latest: number | null, first: number | null) => latest != null && first != null && data.mobility.length > 1 ? Number((latest - first).toFixed(1)) : null;
 
   return <div className="space-y-8">
-    <section><div className="mb-3"><div className="type-eyebrow">Recorded activity</div><h2 className="type-section-title mt-1">Time by activity type</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} recorded session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No manual activities in this range.</div>}</section>
+    <section><div className="mb-3"><div className="type-eyebrow">Activity</div><h2 className="type-section-title mt-1">Time by Activity Type</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} recorded session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No manual activities in this range.</div>}</section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Movement</div><h2 className="type-section-title mt-1">Mobility assessments</h2><p className="type-caption mt-1">Assessments are compared only when they were actually recorded. RepTrack does not interpolate between tests.</p></div>{latestMobility ? <div className="divide-y divide-border border-y border-border">
+    <section><div className="mb-3"><div className="type-eyebrow">Movement</div><h2 className="type-section-title mt-1">Mobility Assessments</h2><p className="type-caption mt-1">Assessments are compared only when they were actually recorded. RepTrack does not interpolate between tests.</p></div>{latestMobility ? <div className="divide-y divide-border border-y border-border">
       {[
         ['Knee-to-wall · left', latestMobility.knee_to_wall_left_cm, firstMobility?.knee_to_wall_left_cm, 'cm'],
         ['Knee-to-wall · right', latestMobility.knee_to_wall_right_cm, firstMobility?.knee_to_wall_right_cm, 'cm'],
@@ -35,5 +35,5 @@ function ActivityContent() {
 }
 
 export default function DataroomActivity() {
-  return <DataroomPageShell eyebrow="Dataroom" title="Activity & movement" description="Recorded walking, running, cycling, and structured mobility assessments without an arbitrary activity score."><ActivityContent /></DataroomPageShell>;
+  return <DataroomPageShell eyebrow="Dataroom" title="Activity & Movement" description="Recorded walking, running, cycling, and structured mobility assessments without an arbitrary activity score."><ActivityContent /></DataroomPageShell>;
 }
