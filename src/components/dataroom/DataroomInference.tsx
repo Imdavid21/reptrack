@@ -64,8 +64,33 @@ function relation(input: Omit<Relation, 'r' | 'effect' | 'score'>): Relation | n
     pairs: clean,
     r,
     effect: effect(clean),
-    score: Math.abs(r) * Math.min(1.6, Math.sqrt(clean.length / 5)),
+    score: Math.abs(r) * Math.min(1.7, Math.sqrt(clean.length / 5)),
   };
+}
+
+function nextObserved(map: Map<string, number>, date: string, maxDays = 2) {
+  for (let lag = 1; lag <= maxDays; lag++) {
+    const value = map.get(dateKey(date, lag));
+    if (value != null) return { value, lag };
+  }
+  return null;
+}
+
+function intervalPairs(source: Map<string, number>, weightPoints: Array<{ date: string; trend: number }>) {
+  const sorted = [...weightPoints].sort((a, b) => a.date.localeCompare(b.date));
+  const pairs: Pair[] = [];
+  for (let index = 1; index < sorted.length; index++) {
+    const previous = sorted[index - 1];
+    const current = sorted[index];
+    const days = Math.max(1, differenceInCalendarDays(parseISO(current.date), parseISO(previous.date)));
+    const values: number[] = [];
+    for (let offset = 0; offset < days; offset++) {
+      const value = source.get(dateKey(previous.date, offset));
+      if (value != null) values.push(value);
+    }
+    if (values.length) pairs.push({ date: current.date, x: mean(values), y: current.trend - previous.trend });
+  }
+  return pairs;
 }
 
 function strength(r: number) {
@@ -102,7 +127,7 @@ function ScatterMini({ points }: { points: Pair[] }) {
 
 function RelationCard({ item }: { item: Relation }) {
   const positive = item.r >= 0;
-  const conclusion = `${positive ? 'Higher' : 'Higher'} ${item.xLabel.toLowerCase()} ${item.kind === 'temporal' ? 'was followed by' : 'tracked with'} ${positive ? 'higher' : 'lower'} ${item.yLabel.toLowerCase()}.`;
+  const conclusion = `Higher ${item.xLabel.toLowerCase()} ${item.kind === 'temporal' ? 'was followed by' : 'tracked with'} ${positive ? 'higher' : 'lower'} ${item.yLabel.toLowerCase()}.`;
   return <article className="rounded-[18px] border border-border bg-card p-4">
     <div className="flex items-start justify-between gap-3">
       <div><h3 className="text-sm font-semibold">{item.title}</h3><p className="type-caption mt-0.5">{item.lag}</p></div>
@@ -116,7 +141,7 @@ function RelationCard({ item }: { item: Relation }) {
     </div>
     <p className="mt-3 text-sm font-medium leading-5">{conclusion}</p>
     {item.effect != null && <p className="type-caption mt-1">High-vs-low split: {item.effect > 0 ? '+' : ''}{fmt(item.effect)}{item.yUnit ? ` ${item.yUnit}` : ''}.</p>}
-    <p className="type-caption mt-2">{item.kind === 'temporal' ? 'Timing makes this a stronger causal candidate, but passive logs cannot prove cause.' : 'Same-period association only.'}</p>
+    <p className="type-caption mt-2">{item.kind === 'temporal' ? 'Timing strengthens the hypothesis, but passive logs cannot prove cause.' : 'Same-period association only.'}</p>
   </article>;
 }
 
@@ -155,8 +180,9 @@ export function DataroomInference(props: Props) {
     const sleep = new Map(props.metrics.filter(row => Number(row.sleep_hours) > 0).map(row => [row.date, Number(row.sleep_hours)]));
     const readiness = new Map(props.readiness.filter(row => row.readiness != null).map(row => [row.checkin_date, Number(row.readiness)]));
     const meals = new Map(props.meals.map(row => [row.date, row]));
+    const calories = new Map(props.meals.map(row => [row.date, Number(row.calories)]));
+    const protein = new Map(props.meals.map(row => [row.date, Number(row.protein)]));
     const energy = new Map(props.energy.filter(row => row.intake != null && row.expenditure != null).map(row => [row.date, Number(row.intake) - Number(row.expenditure)]));
-    const trend = new Map(props.weightPoints.map(row => [row.date, row.trend]));
     const activity = new Map<string, number>();
     for (const row of props.activities) activity.set(row.date, (activity.get(row.date) || 0) + Number(row.duration_minutes || 0));
     const training = new Map<string, number>();
@@ -174,43 +200,63 @@ export function DataroomInference(props: Props) {
       pairs: [...sleep.entries()].filter(([date]) => readiness.has(date)).map(([date, x]) => ({ date, x, y: readiness.get(date)! })),
     }));
     push(relation({
-      id: 'sleep-next-training', title: 'Sleep → next-day training volume', xLabel: 'Sleep', yLabel: 'Training volume', yUnit: 'kg·reps', kind: 'temporal', lag: '1-day lag',
-      pairs: [...sleep.entries()].filter(([date]) => training.has(dateKey(date, 1))).map(([date, x]) => ({ date, x, y: training.get(dateKey(date, 1))! })),
+      id: 'sleep-next-readiness', title: 'Sleep → later readiness', xLabel: 'Sleep', yLabel: 'Readiness', yUnit: '/10', kind: 'temporal', lag: 'Next observed day within 2 days',
+      pairs: [...sleep.entries()].flatMap(([date, x]) => { const next = nextObserved(readiness, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
     }));
     push(relation({
-      id: 'protein-next-training', title: 'Protein → next-day training volume', xLabel: 'Protein', yLabel: 'Training volume', yUnit: 'kg·reps', kind: 'temporal', lag: '1-day lag',
-      pairs: [...meals.entries()].filter(([date]) => training.has(dateKey(date, 1))).map(([date, meal]) => ({ date, x: meal.protein, y: training.get(dateKey(date, 1))! })),
+      id: 'sleep-next-training', title: 'Sleep → next training session', xLabel: 'Sleep', yLabel: 'Training volume', yUnit: 'kg·reps', kind: 'temporal', lag: 'Next session within 2 days',
+      pairs: [...sleep.entries()].flatMap(([date, x]) => { const next = nextObserved(training, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
     }));
     push(relation({
-      id: 'energy-next-weight', title: 'Energy balance → weight-trend change', xLabel: 'Energy balance', yLabel: 'Weight trend change', yUnit: 'kg', kind: 'temporal', lag: '1-day lag',
-      pairs: [...energy.entries()].filter(([date]) => trend.has(date) && trend.has(dateKey(date, 1))).map(([date, x]) => ({ date, x, y: trend.get(dateKey(date, 1))! - trend.get(date)! })),
+      id: 'protein-next-training', title: 'Protein → next training session', xLabel: 'Protein', yLabel: 'Training volume', yUnit: 'kg·reps', kind: 'temporal', lag: 'Next session within 2 days',
+      pairs: [...protein.entries()].flatMap(([date, x]) => { const next = nextObserved(training, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
     }));
     push(relation({
-      id: 'activity-next-sleep', title: 'Activity → next-night sleep', xLabel: 'Activity minutes', yLabel: 'Sleep', yUnit: 'h', kind: 'temporal', lag: '1-day lag',
-      pairs: [...activity.entries()].filter(([date]) => sleep.has(dateKey(date, 1))).map(([date, x]) => ({ date, x, y: sleep.get(dateKey(date, 1))! })),
+      id: 'protein-readiness', title: 'Protein → later readiness', xLabel: 'Protein', yLabel: 'Readiness', yUnit: '/10', kind: 'temporal', lag: 'Next observed day within 2 days',
+      pairs: [...protein.entries()].flatMap(([date, x]) => { const next = nextObserved(readiness, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
+    }));
+    push(relation({
+      id: 'activity-next-sleep', title: 'Activity → later sleep', xLabel: 'Activity minutes', yLabel: 'Sleep', yUnit: 'h', kind: 'temporal', lag: 'Next observed night within 2 days',
+      pairs: [...activity.entries()].flatMap(([date, x]) => { const next = nextObserved(sleep, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
+    }));
+    push(relation({
+      id: 'activity-readiness', title: 'Activity → later readiness', xLabel: 'Activity minutes', yLabel: 'Readiness', yUnit: '/10', kind: 'temporal', lag: 'Next observed day within 2 days',
+      pairs: [...activity.entries()].flatMap(([date, x]) => { const next = nextObserved(readiness, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
+    }));
+    push(relation({
+      id: 'readiness-training', title: 'Readiness vs training volume', xLabel: 'Readiness', yLabel: 'Training volume', yUnit: 'kg·reps', kind: 'association', lag: 'Same day',
+      pairs: [...readiness.entries()].filter(([date]) => training.has(date)).map(([date, x]) => ({ date, x, y: training.get(date)! })),
     }));
     push(relation({
       id: 'load-readiness', title: 'Recent training load → readiness', xLabel: '3-day training load', yLabel: 'Readiness', yUnit: '/10', kind: 'temporal', lag: 'Previous 3 days',
-      pairs: [...readiness.entries()].map(([date, y]) => ({
-        date,
-        y,
-        x: [1, 2, 3].reduce((sum, offset) => sum + (training.get(dateKey(date, -offset)) || 0), 0),
-      })).filter(point => point.x > 0),
+      pairs: [...readiness.entries()].map(([date, y]) => ({ date, y, x: [1, 2, 3].reduce((sum, offset) => sum + (training.get(dateKey(date, -offset)) || 0), 0) })).filter(point => point.x > 0),
     }));
     push(relation({
-      id: 'hydration-next-weight', title: 'Hydration → next-day scale change', xLabel: 'Water', yLabel: 'Scale change', yUnit: 'kg', kind: 'temporal', lag: '1-day lag',
-      pairs: [...hydration.entries()].filter(([date]) => trend.has(date) && trend.has(dateKey(date, 1))).map(([date, x]) => ({ date, x, y: trend.get(dateKey(date, 1))! - trend.get(date)! })),
+      id: 'load-sleep', title: 'Training load → later sleep', xLabel: 'Training volume', yLabel: 'Sleep', yUnit: 'h', kind: 'temporal', lag: 'Next observed night within 2 days',
+      pairs: [...training.entries()].flatMap(([date, x]) => { const next = nextObserved(sleep, date, 2); return next ? [{ date, x, y: next.value }] : []; }),
+    }));
+    push(relation({
+      id: 'energy-weight', title: 'Energy balance → weight-trend change', xLabel: 'Average energy balance', yLabel: 'Weight trend change', yUnit: 'kg', kind: 'temporal', lag: 'Between consecutive weigh-ins',
+      pairs: intervalPairs(energy, props.weightPoints),
+    }));
+    push(relation({
+      id: 'calories-weight', title: 'Calories → weight-trend change', xLabel: 'Average calories', yLabel: 'Weight trend change', yUnit: 'kg', kind: 'temporal', lag: 'Between consecutive weigh-ins',
+      pairs: intervalPairs(calories, props.weightPoints),
+    }));
+    push(relation({
+      id: 'hydration-weight', title: 'Hydration → scale-trend change', xLabel: 'Average water', yLabel: 'Weight trend change', yUnit: 'kg', kind: 'temporal', lag: 'Between consecutive weigh-ins',
+      pairs: intervalPairs(hydration, props.weightPoints),
     }));
     return result.sort((a, b) => b.score - a.score);
   }, [props]);
 
   const useful = relations.filter(item => Math.abs(item.r) >= 0.25).slice(0, 6);
-  const shown = useful.length ? useful : relations.slice(0, 3);
+  const shown = useful.length ? useful : relations.slice(0, 4);
   const experiments = (props.experiments || []).filter(item => item.status === 'active' || item.status === 'completed').slice(0, 5);
 
   return <div className="space-y-8">
     <section>
-      <div className="mb-3 flex items-end justify-between gap-3"><div><h2 className="type-section-title">Conclusions</h2><p className="type-caption mt-1">Ranked from your matched cross-domain data.</p></div><span className="type-meta">{relations.length} testable relationships</span></div>
+      <div className="mb-3 flex items-end justify-between gap-3"><div><h2 className="type-section-title">Conclusions</h2><p className="type-caption mt-1">Ranked from matched cross-domain data and short lag tests.</p></div><span className="type-meta">{relations.length} relationships tested</span></div>
       {shown.length ? <div className="grid gap-3 md:grid-cols-2">{shown.map(item => <RelationCard key={item.id} item={item} />)}</div> : <div className="border-y border-border py-6 type-caption">More overlapping days are needed to test relationships.</div>}
     </section>
 
@@ -222,7 +268,7 @@ export function DataroomInference(props: Props) {
         const delta = current && item.baseline != null ? current.value - item.baseline : null;
         return <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-4"><div><div className="flex items-center gap-2"><span className="text-sm font-semibold">{item.name}</span><span className="rounded-md bg-muted px-2 py-1 type-meta">Experiment</span></div><div className="type-caption mt-1">{item.metric} · day {age + 1}</div><p className="type-caption mt-2">{item.baseline == null ? 'Add a baseline to evaluate change.' : current ? `Baseline ${fmt(item.baseline)} → live ${fmt(current.value)} ${current.unit}${delta == null ? '' : ` (${delta > 0 ? '+' : ''}${fmt(delta)})`}.` : 'Metric is not yet mapped to a live RepTrack signal.'}</p></div><div className="text-right"><div className="type-caption">Target</div><div className="text-sm font-semibold tabular-nums">{item.target == null ? '—' : fmt(item.target)}</div></div></div>;
       })}</div> : <div className="border-y border-border py-6 type-caption">Start an experiment in Performance Lab to create intervention-based evidence.</div>}
-      <p className="type-caption mt-3">RepTrack should only call a result causal after a defined intervention, baseline, repeated observations, and a stable comparison window. These cards do not overstate passive correlations.</p>
+      <p className="type-caption mt-3">RepTrack should only call a result causal after a defined intervention, baseline, repeated observations, and a stable comparison window. Passive correlations are never promoted to causation automatically.</p>
     </section>
   </div>;
 }
