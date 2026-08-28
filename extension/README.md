@@ -1,31 +1,35 @@
-# RepTrack Quick Log Chrome Extension
+# RepTrack Chrome Extension
 
-A Manifest V3 capture surface for fast food and water logging. It uses the existing RepTrack Supabase session and MCP endpoint, so extension logs land in the same `meals` and `water_logs` data used by the main app.
+A minimal Manifest V3 extension for logging food and water into RepTrack through the existing MCP write tools.
 
-## V1
+## What it does
 
 - Natural-language food logging through `parse-food-text` -> MCP `log_meal`
 - Food-photo analysis through `analyze-food` -> MCP `log_meal`
 - One-tap 250 / 500 / 750 ml hydration logging through MCP `log_water`
 - Custom water amount
-- Today's calories, protein, and water through MCP `get_nutrition`
-- RepTrack light design tokens and domain colors
-- No separate extension credentials. The content script captures the signed-in RepTrack Supabase session into extension-local storage.
+- One-time Connect button that opens RepTrack auth and captures the resulting browser session
+- Extension-only water reminders at 30, 60, 90, or 120 minute intervals
+- Reminders only notify between 09:00 and 22:00 local time
 
 ## Install locally
 
 1. Open `chrome://extensions`.
 2. Enable Developer mode.
 3. Choose **Load unpacked** and select this `extension/` directory.
-4. Open `https://reptrack.fitness` and sign in once. Reload the page after first installing the extension so the content script can capture the session.
-5. Pin **RepTrack Quick Log** and open it from the toolbar.
+4. Pin **RepTrack**.
+5. Open the extension and press **Connect** once.
+6. Sign in to RepTrack in the tab that opens. The extension captures the resulting session automatically.
+7. Reopen the extension and it should show **Connected**.
 
 ## Authentication
 
-The extension never asks for an API key or password. `content.js` reads the existing Supabase access token only on RepTrack origins and saves it in `chrome.storage.local`. MCP validates the bearer token server-side and RepTrack Row Level Security remains in force.
+The extension does not ask for an API key or store a RepTrack password. The Connect action opens RepTrack's normal auth surface. `content.js` only runs on RepTrack origins and copies the resulting Supabase access token into extension-local storage. All food and water writes still go through the authenticated RepTrack MCP endpoint and Row Level Security remains in force.
 
-If the token expires, open or reload the signed-in RepTrack app. Supabase refreshes the browser session and the content script captures the current access token again.
+If the session expires, press **Connect** again.
 
-## Deliberate V1 limit
+## Water reminders
 
-Undo/delete is not included. RepTrack's MCP write surface deliberately exposes no delete operation, including for meals and hydration. A future undo should be implemented server-side as a narrowly scoped MCP tool that can only reverse a Quick Log write by its returned ID/client key, rather than bypassing MCP or Row Level Security from the extension.
+Reminders belong only to the Chrome extension. They do not create RepTrack reminders, database rows, or app notifications. Chrome alarms and notifications are stored and scheduled locally by the extension.
+
+The default is enabled every 60 minutes. The popup can disable reminders or switch to 30, 60, 90, or 120 minutes.
