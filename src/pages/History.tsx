@@ -32,7 +32,7 @@ type MetricEdit = {
   minutes: number;
 };
 
-function TimelineContent() {
+function HistoryContent() {
   const navigate = useNavigate();
   const { days, dateRange } = useDataroomRange();
   const { from, to } = dateRange;
@@ -93,7 +93,7 @@ function TimelineContent() {
 
   return <MainLayout wide showBack backTo="/app/dataroom">
     <div className="mx-auto w-full max-w-[900px] pb-10">
-      <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><h1 className="type-page-title">Timeline</h1><DataroomRangeSelector /></header>
+      <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><h1 className="type-page-title">History</h1><DataroomRangeSelector /></header>
 
       {daysWithData.length === 0 ? <section className="rounded-[20px] border border-border bg-card px-5 py-12 text-center"><p className="font-semibold">No records in this range.</p><button onClick={() => navigate('/app/train')} className="mt-4 min-h-11 text-sm font-semibold underline underline-offset-4">Start workout</button></section> : <div className="border-y border-border divide-y divide-border">
         {daysWithData.map(date => {
@@ -119,11 +119,11 @@ function TimelineContent() {
       </div>}
 
       <EditActivityDialog burn={editingBurn} onClose={() => setEditingBurn(null)} onSave={input => updateBurn.mutateAsync(input)} onDelete={id => deleteBurn.mutateAsync(id)} />
-      <Drawer open={!!metricEdit} onOpenChange={open => !open && setMetricEdit(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="px-5 text-left"><DrawerTitle>{metricEdit?.type === 'weight' ? 'Bodyweight' : 'Sleep'}{metricEdit ? ` · ${format(parseDateKey(metricEdit.date), 'MMM d')}` : ''}</DrawerTitle></DrawerHeader>{metricEdit && <div className="px-5 pb-[max(24px,env(safe-area-inset-bottom))] space-y-5">{metricEdit.type === 'weight' ? <div><label htmlFor="timeline-weight" className="type-caption">Weight (kg)</label><Input id="timeline-weight" autoFocus type="number" inputMode="decimal" step="0.01" value={metricEdit.weight} onChange={event => setMetricEdit(value => value ? { ...value, weight: event.target.value } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div> : <div className="grid grid-cols-2 gap-3"><div><label htmlFor="timeline-sleep-hours" className="type-caption">Hours</label><Input id="timeline-sleep-hours" autoFocus type="number" inputMode="numeric" min="0" max="23" value={metricEdit.hours} onChange={event => setMetricEdit(value => value ? { ...value, hours: Math.max(0, Math.min(23, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div><div><label htmlFor="timeline-sleep-minutes" className="type-caption">Minutes</label><Input id="timeline-sleep-minutes" type="number" inputMode="numeric" min="0" max="59" value={metricEdit.minutes} onChange={event => setMetricEdit(value => value ? { ...value, minutes: Math.max(0, Math.min(59, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div></div>}<button onClick={saveMetric} disabled={isUpserting} className="w-full min-h-14 rounded-2xl bg-foreground text-background font-semibold disabled:opacity-50">{isUpserting ? 'Saving…' : 'Save'}</button></div>}</DrawerContent></Drawer>
+      <Drawer open={!!metricEdit} onOpenChange={open => !open && setMetricEdit(null)}><DrawerContent className="rounded-t-[28px]"><DrawerHeader className="px-5 text-left"><DrawerTitle>{metricEdit?.type === 'weight' ? 'Bodyweight' : 'Sleep'}{metricEdit ? ` · ${format(parseDateKey(metricEdit.date), 'MMM d')}` : ''}</DrawerTitle></DrawerHeader>{metricEdit && <div className="px-5 pb-[max(24px,env(safe-area-inset-bottom))] space-y-5">{metricEdit.type === 'weight' ? <div><label htmlFor="history-weight" className="type-caption">Weight (kg)</label><Input id="history-weight" autoFocus type="number" inputMode="decimal" step="0.01" value={metricEdit.weight} onChange={event => setMetricEdit(value => value ? { ...value, weight: event.target.value } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div> : <div className="grid grid-cols-2 gap-3"><div><label htmlFor="history-sleep-hours" className="type-caption">Hours</label><Input id="history-sleep-hours" autoFocus type="number" inputMode="numeric" min="0" max="23" value={metricEdit.hours} onChange={event => setMetricEdit(value => value ? { ...value, hours: Math.max(0, Math.min(23, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div><div><label htmlFor="history-sleep-minutes" className="type-caption">Minutes</label><Input id="history-sleep-minutes" type="number" inputMode="numeric" min="0" max="59" value={metricEdit.minutes} onChange={event => setMetricEdit(value => value ? { ...value, minutes: Math.max(0, Math.min(59, Number(event.target.value))) } : null)} className="mt-1 h-14 text-xl tabular-nums"/></div></div>}<button onClick={saveMetric} disabled={isUpserting} className="w-full min-h-14 rounded-2xl bg-foreground text-background font-semibold disabled:opacity-50">{isUpserting ? 'Saving…' : 'Save'}</button></div>}</DrawerContent></Drawer>
     </div>
   </MainLayout>;
 }
 
 export default function History() {
-  return <DataroomRangeProvider><TimelineContent /></DataroomRangeProvider>;
+  return <DataroomRangeProvider><HistoryContent /></DataroomRangeProvider>;
 }
