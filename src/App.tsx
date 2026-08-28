@@ -100,7 +100,8 @@ function AppRoutes() {
         <Route path="/app/train/current" element={<AdaptiveWorkout />} />
 
         <Route path="/app/dataroom" element={<Dataroom />} />
-        <Route path="/app/dataroom/timeline" element={<History />} />
+        <Route path="/app/dataroom/history" element={<History />} />
+        <Route path="/app/dataroom/timeline" element={<Navigate to="/app/dataroom/history" replace />} />
         <Route path="/app/dataroom/workout/:workoutId" element={<WorkoutDetail />} />
         <Route path="/app/dataroom/exercise/:exercise" element={<DataroomExercise />} />
         <Route path="/app/dataroom/body" element={<DataroomBody />} />
@@ -137,7 +138,7 @@ function AppRoutes() {
         <Route path="/app/chat" element={<Navigate to="/app/settings/mcp" replace />} />
 
         <Route path="/app/progress" element={<Navigate to="/app/dataroom" replace />} />
-        <Route path="/app/progress/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/app/progress/history" element={<Navigate to="/app/dataroom/history" replace />} />
         <Route path="/app/progress/workout/:workoutId" element={<DataroomWorkoutRedirect />} />
         <Route path="/app/progress/analytics" element={<LegacyAnalyticsRedirect />} />
         <Route path="/app/progress/dataroom" element={<Navigate to="/app/dataroom" replace />} />
@@ -145,7 +146,7 @@ function AppRoutes() {
         <Route path="/app/progress/nutrition" element={<Navigate to="/app/dataroom/nutrition" replace />} />
         <Route path="/app/progress/training" element={<Navigate to="/app/dataroom/training" replace />} />
         <Route path="/app/progress/recovery" element={<Navigate to="/app/dataroom/recovery" replace />} />
-        <Route path="/app/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/app/history" element={<Navigate to="/app/dataroom/history" replace />} />
         <Route path="/app/history/:workoutId" element={<DataroomWorkoutRedirect />} />
         <Route path="/app/insights" element={<Navigate to="/app/dataroom/explore" replace />} />
         <Route path="/app/lifecycle" element={<Navigate to="/app/settings/advanced/lifecycle" replace />} />
@@ -157,7 +158,7 @@ function AppRoutes() {
         <Route path="/analytics" element={<LegacyAnalyticsRedirect />} />
         <Route path="/dataroom" element={<Navigate to="/app/dataroom" replace />} />
         <Route path="/health" element={<Navigate to="/app/dataroom/recovery" replace />} />
-        <Route path="/history" element={<Navigate to="/app/dataroom/timeline" replace />} />
+        <Route path="/history" element={<Navigate to="/app/dataroom/history" replace />} />
         <Route path="/history/:workoutId" element={<DataroomWorkoutRedirect />} />
         <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
 
