@@ -23,9 +23,9 @@ function BodyContent() {
       <Value label="Rate" value={weight?.percentPerWeek == null ? 'Need more data' : `${weight.percentPerWeek > 0 ? '+' : ''}${weight.percentPerWeek.toFixed(2)}% / week`} detail="Scale trend, not body-fat change" />
     </section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Bodyweight</div><h2 className="type-section-title mt-1">Raw measurements and smoothed trend</h2></div><WeightTrendChart metrics={data.metrics} target={data.preferences?.weight_goal} /></section>
+    <section><div className="mb-3"><div className="type-eyebrow">Bodyweight</div><h2 className="type-section-title mt-1">Bodyweight Trend</h2></div><WeightTrendChart metrics={data.metrics} target={data.preferences?.weight_goal} /></section>
 
-    <section><div className="mb-3"><div className="type-eyebrow">Physique</div><h2 className="type-section-title mt-1">Recorded check-ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
+    <section><div className="mb-3"><div className="type-eyebrow">Physique</div><h2 className="type-section-title mt-1">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
       {[
         ['Waist', latestPhysique.waist_cm, firstPhysique?.waist_cm, 'cm'],
         ['Chest', latestPhysique.chest_cm, firstPhysique?.chest_cm, 'cm'],
@@ -43,5 +43,5 @@ function BodyContent() {
 }
 
 export default function DataroomBody() {
-  return <DataroomPageShell eyebrow="Dataroom" title="Body & physique" description="Scale trend first, slower physique measurements second. No inferred body-fat or muscle change."><BodyContent /></DataroomPageShell>;
+  return <DataroomPageShell eyebrow="Dataroom" title="Body & Physique" description="Scale trend first, slower physique measurements second. No inferred body-fat or muscle change."><BodyContent /></DataroomPageShell>;
 }
