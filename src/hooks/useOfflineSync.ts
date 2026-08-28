@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getQueuedItems, removeItem, updateItemRetries, getQueueCount, SyncQueueItem } from '@/lib/offlineSyncQueue';
 import { useQueryClient } from '@tanstack/react-query';
-
-const MAX_RETRIES = 5;
+import { useAuth } from '@/hooks/useAuth';
 
 type DynamicResult = {
   data: Array<Record<string, unknown>> | null;
@@ -19,16 +18,20 @@ interface DynamicQuery extends PromiseLike<DynamicResult> {
   limit(count: number): DynamicQuery;
 }
 
-const dynamicSupabase = supabase as unknown as {
-  from: (table: string) => DynamicQuery;
-};
+const dynamicSupabase = supabase as unknown as { from: (table: string) => DynamicQuery };
 
 function errorCode(error: unknown) {
   if (!error || typeof error !== 'object' || !('code' in error)) return '';
   return String((error as { code?: unknown }).code ?? '');
 }
 
+function explicitOwner(item: SyncQueueItem) {
+  const value = item.payload.user_id;
+  return typeof value === 'string' && value ? value : null;
+}
+
 export function useOfflineSync() {
+  const { user } = useAuth();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -55,15 +58,31 @@ export function useOfflineSync() {
     }
   }, []);
 
-  useEffect(() => {
-    void refreshCount();
-  }, [refreshCount, isOnline]);
+  useEffect(() => { void refreshCount(); }, [refreshCount, isOnline]);
 
-  /**
-   * Some older queued workout children do not carry client-generated row ids.
+  /** Legacy child rows (habits/exercises) may not have user_id in their
+   * payload. RLS lets us safely prove ownership through the parent workout.
+   * If ownership cannot be proven, leave the item untouched for its owner. */
+  const belongsToActiveUser = useCallback(async (item: SyncQueueItem): Promise<boolean> => {
+    if (!user) return false;
+    const owner = explicitOwner(item);
+    if (owner) return owner === user.id;
+
+    const workoutId = item.payload.workout_id;
+    if (typeof workoutId === 'string' && workoutId) {
+      const { data, error } = await supabase.from('workouts').select('id').eq('id', workoutId).eq('user_id', user.id).maybeSingle();
+      if (error) return false;
+      return Boolean(data);
+    }
+
+    // Current queue producers are user-scoped. Unknown legacy rows are safer
+    // left pending than replayed under the wrong account.
+    return false;
+  }, [user]);
+
+  /** Some older queued workout children do not carry client-generated row ids.
    * Before replaying them, check the existing natural identity so a request
-   * that reached Supabase but lost its response cannot duplicate a set/pause.
-   */
+   * that reached Supabase but lost its response cannot duplicate a set/pause. */
   const insertAlreadyLanded = useCallback(async (item: SyncQueueItem): Promise<boolean> => {
     if (item.operation !== 'insert') return false;
     const payload = item.payload;
@@ -76,12 +95,7 @@ export function useOfflineSync() {
     }
 
     if (item.table === 'workout_pauses' && payload.workout_id && payload.paused_at) {
-      const { data, error } = await dynamicSupabase
-        .from('workout_pauses')
-        .select('id')
-        .eq('workout_id', String(payload.workout_id))
-        .eq('paused_at', String(payload.paused_at))
-        .limit(1);
+      const { data, error } = await dynamicSupabase.from('workout_pauses').select('id').eq('workout_id', String(payload.workout_id)).eq('paused_at', String(payload.paused_at)).limit(1);
       if (!error && data?.length) return true;
     }
 
@@ -121,7 +135,7 @@ export function useOfflineSync() {
 
   const processQueue = useCallback(async () => {
     if (syncPromiseRef.current) return syncPromiseRef.current;
-    if (!navigator.onLine) return;
+    if (!navigator.onLine || !user) return;
 
     const run = (async () => {
       setIsSyncing(true);
@@ -142,11 +156,7 @@ export function useOfflineSync() {
         }
 
         for (const item of ungrouped) {
-          if (item.retries >= MAX_RETRIES) {
-            console.error('[OfflineSync] Giving up on queued item after max retries', item.table, item.payload);
-            await removeItem(item.id);
-            continue;
-          }
+          if (!(await belongsToActiveUser(item))) continue;
           const success = await processItem(item);
           if (success) await removeItem(item.id);
           else await updateItemRetries(item.id, item.retries + 1);
@@ -154,17 +164,18 @@ export function useOfflineSync() {
 
         for (const [, group] of groups) {
           const sorted = group.sort((a, b) => (a.groupOrder ?? 0) - (b.groupOrder ?? 0));
-          let groupFailed = false;
+          const declaredOwner = sorted.map(explicitOwner).find(Boolean);
+          if (declaredOwner && declaredOwner !== user.id) continue;
+          if (!declaredOwner && !(await belongsToActiveUser(sorted[0]))) continue;
+
           for (const item of sorted) {
-            if (groupFailed || item.retries >= MAX_RETRIES) {
-              if (item.retries >= MAX_RETRIES) await removeItem(item.id);
-              continue;
-            }
+            // A failed parent must stop its dependent children, but nothing is
+            // discarded. A later reconnect or explicit Sync now can retry it.
             const success = await processItem(item);
             if (success) await removeItem(item.id);
             else {
               await updateItemRetries(item.id, item.retries + 1);
-              groupFailed = true;
+              break;
             }
           }
         }
@@ -193,11 +204,11 @@ export function useOfflineSync() {
     } finally {
       syncPromiseRef.current = null;
     }
-  }, [processItem, queryClient, refreshCount]);
+  }, [belongsToActiveUser, processItem, queryClient, refreshCount, user]);
 
   useEffect(() => {
-    if (isOnline && pendingCount > 0) void processQueue();
-  }, [isOnline, pendingCount, processQueue]);
+    if (isOnline && user && pendingCount > 0) void processQueue();
+  }, [isOnline, user, pendingCount, processQueue]);
 
   return { isOnline, pendingCount, isSyncing, processQueue, refreshCount };
 }
