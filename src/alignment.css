@@ -1,0 +1,52 @@
+/* Shared alignment guardrails.
+   Keep these structural: typography, color, and domain styling belong elsewhere. */
+
+/* Dataroom top-level screens share one desktop column so the page title,
+   range control, sub-navigation, and analytical content never jump sideways. */
+[data-dataroom-layout="true"] .max-w-\[900px\],
+[data-dataroom-layout="true"] .max-w-\[980px\],
+[data-dataroom-layout="true"] .max-w-\[1000px\],
+[data-dataroom-layout="true"] .max-w-\[1100px\] {
+  max-width: 1040px;
+}
+
+/* Equal-height overview cards should align their internal baselines even when
+   one finding or metric needs an extra line of copy. */
+section[aria-labelledby="attention-title"] > .grid > button {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex-direction: column;
+}
+
+section[aria-labelledby="attention-title"] > .grid > button > h3 {
+  min-height: 2.5rem;
+}
+
+section[aria-labelledby="attention-title"] > .grid > button > h3 + p {
+  min-height: 2rem;
+}
+
+section[aria-labelledby="attention-title"] > .grid > button > div:last-child {
+  margin-top: auto;
+  min-height: 3.25rem;
+}
+
+section[aria-labelledby="pulse-title"] > .grid > button {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex-direction: column;
+}
+
+section[aria-labelledby="pulse-title"] > .grid > button > div:last-child {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+/* Repeated data rows keep the icon/value columns rigid while the label column
+   absorbs wrapping. This prevents long labels from nudging trailing values. */
+[data-app-layout] button > .shrink-0,
+[data-app-layout] [role="button"] > .shrink-0 {
+  flex-shrink: 0;
+}
