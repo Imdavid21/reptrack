@@ -35,7 +35,7 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   if (data.length < 2) {
-    return <div className="rounded-[18px] border border-border bg-card p-4"><div className="text-sm font-semibold">Bodyweight trend</div><p className="type-supporting mt-1">Add at least two weigh-ins to draw a useful trend.</p></div>;
+    return <div className="rounded-[18px] border border-border bg-card p-4 type-caption">Add at least two weigh-ins.</div>;
   }
 
   const width = 640;
@@ -87,24 +87,17 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
 
   const tooltipOnRight = active ? active.trendPoint.x > width * 0.62 : false;
 
-  return <section className="rounded-[20px] border border-border bg-card p-4" aria-labelledby="weight-trend-heading">
-    <div className="flex items-start justify-between gap-4">
-      <div><h2 id="weight-trend-heading" className="text-sm font-semibold">Bodyweight trend</h2><p className="type-caption mt-0.5">Two lines: actual weigh-ins and the 7-day trend. Dots mark recorded measurements.</p></div>
-      <div className="text-right"><div className="text-lg font-semibold tabular-nums">{Number(latest.value.toFixed(2))} kg</div><div className="type-caption">latest weigh-in</div></div>
-    </div>
+  return <section className="rounded-[20px] border border-border bg-card p-4" aria-label="Bodyweight trend">
     <p className="sr-only">Latest weigh-in {Number(latest.value.toFixed(2))} kilograms. Seven-day trend {Number(latestTrend.value.toFixed(2))} kilograms. Trend is {direction} across this range.</p>
-    <div ref={chartRef} className="relative mt-4 cursor-crosshair overflow-visible rounded-xl bg-muted/20 outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ touchAction: 'pan-y' }} tabIndex={0} role="group" aria-label="Interactive bodyweight chart" onPointerMove={inspectPointer} onPointerDown={inspectPointer} onPointerLeave={(event) => { if (event.pointerType !== 'touch') setActiveIndex(null); }} onFocus={() => setActiveIndex(index => index ?? data.length - 1)} onBlur={() => setActiveIndex(null)} onKeyDown={handleKeyDown}>
+    <div ref={chartRef} className="relative cursor-crosshair overflow-visible rounded-xl bg-muted/20 outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ touchAction: 'pan-y' }} tabIndex={0} role="group" aria-label="Interactive bodyweight chart" onPointerMove={inspectPointer} onPointerDown={inspectPointer} onPointerLeave={(event) => { if (event.pointerType !== 'touch') setActiveIndex(null); }} onFocus={() => setActiveIndex(index => index ?? data.length - 1)} onBlur={() => setActiveIndex(null)} onKeyDown={handleKeyDown}>
       <svg viewBox={`0 0 ${width} ${height}`} className="block w-full h-auto overflow-visible" role="img" aria-label={`Bodyweight trend ${direction}`}>
         <line x1={padX} y1={yFor(low + (high - low) * .25)} x2={width - padX} y2={yFor(low + (high - low) * .25)} stroke="currentColor" opacity="0.08" />
         <line x1={padX} y1={yFor(low + (high - low) * .75)} x2={width - padX} y2={yFor(low + (high - low) * .75)} stroke="currentColor" opacity="0.08" />
         {target && target >= low && target <= high && <line x1={padX} y1={yFor(target)} x2={width - padX} y2={yFor(target)} stroke="currentColor" opacity="0.28" strokeDasharray="6 5" />}
-
         <path d={pathFor(actualPoints)} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" opacity="0.38" />
         {actualPoints.map((point, index) => <circle key={data[index].date} cx={point.x} cy={point.y} r={activeIndex === index ? 5 : 3.5} fill="hsl(var(--background))" stroke="currentColor" strokeWidth={activeIndex === index ? 2 : 1.5} opacity={activeIndex == null || activeIndex === index ? 0.75 : 0.45} />)}
-
         <path d={pathFor(trendPoints)} fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
         {trendPoints.map((point, index) => <circle key={`trend-${trend[index].date}`} cx={point.x} cy={point.y} r={activeIndex === index ? 5 : 2.5} fill="currentColor" opacity={activeIndex == null || activeIndex === index ? 1 : 0.72} />)}
-
         {active && <>
           <line x1={active.trendPoint.x} y1={padY} x2={active.trendPoint.x} y2={height - padY} stroke="currentColor" strokeWidth="1" opacity="0.22" strokeDasharray="3 4" pointerEvents="none" />
           <circle cx={active.trendPoint.x} cy={active.trendPoint.y} r="10" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" pointerEvents="none" />
@@ -115,14 +108,13 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
       {active && <div className="pointer-events-none absolute top-2 z-10 min-w-[150px] rounded-xl border border-border bg-popover/95 px-3 py-2 text-popover-foreground shadow-lg backdrop-blur-sm" style={{ left: `${active.trendPoint.x / width * 100}%`, transform: tooltipOnRight ? 'translateX(calc(-100% - 10px))' : 'translateX(10px)' }}>
         <div className="type-meta">{format(parseISO(active.actual.date), 'd MMM yyyy')}</div>
         <div className="mt-1 flex items-baseline justify-between gap-4"><span className="type-caption">Actual</span><span className="text-sm font-semibold tabular-nums">{active.actual.value.toFixed(2)} kg</span></div>
-        <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">7-day trend</span><span className="text-sm font-semibold tabular-nums">{active.trend.value.toFixed(2)} kg</span></div>
-        {target != null && <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">To target</span><span className="text-sm font-semibold tabular-nums">{Math.abs(active.trend.value - target).toFixed(2)} kg</span></div>}
+        <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">Trend</span><span className="text-sm font-semibold tabular-nums">{active.trend.value.toFixed(2)} kg</span></div>
+        {target != null && <div className="mt-0.5 flex items-baseline justify-between gap-4"><span className="type-caption">Target gap</span><span className="text-sm font-semibold tabular-nums">{Math.abs(active.trend.value - target).toFixed(2)} kg</span></div>}
       </div>}
     </div>
     <div className="mt-3 flex flex-wrap items-center gap-4 type-caption" aria-hidden>
-      <span className="flex items-center gap-1.5"><svg width="22" height="8" viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/><circle cx="11" cy="4" r="2.5" fill="currentColor"/></svg>7-day trend</span>
-      <span className="flex items-center gap-1.5 text-muted-foreground"><svg width="22" height="8" viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="1.75" opacity=".55"/><circle cx="11" cy="4" r="3" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="1.5"/></svg>Actual weight</span>
-      <span className="ml-auto hidden sm:inline text-muted-foreground">Hover or drag to inspect</span>
+      <span className="flex items-center gap-1.5"><svg width="22" height="8" viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/><circle cx="11" cy="4" r="2.5" fill="currentColor"/></svg>Trend</span>
+      <span className="flex items-center gap-1.5 text-muted-foreground"><svg width="22" height="8" viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" strokeWidth="1.75" opacity=".55"/><circle cx="11" cy="4" r="3" fill="hsl(var(--background))" stroke="currentColor" strokeWidth="1.5"/></svg>Actual</span>
     </div>
     <div className="mt-2 flex items-center justify-between type-caption tabular-nums"><span>{format(parseISO(data[0].date), 'd MMM')}</span>{target ? <span>Target {Number(target.toFixed(2))} kg</span> : <span>{data.length} weigh-ins</span>}<span>{format(parseISO(latest.date), 'd MMM')}</span></div>
   </section>;
