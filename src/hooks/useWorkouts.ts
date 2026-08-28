@@ -6,65 +6,13 @@ import { enqueueOperation } from '@/lib/offlineSyncQueue';
 import { localDateKey } from '@/lib/dateKey';
 import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
-
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
-export interface ExerciseSet {
-  setNumber: number;
-  targetWeight: string;
-  targetReps: string;
-  actualWeight: string;
-  actualReps: string;
-  /** Target duration in seconds for timed exercises */
-  targetTime?: number;
-  /** Actual duration in seconds for timed exercises */
-  actualTime?: number;
-  completed: boolean;
-}
+export interface ExerciseSet { setNumber: number; targetWeight: string; targetReps: string; actualWeight: string; actualReps: string; targetTime?: number; actualTime?: number; completed: boolean; }
+export interface WorkoutExercise { id?: string; name: string; category: string; sets: ExerciseSet[]; sort_order: number; exerciseType?: ExerciseType; restSeconds?: number; rir?: string; mandatory?: boolean; progression?: string; }
+export interface Habits { pullups: number; water_intake: number; sleep_hours: number; bodyweight?: number; notes?: string; }
+export interface Workout { id: string; user_id: string; date: string; day: string; day_name: string; week_number: number; created_at: string; started_at?: string; completed_at?: string; workout_duration_minutes?: number; exercises?: WorkoutExercise[]; habits?: Habits; }
 
-export interface WorkoutExercise {
-  id?: string;
-  name: string;
-  category: string;
-  sets: ExerciseSet[];
-  sort_order: number;
-  /** How this exercise is measured: weighted, bodyweight, weighted_bw, timed */
-  exerciseType?: ExerciseType;
-  /** Recommended rest between sets in seconds */
-  restSeconds?: number;
-  /** Reps in reserve target (e.g. "2-3") */
-  rir?: string;
-  /** Corrective/functional work that shouldn't be skipped for time. */
-  mandatory?: boolean;
-  /** Short progression rule shown to the user. */
-  progression?: string;
-}
-
-export interface Habits {
-  pullups: number;
-  water_intake: number;
-  sleep_hours: number;
-  bodyweight?: number;
-  notes?: string;
-}
-
-export interface Workout {
-  id: string;
-  user_id: string;
-  date: string;
-  day: string;
-  day_name: string;
-  week_number: number;
-  created_at: string;
-  started_at?: string;
-  completed_at?: string;
-  workout_duration_minutes?: number;
-  exercises?: WorkoutExercise[];
-  habits?: Habits;
-}
-
-/** Network blips, timeouts and 5xx are worth retrying; validation/permission
- *  errors are not - retrying those just delays an honest error message. */
 export function isRetryableError(error: any): boolean {
   if (!error) return false;
   const message = String(error?.message || '');
@@ -82,13 +30,7 @@ export function useWorkouts() {
     queryKey: ['workouts', user?.id],
     queryFn: async () => {
       if (!user) return [];
-
-      const { data: workouts, error } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
+      const { data: workouts, error } = await supabase.from('workouts').select('*').eq('user_id', user.id).order('date', { ascending: false });
       if (error) throw error;
       return workouts as Workout[];
     },
@@ -108,20 +50,16 @@ export function useWorkouts() {
       completedAt?: Date;
       explicitPauseSeconds?: number;
       pauseIntervals?: Array<{ pausedAt: string; resumedAt?: string }>;
-      /** Stable client-generated id. Makes saving idempotent: a retry after a
-       *  timeout (where the row may already exist) can never create a second
-       *  workout, it just adopts the existing row. */
       clientId?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
       const workoutId = workout.clientId || crypto.randomUUID();
-
-      // Format date for Supabase (YYYY-MM-DD) using LOCAL time, not UTC.
       const workoutDate = localDateKey(workout.date ?? new Date());
 
       const weightWindowStart = new Date(`${workoutDate}T12:00:00`);
       weightWindowStart.setDate(weightWindowStart.getDate() - 30);
-      const { data: weightRows } = await supabase.from('daily_metrics').select('date,bodyweight').eq('user_id', user.id).gte('date', localDateKey(weightWindowStart)).lte('date', workoutDate).not('bodyweight', 'is', null).order('date');
+      const { data: weightRows, error: weightError } = await supabase.from('daily_metrics').select('date,bodyweight').eq('user_id', user.id).gte('date', localDateKey(weightWindowStart)).lte('date', workoutDate).not('bodyweight', 'is', null).order('date');
+      if (weightError && navigator.onLine) console.warn('[useWorkouts] bodyweight lookup failed, using profile fallback', weightError);
       const weight = effectiveWeightAt((weightRows || []).map(row => ({ date: row.date, kg: Number(row.bodyweight) })), workoutDate, preferences?.initial_weight_kg);
       const completedSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.filter(set => set.completed).length, 0);
       const plannedSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
@@ -131,75 +69,42 @@ export function useWorkouts() {
       const burnEstimate = estimateWorkoutEnergy({ durationMinutes: burnDuration + (workout.explicitPauseSeconds || 0) / 60, pausedSeconds: workout.explicitPauseSeconds || 0, completedSets, plannedSets, compoundSets, isolationSets, weightKg: weight.kg, hasActualFinish: !!workout.completedAt, intensityOverride: workoutIntensityOverride({ day_name: workout.day_name }) });
 
       const workoutPayload = {
-        id: workoutId,
-        user_id: user.id,
-        day: workout.day,
-        day_name: workout.day_name,
-        week_number: workout.week_number,
-        date: workoutDate,
-        workout_duration_minutes: workout.durationMinutes,
-        started_at: workout.startedAt?.toISOString(),
-        completed_at: workout.completedAt?.toISOString(),
-        explicit_pause_seconds: workout.explicitPauseSeconds || 0,
-        energy_model_version: ENERGY_MODEL_VERSION,
-        estimated_net_kcal: burnEstimate.netKcal,
-        energy_confidence: burnEstimate.confidence,
+        id: workoutId, user_id: user.id, day: workout.day, day_name: workout.day_name, week_number: workout.week_number, date: workoutDate,
+        workout_duration_minutes: workout.durationMinutes, started_at: workout.startedAt?.toISOString(), completed_at: workout.completedAt?.toISOString(), explicit_pause_seconds: workout.explicitPauseSeconds || 0,
+        energy_model_version: ENERGY_MODEL_VERSION, estimated_net_kcal: burnEstimate.netKcal, energy_confidence: burnEstimate.confidence,
         energy_inputs: { effectiveWeightKg: weight.kg, weightSource: weight.source, intensity: burnEstimate.intensity, met: burnEstimate.met, completedSets, plannedSets, compoundSets, isolationSets },
       };
 
-      // Build exercise rows
       const exerciseRows = workout.exercises.flatMap((ex, exIdx) => {
-        const completedSets = ex.sets.filter(set => set.completed);
-        if (completedSets.length === 0) return [];
-        return completedSets.map((set, setIdx) => ({
-          name: `${ex.name} (Set ${set.setNumber})`,
-          category: ex.category,
-          target_weight: set.targetWeight,
+        const completed = ex.sets.filter(set => set.completed);
+        return completed.map((set, setIdx) => ({
+          name: `${ex.name} (Set ${set.setNumber})`, category: ex.category, target_weight: set.targetWeight,
           target_reps: ex.exerciseType === 'timed' ? String(set.targetTime || set.targetReps) : set.targetReps,
-          actual_weight: set.actualWeight,
-          actual_reps: ex.exerciseType === 'timed' ? String(set.actualTime || set.actualReps) : set.actualReps,
-          completed: set.completed,
-          sort_order: exIdx * 100 + setIdx,
+          actual_weight: set.actualWeight, actual_reps: ex.exerciseType === 'timed' ? String(set.actualTime || set.actualReps) : set.actualReps,
+          completed: true, sort_order: exIdx * 100 + setIdx,
         }));
       });
 
-      const habitsPayload = workout.habits ? {
-        pullups: workout.habits.pullups,
-        water_intake: workout.habits.water_intake,
-        sleep_hours: workout.habits.sleep_hours,
-        bodyweight: workout.habits.bodyweight,
-        notes: workout.habits.notes,
-      } : null;
+      const habitsPayload = workout.habits ? { pullups: workout.habits.pullups, water_intake: workout.habits.water_intake, sleep_hours: workout.habits.sleep_hours, bodyweight: workout.habits.bodyweight, notes: workout.habits.notes } : null;
       const burnCalories = Math.round(burnEstimate.netKcal);
-
-      const rollbackWorkout = async (workoutId: string, originalError: unknown) => {
-        const { error: rollbackError } = await supabase.from('workouts').delete().eq('id', workoutId);
-        if (rollbackError) {
-          console.error('[useWorkouts] rollback failed after incomplete workout save', rollbackError);
-        }
+      const rollbackWorkout = async (id: string, originalError: unknown) => {
+        const { error: rollbackError } = await supabase.from('workouts').delete().eq('id', id).eq('user_id', user.id);
+        if (rollbackError) console.error('[useWorkouts] rollback failed after incomplete workout save', rollbackError);
         throw originalError;
       };
 
       try {
-        // Try online first. Transient failures (network blip, 5xx, timeout) get
-        // a couple of backed-off retries before we give up - the row id is
-        // client-generated, so a retry after a request that actually succeeded
-        // collides on the primary key and is treated as "already saved".
         let workoutData: any = null;
         let lastError: any = null;
+        let adoptedExisting = false;
         for (let attempt = 0; attempt < 3 && !workoutData; attempt++) {
           if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 400 * attempt));
-          const { data, error } = await (supabase
-            .from('workouts') as any)
-            .insert(workoutPayload)
-            .select()
-            .single();
+          const { data, error } = await (supabase.from('workouts') as any).insert(workoutPayload).select().single();
           if (!error) { workoutData = data; break; }
           if (error?.code === '23505') {
-            // The insert already landed (duplicate id). Adopt the stored row
-            // instead of creating a second copy of the same session.
-            const { data: existing } = await (supabase.from('workouts') as any).select('*').eq('id', workoutId).maybeSingle();
-            if (existing) { workoutData = existing; break; }
+            const { data: existing, error: existingError } = await (supabase.from('workouts') as any).select('*').eq('id', workoutId).eq('user_id', user.id).maybeSingle();
+            if (existingError) throw existingError;
+            if (existing) { workoutData = existing; adoptedExisting = true; break; }
           }
           lastError = error;
           if (!isRetryableError(error)) break;
@@ -207,24 +112,20 @@ export function useWorkouts() {
         if (!workoutData) throw lastError || new Error('Workout could not be saved');
 
         if (exerciseRows.length > 0) {
-          // Re-saving an adopted workout must not duplicate its sets.
-          const { data: existingSets } = await supabase.from('exercises').select('id').eq('workout_id', workoutData.id).limit(1);
-          if (!existingSets?.length) {
-            const { error: exercisesError } = await supabase
-              .from('exercises')
-              .insert(exerciseRows.map(r => ({ ...r, workout_id: workoutData.id })));
-            // Sets are the workout. If they cannot be written, don't leave a
-            // hollow session behind - roll back and let the draft survive.
+          let setsAlreadyExist = false;
+          if (adoptedExisting) {
+            const { data: existingSets, error: existingSetsError } = await supabase.from('exercises').select('id').eq('workout_id', workoutData.id).limit(1);
+            if (existingSetsError) throw existingSetsError;
+            setsAlreadyExist = Boolean(existingSets?.length);
+          }
+          if (!setsAlreadyExist) {
+            const { error: exercisesError } = await supabase.from('exercises').insert(exerciseRows.map(row => ({ ...row, workout_id: workoutData.id })));
             if (exercisesError) await rollbackWorkout(workoutData.id, exercisesError);
           }
         }
 
-        // Everything below is supporting data. A failure here must NOT discard
-        // a successfully saved session; it is queued for background replay.
         if (habitsPayload) {
-          const { error: habitsError } = await supabase
-            .from('habits')
-            .insert({ workout_id: workoutData.id, ...habitsPayload });
+          const { error: habitsError } = await supabase.from('habits').insert({ workout_id: workoutData.id, ...habitsPayload });
           if (habitsError) {
             console.error('[useWorkouts] habits insert failed, queued for retry', habitsError);
             await enqueueOperation({ table: 'habits', operation: 'insert', payload: { workout_id: workoutData.id, ...habitsPayload } }).catch(() => {});
@@ -232,128 +133,47 @@ export function useWorkouts() {
         }
 
         if (workout.pauseIntervals?.length) {
-          const { error: pausesError } = await (supabase.from('workout_pauses' as any) as any).insert(workout.pauseIntervals.map(interval => ({ user_id: user.id, workout_id: workoutData.id, paused_at: interval.pausedAt, resumed_at: interval.resumedAt || workout.completedAt?.toISOString() || null })));
-          if (pausesError) console.error('[useWorkouts] pause intervals insert failed', pausesError);
+          const pauseRows = workout.pauseIntervals.map(interval => ({ user_id: user.id, workout_id: workoutData.id, paused_at: interval.pausedAt, resumed_at: interval.resumedAt || workout.completedAt?.toISOString() || null }));
+          const { error: pausesError } = await (supabase.from('workout_pauses' as any) as any).insert(pauseRows);
+          if (pausesError) {
+            console.error('[useWorkouts] pause intervals insert failed, queued for retry', pausesError);
+            for (const row of pauseRows) await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: row }).catch(() => {});
+          }
         }
 
         if (burnCalories > 0) {
-          const { error: burnError } = await (supabase
-            .from('calorie_burns') as any)
-            .upsert({
-              user_id: user.id,
-              date: workoutDate,
-              source: 'workout',
-              activity_type: `workout:${workoutData.id}`,
-              duration_minutes: burnDuration,
-              calories: burnCalories,
-              intensity_band: burnEstimate.intensity,
-              intensity_source: 'workout_structure',
-              met_estimate: burnEstimate.met,
-              effective_weight_kg: weight.kg,
-              confidence: burnEstimate.confidence,
-              energy_model_version: ENERGY_MODEL_VERSION,
-              calculation_inputs: workoutPayload.energy_inputs,
-          }, { onConflict: 'user_id,date,source,activity_type' });
+          const burnPayload = { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${workoutData.id}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs };
+          const { error: burnError } = await (supabase.from('calorie_burns') as any).upsert(burnPayload, { onConflict: 'user_id,date,source,activity_type' });
           if (burnError) {
             console.error('[useWorkouts] burn upsert failed, queued for retry', burnError);
-            await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${workoutData.id}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs } }).catch(() => {});
+            await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: burnPayload }).catch(() => {});
           }
         }
 
         return workoutData;
       } catch (error: any) {
-        // If offline or network failure, queue for background sync
-        const isNetworkError = !navigator.onLine ||
-          error?.message?.includes('Failed to fetch') ||
-          error?.message?.includes('NetworkError') ||
-          error?.message?.includes('ERR_INTERNET_DISCONNECTED');
+        const isNetworkError = !navigator.onLine || error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError') || error?.message?.includes('ERR_INTERNET_DISCONNECTED');
+        if (!isNetworkError) throw error;
 
-        if (isNetworkError) {
-          console.log('[OfflineSync] Network unavailable, queuing workout');
-          const groupId = crypto.randomUUID();
-          const tempWorkoutId = workoutId;
-
-          await enqueueOperation({
-            table: 'workouts',
-            operation: 'insert',
-            payload: { id: tempWorkoutId, ...workoutPayload },
-            groupId,
-            groupOrder: 0,
-          });
-
-          if (exerciseRows.length > 0) {
-            for (let i = 0; i < exerciseRows.length; i++) {
-              await enqueueOperation({
-                table: 'exercises',
-                operation: 'insert',
-                payload: { workout_id: tempWorkoutId, ...exerciseRows[i] },
-                groupId,
-                groupOrder: i + 1,
-              });
-            }
-          }
-
-          if (habitsPayload) {
-            await enqueueOperation({
-              table: 'habits',
-              operation: 'insert',
-              payload: { workout_id: tempWorkoutId, ...habitsPayload },
-              groupId,
-              groupOrder: exerciseRows.length + 1,
-            });
-          }
-
-
-          if (workout.pauseIntervals?.length) {
-            for (let i = 0; i < workout.pauseIntervals.length; i++) {
-              await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: { user_id: user.id, workout_id: tempWorkoutId, paused_at: workout.pauseIntervals[i].pausedAt, resumed_at: workout.pauseIntervals[i].resumedAt || workout.completedAt?.toISOString() || null }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + i });
-            }
-          }
-
-          if (burnCalories > 0) {
-            await enqueueOperation({
-              table: 'calorie_burns',
-              operation: 'insert',
-              payload: {
-                user_id: user.id,
-                date: workoutDate,
-                source: 'workout',
-                activity_type: `workout:${tempWorkoutId}`,
-                duration_minutes: burnDuration,
-                calories: burnCalories,
-                intensity_band: burnEstimate.intensity,
-                intensity_source: 'workout_structure',
-                met_estimate: burnEstimate.met,
-                effective_weight_kg: weight.kg,
-                confidence: burnEstimate.confidence,
-                energy_model_version: ENERGY_MODEL_VERSION,
-                calculation_inputs: workoutPayload.energy_inputs,
-              },
-              groupId,
-              groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + (workout.pauseIntervals?.length || 0),
-            });
-          }
-
-          // Return a fake result so the UI flow continues
-          return { id: tempWorkoutId, ...workoutPayload } as any;
+        console.log('[OfflineSync] Network unavailable, queuing workout');
+        const groupId = crypto.randomUUID();
+        const tempWorkoutId = workoutId;
+        await enqueueOperation({ table: 'workouts', operation: 'insert', payload: { id: tempWorkoutId, ...workoutPayload }, groupId, groupOrder: 0 });
+        for (let i = 0; i < exerciseRows.length; i++) await enqueueOperation({ table: 'exercises', operation: 'insert', payload: { workout_id: tempWorkoutId, ...exerciseRows[i] }, groupId, groupOrder: i + 1 });
+        if (habitsPayload) await enqueueOperation({ table: 'habits', operation: 'insert', payload: { workout_id: tempWorkoutId, ...habitsPayload }, groupId, groupOrder: exerciseRows.length + 1 });
+        if (workout.pauseIntervals?.length) {
+          for (let i = 0; i < workout.pauseIntervals.length; i++) await enqueueOperation({ table: 'workout_pauses', operation: 'insert', payload: { user_id: user.id, workout_id: tempWorkoutId, paused_at: workout.pauseIntervals[i].pausedAt, resumed_at: workout.pauseIntervals[i].resumedAt || workout.completedAt?.toISOString() || null }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + i });
         }
-
-        throw error;
+        if (burnCalories > 0) {
+          await enqueueOperation({ table: 'calorie_burns', operation: 'insert', payload: { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${tempWorkoutId}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs }, groupId, groupOrder: exerciseRows.length + (habitsPayload ? 2 : 1) + (workout.pauseIntervals?.length || 0) });
+        }
+        return { id: tempWorkoutId, ...workoutPayload } as any;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
-      // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance - the 'volumeData'/
-      // 'exerciseProgression' names this used to invalidate read like
-      // plausible query keys but match no actual useQuery anywhere in the
-      // app, so those charts weren't reactively refreshing on a new/deleted
-      // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere - without this, "last
-      // used" prefills and next-session progression suggestions could show
-      // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
@@ -367,7 +187,6 @@ export function useWorkouts() {
   const updateWorkoutMutation = useMutation({
     mutationFn: async (workout: Partial<Workout> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
-
       const patch: Record<string, any> = {};
       if ((workout as any).is_skipped !== undefined) patch.is_skipped = (workout as any).is_skipped;
       if ((workout as any).notes !== undefined) patch.notes = (workout as any).notes;
@@ -376,25 +195,12 @@ export function useWorkouts() {
       if (workout.completed_at !== undefined) patch.completed_at = workout.completed_at;
       if (workout.workout_duration_minutes !== undefined) patch.workout_duration_minutes = workout.workout_duration_minutes;
 
-      const { data, error } = await supabase
-        .from('workouts')
-        .update(patch)
-        .eq('id', workout.id)
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from('workouts').update(patch).eq('id', workout.id).eq('user_id', user.id).select().single();
       if (error) throw error;
 
-      // Keep the linked calorie burn consistent when duration or date changes.
       if (workout.workout_duration_minutes !== undefined || workout.date !== undefined) {
-        const { data: burn } = await supabase
-          .from('calorie_burns')
-          .select('id,duration_minutes,calories')
-          .eq('user_id', user.id)
-          .eq('source', 'workout')
-          .eq('activity_type', `workout:${workout.id}`)
-          .maybeSingle();
-
+        const { data: burn, error: burnLookupError } = await supabase.from('calorie_burns').select('id,duration_minutes,calories').eq('user_id', user.id).eq('source', 'workout').eq('activity_type', `workout:${workout.id}`).maybeSingle();
+        if (burnLookupError) console.error('[useWorkouts] linked burn lookup failed after workout update', burnLookupError);
         if (burn) {
           const burnPatch: Record<string, any> = {};
           if (workout.date !== undefined) burnPatch.date = workout.date;
@@ -402,17 +208,17 @@ export function useWorkouts() {
             const oldDuration = Number(burn.duration_minutes) || 0;
             const newDuration = Number(workout.workout_duration_minutes) || 0;
             burnPatch.duration_minutes = newDuration;
-            if (oldDuration > 0 && newDuration > 0) {
-              burnPatch.calories = Math.round((Number(burn.calories) || 0) * (newDuration / oldDuration));
-            }
+            if (oldDuration > 0 && newDuration > 0) burnPatch.calories = Math.round((Number(burn.calories) || 0) * (newDuration / oldDuration));
           }
-          await supabase.from('calorie_burns').update(burnPatch).eq('id', burn.id);
+          const { error: burnUpdateError } = await supabase.from('calorie_burns').update(burnPatch).eq('id', burn.id).eq('user_id', user.id);
+          if (burnUpdateError) {
+            console.error('[useWorkouts] linked burn update failed, queued for retry', burnUpdateError);
+            await enqueueOperation({ table: 'calorie_burns', operation: 'update', payload: { id: burn.id, user_id: user.id, ...burnPatch } }).catch(() => {});
+          }
         }
       }
-
       return data;
     },
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
@@ -427,33 +233,26 @@ export function useWorkouts() {
     mutationFn: async (workoutId: string) => {
       if (!user) throw new Error('Not authenticated');
 
-      await supabase
-        .from('calorie_burns')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('source', 'workout')
-        .eq('activity_type', `workout:${workoutId}`);
+      const { data: linkedBurn, error: burnLookupError } = await supabase.from('calorie_burns').select('id').eq('user_id', user.id).eq('source', 'workout').eq('activity_type', `workout:${workoutId}`).maybeSingle();
+      if (burnLookupError) throw burnLookupError;
 
-      const { error } = await supabase
-        .from('workouts')
-        .delete()
-        .eq('id', workoutId);
-
+      // Delete the authoritative workout first. Never destroy its supporting
+      // burn row if the workout deletion itself fails.
+      const { error } = await supabase.from('workouts').delete().eq('id', workoutId).eq('user_id', user.id);
       if (error) throw error;
+
+      if (linkedBurn) {
+        const { error: burnDeleteError } = await supabase.from('calorie_burns').delete().eq('id', linkedBurn.id).eq('user_id', user.id);
+        if (burnDeleteError) {
+          console.error('[useWorkouts] linked burn cleanup failed, queued for retry', burnDeleteError);
+          await enqueueOperation({ table: 'calorie_burns', operation: 'delete', payload: { id: linkedBurn.id, user_id: user.id } }).catch(() => {});
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
       queryClient.invalidateQueries({ queryKey: ['habitsData'] });
-      // 'exerciseSets' is the one real query key behind volume charts,
-      // exercise progression, and muscle balance - the 'volumeData'/
-      // 'exerciseProgression' names this used to invalidate read like
-      // plausible query keys but match no actual useQuery anywhere in the
-      // app, so those charts weren't reactively refreshing on a new/deleted
-      // workout at all.
       queryClient.invalidateQueries({ queryKey: ['exerciseSets'] });
-      // 5-minute staleTime, never invalidated elsewhere - without this, "last
-      // used" prefills and next-session progression suggestions could show
-      // pre-this-workout numbers for up to 5 minutes after logging.
       queryClient.invalidateQueries({ queryKey: ['lastUsedWeights'] });
       queryClient.invalidateQueries({ queryKey: ['personalRecords'] });
       queryClient.invalidateQueries({ queryKey: ['calorie-history'] });
@@ -465,12 +264,8 @@ export function useWorkouts() {
   });
 
   return {
-    workouts: workoutsQuery.data ?? [],
-    isLoading: workoutsQuery.isLoading,
-    error: workoutsQuery.error,
-    createWorkout: createWorkoutMutation.mutateAsync,
-    isCreating: createWorkoutMutation.isPending,
-    updateWorkout: updateWorkoutMutation.mutateAsync,
-    deleteWorkout: deleteWorkoutMutation.mutateAsync,
+    workouts: workoutsQuery.data ?? [], isLoading: workoutsQuery.isLoading, error: workoutsQuery.error,
+    createWorkout: createWorkoutMutation.mutateAsync, isCreating: createWorkoutMutation.isPending,
+    updateWorkout: updateWorkoutMutation.mutateAsync, deleteWorkout: deleteWorkoutMutation.mutateAsync,
   };
 }
