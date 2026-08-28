@@ -45,12 +45,19 @@ export function WeightTrendChart({ metrics, target }: WeightTrendChartProps) {
   const height = 210;
   const padX = 20;
   const padY = 20;
-  const values = [...data.map(row => row.value), ...trend.map(row => row.value), ...(target ? [target] : [])];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(0.6, max - min);
-  const low = min - span * 0.12;
-  const high = max + span * 0.12;
+
+  // Scale around the observed weights, not the long-term target. Including a
+  // distant goal in the domain compresses the actual trend against one edge of
+  // the chart and makes normal day-to-day movement unreadable.
+  const observedValues = [...data.map(row => row.value), ...trend.map(row => row.value)];
+  const observedMin = Math.min(...observedValues);
+  const observedMax = Math.max(...observedValues);
+  const observedRange = observedMax - observedMin;
+  const visibleRange = Math.max(1.5, observedRange * 1.8);
+  const center = (observedMin + observedMax) / 2;
+  const low = center - visibleRange / 2;
+  const high = center + visibleRange / 2;
+
   const xFor = (index: number) => padX + index / Math.max(1, data.length - 1) * (width - padX * 2);
   const yFor = (value: number) => padY + (high - value) / Math.max(0.01, high - low) * (height - padY * 2);
   const actualPoints = data.map((row, index) => ({ x: xFor(index), y: yFor(row.value) }));
