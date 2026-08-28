@@ -16,6 +16,14 @@ function BodyContent() {
   const latestPhysique = data.physique.at(-1);
   const delta = (current: number | null, previous: number | null) => current != null && previous != null ? Number((current - previous).toFixed(1)) : null;
   const rangedMetrics = data.metrics.filter(metric => metric.date >= data.startDate && metric.date <= data.endDate);
+  const chartValues = (row: typeof firstPhysique) => row ? {
+    waist_cm: row.waist_cm,
+    chest_cm: row.chest_cm,
+    upper_arm_left_cm: row.upper_arm_left_cm,
+    upper_arm_right_cm: row.upper_arm_right_cm,
+    calf_left_cm: row.calf_left_cm,
+    calf_right_cm: row.calf_right_cm,
+  } : undefined;
 
   return <div className="space-y-8">
     <section className="grid grid-cols-2 md:grid-cols-4 gap-5 border-y border-border py-5">
@@ -27,7 +35,7 @@ function BodyContent() {
 
     <section><div className="mb-3"><h2 className="type-section-title">Bodyweight Trend</h2></div><WeightTrendChart key={`${range}-${data.startDate}-${data.endDate}`} metrics={rangedMetrics} target={data.preferences?.weight_goal} /></section>
 
-    <section><div className="mb-3"><h2 className="type-section-title">Measurement Change</h2><p className="type-caption mt-1">First versus latest recorded measurement in the selected range. No interpolation.</p></div><PhysiqueChangeChart first={firstPhysique} latest={latestPhysique} /></section>
+    <section><div className="mb-3"><h2 className="type-section-title">Measurement Change</h2><p className="type-caption mt-1">First versus latest recorded measurement in the selected range. No interpolation.</p></div><PhysiqueChangeChart first={chartValues(firstPhysique)} latest={chartValues(latestPhysique)} /></section>
 
     <section><div className="mb-3"><h2 className="type-section-title">Physique Check-Ins</h2></div>{latestPhysique ? <div className="border-y border-border divide-y divide-border">
       {[
