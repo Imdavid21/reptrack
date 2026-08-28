@@ -14,75 +14,52 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // The in-app PWAUpdatePrompt decides when it is safe to activate a new
+      // worker. In particular, it suppresses activation while a workout draft
+      // is resumable, so a deploy cannot replace the app mid-session.
+      registerType: 'prompt',
       includeAssets: ['favicon.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        // Cache all static assets aggressively
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff,woff2}'],
-        // Extended offline: cache up to 100 entries, keep for 30 days
         runtimeCaching: [
           {
-            // Supabase REST rows are mutable, per-user, and change constantly
-            // (preferences, workouts, etc). NetworkFirst's whole point is to
-            // fall back to a cached response when the network is slow, but
-            // that means any GET slower than the timeout can silently hand
-            // back a days-old row right after the user just saved a change —
-            // e.g. a training split update appearing to revert on gym wifi.
-            // NetworkOnly means these calls never read from or write to the
-            // cache, so a slow network surfaces as a real (retryable) error
-            // instead of quietly wrong data. Offline writes are unaffected —
-            // they already queue through src/lib/offlineSyncQueue.ts.
+            // Mutable per-user Supabase rows must never fall back to stale
+            // service-worker data. Offline writes use the IndexedDB sync queue.
             urlPattern: /^https:\/\/kfifgbqkykyvnrirxwze\.supabase\.co\/rest\/v1\/.*/i,
             handler: 'NetworkOnly',
           },
           {
-            // Cache Google Fonts
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
-            // Cache font files
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
-            // Cache images with stale-while-revalidate
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'image-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-              },
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],
-        // Never cache OAuth redirect paths
         navigateFallbackDenylist: [/^\/~oauth/],
-        // Don't auto-activate — let the app control the update to preserve auth state
-        skipWaiting: true,
+        // Keep the waiting worker dormant until updateServiceWorker(true) is
+        // called by PWAUpdatePrompt.
+        skipWaiting: false,
         clientsClaim: true,
       },
       manifest: {
@@ -95,24 +72,9 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#000000',
         orientation: 'portrait',
         icons: [
-          {
-            src: '/favicon.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/favicon.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-          {
-            src: '/favicon.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
+          { src: '/favicon.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/favicon.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/favicon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
         ],
       },
     }),
@@ -126,22 +88,11 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
   optimizeDeps: {
-    include: [
-      "react", 
-      "react-dom", 
-      "react/jsx-runtime",
-      "react-dom/client"
-    ],
+    include: ["react", "react-dom", "react/jsx-runtime", "react-dom/client"],
     exclude: ["@radix-ui/react-toast"],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      }
-    }
+    esbuildOptions: { define: { global: 'globalThis' } },
   },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
+    commonjsOptions: { include: [/node_modules/] },
   },
 }));
