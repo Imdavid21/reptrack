@@ -14,8 +14,9 @@ This is the source of truth for product copy and typography. It applies to every
 | Supporting title (`h6`) | 14 px | 600 | Compact card labels only |
 | Body (`body1`) | 16 px | 400 | Primary reading and form copy |
 | Supporting (`body2`) | 14 px | 400 | Descriptions and secondary content |
-| Metadata (`caption`) | 12 px | 500 | Timestamps, units, and quiet status |
-| Eyebrow (`overline`) | 11 px | 700 | Short category labels only |
+| Metadata (`caption`) | 12 px | 500 | Timestamps, units, compact data labels, and quiet status |
+
+Eyebrow and overline headings are not part of the RepTrack interface. Do not place a small category label above a page, section, card, dialog, or sheet title. If context is necessary, integrate it into the title or use supporting copy below the title.
 
 Use tabular numerals for measurements, timers, calories, and sets. Never use less than 12 px for interface copy. The only exceptions are non-interactive chart ticks, compact badges, and bottom-navigation labels, which may use 10–11 px.
 
@@ -24,7 +25,7 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 ## Capitalization
 
 - Use sentence case for page titles, buttons, navigation, fields, rows, dialogs, and errors: `Start workout`, `Choose a workout`, `Save changes`.
-- Use uppercase only for an eyebrow or compact data label: `TODAY`, `SETS`, `PROTEIN`.
+- Uppercase is reserved for compact data labels where scanning materially improves comprehension: `SETS`, `PROTEIN`. Do not use uppercase as a decorative heading layer above another title.
 - Do not mix title case, sentence case, and all caps within the same component.
 - Exercise names retain their conventional title case. Units stay lowercase: `70 kg`, `637 kcal`, `6 h 15 m`.
 
@@ -40,7 +41,7 @@ Large headings use slightly tight tracking; normal reading copy uses normal trac
 ## Hierarchy and layout
 
 - One primary action per screen or sheet. Supporting actions are text/outlined buttons.
-- One eyebrow maximum per card; it must label a group, not repeat its title.
+- Do not stack a category label above a heading. Start each region with the heading itself.
 - Use `h4` for card titles, `body2` for explanation, and `caption` for metadata. Do not compensate for unclear hierarchy with more bold text.
 - Interactive labels must meet the body/small-label scale; icon buttons require an accessible label.
 
@@ -107,7 +108,8 @@ Transitions are 120–180 ms with an ease-out physical response. Respect `prefer
 Before shipping a UI change, check:
 
 1. Does each screen have one page title and one primary action?
-2. Are all user-facing labels sentence case except approved eyebrows/data labels?
-3. Is interface text at least 12 px, apart from approved compact exceptions?
-4. Does the component use a defined role rather than an arbitrary font size?
-5. Is every sentence necessary to complete, understand, or recover from an action?
+2. Does any page, section, card, dialog, or sheet still use an eyebrow or overline heading? If so, remove it.
+3. Are all user-facing labels sentence case except compact data labels where uppercase improves scanning?
+4. Is interface text at least 12 px, apart from approved compact exceptions?
+5. Does the component use a defined role rather than an arbitrary font size?
+6. Is every sentence necessary to complete, understand, or recover from an action?
