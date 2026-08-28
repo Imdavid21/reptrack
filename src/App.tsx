@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams, useSear
 import { OfflineBanner } from "./components/pwa/OfflineBanner";
 import { PWAUpdatePrompt } from "./components/pwa/PWAUpdatePrompt";
 import { WorkoutCompletionWatcher } from "./components/workout/WorkoutCompletionWatcher";
+import { AppSeparatorNormalizer } from "./components/common/AppSeparatorNormalizer";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
@@ -182,6 +183,7 @@ function MuiThemedApp() {
       <CssBaseline />
       <Toaster theme={isDark ? 'dark' : 'light'} position="top-center" richColors closeButton />
       <BrowserRouter>
+        <AppSeparatorNormalizer />
         <OfflineBanner />
         {isStandalone && <PWAUpdatePrompt />}
         <WorkoutCompletionWatcher />
