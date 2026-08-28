@@ -26,6 +26,7 @@ function errorCode(error: unknown) {
 }
 
 function explicitOwner(item: SyncQueueItem) {
+  if (item.ownerUserId) return item.ownerUserId;
   const value = item.payload.user_id;
   return typeof value === 'string' && value ? value : null;
 }
@@ -51,18 +52,18 @@ export function useOfflineSync() {
 
   const refreshCount = useCallback(async () => {
     try {
-      const count = await getQueueCount();
+      const count = await getQueueCount(user?.id);
       setPendingCount(count);
     } catch {
       // IndexedDB can be unavailable in hardened/private browser modes.
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { void refreshCount(); }, [refreshCount, isOnline]);
 
-  /** Legacy child rows (habits/exercises) may not have user_id in their
-   * payload. RLS lets us safely prove ownership through the parent workout.
-   * If ownership cannot be proven, leave the item untouched for its owner. */
+  /** Legacy child rows may not have an owner field. RLS lets us safely prove
+   * ownership through the parent workout without mutating another account's
+   * queue. */
   const belongsToActiveUser = useCallback(async (item: SyncQueueItem): Promise<boolean> => {
     if (!user) return false;
     const owner = explicitOwner(item);
@@ -74,9 +75,6 @@ export function useOfflineSync() {
       if (error) return false;
       return Boolean(data);
     }
-
-    // Current queue producers are user-scoped. Unknown legacy rows are safer
-    // left pending than replayed under the wrong account.
     return false;
   }, [user]);
 
@@ -169,8 +167,6 @@ export function useOfflineSync() {
           if (!declaredOwner && !(await belongsToActiveUser(sorted[0]))) continue;
 
           for (const item of sorted) {
-            // A failed parent must stop its dependent children, but nothing is
-            // discarded. A later reconnect or explicit Sync now can retry it.
             const success = await processItem(item);
             if (success) await removeItem(item.id);
             else {
