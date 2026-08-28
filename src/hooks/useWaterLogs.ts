@@ -32,13 +32,13 @@ export function useWaterLogs(date?: Date) {
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel(`water-logs-realtime-${user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'water_logs', filter: `user_id=eq.${user.id}` }, (payload) => {
-      const timestamp = (payload.new as WaterLog)?.timestamp || (payload.old as WaterLog)?.timestamp;
-      if (timestamp) {
-        const logTimestamp = new Date(timestamp);
-        const today = new Date();
-        if (logTimestamp >= startOfDay(today) && logTimestamp <= endOfDay(today)) queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
-      } else queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
+    const channel = supabase.channel(`water-logs-realtime-${user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'water_logs', filter: `user_id=eq.${user.id}` }, () => {
+      // Water can be written by another tab, the extension, or MCP and can be
+      // back-dated. Invalidate all date-scoped water caches plus Dataroom
+      // hydration instead of refreshing only today's dashboard row.
+      queryClient.invalidateQueries({ queryKey: ['waterLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['hydrationData'] });
+      queryClient.invalidateQueries({ queryKey: ['bodyOverview'] });
     }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
