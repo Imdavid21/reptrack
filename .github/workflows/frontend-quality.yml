@@ -1,4 +1,4 @@
-name: Frontend quality
+name: App quality
 
 on:
   pull_request:
@@ -41,7 +41,12 @@ jobs:
           mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$base...HEAD" -- '*.ts' '*.tsx')
           if (( ${#files[@]} == 0 )); then
             echo "No changed TypeScript files to lint."
-            exit 0
+          else
+            printf 'Linting %s changed TypeScript files\n' "${#files[@]}"
+            npx eslint "${files[@]}"
           fi
-          printf 'Linting %s changed TypeScript files\n' "${#files[@]}"
-          npx eslint "${files[@]}"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check MCP edge function
+        run: deno check supabase/functions/mcp/index.ts
