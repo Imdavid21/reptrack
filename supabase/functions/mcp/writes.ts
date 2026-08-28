@@ -32,6 +32,64 @@ function todayIn(timezone: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
 
+function localParts(instant: Date, timezone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(instant).filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  };
+}
+
+/** Convert a wall-clock time in an IANA timezone to a UTC ISO timestamp.
+ * The verification step rejects nonexistent DST wall times instead of silently
+ * moving the logged session to a different local time. */
+function zonedIso(date: string, time: string, timezone: string) {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(time.trim());
+  if (!dateMatch || !timeMatch) throw new Error("INVALID_LOCAL_TIME");
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  const second = Number(timeMatch[3] || 0);
+  if (hour > 23 || minute > 59 || second > 59) throw new Error("INVALID_LOCAL_TIME");
+
+  const target = Date.UTC(year, month - 1, day, hour, minute, second);
+  let guess = target;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const rendered = localParts(new Date(guess), timezone);
+    const renderedAsUtc = Date.UTC(rendered.year, rendered.month - 1, rendered.day, rendered.hour, rendered.minute, rendered.second);
+    const delta = target - renderedAsUtc;
+    if (delta === 0) break;
+    guess += delta;
+  }
+  const verified = localParts(new Date(guess), timezone);
+  if (verified.year !== year || verified.month !== month || verified.day !== day || verified.hour !== hour || verified.minute !== minute || verified.second !== second) throw new Error("INVALID_LOCAL_TIME");
+  return new Date(guess).toISOString();
+}
+
+function localClock(iso: string, timezone: string) {
+  const value = new Date(iso);
+  if (Number.isNaN(value.getTime())) throw new Error("INVALID_STORED_TIME");
+  const parts = localParts(value, timezone);
+  return `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}:${String(parts.second).padStart(2, "0")}`;
+}
+
 async function preferences(db: Client) {
   try {
     const { data } = await db.from("user_preferences").select("*").limit(1);
@@ -76,7 +134,6 @@ async function stableUuid(seed: string): Promise<string> {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-
 /* ------------------------------- meals ------------------------------- */
 
 function macroPayload(args: Args) {
@@ -106,7 +163,6 @@ async function logMeal(args: Args, db: Client, userId: string, today: string) {
     nutrition_source: "mcp_estimate",
     source_metadata: { via: "mcp", client_key: args.client_key ?? null, estimated_by: "assistant" },
   };
-  // Idempotency: a retried call with the same client key updates its own row.
   if (args.client_key) {
     const { data: existing } = await db.from("meals").select("id").eq("date", date).eq("source_metadata->>client_key", String(args.client_key)).limit(1);
     const id = (Array.isArray(existing) ? existing[0] : existing)?.id;
@@ -133,13 +189,14 @@ async function updateMeal(args: Args, db: Client, userId: string, today: string)
 
 /* ------------------------------- water ------------------------------- */
 
-async function logWater(args: Args, db: Client, userId: string, today: string) {
+async function logWater(args: Args, db: Client, userId: string, today: string, timezone: string) {
   const litres = args.litres !== undefined
     ? boundedNumber("litres", args.litres, 0.05, 10, false)!
     : round((boundedNumber("milliliters", args.milliliters, 50, 10000, false) as number) / 1000, 3);
   const date = assertWritableDate(args.date || today, today);
-  // water_logs is timestamp based; backdated entries land at local midday.
-  const timestamp = date === today ? new Date().toISOString() : `${date}T12:00:00.000Z`;
+  // Current logs retain their true instant; backdated entries land at noon in
+  // the caller's timezone so day bucketing is stable worldwide.
+  const timestamp = date === today ? new Date().toISOString() : zonedIso(date, "12:00:00", timezone);
   const row = await write<any>("water_insert", () => db.from("water_logs").insert({ user_id: userId, amount: litres, method: "automation", timestamp }).select().single());
   return ok("water_logged", row, { litres });
 }
@@ -194,40 +251,43 @@ async function persistWorkoutEnergy(db: Client, userId: string, workout: Args, r
   return estimate;
 }
 
-async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
   const exercises: ExerciseInput[] = Array.isArray(args.exercises) ? args.exercises : [];
   if (!exercises.length) throw new Error("MISSING_EXERCISES");
   const duration = boundedNumber("duration_minutes", args.duration_minutes ?? 45, 1, 480, false)!;
   const name = requireString("workout_name", args.workout_name || "Workout", 80);
-  // Assistants send human-shaped idempotency keys ("chatgpt-2026-08-20-push"),
-  // not UUIDs, so any string is accepted and folded into a stable UUID scoped
-  // to the user. A retry with the same key updates the same session.
   const id = typeof args.client_key === "string" && args.client_key.trim()
     ? (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(args.client_key.trim())
       ? args.client_key.trim()
       : await stableUuid(`${userId}:${args.client_key.trim()}`))
     : crypto.randomUUID();
 
-
   const existingRows = await db.from("workouts").select("id").eq("id", id).limit(1);
   const already = Array.isArray(existingRows?.data) ? existingRows.data[0] : null;
-
+  const startedAt = args.start_time ? zonedIso(date, requireString("start_time", args.start_time, 8), timezone) : null;
+  const completedAt = startedAt ? new Date(Date.parse(startedAt) + duration * 60000).toISOString() : null;
   const payload = {
     id, user_id: userId, date, day: name.slice(0, 40), day_name: name,
     week_number: boundedNumber("week_number", args.week_number ?? 1, 1, 520, false)!,
     workout_duration_minutes: duration,
-    started_at: args.start_time ? new Date(`${date}T${String(args.start_time).slice(0, 5)}:00`).toISOString() : null,
-    completed_at: null as string | null,
+    started_at: startedAt,
+    completed_at: completedAt,
     explicit_pause_seconds: 0,
     energy_inputs: {},
   };
-  if (payload.started_at) payload.completed_at = new Date(Date.parse(payload.started_at) + duration * 60000).toISOString();
 
   if (!already) {
     await write("workout_insert", () => db.from("workouts").insert(payload));
   } else {
-    await write("workout_update", () => db.from("workouts").update({ date, day_name: name, workout_duration_minutes: duration }).eq("id", id).eq("user_id", userId));
+    await write("workout_update", () => db.from("workouts").update({
+      date,
+      day: name.slice(0, 40),
+      day_name: name,
+      workout_duration_minutes: duration,
+      started_at: startedAt,
+      completed_at: completedAt,
+    }).eq("id", id).eq("user_id", userId));
     await write("workout_sets_clear", () => db.from("exercises").delete().eq("workout_id", id));
   }
   const rows = exerciseRows(exercises, id);
@@ -236,19 +296,29 @@ async function logWorkout(args: Args, db: Client, userId: string, today: string,
   return ok(already ? "workout_updated" : "workout_logged", { workout_id: id, date, workout_name: name, duration_minutes: duration, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
 }
 
-async function updateWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args) {
+async function updateWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const id = requireString("workout_id", args.workout_id, 40);
-  const current = await write<any>("workout_lookup", () => db.from("workouts").select("id,date,day_name,workout_duration_minutes").eq("id", id).eq("user_id", userId).maybeSingle());
+  const current = await write<any>("workout_lookup", () => db.from("workouts").select("id,date,day_name,workout_duration_minutes,started_at,completed_at").eq("id", id).eq("user_id", userId).maybeSingle());
   if (!current) throw new Error("WORKOUT_NOT_FOUND");
 
   const patch: Args = {};
   if (args.date !== undefined) patch.date = assertWritableDate(args.date, today);
   if (args.workout_name !== undefined) patch.day_name = requireString("workout_name", args.workout_name, 80);
   if (args.duration_minutes !== undefined) patch.workout_duration_minutes = boundedNumber("duration_minutes", args.duration_minutes, 1, 480, false);
-  if (Object.keys(patch).length) await write("workout_patch", () => db.from("workouts").update(patch).eq("id", id).eq("user_id", userId));
-
   const date = patch.date ?? current.date;
   const duration = patch.workout_duration_minutes ?? current.workout_duration_minutes ?? 45;
+
+  // Preserve the user's local start clock when moving a workout to another
+  // date. Duration edits also move completed_at so the timestamps agree with
+  // workout_duration_minutes.
+  if (current.started_at && (patch.date !== undefined || patch.workout_duration_minutes !== undefined)) {
+    const startedAt = patch.date !== undefined ? zonedIso(date, localClock(current.started_at, timezone), timezone) : current.started_at;
+    patch.started_at = startedAt;
+    patch.completed_at = new Date(Date.parse(startedAt) + Number(duration) * 60000).toISOString();
+  }
+
+  if (Object.keys(patch).length) await write("workout_patch", () => db.from("workouts").update(patch).eq("id", id).eq("user_id", userId));
+
   let rows: Args[];
   if (Array.isArray(args.exercises) && args.exercises.length) {
     await write("workout_sets_clear", () => db.from("exercises").delete().eq("workout_id", id));
@@ -257,9 +327,8 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
   } else {
     rows = (await write<any[]>("workout_sets_read", () => db.from("exercises").select("category").eq("workout_id", id))) || [];
   }
-  // Stale burn rows for the previous date must not linger after a move.
   if (patch.date && patch.date !== current.date) {
-    await db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`);
+    await write("stale_workout_burn_delete", () => db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`));
   }
   const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration }, rows, prefs);
   return ok("workout_updated", { workout_id: id, date, duration_minutes: duration, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });
@@ -295,7 +364,6 @@ async function activityPayload(args: Args, db: Client, userId: string, date: str
 async function logActivity(args: Args, db: Client, userId: string, today: string, prefs: Args) {
   const date = assertWritableDate(args.date || today, today);
   const { row, estimate } = await activityPayload(args, db, userId, date, prefs);
-  // Upsert on the app's natural key: one entry per day and activity type.
   const saved = await write<any>("activity_upsert", () => db.from("calorie_burns").upsert(row, { onConflict: "user_id,date,source,activity_type" }).select().single());
   return ok("activity_logged", saved, { met: estimate.met, pace_source: estimate.paceSource });
 }
@@ -316,22 +384,23 @@ async function updateActivity(args: Args, db: Client, userId: string, today: str
 /* ------------------------------ dispatcher ------------------------------ */
 
 export async function executeWriteTool(name: string, args: Args, db: Client, userId: string, timezone: string) {
-  const today = todayIn(timezone || "Asia/Kolkata");
+  const zone = timezone || "Asia/Kolkata";
+  const today = todayIn(zone);
   const prefs = await preferences(db);
   const run = async () => {
-  switch (name) {
-    case "log_meal": return await logMeal(args, db, userId, today);
-    case "update_meal": return await updateMeal(args, db, userId, today);
-    case "log_water": return await logWater(args, db, userId, today);
-    case "log_workout": return await logWorkout(args, db, userId, today, prefs);
-    case "update_workout": return await updateWorkout(args, db, userId, today, prefs);
-    case "log_activity": return await logActivity(args, db, userId, today, prefs);
-    case "update_activity": return await updateActivity(args, db, userId, today, prefs);
-    case "set_workout_trigger": return await setWorkoutTrigger(db, userId, args);
-    case "cancel_workout_trigger": return await cancelWorkoutTrigger(db, userId, args);
-    case "send_coach_note": return await sendCoachNote(db, args);
-    default: throw new Error("UNKNOWN_TOOL");
-  }
+    switch (name) {
+      case "log_meal": return await logMeal(args, db, userId, today);
+      case "update_meal": return await updateMeal(args, db, userId, today);
+      case "log_water": return await logWater(args, db, userId, today, zone);
+      case "log_workout": return await logWorkout(args, db, userId, today, prefs, zone);
+      case "update_workout": return await updateWorkout(args, db, userId, today, prefs, zone);
+      case "log_activity": return await logActivity(args, db, userId, today, prefs);
+      case "update_activity": return await updateActivity(args, db, userId, today, prefs);
+      case "set_workout_trigger": return await setWorkoutTrigger(db, userId, args);
+      case "cancel_workout_trigger": return await cancelWorkoutTrigger(db, userId, args);
+      case "send_coach_note": return await sendCoachNote(db, args);
+      default: throw new Error("UNKNOWN_TOOL");
+    }
   };
-  return { ...(await run()), timezone: timezone || "Asia/Kolkata" };
+  return { ...(await run()), timezone: zone };
 }
