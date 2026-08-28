@@ -15,7 +15,7 @@ describe('WeightTrendChart interaction', () => {
 
     fireEvent.focus(chart);
     expect(screen.getByText('22 Aug 2026')).toBeInTheDocument();
-    expect(screen.getByText('72.80 kg')).toBeInTheDocument();
+    expect(screen.getByText('72.8 kg')).toBeInTheDocument();
 
     fireEvent.keyDown(chart, { key: 'ArrowLeft' });
     expect(screen.getByText('21 Aug 2026')).toBeInTheDocument();
