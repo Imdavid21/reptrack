@@ -90,6 +90,10 @@ function todayIn(timezone: string) {
 function minusDays(date: string, days: number) {
   const d = new Date(`${date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - days + 1); return d.toISOString().slice(0,10);
 }
+function validTimezone(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try { new Intl.DateTimeFormat("en", { timeZone: value }).format(); return true; } catch { return false; }
+}
 
 async function authenticate(req: Request) {
   const header = req.headers.get("authorization") || "";
@@ -108,13 +112,25 @@ async function authenticate(req: Request) {
   return { user:data.user, token, db:createClient(SUPABASE_URL, ANON_KEY, { global:{headers:{Authorization:`Bearer ${token}`}}, auth:{persistSession:false,autoRefreshToken:false} }) };
 }
 
+async function loadUserTimezone(db: any) {
+  try {
+    const { data, error } = await db.from("user_preferences").select("timezone").limit(1);
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    return validTimezone(row?.timezone) ? row.timezone : "Asia/Kolkata";
+  } catch (error) {
+    console.warn("[mcp] timezone unavailable, using fallback:", (error as Error)?.message ?? error);
+    return "Asia/Kolkata";
+  }
+}
+
 async function audit(userId:string, tool:string, started:number, success:boolean, category:string|null) {
   try { await createClient(SUPABASE_URL,SERVICE_ROLE_KEY,{auth:{persistSession:false}}).from("mcp_audit_logs").insert({user_id:userId,tool_name:tool,duration_ms:Math.max(0,Date.now()-started),success,error_category:category}); } catch { /* audit cannot leak or alter tool output */ }
 }
 
-function createServer(ctx:{user:{id:string},db:any}) {
+function createServer(ctx:{user:{id:string},db:any,timezone?:string}) {
   const server = new McpServer({ name:"fitness-mcp", version:MCP_VERSION }, { capabilities:{tools:{}} });
-  const timezone = () => (ctx as any).timezone || "Asia/Kolkata";
+  const timezone = () => ctx.timezone || "Asia/Kolkata";
   for (const name of WRITE_TOOLS) {
     const def = writeDefinitions[name];
     server.registerTool(name, { title:name.replaceAll("_"," "), description:def.description, inputSchema:def.schema as any, outputSchema, annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false} }, async (raw:any) => {
@@ -159,8 +175,9 @@ Deno.serve(async req => {
   if(!ctx)return json({error:"Authentication required"},401,{"WWW-Authenticate":`Bearer resource_metadata="${RESOURCE_METADATA}"`});
   if(!["POST","GET","DELETE"].includes(req.method))return json({error:"Method not allowed"},405);
   try {
+    const timezone=await loadUserTimezone(ctx.db);
     const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
-    const server=createServer(ctx); await server.connect(transport);
+    const server=createServer({...ctx,timezone}); await server.connect(transport);
     const response=await transport.handleRequest(req);
     const headers=new Headers(response.headers); Object.entries(CORS).forEach(([k,v])=>headers.set(k,v)); headers.set("Cache-Control","no-store");
     return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
