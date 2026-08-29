@@ -86,7 +86,7 @@ export function useLiveWorkoutSession(input: LivePublishInput) {
       started_at: input.startedAt ?? new Date().toISOString(),
       ended_at: null,
     };
-    const fingerprint = JSON.stringify({ ...payload, elapsed_seconds: Math.floor(input.elapsedSeconds / 15) });
+    const fingerprint = JSON.stringify({ ...payload, started_at: null, elapsed_seconds: Math.floor(input.elapsedSeconds / 15) });
     if (fingerprint === lastPayload.current) return;
     lastPayload.current = fingerprint;
     void supabase.from('live_workout_sessions').upsert(payload, { onConflict: 'user_id' }).then(({ error }) => {
