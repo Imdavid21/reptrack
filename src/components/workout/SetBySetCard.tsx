@@ -178,6 +178,8 @@ export function SetBySetCard({
   }, [removedSet]);
 
   if (!currentSet) return null;
+  const __stub = new URLSearchParams(location.search).get('stub');
+  if (__stub === 'hooks') return <div>HOOKS OK</div>;
 
   const previous = lastUsed?.perSet?.[currentSetIndex] ?? (lastUsed ? { weight: lastUsed.weight, reps: lastUsed.reps } : undefined);
   const previousCompleted = currentSetIndex > 0 && exercise.sets[currentSetIndex - 1]?.completed ? exercise.sets[currentSetIndex - 1] : undefined;
@@ -325,6 +327,7 @@ export function SetBySetCard({
     timedRef.current = setInterval(() => setTimedSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
   };
 
+  if (__stub === 'calc') return <div>CALC OK</div>;
   const relationshipOptions = getExerciseRelationships(exercise.name);
   const legacyOptions = getExerciseVariants(exercise.name).filter(option => option.name !== exercise.name);
 
@@ -337,6 +340,7 @@ export function SetBySetCard({
     haptic('medium');
   };
 
+  if (__stub === 'rel') return <div>REL OK</div>;
   const completedSets = exercise.sets.filter(set => set.completed).length;
   const completedWeightSets = exercise.sets.filter(set => set.completed && Number(set.actualWeight) > 0);
   const bestWeight = Math.max(0, ...completedWeightSets.map(set => Number(set.actualWeight)));
@@ -409,7 +413,7 @@ export function SetBySetCard({
           <h2 className="type-section-title mt-1 break-words">{exercise.name}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 type-caption"><span>{exercise.category}</span><span>·</span><span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>{exercise.rir && <><span>·</span><span>{exercise.rir} RIR target</span></>}</div>
         </div>
-        <DropdownMenu>
+        {__stub !== 'nodd' && <DropdownMenu>
           <DropdownMenuTrigger asChild><button aria-label="Exercise options" className="h-11 w-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="z-50 max-h-[60dvh] overflow-y-auto min-w-64">
             <DropdownMenuLabel>Exercise</DropdownMenuLabel>
@@ -420,7 +424,7 @@ export function SetBySetCard({
             {!relationshipOptions.length && legacyOptions.map(option => <DropdownMenuItem key={option.name} onClick={() => replaceWith(option.name)}>{option.name}</DropdownMenuItem>)}
             {completedAcrossWorkout > 0 && <><DropdownMenuSeparator/><DropdownMenuItem onClick={requestFinish}>Finish workout</DropdownMenuItem></>}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>}
       </header>
 
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
@@ -456,7 +460,7 @@ export function SetBySetCard({
         <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? (remainingAcrossWorkout > 0 ? 'Review finish' : 'Finish workout') : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
       </div>
 
-      <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />
+      {__stub !== 'nosheet' && <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />}
     </div>
   );
 }
