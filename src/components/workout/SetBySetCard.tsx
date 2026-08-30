@@ -394,8 +394,12 @@ export function SetBySetCard({
     </div>;
   }
 
+  (window as any).__rc = ((window as any).__rc||0)+1; if ((window as any).__rc < 60) console.log('SBSC render', (window as any).__rc);
+  const __only = __stub && /^n\d$/.test(__stub) ? Number(__stub.slice(1)) : 99;
   return (
     <div className="w-full min-w-0 space-y-4">
+      {__only >= 0 && <>
+
       <div className="flex items-center gap-2">
         <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
         <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>
@@ -407,13 +411,14 @@ export function SetBySetCard({
 
       {environment.unusuallyLong && <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm"><span className="font-semibold">Workout has been running for {environment.elapsedLabel}.</span><span className="text-muted-foreground"> If you are still training, continue normally. RepTrack will not auto-finish it.</span></div>}
 
+      </>}{__only >= 2 && <>
       <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="type-eyebrow">Current exercise</div>
           <h2 className="type-section-title mt-1 break-words">{exercise.name}</h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 type-caption"><span>{exercise.category}</span><span>·</span><span className="tabular-nums">{completedSets}/{exercise.sets.length} sets</span>{exercise.rir && <><span>·</span><span>{exercise.rir} RIR target</span></>}</div>
         </div>
-        {__stub !== 'nodd' && <DropdownMenu>
+        {__stub !== 'nodd' && __stub !== 'n2' && <DropdownMenu>
           <DropdownMenuTrigger asChild><button aria-label="Exercise options" className="h-11 w-11 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="z-50 max-h-[60dvh] overflow-y-auto min-w-64">
             <DropdownMenuLabel>Exercise</DropdownMenuLabel>
@@ -427,6 +432,7 @@ export function SetBySetCard({
         </DropdownMenu>}
       </header>
 
+      </>}{__only >= 3 && <>
       {__stub !== 'ctx' && <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
         <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Previous</span><span className="text-sm font-medium tabular-nums text-right">{previousLabel}</span></div>
         <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Target</span><span className="text-sm font-medium tabular-nums text-right">{targetLabel}</span></div>
@@ -434,13 +440,16 @@ export function SetBySetCard({
         {!personalRecord && familyRecord && <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Reference</span><span className="text-sm font-medium tabular-nums text-right">{familyRecord.exerciseName} · {numberLabel(familyRecord.maxWeight)} kg</span></div>}
       </section>}
 
+      </>}{__only >= 4 && <>
       {__stub !== 'chips' && <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
         {exercise.sets.map((set, index) => <button key={index} onClick={() => onSetIndexChange(index)} aria-label={`Go to set ${index + 1}`} aria-current={index === currentSetIndex ? 'step' : undefined} className={cn('h-10 min-w-10 rounded-full type-meta tabular-nums flex items-center justify-center', set.completed ? 'bg-foreground text-background' : index === currentSetIndex ? 'border-2 border-foreground text-foreground' : 'bg-muted text-muted-foreground')}>{set.completed ? <Check className="h-4 w-4" /> : index + 1}</button>)}
         <button onClick={addSet} aria-label="Add set" className="h-10 min-w-10 rounded-full border border-dashed border-border text-muted-foreground flex items-center justify-center"><Plus className="h-4 w-4" /></button>
       </div>}
 
+      </>}{__only >= 5 && <>
       {removedSet && <div role="status" className="rounded-xl border border-border bg-muted/35 px-3 py-2.5 flex items-center gap-3"><span className="text-sm flex-1">Set removed.</span><button onClick={undoRemoveSet} className="min-h-10 px-3 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-muted"><Undo2 className="h-4 w-4"/>Undo</button></div>}
 
+      </>}{__only >= 6 && <>
       {__stub !== 'actual' && <section className={cn('rounded-[22px] border p-4', currentSet.completed ? 'border-border bg-muted/30' : 'border-border bg-card')}>
         <div className="flex items-center justify-between gap-3 mb-4"><div><div className="type-eyebrow">Actual</div><div className="text-sm font-semibold mt-0.5">Set {currentSetIndex + 1} of {exercise.sets.length}</div></div><div className="flex items-center gap-2">{isNewPR && <span className="rounded-full bg-foreground text-background px-2.5 py-1 text-xs font-bold">New PR</span>}{exercise.sets.length > 1 && <button onClick={removeCurrentSet} aria-label={`Remove set ${currentSetIndex + 1}`} className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-muted flex items-center justify-center"><Trash2 className="h-4 w-4"/></button>}</div></div>
 
@@ -450,17 +459,21 @@ export function SetBySetCard({
         </div>}
       </section>}
 
+      </>}{__only >= 7 && <>
       {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="region" aria-live="polite" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
 
       {restOpen && <RestTimer isOpen defaultDuration={restDuration} onDismiss={advanceAfterRest} onComplete={advanceAfterRest} />}
 
+      </>}{__only >= 8 && <>
       {__stub !== 'footer' && <div className="flex gap-2 pb-[max(4px,env(safe-area-inset-bottom))]">
         {(!isFirstSet || !isFirstExercise) && <button onClick={() => { if (!isFirstSet) onSetIndexChange(currentSetIndex - 1); else onPrevExercise(); }} aria-label="Previous set or exercise" className="h-14 w-12 rounded-xl border border-border flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>}
         {!currentSet.completed && <button onClick={onSkipExercise} className="h-14 px-3 rounded-xl text-sm font-semibold text-muted-foreground flex items-center gap-1"><SkipForward className="h-4 w-4"/>Skip</button>}
         <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? (remainingAcrossWorkout > 0 ? 'Review finish' : 'Finish workout') : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
       </div>}
 
+      </>}{__only >= 9 && <>
       {__stub !== 'nosheet' && <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />}
+      </>}
     </div>
   );
 }
