@@ -44,16 +44,20 @@ export function draftDateKey(draft: DraftWorkout): string {
 
 /**
  * A draft can only be resumed when it is an in-progress exercise session that
- * still holds exercises and was saved within the 24h retention window.
+ * still holds exercises, has at least one logged set, and was saved within the
+ * 24h retention window. Drafts with no logged sets carry no progress, so they
+ * are treated as dead state rather than a resumable session.
  */
 export function isResumableDraft(draft: DraftWorkout | null | undefined): boolean {
   if (!draft) return false;
   if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) return false;
   if (draft.step === 'select-day') return false;
+  if (!draft.exercises.some(ex => ex.sets?.some(set => set.completed))) return false;
   const savedAt = new Date(draft.lastSavedAt ?? draft.date).getTime();
   if (Number.isNaN(savedAt)) return false;
   return (Date.now() - savedAt) / 3_600_000 < 24;
 }
+
 
 export function useDraftWorkout() {
   const { user, loading: authLoading } = useAuth();
