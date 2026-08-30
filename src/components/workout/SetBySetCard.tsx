@@ -424,40 +424,40 @@ export function SetBySetCard({
         </DropdownMenu>
       </header>
 
-      {<section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border" aria-label="Set context">
         <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Previous</span><span className="text-sm font-medium tabular-nums text-right">{previousLabel}</span></div>
         <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Target</span><span className="text-sm font-medium tabular-nums text-right">{targetLabel}</span></div>
         {personalRecord && <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Record</span><span className="text-sm font-medium tabular-nums text-right">{personalRecord.prType === 'duration' ? formatTime(personalRecord.maxWeight) : personalRecord.prType === 'reps' ? `${personalRecord.maxWeight} reps` : `${numberLabel(personalRecord.maxWeight)} ${weightLabel.replace('+','')}${personalRecord.reps ? ` × ${personalRecord.reps}` : ''}`}</span></div>}
         {!personalRecord && familyRecord && <div className="grid grid-cols-[72px_1fr] px-4 py-2.5"><span className="type-caption">Reference</span><span className="text-sm font-medium tabular-nums text-right">{familyRecord.exerciseName} · {numberLabel(familyRecord.maxWeight)} kg</span></div>}
-      </section>}
+      </section>
 
-      {<div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
         {exercise.sets.map((set, index) => <button key={index} onClick={() => onSetIndexChange(index)} aria-label={`Go to set ${index + 1}`} aria-current={index === currentSetIndex ? 'step' : undefined} className={cn('h-10 min-w-10 rounded-full type-meta tabular-nums flex items-center justify-center', set.completed ? 'bg-foreground text-background' : index === currentSetIndex ? 'border-2 border-foreground text-foreground' : 'bg-muted text-muted-foreground')}>{set.completed ? <Check className="h-4 w-4" /> : index + 1}</button>)}
         <button onClick={addSet} aria-label="Add set" className="h-10 min-w-10 rounded-full border border-dashed border-border text-muted-foreground flex items-center justify-center"><Plus className="h-4 w-4" /></button>
-      </div>}
+      </div>
 
       {removedSet && <div role="status" className="rounded-xl border border-border bg-muted/35 px-3 py-2.5 flex items-center gap-3"><span className="text-sm flex-1">Set removed.</span><button onClick={undoRemoveSet} className="min-h-10 px-3 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-muted"><Undo2 className="h-4 w-4"/>Undo</button></div>}
 
-      {<section className={cn('rounded-[22px] border p-4', currentSet.completed ? 'border-border bg-muted/30' : 'border-border bg-card')}>
+      <section className={cn('rounded-[22px] border p-4', currentSet.completed ? 'border-border bg-muted/30' : 'border-border bg-card')}>
         <div className="flex items-center justify-between gap-3 mb-4"><div><div className="type-eyebrow">Actual</div><div className="text-sm font-semibold mt-0.5">Set {currentSetIndex + 1} of {exercise.sets.length}</div></div><div className="flex items-center gap-2">{isNewPR && <span className="rounded-full bg-foreground text-background px-2.5 py-1 text-xs font-bold">New PR</span>}{exercise.sets.length > 1 && <button onClick={removeCurrentSet} aria-label={`Remove set ${currentSetIndex + 1}`} className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive hover:bg-muted flex items-center justify-center"><Trash2 className="h-4 w-4"/></button>}</div></div>
 
         {isTimed ? <div className="space-y-3"><button onClick={toggleTimed} className="w-full rounded-2xl bg-muted py-5 text-center"><div className="text-4xl font-semibold tabular-nums">{formatTime(timedRunning ? timedSeconds : selectedTime)}</div><div className="type-caption mt-1">{timedRunning ? 'Tap to stop timer' : 'Tap to start timer'}</div></button>{editing === 'time' ? <Input autoFocus type="number" inputMode="numeric" value={selectedTime} onChange={event => setTime(Number(event.target.value))} onBlur={() => setEditing(null)} className="h-12 text-center text-lg tabular-nums" /> : <button onClick={() => setEditing('time')} className="w-full min-h-11 text-sm font-semibold text-muted-foreground">Enter another duration</button>}</div> : <div className={cn('grid gap-3', showWeight ? 'grid-cols-2' : 'grid-cols-1')}>
           {showWeight && <div><div className="type-caption text-center mb-2">Weight ({weightLabel})</div>{editing === 'weight' ? <Input autoFocus type="number" inputMode="decimal" step="0.01" value={currentSet.actualWeight !== '' ? currentSet.actualWeight : selectedWeight} onChange={event => patchSet({ actualWeight: event.target.value })} onBlur={() => setEditing(null)} onKeyDown={event => event.key === 'Enter' && setEditing(null)} className="h-14 text-center text-xl font-semibold tabular-nums" /> : <div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setWeight(selectedWeight - 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Decrease weight by 2.5">−</button><button onClick={() => setEditing('weight')} className="h-14 rounded-xl bg-muted text-xl font-semibold tabular-nums">{isWeightedBW ? '+' : ''}{numberLabel(selectedWeight)}</button><button onClick={() => setWeight(selectedWeight + 2.5)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Increase weight by 2.5">+</button></div>}</div>}
           {showReps && <div><div className="type-caption text-center mb-2">Reps</div>{editing === 'reps' ? <Input autoFocus type="number" inputMode="numeric" value={currentSet.actualReps !== '' ? currentSet.actualReps : selectedReps} onChange={event => patchSet({ actualReps: event.target.value })} onBlur={() => setEditing(null)} onKeyDown={event => event.key === 'Enter' && setEditing(null)} className="h-14 text-center text-xl font-semibold tabular-nums" /> : <div className="grid grid-cols-[44px_1fr_44px] gap-1"><button onClick={() => setReps(selectedReps - 1)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Decrease reps by 1">−</button><button onClick={() => setEditing('reps')} className="h-14 rounded-xl bg-muted text-xl font-semibold tabular-nums">{selectedReps}</button><button onClick={() => setReps(selectedReps + 1)} className="h-14 rounded-xl bg-muted text-lg" aria-label="Increase reps by 1">+</button></div>}</div>}
-        </div>}
-      </section>}
+        </div>
+      </section>
 
       {finishConfirm && <div className="rounded-2xl border border-border bg-card p-4" role="region" aria-live="polite" aria-label="Finish incomplete workout"><div className="font-semibold">End workout?</div><p className="type-supporting mt-1">{remainingAcrossWorkout} {remainingAcrossWorkout === 1 ? 'set is' : 'sets are'} still incomplete.</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => setFinishConfirm(false)} className="min-h-12 rounded-xl border border-border text-sm font-semibold">Keep training</button><button onClick={onComplete} className="min-h-12 rounded-xl bg-foreground text-background text-sm font-semibold">End anyway</button></div></div>}
 
       {restOpen && <RestTimer isOpen defaultDuration={restDuration} onDismiss={advanceAfterRest} onComplete={advanceAfterRest} />}
 
-      {<div className="flex gap-2 pb-[max(4px,env(safe-area-inset-bottom))]">
+      <div className="flex gap-2 pb-[max(4px,env(safe-area-inset-bottom))]">
         {(!isFirstSet || !isFirstExercise) && <button onClick={() => { if (!isFirstSet) onSetIndexChange(currentSetIndex - 1); else onPrevExercise(); }} aria-label="Previous set or exercise" className="h-14 w-12 rounded-xl border border-border flex items-center justify-center text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>}
         {!currentSet.completed && <button onClick={onSkipExercise} className="h-14 px-3 rounded-xl text-sm font-semibold text-muted-foreground flex items-center gap-1"><SkipForward className="h-4 w-4"/>Skip</button>}
         <button onClick={completeOrAdvance} className="h-14 flex-1 rounded-xl bg-foreground text-background font-bold flex items-center justify-center gap-2 min-w-0">{!currentSet.completed ? <><Check className="h-4 w-4"/>{isTimed ? `Log ${formatTime(selectedTime)}` : isBodyweight ? `Log ${selectedReps} reps` : `Log ${isWeightedBW ? '+' : ''}${numberLabel(selectedWeight)}${weightLabel.replace('+','')} × ${selectedReps}`}</> : isLastSet ? <>{isLastExercise ? (remainingAcrossWorkout > 0 ? 'Review finish' : 'Finish workout') : 'Next exercise'}<ChevronRight className="h-4 w-4"/></> : <>Next set<ChevronRight className="h-4 w-4"/></>}</button>
-      </div>}
+      </div>
 
-      {<ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />}
+      <ExerciseHistorySheet exerciseName={exercise.name} open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );
 }
