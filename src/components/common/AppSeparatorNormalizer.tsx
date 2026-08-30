@@ -6,12 +6,19 @@ import { useLocation } from 'react-router-dom';
 const SEPARATOR = /(?:\s+·\s*|\s*·\s+)/g;
 const SKIP_SELECTOR = 'script, style, code, pre, textarea';
 
+/** Writes only when the value actually changes so the observer never feeds itself. */
+function normalizeTextNode(node: Node) {
+  const parent = node.parentElement;
+  if (!parent || parent.closest(SKIP_SELECTOR)) return;
+  const current = node.nodeValue;
+  if (!current || !current.includes('·')) return;
+  const next = current.replace(SEPARATOR, ' | ');
+  if (next !== current) node.nodeValue = next;
+}
+
 function normalizeNode(node: Node) {
   if (node.nodeType === Node.TEXT_NODE) {
-    const parent = node.parentElement;
-    if (!parent || parent.closest(SKIP_SELECTOR)) return;
-    const current = node.nodeValue;
-    if (current?.includes('·')) node.nodeValue = current.replace(SEPARATOR, ' | ');
+    normalizeTextNode(node);
     return;
   }
 
@@ -19,17 +26,15 @@ function normalizeNode(node: Node) {
 
   for (const attribute of ['aria-label', 'title']) {
     const value = node.getAttribute(attribute);
-    if (value?.includes('·')) node.setAttribute(attribute, value.replace(SEPARATOR, ' | '));
+    if (!value || !value.includes('·')) continue;
+    const next = value.replace(SEPARATOR, ' | ');
+    if (next !== value) node.setAttribute(attribute, next);
   }
 
   const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
   let textNode = walker.nextNode();
   while (textNode) {
-    const parent = textNode.parentElement;
-    if (parent && !parent.closest(SKIP_SELECTOR)) {
-      const value = textNode.nodeValue;
-      if (value?.includes('·')) textNode.nodeValue = value.replace(SEPARATOR, ' | ');
-    }
+    normalizeTextNode(textNode);
     textNode = walker.nextNode();
   }
 }
@@ -53,7 +58,7 @@ export function AppSeparatorNormalizer() {
     const observer = new MutationObserver(mutations => {
       for (const mutation of mutations) {
         mutation.addedNodes.forEach(normalizeNode);
-        if (mutation.type === 'characterData') normalizeNode(mutation.target);
+        if (mutation.type === 'characterData') normalizeTextNode(mutation.target);
       }
     });
 
