@@ -129,6 +129,9 @@ function QueryAccountBoundary({ children }: { children: ReactNode }) {
 function AuthenticatedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  useEffect(() => {
+    if (!loading && user) warmCoreChunks();
+  }, [loading, user]);
   if (loading) return <RouteFallback />;
   if (!user) {
     const destination = `${location.pathname}${location.search}`;
