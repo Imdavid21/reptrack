@@ -20,34 +20,92 @@ import Privacy from "./pages/Privacy";
 import Changelog from "./pages/Changelog";
 import AppIndex from "./pages/AppIndex";
 
-const AdaptiveWorkout = lazy(() => import("./pages/AdaptiveWorkout"));
-const Dataroom = lazy(() => import("./pages/Dataroom"));
-const DataroomBody = lazy(() => import("./pages/DataroomBody"));
-const DataroomTraining = lazy(() => import("./pages/DataroomTraining"));
-const DataroomExercise = lazy(() => import("./pages/DataroomExercise"));
-const DataroomNutrition = lazy(() => import("./pages/DataroomNutrition"));
-const DataroomRecovery = lazy(() => import("./pages/DataroomRecovery"));
-const DataroomActivity = lazy(() => import("./pages/DataroomActivity"));
-const DataroomRecords = lazy(() => import("./pages/DataroomRecords"));
-const DataroomExplore = lazy(() => import("./pages/DataroomExplore"));
-const History = lazy(() => import("./pages/History"));
-const SettingsHub = lazy(() => import("./pages/SettingsHub"));
-const SettingsAccount = lazy(() => import("./pages/SettingsAccount"));
-const SettingsData = lazy(() => import("./pages/SettingsData"));
-const SettingsAdvanced = lazy(() => import("./pages/SettingsAdvanced"));
-const LifecycleTracker = lazy(() => import("./pages/LifecycleTracker"));
-const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
-const McpStatus = lazy(() => import("./pages/McpStatus"));
-const PerformanceLab = lazy(() => import("./pages/PerformanceLab"));
-const AdvancedSimulator = lazy(() => import("./pages/AdvancedSimulator"));
-const GymProfiles = lazy(() => import("./pages/GymProfiles"));
-const FoodAutopilot = lazy(() => import("./pages/FoodAutopilot"));
-const AdvancedSessionStart = lazy(() => import("./pages/AdvancedSessionStart"));
-const PlateCalculator = lazy(() => import("./pages/PlateCalculator"));
-const FlightRecorder = lazy(() => import("./pages/FlightRecorder"));
-const CoachExport = lazy(() => import("./pages/CoachExport"));
-const ExternalWorkoutImport = lazy(() => import("./pages/ExternalWorkoutImport"));
+const loadAdaptiveWorkout = () => import("./pages/AdaptiveWorkout");
+const loadDataroom = () => import("./pages/Dataroom");
+const loadDataroomBody = () => import("./pages/DataroomBody");
+const loadDataroomTraining = () => import("./pages/DataroomTraining");
+const loadDataroomExercise = () => import("./pages/DataroomExercise");
+const loadDataroomNutrition = () => import("./pages/DataroomNutrition");
+const loadDataroomRecovery = () => import("./pages/DataroomRecovery");
+const loadDataroomActivity = () => import("./pages/DataroomActivity");
+const loadDataroomRecords = () => import("./pages/DataroomRecords");
+const loadDataroomExplore = () => import("./pages/DataroomExplore");
+const loadHistory = () => import("./pages/History");
+const loadSettingsHub = () => import("./pages/SettingsHub");
+const loadSettingsAccount = () => import("./pages/SettingsAccount");
+const loadSettingsData = () => import("./pages/SettingsData");
+const loadSettingsAdvanced = () => import("./pages/SettingsAdvanced");
+const loadLifecycleTracker = () => import("./pages/LifecycleTracker");
+const loadWorkoutDetail = () => import("./pages/WorkoutDetail");
+const loadOAuthConsent = () => import("./pages/OAuthConsent");
+const loadMcpStatus = () => import("./pages/McpStatus");
+const loadPerformanceLab = () => import("./pages/PerformanceLab");
+const loadAdvancedSimulator = () => import("./pages/AdvancedSimulator");
+const loadGymProfiles = () => import("./pages/GymProfiles");
+const loadFoodAutopilot = () => import("./pages/FoodAutopilot");
+const loadAdvancedSessionStart = () => import("./pages/AdvancedSessionStart");
+const loadPlateCalculator = () => import("./pages/PlateCalculator");
+const loadFlightRecorder = () => import("./pages/FlightRecorder");
+const loadCoachExport = () => import("./pages/CoachExport");
+const loadExternalWorkoutImport = () => import("./pages/ExternalWorkoutImport");
+
+const AdaptiveWorkout = lazy(loadAdaptiveWorkout);
+const Dataroom = lazy(loadDataroom);
+const DataroomBody = lazy(loadDataroomBody);
+const DataroomTraining = lazy(loadDataroomTraining);
+const DataroomExercise = lazy(loadDataroomExercise);
+const DataroomNutrition = lazy(loadDataroomNutrition);
+const DataroomRecovery = lazy(loadDataroomRecovery);
+const DataroomActivity = lazy(loadDataroomActivity);
+const DataroomRecords = lazy(loadDataroomRecords);
+const DataroomExplore = lazy(loadDataroomExplore);
+const History = lazy(loadHistory);
+const SettingsHub = lazy(loadSettingsHub);
+const SettingsAccount = lazy(loadSettingsAccount);
+const SettingsData = lazy(loadSettingsData);
+const SettingsAdvanced = lazy(loadSettingsAdvanced);
+const LifecycleTracker = lazy(loadLifecycleTracker);
+const WorkoutDetail = lazy(loadWorkoutDetail);
+const OAuthConsent = lazy(loadOAuthConsent);
+const McpStatus = lazy(loadMcpStatus);
+const PerformanceLab = lazy(loadPerformanceLab);
+const AdvancedSimulator = lazy(loadAdvancedSimulator);
+const GymProfiles = lazy(loadGymProfiles);
+const FoodAutopilot = lazy(loadFoodAutopilot);
+const AdvancedSessionStart = lazy(loadAdvancedSessionStart);
+const PlateCalculator = lazy(loadPlateCalculator);
+const FlightRecorder = lazy(loadFlightRecorder);
+const CoachExport = lazy(loadCoachExport);
+const ExternalWorkoutImport = lazy(loadExternalWorkoutImport);
+
+// Warm the chunks behind the main tabs shortly after the app mounts so tab
+// switches and Start workout don't hit a "Loading…" screen on real networks.
+const CORE_CHUNK_LOADERS = [
+  loadAdaptiveWorkout,
+  loadHistory,
+  loadDataroom,
+  loadDataroomTraining,
+  loadDataroomActivity,
+  loadDataroomNutrition,
+  loadDataroomRecovery,
+  loadDataroomBody,
+  loadDataroomRecords,
+  loadDataroomExplore,
+  loadDataroomExercise,
+  loadWorkoutDetail,
+  loadSettingsHub,
+];
+
+let coreChunksWarmed = false;
+function warmCoreChunks() {
+  if (coreChunksWarmed) return;
+  coreChunksWarmed = true;
+  const preload = () => CORE_CHUNK_LOADERS.forEach(load => { void load().catch(() => {}); });
+  if (typeof window === "undefined") return;
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+  if (idle) idle(preload, { timeout: 3000 });
+  else window.setTimeout(preload, 1200);
+}
 
 function RouteFallback() {
   return <div className="min-h-[45dvh] flex items-center justify-center px-4" role="status" aria-live="polite"><span className="type-caption">Loading…</span></div>;
@@ -71,6 +129,9 @@ function QueryAccountBoundary({ children }: { children: ReactNode }) {
 function AuthenticatedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  useEffect(() => {
+    if (!loading && user) warmCoreChunks();
+  }, [loading, user]);
   if (loading) return <RouteFallback />;
   if (!user) {
     const destination = `${location.pathname}${location.search}`;
