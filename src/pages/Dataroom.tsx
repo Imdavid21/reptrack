@@ -166,6 +166,13 @@ function DataroomContent() {
   const coverageSeries = [coverage.weight.count / Math.max(days, 1), coverage.training.count / Math.max(days / 7, 1), coverage.nutrition.count / Math.max(days, 1), coverage.sleep.count / Math.max(days, 1), coverage.activity.count / Math.max(days / 7, 1)];
   const seriesFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? weightSeries : finding.domain === 'training' ? trainingSeries : finding.domain === 'nutrition' ? proteinSeries : finding.domain === 'recovery' ? sleepSeries : coverageSeries;
 
+  const weightGoalTarget = current.preferences?.weight_goal;
+  const currentWeight = current.analysis?.weight.trendWeight ?? currentSummary.weightLatest;
+  const goalProgress = weightGoalTarget && currentWeight != null && firstWeight.data != null && current.preferences?.weight_goal_type !== 'maintain'
+    ? { start: firstWeight.data, current: currentWeight, target: Number(weightGoalTarget) }
+    : null;
+  const goalProgressFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? goalProgress : null;
+
   const weightValue = current.analysis?.weight.trendWeight != null ? `${current.analysis.weight.trendWeight.toFixed(1)} kg` : currentSummary.weightLatest != null ? `${currentSummary.weightLatest} kg` : 'No data';
   const trainingValue = currentSummary.workouts ? `${currentSummary.workouts} workouts` : 'No sessions';
   const nutritionValue = currentSummary.proteinPerLoggedDay != null ? `${currentSummary.proteinPerLoggedDay} g` : 'No logs';
