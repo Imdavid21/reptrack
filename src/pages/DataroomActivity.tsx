@@ -63,7 +63,12 @@ function ActivityContent() {
     <section><div className="mb-3"><h2 className="type-section-title">Weekly Activity</h2></div><ActivityTimeline activities={data.activities} /></section>
 
 
-    <section><div className="mb-3"><h2 className="type-section-title">Activity Totals</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No activities in this range.</div>}</section>
+    <section><div className="mb-3"><h2 className="type-section-title">Activity Totals</h2></div>{activityRows.length ? <div className="space-y-2">{activityRows.map(([kind, row]) => <div key={kind} className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-baseline justify-between gap-3"><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-energy" style={{ width: `${Math.max(4, (row.minutes / maxMinutes) * 100)}%` }} /></div>
+      <div className="type-caption mt-2 tabular-nums">{row.sessions} session{row.sessions === 1 ? '' : 's'}{row.km ? ` · ${row.km.toFixed(1)} km · ${(row.minutes / row.km).toFixed(1)} min/km` : ''}</div>
+    </div>)}</div> : <div className="border-y border-border py-5 type-caption">No activities in this range.</div>}</section>
+
 
     {latestMobility && <section><div className="mb-3"><h2 className="type-section-title">Left vs Right</h2><p className="type-caption mt-1">Hollow = left · filled = right</p></div><div className="grid gap-3 md:grid-cols-2"><MobilityBalance label="Knee-to-wall" left={latestMobility.knee_to_wall_left_cm} right={latestMobility.knee_to_wall_right_cm} unit="cm"/><MobilityBalance label="Hip 90/90" left={latestMobility.hip_90_90_left} right={latestMobility.hip_90_90_right}/></div></section>}
 
