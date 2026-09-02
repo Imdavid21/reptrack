@@ -57,29 +57,33 @@ function findingPath(domain: DataroomFinding['domain']) {
   return '/app/dataroom/explore';
 }
 
-function GoalProgressBar({ start, current, target }: { start: number; current: number; target: number }) {
-  const total = Math.abs(target - start);
+type GoalProgress = { current: number; target: number; start?: number; unit: string };
+
+function GoalProgressBar({ start, current, target, unit }: GoalProgress) {
+  const baseline = start ?? 0;
+  const total = Math.abs(target - baseline);
   if (!Number.isFinite(total) || total < 0.05) return null;
-  const done = Math.min(1, Math.max(0, Math.abs(current - start) / total));
+  const done = Math.min(1, Math.max(0, Math.abs(current - baseline) / total));
   const remaining = Math.abs(target - current);
-  const reached = target > start ? current >= target : current <= target;
+  const reached = target > baseline ? current >= target : current <= target;
   const percent = Math.round(done * 100);
+  const format = (value: number) => `${Number.isInteger(value) ? value : value.toFixed(1)} ${unit}`;
   return <div className="mt-3 rounded-xl bg-muted/40 p-3" onClick={event => event.stopPropagation()}>
     <div className="flex items-baseline justify-between gap-2">
-      <span className="type-meta uppercase text-muted-foreground">Target {target} kg</span>
+      <span className="type-meta uppercase text-muted-foreground">Target {format(target)}</span>
       <span className="text-sm font-semibold tabular-nums">{reached ? 'Target reached' : `${percent}% there`}</span>
     </div>
     <div className="relative mt-2 h-2 rounded-full bg-muted overflow-hidden">
       <div className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-all" style={{ width: `${percent}%` }} />
     </div>
     <div className="mt-1.5 flex items-baseline justify-between gap-2 type-caption">
-      <span>Start {start.toFixed(1)} kg</span>
-      <span>{reached ? 'Holding at goal' : `${remaining.toFixed(1)} kg to go`}</span>
+      <span>{start != null ? `Start ${format(start)}` : `Now ${format(current)}`}</span>
+      <span>{reached ? 'Holding at goal' : `${format(remaining)} to go`}</span>
     </div>
   </div>;
 }
 
-function AttentionCard({ finding, values, onClick, goalProgress }: { finding: DataroomFinding; values: number[]; onClick: () => void; goalProgress?: { start: number; current: number; target: number } | null }) {
+function AttentionCard({ finding, values, onClick, goalProgress }: { finding: DataroomFinding; values: number[]; onClick: () => void; goalProgress?: GoalProgress | null }) {
   const action = finding.actionKind === 'keep' ? 'On track' : finding.actionKind;
   return <button onClick={onClick} className="rounded-[20px] border border-border bg-card p-4 text-left hover:bg-muted/20 transition-colors">
     <div className="flex items-center justify-between gap-3"><span className="rounded-md bg-muted px-2 py-1 type-meta uppercase">{action}</span><ConfidenceMark value={finding.confidence} compact /></div>
@@ -169,9 +173,31 @@ function DataroomContent() {
   const weightGoalTarget = current.preferences?.weight_goal;
   const currentWeight = current.analysis?.weight.trendWeight ?? currentSummary.weightLatest;
   const goalProgress = weightGoalTarget && currentWeight != null && firstWeight.data != null && current.preferences?.weight_goal_type !== 'maintain'
-    ? { start: firstWeight.data, current: currentWeight, target: Number(weightGoalTarget) }
+    ? { start: firstWeight.data, current: currentWeight, target: Number(weightGoalTarget), unit: 'kg' }
     : null;
-  const goalProgressFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? goalProgress : null;
+
+  const weeklyWorkoutGoal = current.preferences?.weekly_workout_goal;
+  const trainingGoalProgress = weeklyWorkoutGoal && currentSummary.workouts != null
+    ? { current: currentSummary.workouts, target: Math.max(1, Math.round((Number(weeklyWorkoutGoal) * days) / 7)), unit: 'sessions' }
+    : null;
+
+  const sleepGoal = current.preferences?.sleep_goal;
+  const recoveryGoalProgress = sleepGoal && currentSummary.sleepAverage != null
+    ? { current: currentSummary.sleepAverage, target: Number(sleepGoal), unit: 'h' }
+    : null;
+
+  const proteinGoal = current.preferences?.daily_protein_goal;
+  const nutritionGoalProgress = proteinGoal && currentSummary.proteinPerLoggedDay != null
+    ? { current: currentSummary.proteinPerLoggedDay, target: Number(proteinGoal), unit: 'g' }
+    : null;
+
+  const goalProgressFor = (finding: DataroomFinding): GoalProgress | null => {
+    if (finding.domain === 'bodyweight') return goalProgress;
+    if (finding.domain === 'training') return trainingGoalProgress;
+    if (finding.domain === 'recovery') return recoveryGoalProgress;
+    if (finding.domain === 'nutrition') return nutritionGoalProgress;
+    return null;
+  };
 
   const weightValue = current.analysis?.weight.trendWeight != null ? `${current.analysis.weight.trendWeight.toFixed(1)} kg` : currentSummary.weightLatest != null ? `${currentSummary.weightLatest} kg` : 'No data';
   const trainingValue = currentSummary.workouts ? `${currentSummary.workouts} workouts` : 'No sessions';
