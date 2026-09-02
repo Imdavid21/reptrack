@@ -21,6 +21,12 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/toast';
 import { readCompletionSnapshot } from '@/components/workout/WorkoutCompletionWatcher';
+import { rateWorkout, type RatingSet } from '@/lib/workoutRating';
+import { SessionRatingCard } from '@/components/workout/SessionRatingCard';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface InlineEdit {
   id: string;
@@ -151,6 +157,41 @@ export default function WorkoutDetail() {
     };
   }, [workout, previousDetails.workout, grouped, previousGrouped]);
 
+  const { preferences } = useUserPreferences();
+  const { user } = useAuth();
+  const workoutDate = workout?.date || null;
+  const { data: sleepHours } = useQuery({
+    queryKey: ['workout-detail-sleep', user?.id, workoutDate],
+    enabled: Boolean(user?.id && workoutDate && completedMode),
+    queryFn: async () => {
+      const { data } = await supabase.from('daily_metrics').select('sleep_hours').eq('user_id', user!.id).eq('date', workoutDate!).maybeSingle();
+      const hours = data?.sleep_hours as number | null | undefined;
+      return hours && hours > 0 ? hours : null;
+    },
+  });
+
+  const rating = useMemo(() => {
+    if (!completedMode || !workout) return null;
+    const toRatingSets = (sets: DetailSet[] | undefined): RatingSet[] => (sets || []).map(set => ({
+      name: baseName(set.name),
+      category: set.category,
+      weight: Number.parseFloat(set.actual_weight || '0') || 0,
+      reps: Number.parseFloat(set.actual_reps || '0') || 0,
+      completed: set.completed,
+    }));
+    return rateWorkout({
+      dayName: workout.day_name,
+      durationMinutes: Math.round(Number((workout as typeof workout & { workout_duration_minutes?: number }).workout_duration_minutes || 0)) || null,
+      sets: toRatingSets(workout.exercises as DetailSet[]),
+      previousSets: toRatingSets(previousDetails.workout?.exercises as DetailSet[] | undefined),
+      plannedSets: (workout.exercises as DetailSet[]).length || null,
+      sleepHours: sleepHours ?? null,
+      inDeficit: Boolean(preferences?.deficit_mode_enabled),
+    });
+  }, [completedMode, workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+
+
+
   if (currentDetails.isLoading && !(pendingMode && completionSnapshot)) {
     return <MainLayout showBack backTo="/app/progress"><div className="flex items-center justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-muted-foreground" /></div></MainLayout>;
   }
@@ -267,6 +308,7 @@ export default function WorkoutDetail() {
             <div><div className="type-caption">Progression wins</div><div className="text-2xl font-semibold tabular-nums">{comparison?.wins ?? 0}</div></div>
             <div><div className="type-caption">Volume</div><div className="text-2xl font-semibold tabular-nums">{comparison?.currentVolume ? comparison.currentVolume.toLocaleString() : '—'}</div></div>
           </div>
+          {rating && <div className="mt-5"><SessionRatingCard rating={rating} /></div>}
           <div className="mt-6 flex gap-2"><button onClick={() => navigate('/app', { replace: true })} className="min-h-14 flex-1 rounded-2xl bg-foreground text-background font-semibold">Done</button><button onClick={() => document.getElementById('workout-review')?.scrollIntoView({ behavior: 'smooth' })} className="min-h-14 flex-1 rounded-2xl border border-border font-semibold">Review workout</button></div>
         </section>
       ) : (
