@@ -157,6 +157,41 @@ export default function WorkoutDetail() {
     };
   }, [workout, previousDetails.workout, grouped, previousGrouped]);
 
+  const { preferences } = useUserPreferences();
+  const { user } = useAuth();
+  const workoutDate = workout?.date || null;
+  const { data: sleepHours } = useQuery({
+    queryKey: ['workout-detail-sleep', user?.id, workoutDate],
+    enabled: Boolean(user?.id && workoutDate && completedMode),
+    queryFn: async () => {
+      const { data } = await supabase.from('daily_metrics').select('sleep_hours').eq('user_id', user!.id).eq('date', workoutDate!).maybeSingle();
+      const hours = data?.sleep_hours as number | null | undefined;
+      return hours && hours > 0 ? hours : null;
+    },
+  });
+
+  const rating = useMemo(() => {
+    if (!completedMode || !workout) return null;
+    const toRatingSets = (sets: DetailSet[] | undefined): RatingSet[] => (sets || []).map(set => ({
+      name: baseName(set.name),
+      category: set.category,
+      weight: Number.parseFloat(set.actual_weight || '0') || 0,
+      reps: Number.parseFloat(set.actual_reps || '0') || 0,
+      completed: set.completed,
+    }));
+    return rateWorkout({
+      dayName: workout.day_name,
+      durationMinutes: Math.round(Number((workout as typeof workout & { workout_duration_minutes?: number }).workout_duration_minutes || 0)) || null,
+      sets: toRatingSets(workout.exercises as DetailSet[]),
+      previousSets: toRatingSets(previousDetails.workout?.exercises as DetailSet[] | undefined),
+      plannedSets: (workout.exercises as DetailSet[]).length || null,
+      sleepHours: sleepHours ?? null,
+      inDeficit: Boolean(preferences?.deficit_mode_enabled),
+    });
+  }, [completedMode, workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+
+
+
   if (currentDetails.isLoading && !(pendingMode && completionSnapshot)) {
     return <MainLayout showBack backTo="/app/progress"><div className="flex items-center justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-muted-foreground" /></div></MainLayout>;
   }
