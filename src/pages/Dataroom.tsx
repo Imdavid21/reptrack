@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Activity, ChevronRight, Database, Dumbbell, Footprints, Gauge, Moon, Scale, Settings2, Utensils } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
@@ -54,13 +57,36 @@ function findingPath(domain: DataroomFinding['domain']) {
   return '/app/dataroom/explore';
 }
 
-function AttentionCard({ finding, values, onClick }: { finding: DataroomFinding; values: number[]; onClick: () => void }) {
+function GoalProgressBar({ start, current, target }: { start: number; current: number; target: number }) {
+  const total = Math.abs(target - start);
+  if (!Number.isFinite(total) || total < 0.05) return null;
+  const done = Math.min(1, Math.max(0, Math.abs(current - start) / total));
+  const remaining = Math.abs(target - current);
+  const reached = target > start ? current >= target : current <= target;
+  const percent = Math.round(done * 100);
+  return <div className="mt-3 rounded-xl bg-muted/40 p-3" onClick={event => event.stopPropagation()}>
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="type-meta uppercase text-muted-foreground">Target {target} kg</span>
+      <span className="text-sm font-semibold tabular-nums">{reached ? 'Target reached' : `${percent}% there`}</span>
+    </div>
+    <div className="relative mt-2 h-2 rounded-full bg-muted overflow-hidden">
+      <div className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-all" style={{ width: `${percent}%` }} />
+    </div>
+    <div className="mt-1.5 flex items-baseline justify-between gap-2 type-caption">
+      <span>Start {start.toFixed(1)} kg</span>
+      <span>{reached ? 'Holding at goal' : `${remaining.toFixed(1)} kg to go`}</span>
+    </div>
+  </div>;
+}
+
+function AttentionCard({ finding, values, onClick, goalProgress }: { finding: DataroomFinding; values: number[]; onClick: () => void; goalProgress?: { start: number; current: number; target: number } | null }) {
   const action = finding.actionKind === 'keep' ? 'On track' : finding.actionKind;
   return <button onClick={onClick} className="rounded-[20px] border border-border bg-card p-4 text-left hover:bg-muted/20 transition-colors">
     <div className="flex items-center justify-between gap-3"><span className="rounded-md bg-muted px-2 py-1 type-meta uppercase">{action}</span><ConfidenceMark value={finding.confidence} compact /></div>
     <h3 className="mt-3 text-base font-semibold leading-5">{finding.title}</h3>
     <p className="mt-1 type-caption line-clamp-2">{finding.signal}</p>
     <div className="mt-4 text-foreground"><MiniTrend values={values} /></div>
+    {goalProgress && <GoalProgressBar {...goalProgress} />}
     <div className="mt-3 flex items-start justify-between gap-3 border-t border-border pt-3"><p className="text-sm font-medium leading-5 line-clamp-2">{finding.action}</p><ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></div>
   </button>;
 }
@@ -71,8 +97,19 @@ function LoadingLine() {
 
 function DataroomContent() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { days, dateRange } = useDataroomRange();
   const current = useDataroomData(dateRange);
+  const firstWeight = useQuery({
+    queryKey: ['dataroom-first-weight', user?.id],
+    enabled: !!user,
+    staleTime: 10 * 60_000,
+    queryFn: async (): Promise<number | null> => {
+      if (!user) return null;
+      const { data } = await supabase.from('daily_metrics').select('bodyweight').eq('user_id', user.id).gt('bodyweight', 0).order('date', { ascending: true }).limit(1).maybeSingle();
+      return data?.bodyweight != null ? Number(data.bodyweight) : null;
+    },
+  });
   const previousRange = useMemo(() => previousComparableRange(dateRange), [dateRange]);
   const previous = useDataroomData(previousRange);
 
@@ -129,6 +166,13 @@ function DataroomContent() {
   const coverageSeries = [coverage.weight.count / Math.max(days, 1), coverage.training.count / Math.max(days / 7, 1), coverage.nutrition.count / Math.max(days, 1), coverage.sleep.count / Math.max(days, 1), coverage.activity.count / Math.max(days / 7, 1)];
   const seriesFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? weightSeries : finding.domain === 'training' ? trainingSeries : finding.domain === 'nutrition' ? proteinSeries : finding.domain === 'recovery' ? sleepSeries : coverageSeries;
 
+  const weightGoalTarget = current.preferences?.weight_goal;
+  const currentWeight = current.analysis?.weight.trendWeight ?? currentSummary.weightLatest;
+  const goalProgress = weightGoalTarget && currentWeight != null && firstWeight.data != null && current.preferences?.weight_goal_type !== 'maintain'
+    ? { start: firstWeight.data, current: currentWeight, target: Number(weightGoalTarget) }
+    : null;
+  const goalProgressFor = (finding: DataroomFinding) => finding.domain === 'bodyweight' ? goalProgress : null;
+
   const weightValue = current.analysis?.weight.trendWeight != null ? `${current.analysis.weight.trendWeight.toFixed(1)} kg` : currentSummary.weightLatest != null ? `${currentSummary.weightLatest} kg` : 'No data';
   const trainingValue = currentSummary.workouts ? `${currentSummary.workouts} workouts` : 'No sessions';
   const nutritionValue = currentSummary.proteinPerLoggedDay != null ? `${currentSummary.proteinPerLoggedDay} g` : 'No logs';
@@ -144,7 +188,7 @@ function DataroomContent() {
 
       <section className="mb-8" aria-labelledby="attention-title">
         <div className="mb-3 flex items-end justify-between gap-3"><div><h2 id="attention-title" className="type-section-title">{actionFindings.length ? 'Needs Attention' : 'Current Read'}</h2>{current.analysis?.headline && <p className="type-caption mt-1 line-clamp-1">{current.analysis.headline}</p>}</div>{current.analysis && <ConfidenceMark value={current.analysis.confidence} compact />}</div>
-        {current.isLoading && !current.analysis ? <LoadingLine /> : attentionFindings.length ? <div className="grid gap-3 md:grid-cols-3">{attentionFindings.map(finding => <AttentionCard key={finding.id} finding={finding} values={seriesFor(finding)} onClick={() => navigate(findingPath(finding.domain))} />)}</div> : <div className="border-y border-border py-5 text-sm font-semibold">Not enough evidence yet.</div>}
+        {current.isLoading && !current.analysis ? <LoadingLine /> : attentionFindings.length ? <div className="grid gap-3 md:grid-cols-3">{attentionFindings.map(finding => <AttentionCard key={finding.id} finding={finding} values={seriesFor(finding)} goalProgress={goalProgressFor(finding)} onClick={() => navigate(findingPath(finding.domain))} />)}</div> : <div className="border-y border-border py-5 text-sm font-semibold">Not enough evidence yet.</div>}
       </section>
 
       <section className="mb-8" aria-labelledby="pulse-title">
