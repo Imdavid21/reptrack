@@ -22,24 +22,46 @@ function MobilityBalance({ left, right, label, unit = '' }: { left: number | nul
   </div>;
 }
 
+function StatTile({ label, value, unit, sub }: { label: string; value: string; unit?: string; sub?: string }) {
+  return <div className="rounded-xl border border-border bg-card p-3">
+    <div className="type-caption">{label}</div>
+    <div className="mt-1 flex items-baseline gap-1"><span className="text-2xl font-semibold tabular-nums leading-none">{value}</span>{unit && <span className="type-caption">{unit}</span>}</div>
+    {sub && <div className="type-caption mt-1">{sub}</div>}
+  </div>;
+}
+
 function ActivityContent() {
   const { dateRange } = useDataroomRange();
   const data = useDataroomData(dateRange);
-  const grouped = new Map<string, { minutes: number; sessions: number }>();
+  const grouped = new Map<string, { minutes: number; sessions: number; km: number }>();
   data.activities.forEach(activity => {
     const key = activity.activity_type || 'Activity';
-    const row = grouped.get(key) || { minutes: 0, sessions: 0 };
+    const row = grouped.get(key) || { minutes: 0, sessions: 0, km: 0 };
     row.minutes += Number(activity.duration_minutes || 0);
+    row.km += Number(activity.distance_km || 0);
     row.sessions += 1;
     grouped.set(key, row);
   });
   const activityRows = [...grouped.entries()].sort((a, b) => b[1].minutes - a[1].minutes);
+  const totalMinutes = activityRows.reduce((sum, [, row]) => sum + row.minutes, 0);
+  const totalKm = activityRows.reduce((sum, [, row]) => sum + row.km, 0);
+  const totalSessions = activityRows.reduce((sum, [, row]) => sum + row.sessions, 0);
+  const activeDays = new Set(data.activities.map(activity => activity.date)).size;
+  const maxMinutes = Math.max(1, ...activityRows.map(([, row]) => row.minutes));
   const firstMobility = data.mobility.at(0);
   const latestMobility = data.mobility.at(-1);
   const movementDelta = (latest: number | null, first: number | null) => latest != null && first != null && data.mobility.length > 1 ? Number((latest - first).toFixed(1)) : null;
 
   return <div className="space-y-8">
+    <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <StatTile label="Moving time" value={String(Math.round(totalMinutes))} unit="min" sub={`${totalSessions} session${totalSessions === 1 ? '' : 's'}`} />
+      <StatTile label="Distance" value={totalKm ? totalKm.toFixed(1) : '0'} unit="km" sub={totalKm && totalMinutes ? `${(totalMinutes / totalKm).toFixed(1)} min/km avg` : 'No distance logged'} />
+      <StatTile label="Active days" value={String(activeDays)} sub={`${data.rangeDays} days in range`} />
+      <StatTile label="Avg session" value={totalSessions ? String(Math.round(totalMinutes / totalSessions)) : '0'} unit="min" sub={activityRows.length ? `${activityRows.length} activity type${activityRows.length === 1 ? '' : 's'}` : 'No activities'} />
+    </section>
+
     <section><div className="mb-3"><h2 className="type-section-title">Weekly Activity</h2></div><ActivityTimeline activities={data.activities} /></section>
+
 
     <section><div className="mb-3"><h2 className="type-section-title">Activity Totals</h2></div>{activityRows.length ? <div className="divide-y divide-border border-y border-border">{activityRows.map(([kind, row]) => <div key={kind} className="py-3 flex items-center justify-between gap-3"><div><div className="text-sm font-semibold capitalize">{kind.replace(/_/g, ' ')}</div><div className="type-caption mt-0.5">{row.sessions} session{row.sessions === 1 ? '' : 's'}</div></div><div className="text-sm font-semibold tabular-nums">{Math.round(row.minutes)} min</div></div>)}</div> : <div className="border-y border-border py-5 type-caption">No activities in this range.</div>}</section>
 
