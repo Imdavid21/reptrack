@@ -188,7 +188,7 @@ function DataroomContent() {
 
       <section className="mb-8" aria-labelledby="attention-title">
         <div className="mb-3 flex items-end justify-between gap-3"><div><h2 id="attention-title" className="type-section-title">{actionFindings.length ? 'Needs Attention' : 'Current Read'}</h2>{current.analysis?.headline && <p className="type-caption mt-1 line-clamp-1">{current.analysis.headline}</p>}</div>{current.analysis && <ConfidenceMark value={current.analysis.confidence} compact />}</div>
-        {current.isLoading && !current.analysis ? <LoadingLine /> : attentionFindings.length ? <div className="grid gap-3 md:grid-cols-3">{attentionFindings.map(finding => <AttentionCard key={finding.id} finding={finding} values={seriesFor(finding)} onClick={() => navigate(findingPath(finding.domain))} />)}</div> : <div className="border-y border-border py-5 text-sm font-semibold">Not enough evidence yet.</div>}
+        {current.isLoading && !current.analysis ? <LoadingLine /> : attentionFindings.length ? <div className="grid gap-3 md:grid-cols-3">{attentionFindings.map(finding => <AttentionCard key={finding.id} finding={finding} values={seriesFor(finding)} goalProgress={goalProgressFor(finding)} onClick={() => navigate(findingPath(finding.domain))} />)}</div> : <div className="border-y border-border py-5 text-sm font-semibold">Not enough evidence yet.</div>}
       </section>
 
       <section className="mb-8" aria-labelledby="pulse-title">
