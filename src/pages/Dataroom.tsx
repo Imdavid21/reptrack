@@ -54,13 +54,36 @@ function findingPath(domain: DataroomFinding['domain']) {
   return '/app/dataroom/explore';
 }
 
-function AttentionCard({ finding, values, onClick }: { finding: DataroomFinding; values: number[]; onClick: () => void }) {
+function GoalProgressBar({ start, current, target }: { start: number; current: number; target: number }) {
+  const total = Math.abs(target - start);
+  if (!Number.isFinite(total) || total < 0.05) return null;
+  const done = Math.min(1, Math.max(0, Math.abs(current - start) / total));
+  const remaining = Math.abs(target - current);
+  const reached = target > start ? current >= target : current <= target;
+  const percent = Math.round(done * 100);
+  return <div className="mt-3 rounded-xl bg-muted/40 p-3" onClick={event => event.stopPropagation()}>
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="type-meta uppercase text-muted-foreground">Target {target} kg</span>
+      <span className="text-sm font-semibold tabular-nums">{reached ? 'Target reached' : `${percent}% there`}</span>
+    </div>
+    <div className="relative mt-2 h-2 rounded-full bg-muted overflow-hidden">
+      <div className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-all" style={{ width: `${percent}%` }} />
+    </div>
+    <div className="mt-1.5 flex items-baseline justify-between gap-2 type-caption">
+      <span>Start {start.toFixed(1)} kg</span>
+      <span>{reached ? 'Holding at goal' : `${remaining.toFixed(1)} kg to go`}</span>
+    </div>
+  </div>;
+}
+
+function AttentionCard({ finding, values, onClick, goalProgress }: { finding: DataroomFinding; values: number[]; onClick: () => void; goalProgress?: { start: number; current: number; target: number } | null }) {
   const action = finding.actionKind === 'keep' ? 'On track' : finding.actionKind;
   return <button onClick={onClick} className="rounded-[20px] border border-border bg-card p-4 text-left hover:bg-muted/20 transition-colors">
     <div className="flex items-center justify-between gap-3"><span className="rounded-md bg-muted px-2 py-1 type-meta uppercase">{action}</span><ConfidenceMark value={finding.confidence} compact /></div>
     <h3 className="mt-3 text-base font-semibold leading-5">{finding.title}</h3>
     <p className="mt-1 type-caption line-clamp-2">{finding.signal}</p>
     <div className="mt-4 text-foreground"><MiniTrend values={values} /></div>
+    {goalProgress && <GoalProgressBar {...goalProgress} />}
     <div className="mt-3 flex items-start justify-between gap-3 border-t border-border pt-3"><p className="text-sm font-medium leading-5 line-clamp-2">{finding.action}</p><ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></div>
   </button>;
 }
