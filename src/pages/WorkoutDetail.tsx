@@ -308,6 +308,7 @@ export default function WorkoutDetail() {
             <div><div className="type-caption">Progression wins</div><div className="text-2xl font-semibold tabular-nums">{comparison?.wins ?? 0}</div></div>
             <div><div className="type-caption">Volume</div><div className="text-2xl font-semibold tabular-nums">{comparison?.currentVolume ? comparison.currentVolume.toLocaleString() : '—'}</div></div>
           </div>
+          {rating && <div className="mt-5"><SessionRatingCard rating={rating} /></div>}
           <div className="mt-6 flex gap-2"><button onClick={() => navigate('/app', { replace: true })} className="min-h-14 flex-1 rounded-2xl bg-foreground text-background font-semibold">Done</button><button onClick={() => document.getElementById('workout-review')?.scrollIntoView({ behavior: 'smooth' })} className="min-h-14 flex-1 rounded-2xl border border-border font-semibold">Review workout</button></div>
         </section>
       ) : (
