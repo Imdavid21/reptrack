@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Activity, ChevronRight, Database, Dumbbell, Footprints, Gauge, Moon, Scale, Settings2, Utensils } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataroomRangeProvider, useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { DataroomRangeSelector } from '@/components/dataroom/DataroomRangeSelector';
