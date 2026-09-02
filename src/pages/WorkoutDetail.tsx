@@ -21,6 +21,12 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/toast';
 import { readCompletionSnapshot } from '@/components/workout/WorkoutCompletionWatcher';
+import { rateWorkout, type RatingSet } from '@/lib/workoutRating';
+import { SessionRatingCard } from '@/components/workout/SessionRatingCard';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface InlineEdit {
   id: string;
