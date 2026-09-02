@@ -97,8 +97,19 @@ function LoadingLine() {
 
 function DataroomContent() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { days, dateRange } = useDataroomRange();
   const current = useDataroomData(dateRange);
+  const firstWeight = useQuery({
+    queryKey: ['dataroom-first-weight', user?.id],
+    enabled: !!user,
+    staleTime: 10 * 60_000,
+    queryFn: async (): Promise<number | null> => {
+      if (!user) return null;
+      const { data } = await supabase.from('daily_metrics').select('bodyweight').eq('user_id', user.id).gt('bodyweight', 0).order('date', { ascending: true }).limit(1).maybeSingle();
+      return data?.bodyweight != null ? Number(data.bodyweight) : null;
+    },
+  });
   const previousRange = useMemo(() => previousComparableRange(dateRange), [dateRange]);
   const previous = useDataroomData(previousRange);
 
