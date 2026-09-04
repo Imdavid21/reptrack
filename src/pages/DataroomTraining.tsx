@@ -21,6 +21,10 @@ function TrainingContent() {
   const romSets = data.sets.filter(set => set.rom_quality != null);
   const reducedSessions = completed.filter(workout => Boolean((workout as typeof workout & { readiness_band?: string | null }).readiness_band) && (workout as typeof workout & { readiness_band?: string | null }).readiness_band !== 'green');
 
+  const ratingWorkouts = useMemo<HistoryWorkout[]>(() => data.workouts.map(workout => ({ id: workout.id, date: workout.date, day_name: workout.day_name, workout_duration_minutes: workout.workout_duration_minutes, completed_at: workout.completed_at, is_skipped: (workout as typeof workout & { is_skipped?: boolean | null }).is_skipped })), [data.workouts]);
+  const ratingSets = useMemo<HistorySet[]>(() => data.sets.map(set => ({ workout_id: set.workout_id, exercise_name: set.exercise_name, exercise_category: set.exercise_category, actual_weight: set.actual_weight, actual_reps: set.actual_reps, actual_rir: set.actual_rir, pain_score: set.pain_score, completed: set.completed })), [data.sets]);
+  const sleepByDate = useMemo(() => { const map: Record<string, number | null> = {}; for (const day of data.metrics) map[day.date] = day.sleep_hours ?? null; return map; }, [data.metrics]);
+
   return <div className="space-y-8">
     <section className="grid grid-cols-2 md:grid-cols-4 gap-5 border-y border-border py-5">
       <div><div className="type-caption">Workouts</div><div className="mt-1 text-xl font-semibold tabular-nums">{completed.length}</div><div className="type-caption mt-0.5">{(completed.length / days * 7).toFixed(1)} / week</div></div>
