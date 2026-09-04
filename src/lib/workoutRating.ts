@@ -2,6 +2,13 @@
 // Seven weighted dimensions sum to a score out of 100, with a separate
 // evidence confidence tier (A-D). Never invent data: missing inputs lower
 // confidence first and the score only when the dimension cannot be judged.
+//
+// Exercise identity and muscle mapping come from the shared exercise
+// classification layer so ratings agree with insights, PRs, and volume charts.
+
+import { getBodyPart, stripSetSuffix } from './exerciseClassification';
+import { getCanonicalName } from './exerciseMatching';
+import { getFamilyKey } from './exerciseFamilies';
 
 export interface RatingSet {
   name: string;
@@ -229,7 +236,7 @@ export function rateWorkout(input: RatingInput): WorkoutRating | null {
     let dropoffCount = 0;
     const byExercise = new Map<string, RatingSet[]>();
     for (const set of completed) {
-      const key = baseName(set.name).toLowerCase();
+      const key = exerciseKey(set.name);
       (byExercise.get(key) || byExercise.set(key, []).get(key)!).push(set);
     }
     for (const sets of byExercise.values()) {
@@ -277,7 +284,7 @@ export function rateWorkout(input: RatingInput): WorkoutRating | null {
     for (const [key, value] of currentBest) {
       const before = previousBest.get(key);
       if (!before) continue;
-      if (value > before * 1.01) { prWins += 1; winNames.push(key); }
+      if (value > before * 1.01) { prWins += 1; winNames.push(labelForKey(completed, key)); }
       else if (value < before * 0.97) regressions += 1;
       else stable += 1;
     }
