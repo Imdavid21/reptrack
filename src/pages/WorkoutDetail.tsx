@@ -162,7 +162,7 @@ export default function WorkoutDetail() {
   const workoutDate = workout?.date || null;
   const { data: sleepHours } = useQuery({
     queryKey: ['workout-detail-sleep', user?.id, workoutDate],
-    enabled: Boolean(user?.id && workoutDate && completedMode),
+    enabled: Boolean(user?.id && workoutDate),
     queryFn: async () => {
       const { data } = await supabase.from('daily_metrics').select('sleep_hours').eq('user_id', user!.id).eq('date', workoutDate!).maybeSingle();
       const hours = data?.sleep_hours as number | null | undefined;
@@ -171,7 +171,7 @@ export default function WorkoutDetail() {
   });
 
   const rating = useMemo(() => {
-    if (!completedMode || !workout) return null;
+    if (!workout) return null;
     const toRatingSets = (sets: DetailSet[] | undefined): RatingSet[] => (sets || []).map(set => ({
       name: baseName(set.name),
       category: set.category,
@@ -179,16 +179,19 @@ export default function WorkoutDetail() {
       reps: Number.parseFloat(set.actual_reps || '0') || 0,
       completed: set.completed,
     }));
+    const sets = toRatingSets(workout.exercises as DetailSet[]);
+    if (!sets.some(set => set.completed)) return null;
     return rateWorkout({
       dayName: workout.day_name,
       durationMinutes: Math.round(Number((workout as typeof workout & { workout_duration_minutes?: number }).workout_duration_minutes || 0)) || null,
-      sets: toRatingSets(workout.exercises as DetailSet[]),
+      sets,
       previousSets: toRatingSets(previousDetails.workout?.exercises as DetailSet[] | undefined),
       plannedSets: (workout.exercises as DetailSet[]).length || null,
       sleepHours: sleepHours ?? null,
       inDeficit: Boolean(preferences?.deficit_mode_enabled),
     });
-  }, [completedMode, workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+  }, [workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+
 
 
 
