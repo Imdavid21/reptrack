@@ -2,6 +2,13 @@
 // Seven weighted dimensions sum to a score out of 100, with a separate
 // evidence confidence tier (A-D). Never invent data: missing inputs lower
 // confidence first and the score only when the dimension cannot be judged.
+//
+// Exercise identity and muscle mapping come from the shared exercise
+// classification layer so ratings agree with insights, PRs, and volume charts.
+
+import { getBodyPart, stripSetSuffix } from './exerciseClassification';
+import { getCanonicalName } from './exerciseMatching';
+import { getFamilyKey } from './exerciseFamilies';
 
 export interface RatingSet {
   name: string;
@@ -49,7 +56,13 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function baseName(name: string) {
-  return name.replace(/ \(Set \d+\)$/i, '').trim();
+  return stripSetSuffix(name);
+}
+
+/** Identity used for progression comparisons: grip and equipment variants of the
+ *  same movement pattern resolve to one key so a PR is not lost on a swap. */
+function exerciseKey(name: string) {
+  return getFamilyKey(baseName(name));
 }
 
 function e1rm(set: RatingSet) {
@@ -61,12 +74,34 @@ function bestByExercise(sets: RatingSet[]) {
   const best = new Map<string, number>();
   for (const set of sets) {
     if (!set.completed) continue;
-    const key = baseName(set.name).toLowerCase();
+    const key = exerciseKey(set.name);
     const value = e1rm(set);
     if (value > (best.get(key) || 0)) best.set(key, value);
   }
   return best;
 }
+
+/** Display label for a family key, taken from the first set that maps to it. */
+function labelForKey(sets: RatingSet[], key: string) {
+  const match = sets.find(set => exerciseKey(set.name) === key);
+  return match ? getCanonicalName(baseName(match.name)) : key;
+}
+
+// Body parts from the shared classifier collapse into the coverage groups the
+// day templates are written against.
+const BODY_PART_TO_GROUP: Record<string, string> = {
+  chest: 'chest',
+  back: 'back',
+  shoulders: 'shoulders',
+  triceps: 'triceps',
+  biceps: 'biceps',
+  forearms: 'biceps',
+  quads: 'legs',
+  hamstrings: 'legs',
+  glutes: 'legs',
+  calves: 'legs',
+  core: 'core',
+};
 
 const CATEGORY_GROUPS: Record<string, RegExp> = {
   chest: /chest|pec/i,
@@ -79,12 +114,19 @@ const CATEGORY_GROUPS: Record<string, RegExp> = {
 };
 
 function muscleGroup(category: string, name: string): string {
+  // Prefer the shared exercise classifier so the rating engine sees the same
+  // muscle mapping as insights and volume charts.
+  const bodyPart = getBodyPart(getCanonicalName(baseName(name)), category).toLowerCase();
+  const mapped = BODY_PART_TO_GROUP[bodyPart];
+  if (mapped) return mapped;
+
   const haystack = `${category} ${name}`;
   for (const [group, pattern] of Object.entries(CATEGORY_GROUPS)) {
     if (pattern.test(haystack)) return group;
   }
   return 'other';
 }
+
 
 const DAY_EXPECTATIONS: Array<{ match: RegExp; groups: string[]; priority: string[] }> = [
   { match: /push/i, groups: ['chest', 'shoulders', 'triceps'], priority: ['shoulders', 'chest'] },
@@ -194,7 +236,7 @@ export function rateWorkout(input: RatingInput): WorkoutRating | null {
     let dropoffCount = 0;
     const byExercise = new Map<string, RatingSet[]>();
     for (const set of completed) {
-      const key = baseName(set.name).toLowerCase();
+      const key = exerciseKey(set.name);
       (byExercise.get(key) || byExercise.set(key, []).get(key)!).push(set);
     }
     for (const sets of byExercise.values()) {
@@ -242,7 +284,7 @@ export function rateWorkout(input: RatingInput): WorkoutRating | null {
     for (const [key, value] of currentBest) {
       const before = previousBest.get(key);
       if (!before) continue;
-      if (value > before * 1.01) { prWins += 1; winNames.push(key); }
+      if (value > before * 1.01) { prWins += 1; winNames.push(labelForKey(completed, key)); }
       else if (value < before * 0.97) regressions += 1;
       else stable += 1;
     }
