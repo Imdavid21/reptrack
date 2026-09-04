@@ -315,11 +315,15 @@ export default function WorkoutDetail() {
           <div className="mt-6 flex gap-2"><button onClick={() => navigate('/app', { replace: true })} className="min-h-14 flex-1 rounded-2xl bg-foreground text-background font-semibold">Done</button><button onClick={() => document.getElementById('workout-review')?.scrollIntoView({ behavior: 'smooth' })} className="min-h-14 flex-1 rounded-2xl border border-border font-semibold">Review workout</button></div>
         </section>
       ) : (
-        <header className="flex items-start justify-between gap-4 mb-5">
-          <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}</p></div>
-          <button onClick={() => setIsEditMode(value => !value)} className={cn('min-h-11 px-3 rounded-xl text-sm font-semibold flex items-center gap-2', isEditMode ? 'bg-foreground text-background' : 'border border-border text-muted-foreground')}><Edit2 className="h-4 w-4"/>{isEditMode ? 'Done' : 'Edit'}</button>
-        </header>
+        <>
+          <header className="flex items-start justify-between gap-4 mb-5">
+            <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}</p></div>
+            <button onClick={() => setIsEditMode(value => !value)} className={cn('min-h-11 px-3 rounded-xl text-sm font-semibold flex items-center gap-2', isEditMode ? 'bg-foreground text-background' : 'border border-border text-muted-foreground')}><Edit2 className="h-4 w-4"/>{isEditMode ? 'Done' : 'Edit'}</button>
+          </header>
+          {rating && <div className="mb-5"><SessionRatingCard rating={rating} /></div>}
+        </>
       )}
+
 
       {previousDetails.workout && comparison && <section className="py-5 border-b border-border" aria-label={`Comparison with previous ${workout.day_name}`}>
         <div className="flex items-end justify-between gap-3"><div><div className="type-eyebrow">Vs previous {workout.day_name}</div><div className="type-supporting mt-1">{previousDetails.workout.date}</div></div>{comparison.wins > 0 && <div className="text-sm font-semibold">{comparison.wins} {comparison.wins === 1 ? 'exercise improved' : 'exercises improved'}</div>}</div>
