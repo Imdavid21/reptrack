@@ -49,7 +49,13 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function baseName(name: string) {
-  return name.replace(/ \(Set \d+\)$/i, '').trim();
+  return stripSetSuffix(name);
+}
+
+/** Identity used for progression comparisons: grip and equipment variants of the
+ *  same movement pattern resolve to one key so a PR is not lost on a swap. */
+function exerciseKey(name: string) {
+  return getFamilyKey(baseName(name));
 }
 
 function e1rm(set: RatingSet) {
@@ -61,12 +67,34 @@ function bestByExercise(sets: RatingSet[]) {
   const best = new Map<string, number>();
   for (const set of sets) {
     if (!set.completed) continue;
-    const key = baseName(set.name).toLowerCase();
+    const key = exerciseKey(set.name);
     const value = e1rm(set);
     if (value > (best.get(key) || 0)) best.set(key, value);
   }
   return best;
 }
+
+/** Display label for a family key, taken from the first set that maps to it. */
+function labelForKey(sets: RatingSet[], key: string) {
+  const match = sets.find(set => exerciseKey(set.name) === key);
+  return match ? getCanonicalName(baseName(match.name)) : key;
+}
+
+// Body parts from the shared classifier collapse into the coverage groups the
+// day templates are written against.
+const BODY_PART_TO_GROUP: Record<string, string> = {
+  chest: 'chest',
+  back: 'back',
+  shoulders: 'shoulders',
+  triceps: 'triceps',
+  biceps: 'biceps',
+  forearms: 'biceps',
+  quads: 'legs',
+  hamstrings: 'legs',
+  glutes: 'legs',
+  calves: 'legs',
+  core: 'core',
+};
 
 const CATEGORY_GROUPS: Record<string, RegExp> = {
   chest: /chest|pec/i,
@@ -79,12 +107,19 @@ const CATEGORY_GROUPS: Record<string, RegExp> = {
 };
 
 function muscleGroup(category: string, name: string): string {
+  // Prefer the shared exercise classifier so the rating engine sees the same
+  // muscle mapping as insights and volume charts.
+  const bodyPart = getBodyPart(getCanonicalName(baseName(name)), category).toLowerCase();
+  const mapped = BODY_PART_TO_GROUP[bodyPart];
+  if (mapped) return mapped;
+
   const haystack = `${category} ${name}`;
   for (const [group, pattern] of Object.entries(CATEGORY_GROUPS)) {
     if (pattern.test(haystack)) return group;
   }
   return 'other';
 }
+
 
 const DAY_EXPECTATIONS: Array<{ match: RegExp; groups: string[]; priority: string[] }> = [
   { match: /push/i, groups: ['chest', 'shoulders', 'triceps'], priority: ['shoulders', 'chest'] },
