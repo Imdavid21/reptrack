@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { DataroomPageShell } from '@/components/dataroom/DataroomPageShell';
 import { MuscleVolumeTimeline } from '@/components/dataroom/DataroomCharts';
+import { SessionRatingTrend } from '@/components/dataroom/SessionRatingTrend';
 import { useDataroomRange } from '@/contexts/DataroomRangeContext';
 import { useDataroomData } from '@/hooks/useDataroomData';
+import type { HistorySet, HistoryWorkout } from '@/lib/sessionRatingHistory';
 import { useNavigate } from 'react-router-dom';
 
 function TrainingContent() {
