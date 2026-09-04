@@ -162,7 +162,7 @@ export default function WorkoutDetail() {
   const workoutDate = workout?.date || null;
   const { data: sleepHours } = useQuery({
     queryKey: ['workout-detail-sleep', user?.id, workoutDate],
-    enabled: Boolean(user?.id && workoutDate && completedMode),
+    enabled: Boolean(user?.id && workoutDate),
     queryFn: async () => {
       const { data } = await supabase.from('daily_metrics').select('sleep_hours').eq('user_id', user!.id).eq('date', workoutDate!).maybeSingle();
       const hours = data?.sleep_hours as number | null | undefined;
@@ -171,7 +171,7 @@ export default function WorkoutDetail() {
   });
 
   const rating = useMemo(() => {
-    if (!completedMode || !workout) return null;
+    if (!workout) return null;
     const toRatingSets = (sets: DetailSet[] | undefined): RatingSet[] => (sets || []).map(set => ({
       name: baseName(set.name),
       category: set.category,
@@ -179,16 +179,19 @@ export default function WorkoutDetail() {
       reps: Number.parseFloat(set.actual_reps || '0') || 0,
       completed: set.completed,
     }));
+    const sets = toRatingSets(workout.exercises as DetailSet[]);
+    if (!sets.some(set => set.completed)) return null;
     return rateWorkout({
       dayName: workout.day_name,
       durationMinutes: Math.round(Number((workout as typeof workout & { workout_duration_minutes?: number }).workout_duration_minutes || 0)) || null,
-      sets: toRatingSets(workout.exercises as DetailSet[]),
+      sets,
       previousSets: toRatingSets(previousDetails.workout?.exercises as DetailSet[] | undefined),
       plannedSets: (workout.exercises as DetailSet[]).length || null,
       sleepHours: sleepHours ?? null,
       inDeficit: Boolean(preferences?.deficit_mode_enabled),
     });
-  }, [completedMode, workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+  }, [workout, previousDetails.workout, sleepHours, preferences?.deficit_mode_enabled]);
+
 
 
 
@@ -312,11 +315,15 @@ export default function WorkoutDetail() {
           <div className="mt-6 flex gap-2"><button onClick={() => navigate('/app', { replace: true })} className="min-h-14 flex-1 rounded-2xl bg-foreground text-background font-semibold">Done</button><button onClick={() => document.getElementById('workout-review')?.scrollIntoView({ behavior: 'smooth' })} className="min-h-14 flex-1 rounded-2xl border border-border font-semibold">Review workout</button></div>
         </section>
       ) : (
-        <header className="flex items-start justify-between gap-4 mb-5">
-          <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}</p></div>
-          <button onClick={() => setIsEditMode(value => !value)} className={cn('min-h-11 px-3 rounded-xl text-sm font-semibold flex items-center gap-2', isEditMode ? 'bg-foreground text-background' : 'border border-border text-muted-foreground')}><Edit2 className="h-4 w-4"/>{isEditMode ? 'Done' : 'Edit'}</button>
-        </header>
+        <>
+          <header className="flex items-start justify-between gap-4 mb-5">
+            <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}</p></div>
+            <button onClick={() => setIsEditMode(value => !value)} className={cn('min-h-11 px-3 rounded-xl text-sm font-semibold flex items-center gap-2', isEditMode ? 'bg-foreground text-background' : 'border border-border text-muted-foreground')}><Edit2 className="h-4 w-4"/>{isEditMode ? 'Done' : 'Edit'}</button>
+          </header>
+          {rating && <div className="mb-5"><SessionRatingCard rating={rating} /></div>}
+        </>
       )}
+
 
       {previousDetails.workout && comparison && <section className="py-5 border-b border-border" aria-label={`Comparison with previous ${workout.day_name}`}>
         <div className="flex items-end justify-between gap-3"><div><div className="type-eyebrow">Vs previous {workout.day_name}</div><div className="type-supporting mt-1">{previousDetails.workout.date}</div></div>{comparison.wins > 0 && <div className="text-sm font-semibold">{comparison.wins} {comparison.wins === 1 ? 'exercise improved' : 'exercises improved'}</div>}</div>

@@ -142,8 +142,10 @@ function AuthenticatedRoute({ children }: { children: ReactNode }) {
 
 function DataroomWorkoutRedirect() {
   const { workoutId } = useParams();
-  return <Navigate to={`/app/dataroom/workout/${workoutId}`} replace />;
+  const location = useLocation();
+  return <Navigate to={`/app/dataroom/workout/${workoutId}${location.search}`} replace />;
 }
+
 
 function LegacyAnalyticsRedirect() {
   const [params] = useSearchParams();
