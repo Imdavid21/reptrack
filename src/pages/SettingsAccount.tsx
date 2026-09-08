@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAutoMaintenanceCalories } from '@/hooks/useAutoMaintenanceCalories';
+import { deriveProteinTarget } from '@/lib/energyEngineV3';
+
 
 export default function SettingsAccount() {
   const navigate = useNavigate();
@@ -128,6 +131,11 @@ export default function SettingsAccount() {
 
   const field = (key: keyof typeof form, value: string) => setForm(current => ({ ...current, [key]: value }));
   const identities = user?.identities || [];
+  const weightGoalType = (preferences?.weight_goal_type as 'lose' | 'gain' | 'maintain' | undefined) ?? 'maintain';
+  const weightGoalLabel = weightGoalType === 'lose' ? 'losing weight' : weightGoalType === 'gain' ? 'gaining weight' : 'maintaining';
+  const proteinPerKg = weightGoalType === 'lose' ? 2.2 : weightGoalType === 'gain' ? 1.8 : 2;
+  const automaticProtein = energy.effectiveWeightKg > 0 ? deriveProteinTarget(energy.effectiveWeightKg, weightGoalType) : 0;
+
 
   return <MainLayout showBack backTo="/app/settings" hideNav>
     <div className="mx-auto max-w-[700px] pb-12">
