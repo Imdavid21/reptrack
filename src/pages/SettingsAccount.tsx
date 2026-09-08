@@ -19,7 +19,9 @@ export default function SettingsAccount() {
   const { user, signOut, updateEmail, resetPassword } = useAuth();
   const { preferences, updatePreferences, isLoading } = useUserPreferences();
   const { recordGoalHistory } = useGoalHistory();
+  const energy = useAutoMaintenanceCalories();
   const [saving, setSaving] = useState(false);
+
   const [newEmail, setNewEmail] = useState('');
   const [emailBusy, setEmailBusy] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
