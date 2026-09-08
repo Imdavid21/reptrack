@@ -73,10 +73,11 @@ export function NextWorkoutCard() {
 
   return <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card overflow-hidden">
     <div className="p-5">
-      <div className="flex items-center justify-between gap-3"><div className="type-eyebrow">{key === 'recovery' ? 'Recovery day' : 'Next workout'}</div>{advanced.settings.enabled && <span className="rounded-lg bg-muted px-2 py-1 type-meta">Advanced</span>}</div>
-      <div className="flex items-end justify-between gap-3 mt-1"><div><div className="type-section-title">{session.name}</div><div className="type-supporting mt-1">About {session.duration} min</div></div><span className="type-caption">Next in sequence</span></div>
+      <div className="flex min-h-6 items-center justify-between gap-3"><div className="type-eyebrow leading-none">{key === 'recovery' ? 'Recovery day' : 'Next workout'}</div>{advanced.settings.enabled && <span className="rounded-lg bg-muted px-2 py-0.5 type-meta leading-none">Advanced</span>}</div>
+      <div className="flex items-end justify-between gap-3 mt-2"><div><div className="type-section-title leading-tight">{session.name}</div><div className="type-supporting mt-1">About {session.duration} min</div></div><span className="type-caption">Next in sequence</span></div>
       <p className="type-supporting mt-4 line-clamp-2">{preview || session.objective}</p>
     </div>
+
     <button onClick={startNow} className="w-full bg-foreground text-background py-4 flex items-center justify-center gap-2 font-bold text-sm active:opacity-80"><Play className="h-4 w-4" fill="currentColor" />{key === 'recovery' ? 'View recovery options' : advanced.settings.enabled ? 'Review & start' : 'Start workout'}<ArrowRight className="h-4 w-4" /></button>
   </motion.div>;
 }
