@@ -10,12 +10,24 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   BarChart,
   Bar,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
+import {
+  CHART_HEIGHT,
+  chartAxisProps,
+  chartBarProps,
+  chartCursor,
+  chartGrid,
+  chartMargin,
+  chartPalette,
+  chartReferenceLine,
+} from '@/lib/chartStyles';
+import { ChartTooltipLabel, ChartTooltipRow, ChartTooltipShell } from '@/components/charts/ChartTooltip';
 
 export function HydrationChart() {
   const theme = useTheme();
@@ -78,24 +90,15 @@ export function HydrationChart() {
     const d = payload[0].payload;
     
     return (
-      <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 2,
-        border: 1,
-        borderColor: 'divider',
-        p: 1.5,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>{label}</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {d.total.toFixed(2)}L ({d.logs} logs)
-        </Typography>
-        {d.metGoal && (
-          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mt: 0.5 }}>
-            ✓ Goal met!
-          </Typography>
-        )}
-      </Box>
+      <ChartTooltipShell>
+        <ChartTooltipLabel>{label}</ChartTooltipLabel>
+        <ChartTooltipRow
+          color={chartPalette.water}
+          label={`${d.logs} logs`}
+          value={`${d.total.toFixed(2)}L`}
+        />
+        {d.metGoal && <ChartTooltipRow label="Goal met" value="Yes" />}
+      </ChartTooltipShell>
     );
   };
 
@@ -142,30 +145,15 @@ export function HydrationChart() {
         />
       </Box>
 
-      <Box sx={{ height: 160 }}>
+      <Box sx={{ height: CHART_HEIGHT.sm }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <XAxis
-              dataKey="displayDate"
-              tick={{ fill: mutedColor, fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-              interval="preserveStartEnd"
-            />
-            <YAxis
-              domain={[0, yMax]}
-              ticks={yTicks}
-              tick={{ fill: mutedColor, fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <ReferenceLine
-              y={dailyGoal}
-              stroke={mutedColor}
-              strokeDasharray="4 4"
-            />
-            <Tooltip content={renderTooltip} />
-            <Bar dataKey="total" radius={[4, 4, 0, 0]} fill="hsl(var(--water))" />
+          <BarChart data={chartData} margin={chartMargin}>
+            <CartesianGrid {...chartGrid} />
+            <XAxis dataKey="displayDate" {...chartAxisProps} interval="preserveStartEnd" />
+            <YAxis domain={[0, yMax]} ticks={yTicks} {...chartAxisProps} />
+            <ReferenceLine y={dailyGoal} {...chartReferenceLine} />
+            <Tooltip content={renderTooltip} cursor={chartCursor} />
+            <Bar dataKey="total" {...chartBarProps} fill={chartPalette.water} />
           </BarChart>
         </ResponsiveContainer>
       </Box>

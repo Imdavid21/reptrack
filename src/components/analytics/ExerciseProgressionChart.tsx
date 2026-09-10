@@ -1,5 +1,19 @@
 import { useState, useMemo } from 'react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  CHART_HEIGHT,
+  chartActiveDot,
+  chartAxisProps,
+  chartDot,
+  chartGrid,
+  chartLineCursor,
+  chartLineProps,
+  chartMargin,
+  chartPalette,
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+} from '@/lib/chartStyles';
 import { useExerciseSets, ExerciseProgression } from '@/hooks/useExerciseSets';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { MuiCard } from '@/components/ui/MuiCard';
@@ -39,7 +53,7 @@ function GrowthBadge({ startWeight, endWeight }: { startWeight: number; endWeigh
 
 function MiniChart({ data }: { data: ExerciseProgression['data'] }) {
   return (
-    <ResponsiveContainer width="100%" height={50}>
+    <ResponsiveContainer width="100%" height={CHART_HEIGHT.spark}>
       <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="exGrad" x1="0" y1="0" x2="0" y2="1">
@@ -48,10 +62,10 @@ function MiniChart({ data }: { data: ExerciseProgression['data'] }) {
           </linearGradient>
         </defs>
         <Area
-          type="monotone"
+          {...chartLineProps}
+          strokeWidth={2}
           dataKey="weight"
           stroke="currentColor"
-          strokeWidth={1.5}
           fill="url(#exGrad)"
           dot={false}
         />
@@ -88,37 +102,31 @@ function ExerciseCard({ progression }: { progression: ExerciseProgression }) {
 
       <Collapse in={expanded}>
         <div className="px-3 pb-3 border-t border-border/50">
-          <ResponsiveContainer width="100%" height={120}>
-            <AreaChart data={progression.data} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={CHART_HEIGHT.xs}>
+            <AreaChart data={progression.data} margin={chartMargin}>
               <defs>
                 <linearGradient id={`grad-${progression.exerciseName}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <stop offset="5%" stopColor="hsl(var(--foreground))" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis
-                dataKey="weekLabel"
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                domain={['dataMin - 5', 'dataMax + 5']}
-              />
+              <CartesianGrid {...chartGrid} />
+              <XAxis dataKey="weekLabel" {...chartAxisProps} />
+              <YAxis {...chartAxisProps} domain={['dataMin - 5', 'dataMax + 5']} />
               <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                contentStyle={chartTooltipContentStyle}
+                labelStyle={chartTooltipLabelStyle}
+                itemStyle={chartTooltipItemStyle}
+                cursor={chartLineCursor}
                 formatter={(value: number) => [`${value}kg`, 'Weight']}
               />
               <Area
-                type="monotone"
+                {...chartLineProps}
                 dataKey="weight"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
+                stroke={chartPalette.primary}
                 fill={`url(#grad-${progression.exerciseName})`}
-                dot={{ r: 3, fill: 'hsl(var(--primary))' }}
+                dot={chartDot()}
+                activeDot={chartActiveDot()}
               />
             </AreaChart>
           </ResponsiveContainer>

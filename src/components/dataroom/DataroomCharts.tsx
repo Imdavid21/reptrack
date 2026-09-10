@@ -16,23 +16,22 @@ import {
   YAxis,
 } from 'recharts';
 import { getMuscleSubRegions } from '@/lib/exerciseClassification';
+import {
+  chartAxisTick,
+  chartGrid,
+  chartTooltipContentStyle,
+  chartTooltipFormatter,
+  formatChartNumber,
+} from '@/lib/chartStyles';
 
-const grid = { stroke: 'hsl(var(--border))', strokeOpacity: 0.45 };
-const axis = { fontSize: 11, fill: 'hsl(var(--muted-foreground))' };
-const tooltip = {
-  background: 'hsl(var(--popover))',
-  border: '1px solid hsl(var(--border))',
-  borderRadius: 12,
-  fontSize: 12,
-};
+// Styling comes from the shared chart tokens so Dataroom, Insights and the
+// dashboard charts stay visually identical.
+const grid = { stroke: chartGrid.stroke, strokeOpacity: chartGrid.strokeOpacity };
+const axis = chartAxisTick;
+const tooltip = chartTooltipContentStyle;
 
-const chartNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
-const formatChartNumber = (value: unknown) => {
-  const number = Number(value);
-  return Number.isFinite(number) ? chartNumber.format(number) : String(value ?? '');
-};
 const roundChartNumber = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
-const tooltipFormatter = (value: number | string, name: string) => [formatChartNumber(value), name];
+const tooltipFormatter = chartTooltipFormatter;
 
 function Empty({ children }: { children: string }) {
   return <div className="border-y border-border py-6 type-caption">{children}</div>;

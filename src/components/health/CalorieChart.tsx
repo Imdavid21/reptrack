@@ -1,5 +1,13 @@
 import { format, parseISO } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import {
+  CHART_HEIGHT,
+  chartAxisProps,
+  chartCursor,
+  chartGrid,
+  chartMargin,
+  chartPalette,
+} from '@/lib/chartStyles';
 import { motion } from 'framer-motion';
 import { Flame, Dumbbell, Activity } from 'lucide-react';
 import { useCalorieHistory } from '@/hooks/useCalorieHistory';
@@ -40,7 +48,7 @@ export function CalorieChart() {
     if (!data) return null;
 
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-lg">
+      <div className="bg-popover border border-border rounded-xl p-2.5 shadow-lg">
         <p className="text-xs text-muted-foreground mb-2">{data.displayDate}</p>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-4">
@@ -132,57 +140,50 @@ export function CalorieChart() {
       )}
 
       {/* Diverging Bar Chart */}
-      <div className="h-40">
+      <div style={{ height: CHART_HEIGHT.sm }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+            margin={chartMargin}
             stackOffset="sign"
           >
-            <XAxis
-              dataKey="shortDate"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-              interval="preserveStartEnd"
-            />
+            <CartesianGrid {...chartGrid} />
+            <XAxis dataKey="shortDate" {...chartAxisProps} interval="preserveStartEnd" />
             <YAxis
               domain={yDomain}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              {...chartAxisProps}
               tickFormatter={(v) => {
                 const abs = Math.abs(v);
                 return abs >= 1000 ? `${(abs / 1000).toFixed(1)}k` : abs.toString();
               }}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />
+            <Tooltip content={<CustomTooltip />} cursor={chartCursor} />
             <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
 
             <Bar
               dataKey="intakeValue"
-              radius={[3, 3, 0, 0]}
-              maxBarSize={20}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={28}
             >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`intake-${index}`}
-                  fill="hsl(var(--insight-mint))"
-                  fillOpacity={0.7}
+                  fill={chartPalette.positive}
+                  fillOpacity={0.85}
                 />
               ))}
             </Bar>
 
             <Bar
               dataKey="burnedValue"
-              radius={[0, 0, 3, 3]}
-              maxBarSize={20}
+              radius={[0, 0, 4, 4]}
+              maxBarSize={28}
             >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`burned-${index}`}
-                  fill="hsl(var(--insight-coral))"
-                  fillOpacity={0.7}
+                  fill={chartPalette.negative}
+                  fillOpacity={0.85}
                 />
               ))}
             </Bar>
