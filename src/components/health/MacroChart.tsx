@@ -38,7 +38,7 @@ const MACRO_CONFIGS: Record<MacroKey, MacroConfig> = {
   sugar: { label: 'Sugar', unit: 'g', column: 'sugar', goalKey: 'daily_sugar_goal', defaultGoal: 50, colorVar: '--insight-rose', icon: Candy, direction: 'atMost' },
   sodium: { label: 'Sodium', unit: 'mg', column: 'sodium', goalKey: 'daily_sodium_goal', defaultGoal: 2300, colorVar: '--insight-sky', icon: Waves, direction: 'atMost', maxTarget: 10000 },
   potassium: { label: 'Potassium', unit: 'mg', column: 'potassium', goalKey: 'daily_potassium_goal', defaultGoal: 3400, colorVar: '--insight-mint', icon: Banana, maxTarget: 10000 },
-  caffeine: { label: 'Caffeine', unit: 'mg', column: 'caffeine', goalKey: 'daily_caffeine_goal', defaultGoal: 400, colorVar: '--insight-amber', icon: Coffee, direction: 'atMost', maxTarget: 2000 },
+  caffeine: { label: 'Caffeine', unit: 'mg', column: 'caffeine', goalKey: 'daily_caffeine_goal', defaultGoal: 250, colorVar: '--insight-amber', icon: Coffee, direction: 'atMost', maxTarget: 2000 },
 };
 
 interface DataPoint {
