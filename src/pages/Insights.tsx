@@ -418,7 +418,7 @@ function InsightsContent() {
               </motion.div>
             </InsightSection>
 
-            <InsightSection label="Fuel" count={8} dotClass="bg-fuel">
+            <InsightSection label="Fuel" count={7} dotClass="bg-fuel">
               <motion.div variants={staggerItem}>
                 <CalorieChart />
               </motion.div>
