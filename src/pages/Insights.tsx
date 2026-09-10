@@ -418,7 +418,7 @@ function InsightsContent() {
               </motion.div>
             </InsightSection>
 
-            <InsightSection label="Fuel" count={8} dotClass="bg-fuel">
+            <InsightSection label="Fuel" count={7} dotClass="bg-fuel">
               <motion.div variants={staggerItem}>
                 <CalorieChart />
               </motion.div>
@@ -439,9 +439,6 @@ function InsightsContent() {
               </motion.div>
               <motion.div variants={staggerItem}>
                 <MacroChart macro="sodium" />
-              </motion.div>
-              <motion.div variants={staggerItem}>
-                <MacroChart macro="potassium" />
               </motion.div>
               <motion.div variants={staggerItem}>
                 <MacroChart macro="caffeine" />

@@ -69,7 +69,7 @@ type EditableFood = {
   fiber?: number;
   sugar?: number;
   sodium?: number;
-  potassium?: number;
+  caffeine?: number;
 };
 
 export function CalorieTrackerCompact() {
@@ -159,9 +159,9 @@ export function CalorieTrackerCompact() {
     [meals]
   );
   const dayMacros = useMemo(() => {
-    const sum = (key: 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium') =>
+    const sum = (key: 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'caffeine') =>
       meals.reduce((s, m) => s + Number(m[key] || 0), 0);
-    return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium'), potassium: sum('potassium') };
+    return { carbs: sum('carbs'), fat: sum('fat'), fiber: sum('fiber'), sugar: sum('sugar'), sodium: sum('sodium'), caffeine: sum('caffeine') };
   }, [meals]);
   const macroGoalPreferences = preferences as unknown as Record<string, number | null | undefined>;
   const macroTargets = {
@@ -170,7 +170,7 @@ export function CalorieTrackerCompact() {
     fiber: macroGoalPreferences?.daily_fiber_goal ?? 30,
     sugar: macroGoalPreferences?.daily_sugar_goal ?? 50,
     sodium: macroGoalPreferences?.daily_sodium_goal ?? 2300,
-    potassium: macroGoalPreferences?.daily_potassium_goal ?? 3400,
+    caffeine: macroGoalPreferences?.daily_caffeine_goal ?? 400,
   };
   const netDeficit = energy.model ? -energy.model.energyBalance : maintenance - totalCalories + totalBurned; // positive = under maintenance
 
@@ -195,7 +195,7 @@ export function CalorieTrackerCompact() {
    *  otherwise the analysis-level totals. */
   const pendingMacros = useMemo(() => {
     const valid = editableFoods.filter(f => f.name.trim() && f.calories > 0);
-    const pick = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium', total?: number) => {
+    const pick = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'caffeine', total?: number) => {
       const anySpecified = valid.some(f => f[key] != null);
       if (anySpecified) return valid.reduce((s, f) => s + (f[key] || 0), 0);
       return total ?? 0;
@@ -207,7 +207,7 @@ export function CalorieTrackerCompact() {
       fiber: pick('fiber', analysis?.total_fiber),
       sugar: pick('sugar', analysis?.total_sugar),
       sodium: pick('sodium', analysis?.total_sodium),
-      potassium: pick('potassium', analysis?.total_potassium),
+      caffeine: pick('caffeine', analysis?.total_caffeine),
     };
   }, [editableFoods, analysis]);
 
@@ -279,7 +279,7 @@ export function CalorieTrackerCompact() {
       setUploadedPhotoUrl(firstUrl);
       // Sum the per-item macros into analysis-level totals so nothing is lost
       // when several photos are merged into one entry.
-      const sumKey = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium') => {
+      const sumKey = (key: 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'caffeine') => {
         if (!mergedFoods.some(f => f[key] != null)) return undefined;
         return mergedFoods.reduce((s, f) => s + (f[key] || 0), 0);
       };
@@ -292,7 +292,7 @@ export function CalorieTrackerCompact() {
         total_fiber: sumKey('fiber'),
         total_sugar: sumKey('sugar'),
         total_sodium: sumKey('sodium'),
-        total_potassium: sumKey('potassium'),
+        total_caffeine: sumKey('caffeine'),
         confidence: confSum / files.length,
         description: descriptions.join(' + '),
         food_quality: qualitySeen,
@@ -384,7 +384,7 @@ export function CalorieTrackerCompact() {
 
     // Exactly the macro numbers shown in the pre-confirm breakdown, so what the
     // user reviews is what gets saved.
-    const { protein: totalProtein, carbs: totalCarbs, fat: totalFat, fiber: totalFiber, sugar: totalSugar, sodium: totalSodium, potassium: totalPotassium } = pendingMacros;
+    const { protein: totalProtein, carbs: totalCarbs, fat: totalFat, fiber: totalFiber, sugar: totalSugar, sodium: totalSodium, caffeine: totalCaffeine } = pendingMacros;
 
     try {
       await addMeal({
@@ -401,7 +401,7 @@ export function CalorieTrackerCompact() {
         fiber: totalFiber || undefined,
         sugar: totalSugar || undefined,
         sodium: totalSodium || undefined,
-        potassium: totalPotassium || undefined,
+        caffeine: totalCaffeine || undefined,
         food_quality: analysis?.food_quality,
         nutrition_source: uploadedPhotoUrl ? 'ai_photo' : 'ai_text',
         source_metadata: { modelEstimated: true, editedBeforeSave: true },
@@ -850,7 +850,7 @@ export function CalorieTrackerCompact() {
                 { key: 'fiber', label: 'Fiber', unit: 'g' },
                 { key: 'sugar', label: 'Sugar', unit: 'g' },
                 { key: 'sodium', label: 'Sodium', unit: 'mg' },
-                { key: 'potassium', label: 'Potassium', unit: 'mg' },
+                { key: 'caffeine', label: 'Caffeine', unit: 'mg' },
               ] as const).map(m => (
                 <div key={m.key} className="min-w-0 p-3 text-center">
                   <div className="text-sm font-bold tabular-nums">{Math.round(dayMacros[m.key])}/{Math.round(macroTargets[m.key])} <span className="text-xs font-medium text-muted-foreground">{m.unit}</span></div>
@@ -1097,7 +1097,7 @@ export function CalorieTrackerCompact() {
                       { key: 'fiber', label: 'Fiber', unit: 'g' },
                       { key: 'sugar', label: 'Sugar', unit: 'g' },
                       { key: 'sodium', label: 'Sodium', unit: 'mg' },
-                      { key: 'potassium', label: 'Potassium', unit: 'mg' },
+                      { key: 'caffeine', label: 'Caffeine', unit: 'mg' },
                     ] as const).map(m => (
                       <div key={m.key} className="p-2 rounded-xl border border-border bg-muted/20 text-center">
                         <div className="text-sm font-bold tabular-nums">
