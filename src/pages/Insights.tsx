@@ -441,8 +441,6 @@ function InsightsContent() {
                 <MacroChart macro="sodium" />
               </motion.div>
               <motion.div variants={staggerItem}>
-
-              <motion.div variants={staggerItem}>
                 <MacroChart macro="caffeine" />
               </motion.div>
             </InsightSection>
