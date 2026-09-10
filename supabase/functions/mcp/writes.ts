@@ -136,7 +136,33 @@ async function stableUuid(seed: string): Promise<string> {
 
 /* ------------------------------- meals ------------------------------- */
 
+/** Keyword based caffeine estimate (mg) used when the caller omits the field,
+ *  so assistant logged coffee/tea/cola entries still land with a real number. */
+export function estimateCaffeineMg(foodName: string): number {
+  const n = (foodName || "").toLowerCase();
+  const has = (re: string) => new RegExp(`\\b(${re})\\b`).test(n);
+  let mg = 0;
+  if (has("decaf")) mg = 3;
+  else if (has("americano|cold brew|filter coffee|drip coffee")) mg = 150;
+  else if (has("matcha") && has("latte|cappuccino|mocha|frappe")) mg = 70;
+  else if (has("latte|cappuccino|mocha|flat white|frappe|macchiato")) mg = 75;
+  else if (has("espresso")) mg = 65;
+  else if (has("coffee|nescafe")) mg = 95;
+  else if (has("matcha")) mg = 70;
+  else if (has("green tea|lemon tea|white tea")) mg = 30;
+  else if (has("tea|chai")) mg = 47;
+  else if (has("red bull|monster|energy drink|pre-workout|preworkout")) mg = 80;
+  else if (has("coke|cola|pepsi")) mg = 35;
+  else if (has("dark chocolate|bournville|cocoa|cacao")) mg = 20;
+  else if (has("chocolate")) mg = 6;
+  if (mg && /\b(two|2|three|3)\s+(cups|glasses|shots|mugs)\b/.test(n)) mg *= 2;
+  return mg;
+}
+
 function macroPayload(args: Args) {
+  const caffeine = args.caffeine === undefined || args.caffeine === null
+    ? estimateCaffeineMg(String(args.food_name ?? ""))
+    : boundedNumber("caffeine", args.caffeine, 0, 2000);
   return {
     calories: boundedNumber("calories", args.calories, 0, 10000, false),
     protein: boundedNumber("protein", args.protein, 0, 500),
@@ -146,7 +172,7 @@ function macroPayload(args: Args) {
     sugar: boundedNumber("sugar", args.sugar, 0, 800),
     sodium: boundedNumber("sodium", args.sodium, 0, 20000),
     potassium: boundedNumber("potassium", args.potassium, 0, 20000),
-    caffeine: boundedNumber("caffeine", args.caffeine, 0, 2000),
+    caffeine,
   };
 }
 
@@ -180,6 +206,10 @@ async function updateMeal(args: Args, db: Client, userId: string, today: string)
   if (args.notes !== undefined) patch.notes = String(args.notes).slice(0, 500);
   for (const [key, value] of Object.entries(macroPayload({ calories: args.calories ?? 0, ...args }))) {
     if (args[key] !== undefined) patch[key] = value;
+  }
+  // Renaming a meal without giving caffeine re-derives it from the new name.
+  if (args.food_name !== undefined && args.caffeine === undefined) {
+    patch.caffeine = estimateCaffeineMg(String(args.food_name));
   }
   if (!Object.keys(patch).length) throw new Error("NO_FIELDS_TO_UPDATE");
   const row = await write<any>("meal_update", () => db.from("meals").update(patch).eq("id", id).eq("user_id", userId).select().maybeSingle());
