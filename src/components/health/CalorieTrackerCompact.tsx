@@ -170,7 +170,7 @@ export function CalorieTrackerCompact() {
     fiber: macroGoalPreferences?.daily_fiber_goal ?? 30,
     sugar: macroGoalPreferences?.daily_sugar_goal ?? 50,
     sodium: macroGoalPreferences?.daily_sodium_goal ?? 2300,
-    caffeine: macroGoalPreferences?.daily_caffeine_goal ?? 400,
+    caffeine: macroGoalPreferences?.daily_caffeine_goal ?? 250,
   };
   const netDeficit = energy.model ? -energy.model.energyBalance : maintenance - totalCalories + totalBurned; // positive = under maintenance
 
