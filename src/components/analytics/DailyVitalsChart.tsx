@@ -17,6 +17,19 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
+import {
+  CHART_HEIGHT,
+  chartActiveDot,
+  chartAxisProps,
+  chartDot,
+  chartGrid,
+  chartLineCursor,
+  chartLineProps,
+  chartMargin,
+  chartPalette,
+  chartReferenceLine,
+} from '@/lib/chartStyles';
+import { ChartTooltipLabel, ChartTooltipRow, ChartTooltipShell } from '@/components/charts/ChartTooltip';
 
 type MetricType = 'weight' | 'sleep';
 
@@ -123,27 +136,20 @@ export function DailyVitalsChart() {
     }
   };
 
+  const seriesColor = activeMetric === 'sleep' ? chartPalette.recover : chartPalette.primary;
+
   const renderTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     
     return (
-      <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 2,
-        border: 1,
-        borderColor: 'divider',
-        p: 1.5,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>{label}</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {activeMetric === 'weight' ? (
-            <>Weight: <strong>{payload[0].value} kg</strong></>
-          ) : (
-            <>Sleep: <strong>{payload[0].value}h</strong></>
-          )}
-        </Typography>
-      </Box>
+      <ChartTooltipShell>
+        <ChartTooltipLabel>{label}</ChartTooltipLabel>
+        <ChartTooltipRow
+          color={activeMetric === 'sleep' ? chartPalette.recover : chartPalette.primary}
+          label={activeMetric === 'weight' ? 'Weight' : 'Sleep'}
+          value={activeMetric === 'weight' ? `${payload[0].value} kg` : `${payload[0].value}h`}
+        />
+      </ChartTooltipShell>
     );
   };
 
@@ -219,40 +225,25 @@ export function DailyVitalsChart() {
         </Typography>
       ) : (
         <>
-          <Box sx={{ height: 160 }}>
+          <Box sx={{ height: CHART_HEIGHT.sm }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: mutedColor, fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  domain={getYDomain()}
-                  tick={{ fill: mutedColor, fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
+              <AreaChart data={chartData} margin={chartMargin}>
+                <CartesianGrid {...chartGrid} />
+                <XAxis dataKey="date" {...chartAxisProps} interval="preserveStartEnd" />
+                <YAxis domain={getYDomain()} {...chartAxisProps} />
                 {getReferenceLine() && (
-                  <ReferenceLine
-                    y={getReferenceLine()}
-                    stroke={mutedColor}
-                    strokeDasharray="4 4"
-                  />
+                  <ReferenceLine y={getReferenceLine()} {...chartReferenceLine} />
                 )}
-                <Tooltip content={renderTooltip} />
+                <Tooltip content={renderTooltip} cursor={chartLineCursor} />
                 <Area
-                  type="monotone"
+                  {...chartLineProps}
                   dataKey="value"
-                  stroke={activeMetric === 'sleep' ? 'hsl(var(--recover))' : primaryColor}
-                  strokeWidth={2}
+                  stroke={seriesColor}
                   fill={activeMetric === 'sleep'
                     ? 'hsl(var(--recover) / 0.12)'
                     : theme.palette.action.hover}
-                  dot={{ r: 3, fill: activeMetric === 'sleep' ? 'hsl(var(--recover))' : primaryColor }}
-                  connectNulls
+                  dot={chartDot(seriesColor)}
+                  activeDot={chartActiveDot(seriesColor)}
                 />
               </AreaChart>
             </ResponsiveContainer>
