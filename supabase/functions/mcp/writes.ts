@@ -207,6 +207,10 @@ async function updateMeal(args: Args, db: Client, userId: string, today: string)
   for (const [key, value] of Object.entries(macroPayload({ calories: args.calories ?? 0, ...args }))) {
     if (args[key] !== undefined) patch[key] = value;
   }
+  // Renaming a meal without giving caffeine re-derives it from the new name.
+  if (args.food_name !== undefined && args.caffeine === undefined) {
+    patch.caffeine = estimateCaffeineMg(String(args.food_name));
+  }
   if (!Object.keys(patch).length) throw new Error("NO_FIELDS_TO_UPDATE");
   const row = await write<any>("meal_update", () => db.from("meals").update(patch).eq("id", id).eq("user_id", userId).select().maybeSingle());
   if (!row) throw new Error("MEAL_NOT_FOUND");
