@@ -8,6 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts';
 import { haptic } from '@/lib/haptics';
 import { getMuscleGroup, stripSetSuffix } from '@/lib/exerciseClassification';
+import {
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+} from '@/lib/chartStyles';
 
 interface CategoryData {
   name: string;
@@ -200,16 +205,9 @@ export function VolumeSankeyChart() {
             >
               <Tooltip
                 cursor={false}
-                contentStyle={{
-                  background: theme.palette.background.paper,
-                  color: theme.palette.text.primary,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 12,
-                  fontSize: 12,
-                  padding: '8px 10px',
-                  boxShadow: theme.shadows[3],
-                }}
-                labelStyle={{ color: theme.palette.text.secondary, fontSize: 12 }}
+                contentStyle={chartTooltipContentStyle}
+                labelStyle={chartTooltipLabelStyle}
+                itemStyle={chartTooltipItemStyle}
                 formatter={(value: number, _name, item) => {
                   const volume = Number(item?.payload?.volume || 0);
                   return [`${value}% · ${formatVolume(volume)} kg`, 'Share'];
