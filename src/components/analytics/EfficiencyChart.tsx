@@ -4,9 +4,22 @@ import { Zap, Clock, TrendingUp, Dumbbell } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useAutoMetrics } from '@/hooks/useAutoMetrics';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, CartesianGrid, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import {
+  CHART_HEIGHT,
+  chartActiveDot,
+  chartAxisProps,
+  chartBarProps,
+  chartDot,
+  chartGrid,
+  chartLineCursor,
+  chartLineProps,
+  chartMargin,
+  chartPalette,
+} from '@/lib/chartStyles';
+import { ChartTooltipLabel, ChartTooltipRow, ChartTooltipShell } from '@/components/charts/ChartTooltip';
 
 type ViewMode = 'volume' | 'strength';
 
@@ -64,44 +77,26 @@ export function EfficiencyChart() {
     if (!active || !payload?.length) return null;
     const dataPoint = chartData.find(d => d.date === label);
     return (
-      <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 2,
-        border: 1,
-        borderColor: 'divider',
-        p: 1.5,
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{label}</Typography>
+      <ChartTooltipShell>
+        <ChartTooltipLabel>{label}</ChartTooltipLabel>
         {isVolume ? (
           <>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Volume: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.volume}k kg</strong>
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Duration: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.duration} min</strong>
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Efficiency: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.efficiency} kg/min</strong>
-            </Typography>
+            <ChartTooltipRow label="Volume" value={`${dataPoint?.volume}k kg`} />
+            <ChartTooltipRow label="Duration" value={`${dataPoint?.duration} min`} />
+            <ChartTooltipRow label="Efficiency" value={`${dataPoint?.efficiency} kg/min`} />
           </>
         ) : (
           <>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Peak est. 1RM that day: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.strengthIndex || '-'} kg</strong>
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-              Best so far: <strong style={{ color: theme.palette.text.primary }}>{dataPoint?.bestSoFar || '-'} kg</strong>
-            </Typography>
+            <ChartTooltipRow label="Peak estimated 1RM" value={`${dataPoint?.strengthIndex || '-'} kg`} />
+            <ChartTooltipRow label="Best so far" value={`${dataPoint?.bestSoFar || '-'} kg`} />
           </>
         )}
-      </Box>
+      </ChartTooltipShell>
     );
   };
 
-  const barColor = theme.palette.text.primary;
-  const lineColor = theme.palette.text.primary;
-  const mutedColor = theme.palette.text.secondary;
+  const barColor = chartPalette.primary;
+  const lineColor = chartPalette.primary;
 
   return (
     <MuiCard>
@@ -156,29 +151,30 @@ export function EfficiencyChart() {
       </Typography>
 
       {chartData.length > 0 ? (
-        <Box sx={{ height: 220 }}>
+        <Box sx={{ height: CHART_HEIGHT.md }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData}>
-              <XAxis dataKey="date" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: mutedColor }} axisLine={false} tickLine={false} hide />
-              <Tooltip content={renderTooltip} />
+            <ComposedChart data={chartData} margin={chartMargin}>
+              <CartesianGrid {...chartGrid} />
+              <XAxis dataKey="date" {...chartAxisProps} />
+              <YAxis yAxisId="left" {...chartAxisProps} />
+              <YAxis yAxisId="right" orientation="right" {...chartAxisProps} hide />
+              <Tooltip content={renderTooltip} cursor={chartLineCursor} />
               {isVolume ? (
                 <>
                   <Bar
                     yAxisId="left"
                     dataKey="volume"
                     fill={barColor}
-                    radius={[4, 4, 0, 0]}
+                    {...chartBarProps}
                     name="Volume (k kg)"
                   />
                   <Line
                     yAxisId="right"
-                    type="monotone"
+                    {...chartLineProps}
                     dataKey="efficiency"
                     stroke={lineColor}
-                    strokeWidth={2}
-                    dot={false}
+                    dot={chartDot(lineColor)}
+                    activeDot={chartActiveDot(lineColor)}
                     name="Efficiency"
                     unit=" kg/min"
                   />
@@ -189,16 +185,16 @@ export function EfficiencyChart() {
                     yAxisId="left"
                     dataKey="strengthIndex"
                     fill={barColor}
-                    radius={[4, 4, 0, 0]}
+                    {...chartBarProps}
                     name="Est. 1RM (kg)"
                   />
                   <Line
                     yAxisId="left"
-                    type="monotone"
+                    {...chartLineProps}
                     dataKey="bestSoFar"
                     stroke={lineColor}
-                    strokeWidth={2}
-                    dot={false}
+                    dot={chartDot(lineColor)}
+                    activeDot={chartActiveDot(lineColor)}
                     name="Best so far"
                     unit=" kg"
                   />

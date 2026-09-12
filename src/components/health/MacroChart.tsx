@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import { Beef, Wheat, Droplet, Leaf, Candy, Waves, Banana, Coffee, Pencil, Check, X, LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,16 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useGoalHistory } from '@/hooks/useGoalHistory';
 import { cn } from '@/lib/utils';
+import {
+  CHART_HEIGHT,
+  chartAxisProps,
+  chartBarProps,
+  chartCursor,
+  chartGrid,
+  chartMargin,
+  chartReferenceLine,
+} from '@/lib/chartStyles';
+import { ChartTooltipLabel, ChartTooltipRow, ChartTooltipShell } from '@/components/charts/ChartTooltip';
 
 export type MacroKey = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'potassium' | 'caffeine';
 
@@ -146,14 +156,11 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
     if (!d) return null;
     const pct = Math.round((d.value / d.target) * 100);
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-lg">
-        <p className="text-xs text-muted-foreground mb-1.5">{d.displayDate}</p>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-xs" style={{ color }}>{cfg.label}</span>
-          <span className="text-sm font-semibold tabular-nums">{d.value}{cfg.unit}</span>
-        </div>
-        <div className="text-xs text-muted-foreground mt-1">{pct}% of {d.target}{cfg.unit} {isAtMost ? 'limit' : 'target'}</div>
-      </div>
+      <ChartTooltipShell>
+        <ChartTooltipLabel>{d.displayDate}</ChartTooltipLabel>
+        <ChartTooltipRow color={color} label={cfg.label} value={`${d.value}${cfg.unit}`} />
+        <ChartTooltipRow label={`${isAtMost ? 'Limit' : 'Target'} progress`} value={`${pct}% of ${d.target}${cfg.unit}`} />
+      </ChartTooltipShell>
     );
   };
 
@@ -210,26 +217,19 @@ export function MacroChart({ macro }: { macro: MacroKey }) {
         </div>
       </div>
 
-      <div className="h-32">
+      <div style={{ height: CHART_HEIGHT.xs }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <XAxis
-              dataKey="shortDate"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-              interval="preserveStartEnd"
-            />
+          <BarChart data={chartData} margin={chartMargin}>
+            <CartesianGrid {...chartGrid} />
+            <XAxis dataKey="shortDate" {...chartAxisProps} interval="preserveStartEnd" />
             <YAxis
               domain={[0, Math.ceil(maxValue * 1.1)]}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              {...chartAxisProps}
               tickFormatter={(v) => `${v}${cfg.unit}`}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />
-            <ReferenceLine y={dailyTarget} stroke={color} strokeDasharray="3 3" strokeOpacity={0.6} />
-            <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={20}>
+            <Tooltip content={<CustomTooltip />} cursor={chartCursor} />
+            <ReferenceLine y={dailyTarget} {...chartReferenceLine} stroke={color} />
+            <Bar dataKey="value" {...chartBarProps}>
               {chartData.map((entry, index) => (
                 <Cell key={`m-${index}`} fill={color} fillOpacity={isGood(entry.value, entry.target) ? 0.85 : 0.55} />
               ))}

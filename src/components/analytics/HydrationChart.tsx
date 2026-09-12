@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, Typography, Skeleton, useTheme, Chip } from '@mui/material';
+import { Box, Typography, Skeleton, Chip } from '@mui/material';
 import { Droplets, Target } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
 import { useHydrationData } from '@/hooks/useHydrationData';
@@ -30,7 +30,6 @@ import {
 import { ChartTooltipLabel, ChartTooltipRow, ChartTooltipShell } from '@/components/charts/ChartTooltip';
 
 export function HydrationChart() {
-  const theme = useTheme();
   const { dateRange } = useDateRange();
   const { preferences } = useUserPreferences();
   const { resolveGoal } = useGoalHistory();
@@ -38,10 +37,6 @@ export function HydrationChart() {
   // elsewhere (see Insights.tsx) - daily_water_goal is meant to be liters.
   const dailyGoal = normalizeWaterGoalLiters(preferences?.daily_water_goal);
   const { data, isLoading } = useHydrationData(dateRange);
-
-  const primaryColor = theme.palette.text.primary;
-  const mutedColor = theme.palette.text.secondary;
-
 
   // Each day is judged against the goal that was actually active on it (via
   // goal_history), not today's live value - see MacroChart for the same

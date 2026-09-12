@@ -63,14 +63,14 @@ export function SessionRatingTrend({
         <svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} className="h-40 w-full" role="img" aria-label="Session score trend">
           {[25, 50, 75].map(value => {
             const y = PADDING + (1 - value / 100) * (CHART_HEIGHT - PADDING * 2);
-            return <line key={value} x1={PADDING} x2={CHART_WIDTH - PADDING} y1={y} y2={y} className="stroke-border" strokeWidth="1" strokeDasharray="4 6" />;
+            return <line key={value} x1={PADDING} x2={CHART_WIDTH - PADDING} y1={y} y2={y} className="stroke-border" strokeWidth="1" opacity="0.45" />;
           })}
-          {sessions.length > 1 && <path d={line} fill="none" className="stroke-foreground" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
+          {sessions.length > 1 && <path d={line} fill="none" className="stroke-foreground" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
           {points.map(point => (
             <g key={point.session.id}>
               <circle
-                cx={point.x} cy={point.y} r={point.session.id === active?.session.id ? 6 : 4}
-                className={cn('cursor-pointer', point.session.id === active?.session.id ? 'fill-foreground' : 'fill-background stroke-foreground')}
+                cx={point.x} cy={point.y} r={point.session.id === active?.session.id ? 5 : 3}
+                className={cn('cursor-pointer fill-background stroke-foreground')}
                 strokeWidth="2"
                 onClick={() => setSelected(point.session.id)}
               />
