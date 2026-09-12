@@ -11,6 +11,7 @@ import { format, parseISO } from 'date-fns';
 import {
   AreaChart,
   Area,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,

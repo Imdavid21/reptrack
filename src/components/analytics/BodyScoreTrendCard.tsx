@@ -1,9 +1,23 @@
 import { useMemo } from 'react';
-import { Skeleton, useTheme } from '@mui/material';
-import { ResponsiveContainer, AreaChart, Area, YAxis, XAxis, Tooltip, ReferenceLine } from 'recharts';
+import { Skeleton } from '@mui/material';
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, YAxis, XAxis, Tooltip, ReferenceLine } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ScorePoint } from '@/lib/bodyScore';
+import {
+  CHART_HEIGHT,
+  chartActiveDot,
+  chartAxisProps,
+  chartDot,
+  chartGrid,
+  chartLineCursor,
+  chartLineProps,
+  chartMargin,
+  chartReferenceLine,
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+} from '@/lib/chartStyles';
 
 interface Props {
   trend: ScorePoint[];
@@ -16,9 +30,6 @@ interface Props {
  * climbing, holding, or slipping across the selected range.
  */
 export function BodyScoreTrendCard({ trend, isLoading }: Props) {
-  const theme = useTheme();
-  const mutedColor = theme.palette.text.secondary;
-
   const points = useMemo(() => trend.filter(p => p.score != null), [trend]);
 
   const delta = useMemo(() => {
@@ -63,39 +74,33 @@ export function BodyScoreTrendCard({ trend, isLoading }: Props) {
         </div>
       </div>
 
-      <div className="h-28">
+      <div style={{ height: CHART_HEIGHT.xs }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 6, right: 6, left: -28, bottom: 0 }}>
+          <AreaChart data={chartData} margin={chartMargin}>
             <defs>
               <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="hsl(var(--energy))" stopOpacity={0.25} />
                 <stop offset="100%" stopColor="hsl(var(--energy))" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <ReferenceLine y={70} stroke={mutedColor} strokeDasharray="3 3" strokeOpacity={0.5} />
-            <XAxis dataKey="label" tick={{ fill: mutedColor, fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={28} />
-            <YAxis domain={[0, 100]} ticks={[0, 50, 100]} tick={{ fill: mutedColor, fontSize: 12 }} axisLine={false} tickLine={false} width={36} />
+            <CartesianGrid {...chartGrid} />
+            <ReferenceLine y={70} {...chartReferenceLine} />
+            <XAxis dataKey="label" {...chartAxisProps} interval="preserveStartEnd" minTickGap={28} />
+            <YAxis domain={[0, 100]} ticks={[0, 50, 100]} {...chartAxisProps} width={36} />
             <Tooltip
-              cursor={{ stroke: mutedColor, strokeWidth: 1 }}
-              contentStyle={{
-                background: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 12,
-                fontSize: 12,
-                padding: '6px 10px',
-              }}
-              labelStyle={{ color: mutedColor, fontSize: 12 }}
+              cursor={chartLineCursor}
+              contentStyle={chartTooltipContentStyle}
+              labelStyle={chartTooltipLabelStyle}
+              itemStyle={chartTooltipItemStyle}
               formatter={(v: number | null) => [v == null ? '-' : v, 'Score']}
             />
             <Area
-              type="monotone"
+              {...chartLineProps}
               dataKey="score"
               stroke="hsl(var(--energy))"
-              strokeWidth={2}
               fill="url(#scoreFill)"
-              dot={false}
-              connectNulls
+              dot={chartDot('hsl(var(--energy))')}
+              activeDot={chartActiveDot('hsl(var(--energy))')}
             />
           </AreaChart>
         </ResponsiveContainer>
