@@ -17,6 +17,7 @@ export const WRITE_TOOLS = [
   "log_workout", "update_workout",
   "log_activity", "update_activity",
   "set_workout_trigger", "cancel_workout_trigger", "send_coach_note",
+  "log_physique_checkin", "update_physique_checkin",
 ] as const;
 
 export type ToolName = typeof APPROVED_TOOLS[number];
