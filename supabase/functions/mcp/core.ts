@@ -1,5 +1,5 @@
 export const MCP_MODE = "read_write" as const;
-export const MCP_VERSION = "1.3.0";
+export const MCP_VERSION = "1.4.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
@@ -8,7 +8,7 @@ export const APPROVED_TOOLS = [
   "get_live_workout", "list_workout_triggers",
   "get_advanced_snapshot", "get_progression_autopilot", "get_cut_control",
   "get_weak_point_radar", "get_weekly_coach_review", "get_goal_runway",
-  "get_advanced_config", "list_coach_events",
+  "get_advanced_config", "list_coach_events", "get_physique_checkins",
 ] as const;
 
 /** Writes are limited to logs and scoped live-workout coaching state. No historical deletes exist. */
@@ -17,6 +17,7 @@ export const WRITE_TOOLS = [
   "log_workout", "update_workout",
   "log_activity", "update_activity",
   "set_workout_trigger", "cancel_workout_trigger", "send_coach_note",
+  "log_physique_checkin", "update_physique_checkin",
 ] as const;
 
 export type ToolName = typeof APPROVED_TOOLS[number];

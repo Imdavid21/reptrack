@@ -411,6 +411,50 @@ async function updateActivity(args: Args, db: Client, userId: string, today: str
   return ok("activity_updated", saved);
 }
 
+/* -------------------------- physique check-ins -------------------------- */
+
+/** Measurements are optional individually; at least one must be present so an
+ *  empty check-in never lands in the trend. */
+function physiquePayload(args: Args) {
+  const row: Args = {
+    bodyweight: boundedNumber("bodyweight", args.bodyweight, 20, 400),
+    waist_cm: boundedNumber("waist_cm", args.waist_cm, 30, 250),
+    upper_arm_left_cm: boundedNumber("upper_arm_left_cm", args.upper_arm_left_cm, 10, 100),
+    upper_arm_right_cm: boundedNumber("upper_arm_right_cm", args.upper_arm_right_cm, 10, 100),
+    chest_cm: boundedNumber("chest_cm", args.chest_cm, 40, 250),
+    calf_left_cm: boundedNumber("calf_left_cm", args.calf_left_cm, 10, 100),
+    calf_right_cm: boundedNumber("calf_right_cm", args.calf_right_cm, 10, 100),
+    body_fat_percentage: boundedNumber("body_fat_percentage", args.body_fat_percentage, 2, 70),
+  };
+  return row;
+}
+
+async function logPhysiqueCheckin(args: Args, db: Client, userId: string, today: string) {
+  const date = assertWritableDate(args.checkin_date || args.date || today, today);
+  const row = physiquePayload(args);
+  if (Object.values(row).every(value => value === null)) throw new Error("MISSING_MEASUREMENTS");
+  const existing = await write<any>("physique_lookup", () => db.from("physique_checkins").select("id").eq("user_id", userId).eq("checkin_date", date).limit(1).maybeSingle());
+  if (existing?.id) {
+    const updated = await write<any>("physique_update", () => db.from("physique_checkins").update(row).eq("id", existing.id).eq("user_id", userId).select().single());
+    return ok("physique_checkin_updated", updated);
+  }
+  const saved = await write<any>("physique_insert", () => db.from("physique_checkins").insert({ user_id: userId, checkin_date: date, photo_paths: [], ...row }).select().single());
+  return ok("physique_checkin_logged", saved);
+}
+
+async function updatePhysiqueCheckin(args: Args, db: Client, userId: string, today: string) {
+  const id = args.checkin_id ? requireString("checkin_id", args.checkin_id, 40) : null;
+  if (!id) return await logPhysiqueCheckin(args, db, userId, today);
+  const row = physiquePayload(args);
+  const patch: Args = {};
+  for (const [key, value] of Object.entries(row)) if (value !== null) patch[key] = value;
+  if (args.checkin_date || args.date) patch.checkin_date = assertWritableDate(args.checkin_date || args.date, today);
+  if (!Object.keys(patch).length) throw new Error("NOTHING_TO_UPDATE");
+  const saved = await write<any>("physique_update", () => db.from("physique_checkins").update(patch).eq("id", id).eq("user_id", userId).select().maybeSingle());
+  if (!saved) throw new Error("PHYSIQUE_CHECKIN_NOT_FOUND");
+  return ok("physique_checkin_updated", saved);
+}
+
 /* ------------------------------ dispatcher ------------------------------ */
 
 export async function executeWriteTool(name: string, args: Args, db: Client, userId: string, timezone: string) {
@@ -429,6 +473,8 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
       case "set_workout_trigger": return await setWorkoutTrigger(db, userId, args);
       case "cancel_workout_trigger": return await cancelWorkoutTrigger(db, userId, args);
       case "send_coach_note": return await sendCoachNote(db, args);
+      case "log_physique_checkin": return await logPhysiqueCheckin(args, db, userId, today);
+      case "update_physique_checkin": return await updatePhysiqueCheckin(args, db, userId, today);
       default: throw new Error("UNKNOWN_TOOL");
     }
   };

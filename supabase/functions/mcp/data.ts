@@ -92,6 +92,26 @@ export async function executeTool(name: string, args: Args, db: Client) {
     return envelope(start,end,timezone,data,{average_calories_per_logged_day:average(data.map(d=>d.calories)),average_protein_g_per_logged_day:average(data.map(d=>d.protein)),average_carbs_g_per_logged_day:average(data.map(d=>d.carbs)),average_fat_g_per_logged_day:average(data.map(d=>d.fat)),logged_days:data.length,targets:{calories:p.daily_calorie_goal,protein_g:p.daily_protein_goal,carbs_g:p.daily_carbs_goal,fat_g:p.daily_fat_goal}},{has_more:Object.keys(days).length>limit,limit});
   }
 
+  if (name === "get_physique_checkins") {
+    const limit = Math.min(args.limit ?? 100, 200);
+    const rows = await read<any[]>("physique_checkins", () => db.from("physique_checkins")
+      .select("id,checkin_date,bodyweight,waist_cm,upper_arm_left_cm,upper_arm_right_cm,chest_cm,calf_left_cm,calf_right_cm,body_fat_percentage")
+      .gte("checkin_date", start).lte("checkin_date", end).order("checkin_date").limit(limit + 1));
+    const data = (rows || []).slice(0, limit);
+    const firstOf = (key: string) => data.find((r: any) => r[key] != null)?.[key] ?? null;
+    const lastOf = (key: string) => [...data].reverse().find((r: any) => r[key] != null)?.[key] ?? null;
+    const delta = (key: string) => { const a = firstOf(key), b = lastOf(key); return a != null && b != null ? round(Number(b) - Number(a)) : null; };
+    return envelope(start, end, timezone, data, {
+      checkins: data.length,
+      latest_date: data.at(-1)?.checkin_date ?? null,
+      latest_waist_cm: lastOf("waist_cm"),
+      latest_body_fat_percentage: lastOf("body_fat_percentage"),
+      waist_change_cm: delta("waist_cm"),
+      bodyweight_change_kg: delta("bodyweight"),
+      body_fat_change_percentage: delta("body_fat_percentage"),
+    }, { has_more: (rows || []).length > limit, limit, unit: "cm; bodyweight in kg" });
+  }
+
   if (name === "get_sleep") {
     const data=await read<any[]>("sleep", () => db.from("daily_metrics").select("date,sleep_hours").gte("date",start).lte("date",end).not("sleep_hours","is",null).order("date")); const vals=(data||[]).map((r:any)=>r.sleep_hours);
     return envelope(start,end,timezone,data||[],{average_sleep_hours:average(vals),minimum_sleep_hours:vals.length?Math.min(...vals):null,maximum_sleep_hours:vals.length?Math.max(...vals):null,logged_nights:vals.length},{unavailable_fields:["bedtime","wake_time","sleep_score","sleep_stages","interruptions"]});

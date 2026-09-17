@@ -59,10 +59,107 @@ export function WeeklyAdaptiveCheckin({ fallback = null, open, onOpenChange }: P
   };
 
   if (!loaded) return null;
-  return <>{fallback}{due && <Dialog open={open} onClose={() => onOpenChange(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 4 } }}><DialogContent sx={{ p: 2.5 }}>
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2.5 }}><Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}><Ruler size={17}/><Box><Typography fontWeight={800}>Weekly check</Typography><Typography variant="caption" color="text.secondary">A few measurements for your trend</Typography></Box></Box><IconButton onClick={() => onOpenChange(false)} aria-label="Close weekly check"><X /></IconButton></Box>
-    <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: 'action.hover', display: 'flex', justifyContent: 'space-between', mb: 2 }}><Box><Typography variant="caption" color="text.secondary">7-DAY AVERAGE WEIGHT</Typography><Typography variant="h6" fontWeight={800}>{averageWeight != null ? `${averageWeight.toFixed(2)} kg` : 'Not enough data'}</Typography></Box>{weightTrend != null && <Typography variant="body2" color="text.secondary">{weightTrend > 0 ? '+' : ''}{weightTrend.toFixed(2)} kg vs prior 7 days</Typography>}</Box>
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}><TextField required label="Waist (cm)" value={waist} onChange={event => setWaist(event.target.value)} inputMode="decimal"/><TextField label="Upper arm L (cm)" value={upperArmLeft} onChange={event => setUpperArmLeft(event.target.value)} inputMode="decimal"/><TextField label="Upper arm R (cm)" value={upperArmRight} onChange={event => setUpperArmRight(event.target.value)} inputMode="decimal"/><TextField label="Chest (cm)" value={chest} onChange={event => setChest(event.target.value)} inputMode="decimal"/><TextField label="Calf L (cm)" value={calfLeft} onChange={event => setCalfLeft(event.target.value)} inputMode="decimal"/><TextField label="Calf R (cm)" value={calfRight} onChange={event => setCalfRight(event.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall L (cm)" value={left} onChange={event => setLeft(event.target.value)} inputMode="decimal"/><TextField required label="Knee-to-wall R (cm)" value={right} onChange={event => setRight(event.target.value)} inputMode="decimal"/><TextField label="Body fat (%)" value={bodyFat} onChange={event => setBodyFat(event.target.value)} inputMode="decimal"/></Box>
-    <Button fullWidth variant="contained" onClick={save} disabled={saving || averageWeight == null} sx={{ mt: 2 }}>{saving ? 'Saving…' : 'Save weekly check'}</Button>
-  </DialogContent></Dialog>}</>;
+
+  const fields: Array<{ label: string; value: string; set: (value: string) => void; required?: boolean }> = [
+    { label: 'Waist (cm)', value: waist, set: setWaist, required: true },
+    { label: 'Upper arm L (cm)', value: upperArmLeft, set: setUpperArmLeft },
+    { label: 'Upper arm R (cm)', value: upperArmRight, set: setUpperArmRight },
+    { label: 'Chest (cm)', value: chest, set: setChest },
+    { label: 'Calf L (cm)', value: calfLeft, set: setCalfLeft },
+    { label: 'Calf R (cm)', value: calfRight, set: setCalfRight },
+    { label: 'Knee-to-wall L (cm)', value: left, set: setLeft, required: true },
+    { label: 'Knee-to-wall R (cm)', value: right, set: setRight, required: true },
+    { label: 'Body fat (%)', value: bodyFat, set: setBodyFat },
+  ];
+
+  return (
+    <>
+      {fallback}
+      {due && (
+        <Dialog
+          open={open}
+          onClose={() => onOpenChange(false)}
+          fullWidth
+          maxWidth="sm"
+          PaperProps={{ sx: { borderRadius: '24px', border: 1, borderColor: 'divider' } }}
+        >
+          <DialogContent sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 2.5 }}>
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={{ p: 1, borderRadius: '12px', bgcolor: 'action.hover', display: 'flex' }}>
+                  <Ruler size={16} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.125rem', lineHeight: 1.3 }}>
+                    Weekly check
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    A few measurements for your trend
+                  </Typography>
+                </Box>
+              </Box>
+              <IconButton size="small" onClick={() => onOpenChange(false)} aria-label="Close weekly check">
+                <X size={18} />
+              </IconButton>
+            </Box>
+
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: 'action.hover',
+                border: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 2,
+                mb: 2.5,
+              }}
+            >
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  7-day average weight
+                </Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '1.375rem', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
+                  {averageWeight != null ? `${averageWeight.toFixed(2)} kg` : 'Not enough data'}
+                </Typography>
+              </Box>
+              {weightTrend != null && (
+                <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {weightTrend > 0 ? '+' : ''}
+                  {weightTrend.toFixed(2)} kg vs prior 7 days
+                </Typography>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+              {fields.map(field => (
+                <TextField
+                  key={field.label}
+                  required={field.required}
+                  label={field.label}
+                  value={field.value}
+                  onChange={event => field.set(event.target.value)}
+                  inputMode="decimal"
+                  size="small"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', height: 44 } }}
+                />
+              ))}
+            </Box>
+
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={save}
+              disabled={saving || averageWeight == null}
+              sx={{ mt: 3, height: 52, borderRadius: '12px', fontWeight: 700, textTransform: 'none' }}
+            >
+              {saving ? 'Saving' : 'Save weekly check'}
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
 }
