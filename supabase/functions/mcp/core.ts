@@ -1,5 +1,5 @@
 export const MCP_MODE = "read_write" as const;
-export const MCP_VERSION = "1.3.0";
+export const MCP_VERSION = "1.4.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
