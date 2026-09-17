@@ -8,7 +8,7 @@ export const APPROVED_TOOLS = [
   "get_live_workout", "list_workout_triggers",
   "get_advanced_snapshot", "get_progression_autopilot", "get_cut_control",
   "get_weak_point_radar", "get_weekly_coach_review", "get_goal_runway",
-  "get_advanced_config", "list_coach_events",
+  "get_advanced_config", "list_coach_events", "get_physique_checkins",
 ] as const;
 
 /** Writes are limited to logs and scoped live-workout coaching state. No historical deletes exist. */
