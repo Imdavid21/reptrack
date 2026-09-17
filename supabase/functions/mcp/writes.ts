@@ -473,6 +473,8 @@ export async function executeWriteTool(name: string, args: Args, db: Client, use
       case "set_workout_trigger": return await setWorkoutTrigger(db, userId, args);
       case "cancel_workout_trigger": return await cancelWorkoutTrigger(db, userId, args);
       case "send_coach_note": return await sendCoachNote(db, args);
+      case "log_physique_checkin": return await logPhysiqueCheckin(args, db, userId, today);
+      case "update_physique_checkin": return await updatePhysiqueCheckin(args, db, userId, today);
       default: throw new Error("UNKNOWN_TOOL");
     }
   };
