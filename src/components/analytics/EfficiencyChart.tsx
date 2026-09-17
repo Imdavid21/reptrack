@@ -213,7 +213,7 @@ export function EfficiencyChart() {
         {isVolume ? (
           <>
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
-              <Clock size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+              <Clock size={14} style={{ color: chartPalette.muted, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgDuration || '-'}m
               </Typography>
@@ -222,7 +222,7 @@ export function EfficiencyChart() {
               </Typography>
             </Box>
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
-              <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+              <TrendingUp size={14} style={{ color: chartPalette.muted, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgVolume ? `${(avgVolume / 1000).toFixed(1)}k` : '-'}
               </Typography>
@@ -234,7 +234,7 @@ export function EfficiencyChart() {
         ) : (
           <>
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
-              <Dumbbell size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+              <Dumbbell size={14} style={{ color: chartPalette.muted, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {peakStrength || '-'}
               </Typography>
@@ -243,7 +243,7 @@ export function EfficiencyChart() {
               </Typography>
             </Box>
             <Box sx={{ flex: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, textAlign: 'center' }}>
-              <TrendingUp size={14} style={{ color: mutedColor, marginBottom: 4 }} />
+              <TrendingUp size={14} style={{ color: chartPalette.muted, marginBottom: 4 }} />
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem' }}>
                 {avgStrength || '-'}
               </Typography>
