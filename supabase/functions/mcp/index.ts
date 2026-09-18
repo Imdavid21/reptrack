@@ -68,6 +68,17 @@ const exerciseList = z.array(z.object({
   sets: z.array(z.object({ reps: z.number().min(0).max(1000).optional(), weight: z.number().min(0).max(600).optional().describe("Plate weight in kg, excluding the bar.") })).min(1),
 })).min(1).max(30);
 
+const physiqueFields = {
+  bodyweight: z.number().min(20).max(400).optional().describe("Kilograms."),
+  waist_cm: z.number().min(30).max(250).optional(),
+  upper_arm_left_cm: z.number().min(10).max(100).optional(),
+  upper_arm_right_cm: z.number().min(10).max(100).optional(),
+  chest_cm: z.number().min(40).max(250).optional(),
+  calf_left_cm: z.number().min(10).max(100).optional(),
+  calf_right_cm: z.number().min(10).max(100).optional(),
+  body_fat_percentage: z.number().min(2).max(70).optional(),
+};
+
 const writeDefinitions = {
   log_meal: { description: "Log a meal for the authenticated user with estimated calories and macros. Calories are required; macros are optional. Use when the user reports what they ate.", schema: { date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200), calories: z.number().min(0).max(10000), ...macros, notes: z.string().max(500).optional(), client_key: z.string().max(64).optional().describe("Idempotency key; a retry with the same key updates the same meal.") } },
   update_meal: { description: "Correct a previously logged meal by its id. Only the supplied fields change. Never deletes.", schema: { meal_id: z.string().min(1).max(40), date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200).optional(), calories: z.number().min(0).max(10000).optional(), ...macros, notes: z.string().max(500).optional() } },
