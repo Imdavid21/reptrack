@@ -68,6 +68,17 @@ const exerciseList = z.array(z.object({
   sets: z.array(z.object({ reps: z.number().min(0).max(1000).optional(), weight: z.number().min(0).max(600).optional().describe("Plate weight in kg, excluding the bar.") })).min(1),
 })).min(1).max(30);
 
+const physiqueFields = {
+  bodyweight: z.number().min(20).max(400).optional().describe("Kilograms."),
+  waist_cm: z.number().min(30).max(250).optional(),
+  upper_arm_left_cm: z.number().min(10).max(100).optional(),
+  upper_arm_right_cm: z.number().min(10).max(100).optional(),
+  chest_cm: z.number().min(40).max(250).optional(),
+  calf_left_cm: z.number().min(10).max(100).optional(),
+  calf_right_cm: z.number().min(10).max(100).optional(),
+  body_fat_percentage: z.number().min(2).max(70).optional(),
+};
+
 const writeDefinitions = {
   log_meal: { description: "Log a meal for the authenticated user with estimated calories and macros. Calories are required; macros are optional. Use when the user reports what they ate.", schema: { date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200), calories: z.number().min(0).max(10000), ...macros, notes: z.string().max(500).optional(), client_key: z.string().max(64).optional().describe("Idempotency key; a retry with the same key updates the same meal.") } },
   update_meal: { description: "Correct a previously logged meal by its id. Only the supplied fields change. Never deletes.", schema: { meal_id: z.string().min(1).max(40), date: logDate, meal_type: z.enum(["breakfast","lunch","dinner","snack"]).optional(), food_name: z.string().min(1).max(200).optional(), calories: z.number().min(0).max(10000).optional(), ...macros, notes: z.string().max(500).optional() } },
@@ -79,6 +90,8 @@ const writeDefinitions = {
   set_workout_trigger: { description: "Create an in-session cue that the app shows the user while training. Conditions: exercise_started, weight_at_least, reps_at_least, elapsed_minutes, completed_sets, session_volume.", schema: { condition_type: z.enum(["exercise_started","weight_at_least","reps_at_least","elapsed_minutes","completed_sets","session_volume"]), exercise_name: z.string().max(120).optional().describe("Required for exercise-scoped conditions."), threshold: z.number().min(0).max(100000).optional().describe("Required for every condition except exercise_started."), comparator: z.enum(["gte","lte"]).optional().default("gte"), message: z.string().min(1).max(300).describe("Cue text shown to the user mid-session."), repeat_mode: z.enum(["once","always"]).optional().default("once"), expires_in_hours: z.number().min(1).max(72).optional() } },
   cancel_workout_trigger: { description: "Cancel a previously created in-session cue by its id.", schema: { trigger_id: z.string().min(1).max(40) } },
   send_coach_note: { description: "Push a short note into the live workout screen. Fails when no session is active.", schema: { note: z.string().min(1).max(500) } },
+  log_physique_checkin: { description: "Log a physique check-in (measurements in cm, bodyweight in kg, body fat percentage) for a day. Logging twice on the same date updates that day's check-in. At least one measurement is required.", schema: { ...physiqueFields, checkin_date: logDate } },
+  update_physique_checkin: { description: "Correct a physique check-in by its id. Only supplied fields change. Without an id it falls back to logging the day's check-in. Never deletes.", schema: { checkin_id: z.string().min(1).max(40).optional(), checkin_date: logDate, ...physiqueFields } },
 } as const;
 
 function json(body: unknown, status = 200, headers: Record<string,string> = {}) {
