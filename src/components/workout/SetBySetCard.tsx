@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock3, History, MoreHorizontal, Plus, SkipForward, Trash2, Undo2 } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, History, MoreHorizontal, Plus, SkipForward, Trash2, Undo2 } from 'lucide-react';
 import type { WorkoutExercise, ExerciseSet } from '@/hooks/useWorkouts';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
@@ -380,7 +380,6 @@ export function SetBySetCard({
       <div className="flex items-center gap-2">
         <span className="type-meta whitespace-nowrap tabular-nums">{exerciseIndex + 1}/{totalExercises}</span>
         <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>{Array.from({ length: totalExercises }).map((_, index) => <span key={index} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}</div>
-        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
       </div>
       <section className="rounded-[22px] border border-warning/40 bg-card p-5" role="status">
         <div className="flex gap-3"><AlertTriangle className="h-5 w-5 mt-0.5 shrink-0"/><div className="min-w-0 flex-1"><div className="font-semibold">This workout is active in another tab.</div><p className="type-supporting mt-1">Set editing is locked here so two tabs cannot race the same draft. Take over only if this is the tab you want to keep using.</p></div></div>
@@ -398,7 +397,6 @@ export function SetBySetCard({
         <div className="flex flex-1 gap-1" aria-label={`Exercise ${exerciseIndex + 1} of ${totalExercises}`}>
           {Array.from({ length: totalExercises }).map((_, index) => <button key={index} onClick={() => onJumpToExercise?.(index)} aria-label={`Go to exercise ${index + 1}`} className={cn('h-1.5 flex-1 rounded-full', index < exerciseIndex ? 'bg-foreground' : index === exerciseIndex ? 'bg-foreground/55' : 'bg-muted')} />)}
         </div>
-        <span className="inline-flex items-center gap-1 type-meta whitespace-nowrap tabular-nums"><Clock3 className="h-3.5 w-3.5" aria-hidden />{environment.elapsedLabel}</span>
         {typeof completedWorkoutSets === 'number' && typeof totalWorkoutSets === 'number' && <span className="type-meta whitespace-nowrap tabular-nums hidden sm:inline">{completedWorkoutSets}/{totalWorkoutSets} sets</span>}
       </div>
 
