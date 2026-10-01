@@ -45,18 +45,22 @@ export const emptyCategories = (): DayActivityCategories => ({
 });
 
 /**
- * Active minutes for a workout. When both timestamps exist the elapsed span
- * is authoritative and explicit pauses are subtracted downstream; legacy
- * `workout_duration_minutes` is already active time, so no pause is removed
- * from it a second time.
+ * Active minutes for a workout. The saved duration is active time and is the
+ * authoritative value after a manual correction. Timestamps are only a
+ * fallback for workouts that have no saved duration; pauses apply only to
+ * that fallback, never to the already-active saved duration.
  */
 export function timingFromWorkout(workout: any): { elapsedMinutes: number; pausedSeconds: number } {
+  const savedMinutes = Number(workout.workout_duration_minutes);
+  if (Number.isFinite(savedMinutes) && savedMinutes > 0) {
+    return { elapsedMinutes: savedMinutes, pausedSeconds: 0 };
+  }
   const start = workout.started_at ? new Date(workout.started_at).getTime() : NaN;
   const finish = workout.completed_at ? new Date(workout.completed_at).getTime() : NaN;
   if (Number.isFinite(start) && Number.isFinite(finish)) {
     return { elapsedMinutes: Math.max(0, (finish - start) / 60000), pausedSeconds: Number(workout.explicit_pause_seconds) || 0 };
   }
-  return { elapsedMinutes: Math.max(0, Number(workout.workout_duration_minutes) || 0), pausedSeconds: 0 };
+  return { elapsedMinutes: 0, pausedSeconds: 0 };
 }
 
 /** Net kcal above rest for one workout row. */
