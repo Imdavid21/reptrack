@@ -11,7 +11,7 @@ import type { ExerciseType } from '@/lib/exerciseLibrary';
 export interface ExerciseSet { setNumber: number; targetWeight: string; targetReps: string; actualWeight: string; actualReps: string; targetTime?: number; actualTime?: number; completed: boolean; }
 export interface WorkoutExercise { id?: string; name: string; category: string; sets: ExerciseSet[]; sort_order: number; exerciseType?: ExerciseType; restSeconds?: number; rir?: string; mandatory?: boolean; progression?: string; }
 export interface Habits { pullups: number; water_intake: number; sleep_hours: number; bodyweight?: number; notes?: string; }
-export interface Workout { id: string; user_id: string; date: string; day: string; day_name: string; week_number: number; created_at: string; started_at?: string; completed_at?: string; workout_duration_minutes?: number; exercises?: WorkoutExercise[]; habits?: Habits; }
+export interface Workout { id: string; user_id: string; date: string; day: string; day_name: string; week_number: number; created_at: string; started_at?: string; completed_at?: string; workout_duration_minutes?: number; estimated_net_kcal?: number | null; exercises?: WorkoutExercise[]; habits?: Habits; }
 
 export function isRetryableError(error: any): boolean {
   if (!error) return false;

@@ -66,8 +66,12 @@ describe('estimateDayActivity', () => {
     expect(estimateDayActivity({ date: '2026-08-10', workouts: [{ ...workout, completed_at: null }], burns: [], weight }).total).toBe(0);
   });
 
-  it('prefers the elapsed span over the stored duration when both timestamps exist', () => {
+  it('uses the saved active duration and never subtracts a pause twice', () => {
     expect(timingFromWorkout(workout).elapsedMinutes).toBeCloseTo(85, 6);
     expect(timingFromWorkout({ ...workout, started_at: null, completed_at: null, workout_duration_minutes: 40 })).toEqual({ elapsedMinutes: 40, pausedSeconds: 0 });
+    const corrected = { ...workout, workout_duration_minutes: 76, explicit_pause_seconds: 2828, completed_at: '2026-08-10T09:36:00.000Z' };
+    expect(timingFromWorkout(corrected)).toEqual({ elapsedMinutes: 76, pausedSeconds: 0 });
+    expect(workoutNetKcal(corrected, 70.02)).toBeCloseTo(netActivityKcal(3.5, 70.02, 76), 1);
+    expect(timingFromWorkout({ ...workout, workout_duration_minutes: null, explicit_pause_seconds: 300 })).toEqual({ elapsedMinutes: 85, pausedSeconds: 300 });
   });
 });
