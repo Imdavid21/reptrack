@@ -317,7 +317,7 @@ export default function WorkoutDetail() {
       ) : (
         <>
           <header className="flex items-start justify-between gap-4 mb-5">
-            <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}</p></div>
+            <div><h1 className="type-page-title">{workout.day_name}</h1><p className="type-supporting mt-1">{format(parseDateKey(workout.date), 'EEEE, MMM d')}{duration ? ` · ${duration} min` : ''}{(workout as typeof workout & { estimated_net_kcal?: number | null }).estimated_net_kcal != null ? ` · ~${Math.round(Number((workout as typeof workout & { estimated_net_kcal?: number | null }).estimated_net_kcal))} kcal` : ''}</p></div>
             <button onClick={() => setIsEditMode(value => !value)} className={cn('min-h-11 px-3 rounded-xl text-sm font-semibold flex items-center gap-2', isEditMode ? 'bg-foreground text-background' : 'border border-border text-muted-foreground')}><Edit2 className="h-4 w-4"/>{isEditMode ? 'Done' : 'Edit'}</button>
           </header>
           {rating && <div className="mb-5"><SessionRatingCard rating={rating} /></div>}
