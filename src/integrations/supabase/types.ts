@@ -1539,6 +1539,33 @@ export type Database = {
           },
         ]
       }
+      workout_recovery_snapshots: {
+        Row: {
+          save_id: string
+          saved_at: string
+          snapshot: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          save_id: string
+          saved_at: string
+          snapshot: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          save_id?: string
+          saved_at?: string
+          snapshot?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_triggers: {
         Row: {
           acknowledged_at: string | null
@@ -1698,7 +1725,15 @@ export type Database = {
         Args: { p_bucket: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      close_workout_recovery: {
+        Args: { p_save_id: string }
+        Returns: undefined
+      }
       delete_my_account: { Args: never; Returns: undefined }
+      save_workout_recovery: {
+        Args: { p_save_id: string; p_saved_at: string; p_snapshot: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

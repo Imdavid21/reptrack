@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790934132803,
+      "tag": "0000_add_workout_recovery_snapshots",
+      "breakpoints": true
+    }
+  ]
+}
