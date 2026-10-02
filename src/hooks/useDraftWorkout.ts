@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { WorkoutExercise, Habits } from './useWorkouts';
 import { useAuth } from './useAuth';
 
@@ -14,27 +15,26 @@ export interface DraftWorkout {
   step: 'select-day' | 'review' | 'exercises';
   lastSavedAt: string;
   workoutStartTime?: string;
-  /** Manually set session start (used for back-dated logging). */
   manualStart?: string;
-  /** Manually set session duration in minutes (used for back-dated logging). */
   manualDuration?: number;
-
-  /** Stable client id for the eventual workout row, so an interrupted save can
-   *  be retried idempotently after resuming. */
   saveId?: string;
-
-  /** Route to return to when resuming (the screen the session was paused from). */
   resumePath?: string;
-
   elapsedSeconds?: number;
   pausedSeconds?: number;
   pauseStartedAt?: string;
   pauseIntervals?: Array<{ pausedAt: string; resumedAt?: string }>;
+  version?: number;
 }
 
 const DRAFT_KEY = 'fittrack_draft_workout';
+const MAX_AGE = 7 * 24 * 3_600_000;
+const keyFor = (userId: string) => `${DRAFT_KEY}_${userId}`;
+const hasSets = (draft: DraftWorkout) => draft.exercises?.some(ex => ex.sets?.some(set => set.completed)) ?? false;
+const fresh = (draft: DraftWorkout) => {
+  const stamp = new Date(draft.lastSavedAt).getTime();
+  return Number.isFinite(stamp) && stamp <= Date.now() + 300_000 && Date.now() - stamp < MAX_AGE;
+};
 
-/** The local yyyy-MM-dd day a draft belongs to. */
 export function draftDateKey(draft: DraftWorkout): string {
   const parsed = draft.date ? new Date(draft.date) : new Date();
   if (Number.isNaN(parsed.getTime())) return '';
@@ -42,163 +42,171 @@ export function draftDateKey(draft: DraftWorkout): string {
   return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
 }
 
-/**
- * A draft can only be resumed when it is an in-progress exercise session that
- * still holds exercises, has at least one logged set, and was saved within the
- * 24h retention window. Drafts with no logged sets carry no progress, so they
- * are treated as dead state rather than a resumable session.
- */
 export function isResumableDraft(draft: DraftWorkout | null | undefined): boolean {
-  if (!draft) return false;
-  if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) return false;
-  if (draft.step === 'select-day') return false;
-  if (!draft.exercises.some(ex => ex.sets?.some(set => set.completed))) return false;
-  const savedAt = new Date(draft.lastSavedAt ?? draft.date).getTime();
-  if (Number.isNaN(savedAt)) return false;
-  return (Date.now() - savedAt) / 3_600_000 < 24;
+  return !!draft && Array.isArray(draft.exercises) && draft.exercises.length > 0 && draft.step !== 'select-day' && hasSets(draft) && fresh(draft);
 }
 
+export function recoveryConflict(local: DraftWorkout | null, cloud: DraftWorkout | null): boolean {
+  if (!local || !cloud || !isResumableDraft(local) || !isResumableDraft(cloud)) return false;
+  return local.saveId !== cloud.saveId || JSON.stringify(local.exercises) !== JSON.stringify(cloud.exercises);
+}
+
+// One queue per account prevents an older, slower request from overtaking a newer snapshot.
+const queues = new Map<string, Promise<void>>();
+function enqueue(userId: string, task: () => Promise<void>) {
+  const previous = queues.get(userId) ?? Promise.resolve();
+  const next = previous.catch(() => {}).then(task);
+  queues.set(userId, next);
+  void next.finally(() => { if (queues.get(userId) === next) queues.delete(userId); }).catch(() => {});
+  return next;
+}
 
 export function useDraftWorkout() {
   const { user, loading: authLoading } = useAuth();
   const [draft, setDraft] = useState<DraftWorkout | null>(null);
+  const [cloudDraft, setCloudDraft] = useState<DraftWorkout | null>(null);
+  const [conflict, setConflict] = useState<{ local: DraftWorkout; cloud: DraftWorkout } | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'checking' | 'device' | 'synced'>('checking');
   const pendingSaveRef = useRef<DraftWorkout | null>(null);
+  const currentRef = useRef<DraftWorkout | null>(null);
+  const readyRef = useRef(false);
+  const blockedRef = useRef(false);
+  const closedRef = useRef(false);
 
-  // Get storage key for current user
-  const getKey = useCallback(() => {
-    return user ? `${DRAFT_KEY}_${user.id}` : null;
+  const publish = useCallback((snapshot: DraftWorkout) => {
+    if (!user || !readyRef.current || blockedRef.current || closedRef.current || !navigator.onLine || !hasSets(snapshot)) return;
+    const saveId = snapshot.saveId;
+    if (!saveId) return;
+    void enqueue(user.id, async () => {
+      if (closedRef.current || blockedRef.current || currentRef.current?.saveId !== saveId) return;
+      const { error } = await supabase.rpc('save_workout_recovery', {
+        p_save_id: saveId, p_snapshot: snapshot as unknown as import('@/integrations/supabase/types').Json, p_saved_at: snapshot.lastSavedAt,
+      });
+      if (error) { console.warn('[workout-recovery] account save failed', error.message); setSyncStatus('device'); }
+      else if (!closedRef.current && currentRef.current?.lastSavedAt === snapshot.lastSavedAt) setSyncStatus('synced');
+    });
   }, [user]);
 
-  // Load draft from localStorage on mount
   useEffect(() => {
-    // Wait for auth to settle. Reporting "loaded with no draft" while the
-    // session is still resolving makes consumers mark the restore as done and
-    // silently skip the paused session that arrives a tick later.
     if (authLoading) return;
-    if (!user) {
+    if (!user) { setLoaded(true); return; }
+    let cancelled = false;
+    readyRef.current = false;
+    closedRef.current = false;
+    setLoaded(false);
+    setSyncStatus('checking');
+    const key = keyFor(user.id);
+    let local: DraftWorkout | null = null;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as DraftWorkout;
+        if (fresh(parsed)) local = parsed;
+        else localStorage.removeItem(key);
+      }
+    } catch { localStorage.removeItem(key); }
+    currentRef.current = local;
+    pendingSaveRef.current = local;
+    setDraft(local);
+    const load = async () => {
+      const { data, error } = await supabase.from('workout_recovery_snapshots').select('save_id,snapshot,status').eq('user_id', user.id).maybeSingle();
+      if (cancelled) return;
+      if (error) { console.warn('[workout-recovery] account load failed', error.message); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
+      const remote = data?.status === 'active' ? data.snapshot as unknown as DraftWorkout : null;
+      const cloud = remote && fresh(remote) && remote.saveId === data?.save_id ? remote : null;
+      // A completed workout must never be resurrected by a leftover recovery copy.
+      if (cloud?.saveId) {
+        const { data: finished, error: lookupError } = await supabase.from('workouts').select('id').eq('id', cloud.saveId).eq('user_id', user.id).limit(1).maybeSingle();
+        if (cancelled) return;
+        if (lookupError) { console.warn('[workout-recovery] finish lookup failed', lookupError.message); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
+        if (finished) { void supabase.rpc('close_workout_recovery', { p_save_id: cloud.saveId }); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
+      }
+      setCloudDraft(cloud);
+      const latestLocal = currentRef.current;
+      if (recoveryConflict(latestLocal, cloud) && cloud && latestLocal) {
+        blockedRef.current = true;
+        setConflict({ local: latestLocal, cloud });
+        setSyncStatus('device');
+      } else if (cloud && (!latestLocal || new Date(cloud.lastSavedAt).getTime() > new Date(latestLocal.lastSavedAt).getTime())) {
+        currentRef.current = cloud;
+        pendingSaveRef.current = cloud;
+        localStorage.setItem(key, JSON.stringify(cloud));
+        setDraft(cloud);
+        setSyncStatus('synced');
+      } else if (latestLocal && cloud && latestLocal.lastSavedAt === cloud.lastSavedAt) setSyncStatus('synced');
+      else setSyncStatus('device');
+      readyRef.current = true;
       setLoaded(true);
-      return;
-    }
+      if (!blockedRef.current && latestLocal && (!cloud || latestLocal.lastSavedAt > cloud.lastSavedAt)) publish(latestLocal);
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [user?.id, authLoading, publish]);
 
-    const key = getKey();
-    if (!key) return;
-
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as DraftWorkout;
-        // Staleness must be measured from when the draft was last SAVED, not from
-        // parsed.date - parsed.date is the workout's (possibly back-dated) logging
-        // date, so basing staleness on it makes any back-dated session look >24h
-        // old the instant it's saved and silently discards the in-progress sets.
-        const referenceTime = parsed.lastSavedAt ?? parsed.date;
-        const draftTime = new Date(referenceTime).getTime();
-        const now = Date.now();
-        const hoursSinceDraft = (now - draftTime) / (1000 * 60 * 60);
-        if (hoursSinceDraft < 24) {
-          setDraft(parsed);
-        } else {
-          // Clear stale drafts older than 24h
-          localStorage.removeItem(key);
-        }
-      } catch (e) {
-        console.error('Failed to parse draft workout:', e);
-        localStorage.removeItem(key);
-      }
-    }
-    setLoaded(true);
-  }, [user, authLoading, getKey]);
-
-  // Aggressive persistence - save immediately when app is backgrounded, closed, or killed
   useEffect(() => {
-    const flushDraft = () => {
-      if (pendingSaveRef.current) {
-        const key = getKey();
-        if (key) {
-          try {
-            localStorage.setItem(key, JSON.stringify(pendingSaveRef.current));
-          } catch (e) {
-            console.error('Failed to persist draft:', e);
-          }
-        }
-      }
-    };
-
-    // iOS: app backgrounded
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flushDraft();
-    };
-
-    // Safari iOS: page being unloaded
-    const handlePageHide = () => flushDraft();
-
-    // Desktop/Android: tab or browser being closed
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      flushDraft();
-      // Show browser confirmation dialog if there's an active workout
-      if (pendingSaveRef.current && pendingSaveRef.current.step === 'exercises') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    // Periodic background save every 5s as a safety net against force kills
-    const intervalId = setInterval(flushDraft, 5000);
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [getKey]);
-
-  // Save draft to localStorage
-  const saveDraft = useCallback((draftData: Omit<DraftWorkout, 'lastSavedAt'>) => {
     if (!user) return;
-
-    const key = getKey();
-    if (!key) return;
-
-    const newDraft: DraftWorkout = {
-      ...draftData,
-      currentSetIndex: draftData.currentSetIndex ?? 0,
-      lastSavedAt: new Date().toISOString(),
+    const flush = () => {
+      if (!pendingSaveRef.current) return;
+      try { localStorage.setItem(keyFor(user.id), JSON.stringify(pendingSaveRef.current)); }
+      catch (error) { console.error('[workout-recovery] device save failed', error); }
     };
+    const visible = () => { if (document.visibilityState === 'hidden') flush(); else if (navigator.onLine && currentRef.current) publish(currentRef.current); };
+    const online = () => { if (currentRef.current) publish(currentRef.current); };
+    const beforeUnload = (event: BeforeUnloadEvent) => { flush(); if (pendingSaveRef.current?.step === 'exercises') { event.preventDefault(); event.returnValue = ''; } };
+    const timer = window.setInterval(flush, 5000);
+    document.addEventListener('visibilitychange', visible);
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', beforeUnload);
+    window.addEventListener('online', online);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); window.removeEventListener('pagehide', flush); window.removeEventListener('beforeunload', beforeUnload); window.removeEventListener('online', online); };
+  }, [user?.id, publish]);
 
-    // Keep ref updated for visibility handler
-    pendingSaveRef.current = newDraft;
-    setDraft(newDraft);
-    localStorage.setItem(key, JSON.stringify(newDraft));
-  }, [user, getKey]);
+  const saveDraft = useCallback((data: Omit<DraftWorkout, 'lastSavedAt'>) => {
+    if (!user || closedRef.current) return;
+    const snapshot: DraftWorkout = { ...data, saveId: data.saveId || currentRef.current?.saveId || crypto.randomUUID(), currentSetIndex: data.currentSetIndex ?? 0, version: 1, lastSavedAt: new Date().toISOString() };
+    currentRef.current = snapshot;
+    pendingSaveRef.current = snapshot;
+    setDraft(snapshot);
+    setSyncStatus('device');
+    try { localStorage.setItem(keyFor(user.id), JSON.stringify(snapshot)); }
+    catch (error) { console.error('[workout-recovery] device save failed', error); }
+    publish(snapshot);
+  }, [user, publish]);
 
-  // Clear draft after successful submission
-  const clearDraft = useCallback(() => {
+  const chooseDraft = useCallback((source: 'device' | 'account') => {
+    if (!conflict || !user) return;
+    const chosen = source === 'device' ? conflict.local : conflict.cloud;
+    blockedRef.current = false;
+    currentRef.current = chosen;
+    pendingSaveRef.current = chosen;
+    localStorage.setItem(keyFor(user.id), JSON.stringify(chosen));
+    setDraft(chosen);
+    setCloudDraft(source === 'account' ? chosen : cloudDraft);
+    setConflict(null);
+    setSyncStatus(source === 'account' ? 'synced' : 'device');
+    if (source === 'device') publish(chosen);
+  }, [conflict, user, publish, cloudDraft]);
+
+  const clearDraft = useCallback(async () => {
     if (!user) return;
-    const key = getKey();
-    if (!key) return;
-    
-    localStorage.removeItem(key);
+    const saveId = currentRef.current?.saveId;
+    closedRef.current = true;
+    blockedRef.current = false;
+    if (saveId && navigator.onLine) {
+      // Close after queued writes, so a delayed save cannot recreate the session.
+      const previous = queues.get(user.id);
+      if (previous) await previous.catch(() => {});
+      const { error } = await supabase.rpc('close_workout_recovery', { p_save_id: saveId });
+      if (error) console.warn('[workout-recovery] account close failed', error.message);
+    }
+    localStorage.removeItem(keyFor(user.id));
     setDraft(null);
+    setCloudDraft(null);
+    setConflict(null);
     pendingSaveRef.current = null;
-  }, [user, getKey]);
+    currentRef.current = null;
+  }, [user]);
 
-  // Check if there are any completed sets in draft
-  const hasProgress = draft?.exercises?.some(ex => 
-    ex.sets.some(s => s.completed)
-  ) ?? false;
-
-  return {
-    draft,
-    resumable: isResumableDraft(draft),
-    loaded,
-    saveDraft,
-    clearDraft,
-    hasProgress,
-  };
+  return { draft, cloudDraft, conflict, chooseDraft, syncStatus, resumable: isResumableDraft(draft), loaded, saveDraft, clearDraft, hasProgress: draft ? hasSets(draft) : false };
 }
