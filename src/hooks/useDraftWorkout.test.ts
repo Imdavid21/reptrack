@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isResumableDraft, draftDateKey, DraftWorkout } from './useDraftWorkout';
+import { isResumableDraft, draftDateKey, recoveryConflict, DraftWorkout } from './useDraftWorkout';
 
 const base = (over: Partial<DraftWorkout> = {}): DraftWorkout => ({
   day: 'push_a',
@@ -26,9 +26,22 @@ describe('isResumableDraft', () => {
   it('rejects a day-picker draft', () => {
     expect(isResumableDraft(base({ step: 'select-day' }))).toBe(false);
   });
-  it('rejects a draft older than 24h', () => {
-    const old = new Date(Date.now() - 25 * 3600_000).toISOString();
+  it('rejects a draft older than seven days', () => {
+    const old = new Date(Date.now() - 8 * 24 * 3600_000).toISOString();
     expect(isResumableDraft(base({ lastSavedAt: old }))).toBe(false);
+  });
+  it('can recover a workout after more than 24 hours', () => {
+    expect(isResumableDraft(base({ lastSavedAt: new Date(Date.now() - 25 * 3600_000).toISOString() }))).toBe(true);
+  });
+});
+
+describe('recoveryConflict', () => {
+  it('does not ask when both copies have the same saved sets', () => {
+    const draft = base({ saveId: 'workout-one' });
+    expect(recoveryConflict(draft, { ...draft })).toBe(false);
+  });
+  it('asks before overwriting sets from another saved copy', () => {
+    expect(recoveryConflict(base({ saveId: 'workout-one' }), base({ saveId: 'workout-two' }))).toBe(true);
   });
 });
 
