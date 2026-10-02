@@ -39,9 +39,11 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const redirectAfterAuth = searchParams.get('redirect');
   const { isDark, toggleTheme } = useTheme();
-  const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, resetPassword } = useAuth();
 
-  const [step, setStep] = useState<AuthStep>('email');
+  const isRecoveryPage = location.pathname === '/reset-password';
+  const [hasRecoveryLink] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery');
+  const [step, setStep] = useState<AuthStep>(isRecoveryPage ? 'reset' : 'email');
   const [accountStatus, setAccountStatus] = useState<AccountStatus>('unknown');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,16 +60,12 @@ export default function Auth() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate(redirectAfterAuth || '/app', { replace: true });
+    if (!authLoading && user && !isRecoveryPage) {
+      const destination = redirectAfterAuth?.startsWith('/') && !redirectAfterAuth.startsWith('//')
+        ? redirectAfterAuth : '/app';
+      navigate(destination, { replace: true });
     }
-  }, [user, authLoading, navigate, redirectAfterAuth]);
-
-  useEffect(() => {
-    if (searchParams.get('type') === 'recovery') {
-      setStep('reset');
-    }
-  }, [searchParams]);
+  }, [user, authLoading, navigate, redirectAfterAuth, isRecoveryPage]);
 
   const saveLastMethod = (method: AuthMethod) => {
     localStorage.setItem(LAST_AUTH_KEY, method);
@@ -143,7 +141,7 @@ export default function Auth() {
           toast.success('Account created! Welcome to Reptrack.');
           localStorage.setItem('just_signed_up', 'true');
           saveLastMethod('email');
-          navigate(redirectAfterAuth || '/app', { replace: true });
+          navigate(redirectAfterAuth?.startsWith('/') && !redirectAfterAuth.startsWith('//') ? redirectAfterAuth : '/app', { replace: true });
         } else {
           // Email confirmation may be enabled in another environment. Do not
           // claim the user is signed in or send them into a protected route.
@@ -162,7 +160,7 @@ export default function Auth() {
         } else {
           toast.success('Welcome back!');
           saveLastMethod('email');
-          navigate(redirectAfterAuth || '/app', { replace: true });
+          navigate(redirectAfterAuth?.startsWith('/') && !redirectAfterAuth.startsWith('//') ? redirectAfterAuth : '/app', { replace: true });
         }
       }
     } catch (error: any) {
@@ -190,6 +188,10 @@ export default function Auth() {
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasRecoveryLink || !user) {
+      toast.error('This reset link is invalid or expired. Request a new one.');
+      return;
+    }
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -200,7 +202,7 @@ export default function Auth() {
     }
     setLoading(true);
     try {
-      const { error } = await updatePassword(password);
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success('Password updated!');
       navigate('/app', { replace: true });
@@ -219,7 +221,7 @@ export default function Auth() {
 
   const strength = getPasswordStrength(password);
 
-  if (authLoading) {
+  if (authLoading && (!isRecoveryPage || hasRecoveryLink)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-2xl font-bold tracking-tight animate-pulse">
@@ -501,7 +503,7 @@ export default function Auth() {
           )}
 
           {/* Reset password */}
-          {step === 'reset' && (
+          {step === 'reset' && hasRecoveryLink && user && (
             <motion.form
               key="reset"
               initial={{ opacity: 0, y: 10 }}
@@ -564,6 +566,12 @@ export default function Auth() {
               </button>
             </motion.form>
           )}
+          {step === 'reset' && (!hasRecoveryLink || !user) && !authLoading && (
+            <div role="alert" className="space-y-4 text-center">
+              <p className="type-supporting">This reset link is invalid or expired. Request a new link to set your password.</p>
+              <Link to="/signin" className="inline-block text-sm font-semibold text-foreground underline">Back to sign in</Link>
+            </div>
+          )}
         </AnimatePresence>
         </motion.div>
 
@@ -595,7 +603,7 @@ export default function Auth() {
             </button>
           )}
 
-          {(step === 'forgot' || step === 'reset') && (
+          {(step === 'forgot' || (step === 'reset' && !isRecoveryPage)) && (
             <button
               onClick={() => setStep(email ? 'password' : 'email')}
               className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"

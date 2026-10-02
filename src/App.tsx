@@ -183,6 +183,7 @@ function AppRoutes() {
         <Route path="/" element={<RootRoute />} />
         <Route path="/signin" element={<Auth />} />
         <Route path="/signup" element={<Auth />} />
+        <Route path="/reset-password" element={<Auth />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />

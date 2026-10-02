@@ -56,7 +56,7 @@ export function useAuth() {
     // The custom Resend fallback was removed to prevent anonymous email-spam abuse
     // via the send-auth-email edge function.
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/signin?type=recovery`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     return { data, error };
@@ -68,13 +68,6 @@ export function useAuth() {
       email: newEmail,
     });
     
-    return { data, error };
-  };
-
-  const updatePassword = async (newPassword: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
     return { data, error };
   };
 
@@ -114,7 +107,6 @@ export function useAuth() {
     signOut,
     resetPassword,
     updateEmail,
-    updatePassword,
     linkOAuthProvider,
     unlinkOAuthProvider,
   };
