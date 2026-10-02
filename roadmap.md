@@ -5,3 +5,4 @@
 - [x] Reduce loading-screen time (user: loading page adds extra time and hampers experience)
 - [x] Correct October 1 Pull A duration/burn only and verify Today, Activity, History, and stored values
 - [x] Finish email/password sign-in and recovery flow; confirm the dashboard redirect with a signed-in session
+- [ ] Recover unfinished workouts from the account across devices, with local fallback and conflict choice
