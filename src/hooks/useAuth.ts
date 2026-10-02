@@ -71,14 +71,6 @@ export function useAuth() {
     return { data, error };
   };
 
-  const updatePassword = async (newPassword: string, currentPassword: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-      current_password: currentPassword,
-    });
-    return { data, error };
-  };
-
   const linkOAuthProvider = async (provider: 'google' | 'apple') => {
     const { data, error } = await supabase.auth.linkIdentity({
       provider,
@@ -115,7 +107,6 @@ export function useAuth() {
     signOut,
     resetPassword,
     updateEmail,
-    updatePassword,
     linkOAuthProvider,
     unlinkOAuthProvider,
   };
