@@ -116,7 +116,7 @@ export function useDraftWorkout() {
       const remote = data?.status === 'active' ? data.snapshot as unknown as DraftWorkout : null;
       const cloud = remote && fresh(remote) && remote.saveId === data?.save_id ? remote : null;
       // A completed workout must never be resurrected by a leftover recovery copy.
-      if (cloud?.saveId) {
+      if (cloud?.saveId && /^[0-9a-f-]{36}$/i.test(cloud.saveId)) {
         const { data: finished, error: lookupError } = await supabase.from('workouts').select('id').eq('id', cloud.saveId).eq('user_id', user.id).limit(1).maybeSingle();
         if (cancelled) return;
         if (lookupError) { console.warn('[workout-recovery] finish lookup failed', lookupError.message); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
