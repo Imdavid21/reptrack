@@ -60,7 +60,9 @@ export function useEnergyModel(referenceDate: Date = new Date()): EnergyModelRes
       if (!user) return null;
       const [weights, meals, burns, workouts, previousState, previousTarget] = await Promise.all([
         supabase.from('daily_metrics').select('date,bodyweight').eq('user_id', user.id).gte('date', from).lte('date', to).not('bodyweight', 'is', null).order('date'),
-        supabase.from('meals').select('date,meal_type,calories,is_confirmed,created_at').eq('user_id', user.id).gte('date', from).lte('date', date).order('date'),
+        // Only the 42-day calibration window is used. A 365-day read exceeds the
+        // 1000-row response cap and silently drops the newest (today's) meals.
+        supabase.from('meals').select('date,meal_type,calories,is_confirmed,created_at').eq('user_id', user.id).gte('date', localDateKey(subDays(referenceDate, 42))).lte('date', date).order('date', { ascending: false }).limit(5000),
         (supabase.from('calorie_burns') as any).select('id,date,source,activity_type,calories,duration_minutes,distance_km,confidence,energy_model_version,created_at').eq('user_id', user.id).gte('date', from).lte('date', date).order('date'),
         (supabase.from('workouts') as any).select('id,date,day_name,started_at,completed_at,workout_duration_minutes,explicit_pause_seconds,is_skipped,estimated_net_kcal,energy_confidence,exercises(category,completed)').eq('user_id', user.id).gte('date', from).lte('date', date).order('date'),
         (supabase.from('energy_model_states' as any) as any).select('*').eq('user_id', user.id).lte('effective_date', date).order('effective_date', { ascending: false }).limit(1).maybeSingle(),
