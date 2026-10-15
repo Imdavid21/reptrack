@@ -6,3 +6,5 @@
 - [x] Correct October 1 Pull A duration/burn only and verify Today, Activity, History, and stored values
 - [x] Finish email/password sign-in and recovery flow; confirm the dashboard redirect with a signed-in session
 - [x] Recover unfinished workouts from the account across devices, with local fallback and conflict choice
+
+- [ ] Audit and repair CSV coverage, types and relationships; verify authenticated export/import round trip
