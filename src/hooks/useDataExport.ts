@@ -3,27 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format } from 'date-fns';
 
-export type DataTable =
-  | 'workouts'
-  | 'exercises'
-  | 'daily_metrics'
-  | 'water_logs'
-  | 'meals'
-  | 'calorie_burns'
-  | 'habits'
-  | 'custom_routines'
-  | 'user_preferences'
-  | 'goal_history'
-  | 'adaptive_lifecycles'
-  | 'adaptive_session_logs'
-  | 'training_state'
-  | 'readiness_checkins'
-  | 'post_workout_checkins'
-  | 'mobility_assessments'
-  | 'physique_checkins'
-  | 'workout_pauses'
-  | 'energy_model_states'
-  | 'energy_targets';
+import { useQueryClient } from '@tanstack/react-query';
+import Papa from 'papaparse';
+import { CSV_SCHEMA, DATA_TABLES, TABLE_COLUMNS, type DataTable } from '@/lib/importers/csvSchema';
+export { TABLE_COLUMNS, type DataTable };
 
 interface ExportOptions {
   tables: DataTable[];
@@ -38,187 +21,34 @@ export interface LastExportFile {
   createdAt: Date;
 }
 
-// Column mappings for each table. Kept in sync with the actual schema
-// (src/integrations/supabase/types.ts) by hand - this list previously drifted
-// badly behind real columns (e.g. every Deficit Mode and Adaptive Mode field
-// on user_preferences, workout check-in fields, calorie_burns.distance_km),
-// so "export all my data" silently left most of a user's settings and several
-// whole feature areas out of the file.
-export const TABLE_COLUMNS: Record<DataTable, string[]> = {
-  workouts: [
-    'id', 'user_id', 'date', 'day', 'day_name', 'week_number',
-    'started_at', 'completed_at', 'workout_duration_minutes', 'is_skipped',
-    'explicit_pause_seconds', 'energy_model_version', 'estimated_net_kcal',
-    'energy_confidence', 'energy_inputs',
-    'pre_energy', 'pre_motivation', 'pre_soreness', 'post_difficulty', 'post_satisfaction',
-    'session_key', 'readiness_band', 'completion_percent',
-    'created_at'
-  ],
-  exercises: [
-    'id', 'workout_id', 'name', 'category', 'sort_order',
-    'target_weight', 'target_reps', 'actual_weight', 'actual_reps',
-    'completed', 'actual_rir', 'rom_quality', 'pain_score', 'set_kind', 'prescription'
-  ],
-  daily_metrics: [
-    'id', 'user_id', 'date', 'sleep_hours', 'bodyweight', 'pullups',
-    'energy_level', 'is_rest_day', 'supplements', 'notes', 'created_at', 'updated_at'
-  ],
-  water_logs: [
-    'id', 'user_id', 'timestamp', 'amount', 'method'
-  ],
-  meals: [
-    'id', 'user_id', 'date', 'meal_type', 'food_name', 'calories',
-    'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine', 'food_quality',
-    'photo_url', 'ai_detected_food', 'ai_confidence', 'is_confirmed',
-    'nutrition_source', 'source_metadata', 'notes', 'created_at'
-  ],
-  calorie_burns: [
-    'id', 'user_id', 'date', 'calories', 'source', 'activity_type',
-    'duration_minutes', 'distance_km', 'started_at', 'ended_at',
-    'intensity_band', 'intensity_source', 'met_estimate', 'effective_weight_kg',
-    'confidence', 'energy_model_version', 'calculation_inputs', 'created_at'
-  ],
-  habits: [
-    'id', 'workout_id', 'pullups', 'water_intake', 'sleep_hours',
-    'bodyweight', 'energy_level', 'supplements', 'notes'
-  ],
-  custom_routines: [
-    'id', 'user_id', 'routine_name', 'routine_data', 'is_active', 'created_at'
-  ],
-  user_preferences: [
-    'id', 'user_id', 'name', 'age', 'date_of_birth', 'gender', 'height_cm',
-    'initial_weight_kg', 'nonexercise_lifestyle', 'activity_level',
-    'units_system', 'weight_goal_type', 'weight_goal', 'sleep_goal',
-    'weekly_workout_goal', 'daily_calorie_goal', 'daily_protein_goal',
-    'calorie_target_locked', 'protein_target_locked',
-    'daily_carbs_goal', 'daily_fat_goal', 'daily_fiber_goal', 'daily_sugar_goal',
-    'daily_sodium_goal', 'daily_potassium_goal', 'daily_caffeine_goal', 'daily_water_goal', 'dietary_preferences',
-    'deficit_mode_enabled', 'daily_deficit_target', 'maintenance_calories',
-    'adaptive_mode_enabled', 'onboarding_completed', 'routine_setup_completed',
-    'rest_days', 'training_split', 'training_focus', 'default_rest_seconds',
-    'auto_rest_timer', 'show_bmr_on_dashboard', 'fitness_goal', 'created_at', 'updated_at'
-  ],
-  goal_history: [
-    'id', 'user_id', 'goal_key', 'value', 'effective_from', 'created_at'
-  ],
-  adaptive_lifecycles: [
-    'id', 'user_id', 'movement_pattern', 'variation_name', 'phase_modifier',
-    'rep_range_low', 'rep_range_high', 'start_date', 'end_date',
-    'starting_load', 'ending_load', 'carryover_in', 'carryover_out',
-    'end_trigger', 'weak_points_targeted', 'status', 'created_at', 'updated_at'
-  ],
-  adaptive_session_logs: [
-    'id', 'user_id', 'lifecycle_id', 'session_date', 'leading_load', 'leading_reps',
-    'backoff_load', 'backoff_reps', 'weak_point_zone', 'form_note', 'created_at'
-  ],
-  training_state: ['user_id', 'next_session', 'block_name', 'deload_active', 'deload_started_on', 'updated_at'],
-  readiness_checkins: ['id', 'user_id', 'session_key', 'checkin_date', 'sleep_hours', 'soreness', 'joint_discomfort', 'fatigue', 'motivation', 'resting_hr', 'illness', 'sharp_pain', 'readiness', 'recommendation', 'created_at'],
-  post_workout_checkins: ['id', 'user_id', 'workout_id', 'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'exercise_felt_wrong', 'completion_percent', 'notes', 'created_at'],
-  mobility_assessments: ['id', 'user_id', 'assessment_date', 'deep_squat_depth', 'heels_down', 'discomfort', 'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'created_at'],
-  physique_checkins: ['id', 'user_id', 'checkin_date', 'bodyweight', 'waist_cm', 'upper_arm_left_cm', 'upper_arm_right_cm', 'chest_cm', 'calf_left_cm', 'calf_right_cm', 'photo_paths', 'created_at'],
-  workout_pauses: ['id', 'user_id', 'workout_id', 'paused_at', 'resumed_at', 'created_at'],
-  energy_model_states: [
-    'id', 'user_id', 'effective_date', 'energy_model_version', 'effective_weight_kg',
-    'weight_source', 'formula_ree', 'nonexercise_factor', 'formula_baseline',
-    'calibration_adjustment', 'personal_baseline', 'predicted_tdee', 'calibrated_tdee',
-    'likely_low', 'likely_high', 'data_quality', 'calibration_confidence',
-    'calibration_eligible', 'inputs', 'calculated_at', 'created_at'
-  ],
-  energy_targets: [
-    'id', 'user_id', 'effective_from', 'calorie_target', 'protein_target',
-    'estimated_maintenance', 'target_adjustment', 'basis', 'reason',
-    'energy_model_version', 'generated_at', 'created_at'
-  ],
-};
-
-// Tables that link via a foreign key to another exported table's row,
-// instead of (or in addition to) a direct user_id. On import, that FK has to
-// be remapped from the old CSV id to the newly-inserted row's real id - the
-// DB assigns fresh ids on insert, so the old ids from the export are
-// meaningless afterward. Getting this wrong (dropping the FK column instead
-// of remapping it) silently orphans every imported row: exercises/habits
-// with no workout to attach to, adaptive session logs with no lifecycle.
 export const LINKED_TABLES: Partial<Record<DataTable, { parentTable: DataTable; fkColumn: string }>> = {
   exercises: { parentTable: 'workouts', fkColumn: 'workout_id' },
+  exercise_sets: { parentTable: 'workouts', fkColumn: 'workout_id' },
   habits: { parentTable: 'workouts', fkColumn: 'workout_id' },
   adaptive_session_logs: { parentTable: 'adaptive_lifecycles', fkColumn: 'lifecycle_id' },
   post_workout_checkins: { parentTable: 'workouts', fkColumn: 'workout_id' },
   workout_pauses: { parentTable: 'workouts', fkColumn: 'workout_id' },
 };
-
-const TABLE_ORDER_BY: Record<DataTable, { column: string; ascending: boolean } | null> = {
-  workouts: { column: 'date', ascending: true },
-  exercises: { column: 'sort_order', ascending: true },
-  daily_metrics: { column: 'date', ascending: true },
-  water_logs: { column: 'timestamp', ascending: true },
-  meals: { column: 'date', ascending: true },
-  calorie_burns: { column: 'date', ascending: true },
-  habits: null,
-  custom_routines: { column: 'created_at', ascending: true },
-  user_preferences: { column: 'created_at', ascending: true },
-  goal_history: { column: 'effective_from', ascending: true },
-  adaptive_lifecycles: { column: 'start_date', ascending: true },
-  adaptive_session_logs: { column: 'session_date', ascending: true },
-  training_state: null,
-  readiness_checkins: { column: 'checkin_date', ascending: true },
-  post_workout_checkins: { column: 'created_at', ascending: true },
-  mobility_assessments: { column: 'assessment_date', ascending: true },
-  physique_checkins: { column: 'checkin_date', ascending: true },
-  workout_pauses: { column: 'paused_at', ascending: true },
-  energy_model_states: { column: 'effective_date', ascending: true },
-  energy_targets: { column: 'effective_from', ascending: true },
+export const REFERENCES: Partial<Record<DataTable, { column: string; parent: DataTable }[]>> = {
+  ...Object.fromEntries(Object.entries(LINKED_TABLES).map(([table, link]) => [table, [{ column: link.fkColumn, parent: link.parentTable }]])),
+  exercise_sets: [{ column: 'workout_id', parent: 'workouts' }, { column: 'template_id', parent: 'exercise_templates' }],
+  workouts: [{ column: 'readiness_id', parent: 'readiness_checkins' }],
+  calorie_burns: [{ column: 'activity_type', parent: 'workouts' }],
 };
+export const NUMERIC_FIELDS = new Set(Object.values(CSV_SCHEMA).flatMap(columns => Object.entries(columns).filter(([, type]) => type === 'number').map(([column]) => column)));
+export const BOOLEAN_FIELDS = new Set(Object.values(CSV_SCHEMA).flatMap(columns => Object.entries(columns).filter(([, type]) => type === 'boolean').map(([column]) => column)));
+const SINGLETONS = new Set<DataTable>(['user_preferences', 'training_state', 'advanced_settings']);
 
-/** Every column that's a genuine number in the DB, across all tables - used to parse CSV strings back to numbers on import. */
-export const NUMERIC_FIELDS = new Set([
-  // exercises
-  'actual_weight', 'actual_reps', 'target_weight', 'target_reps', 'sort_order',
-  // daily_metrics / habits
-  'sleep_hours', 'bodyweight', 'pullups', 'energy_level',
-  // water_logs
-  'amount',
-  // meals
-  'calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium', 'potassium', 'caffeine', 'ai_confidence',
-  // calorie_burns
-  'duration_minutes', 'distance_km', 'met_estimate', 'effective_weight_kg',
-  // habits
-  'water_intake',
-  // workouts
-  'workout_duration_minutes', 'explicit_pause_seconds', 'estimated_net_kcal',
-  'energy_model_version', 'week_number', 'pre_energy', 'pre_motivation',
-  'pre_soreness', 'post_difficulty', 'post_satisfaction',
-  // user_preferences
-  'age', 'height_cm', 'initial_weight_kg', 'weight_goal', 'sleep_goal', 'weekly_workout_goal',
-  'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
-  'daily_fiber_goal', 'daily_sugar_goal', 'daily_sodium_goal', 'daily_potassium_goal', 'daily_caffeine_goal', 'daily_water_goal',
-  'daily_deficit_target', 'maintenance_calories', 'default_rest_seconds',
-  'completion_percent', 'actual_rir', 'rom_quality', 'pain_score', 'fatigue', 'motivation', 'resting_hr',
-  'workout_difficulty', 'pump', 'target_stimulus', 'joint_discomfort', 'energy', 'discomfort',
-  'knee_to_wall_left_cm', 'knee_to_wall_right_cm', 'hip_90_90_left', 'hip_90_90_right', 'hip_flexion_restriction', 'waist_cm',
-  // goal_history
-  'value',
-  // adaptive_lifecycles
-  'rep_range_low', 'rep_range_high', 'starting_load', 'ending_load',
-  'carryover_in', 'carryover_out',
-  // adaptive_session_logs
-  'leading_load', 'leading_reps', 'backoff_load', 'backoff_reps',
-  // versioned energy model
-  'effective_weight_kg', 'formula_ree', 'nonexercise_factor', 'formula_baseline',
-  'calibration_adjustment', 'personal_baseline', 'predicted_tdee', 'calibrated_tdee',
-  'likely_low', 'likely_high', 'calorie_target', 'protein_target',
-  'estimated_maintenance', 'target_adjustment',
-]);
-
-/** Every column that's a genuine boolean in the DB - parsed from the CSV's "true"/"1" text back to a real boolean on import. */
-export const BOOLEAN_FIELDS = new Set([
-  'completed', 'is_confirmed', 'is_skipped', 'auto_rest_timer', 'is_active',
-  'onboarding_completed', 'routine_setup_completed', 'deficit_mode_enabled',
-  'adaptive_mode_enabled', 'is_rest_day',
-  'show_bmr_on_dashboard', 'deload_active', 'illness', 'sharp_pain', 'exercise_felt_wrong', 'heels_down',
-  'calorie_target_locked', 'protein_target_locked', 'calibration_eligible',
-]);
-
-const JSON_FIELDS = new Set(['routine_data', 'dietary_preferences', 'rest_days', 'weak_points_targeted', 'prescription', 'soreness', 'recommendation', 'photo_paths', 'source_metadata', 'calculation_inputs', 'energy_inputs', 'inputs']);
+export function dependencyOrder(tables: DataTable[]): DataTable[] {
+  const result: DataTable[] = [];
+  const visit = (table: DataTable) => {
+    if (result.includes(table)) return;
+    for (const ref of REFERENCES[table] ?? []) visit(ref.parent);
+    result.push(table);
+  };
+  tables.forEach(visit);
+  return result;
+}
 
 const PAGE_SIZE = 1000;
 
@@ -240,73 +70,79 @@ async function fetchAllPaged<T>(
   return all;
 }
 
-export function escapeCSV(value: any): string {
-  if (value === null || value === undefined) return '';
+export function escapeCSV(value: unknown): string {
+  if (value == null) return '';
+  // Preserve empty strings and literal backslashes without changing old CSVs.
+  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  const encoded = text === '' ? '\\E' : text.startsWith('\\') ? '\\' + text : text;
+  return /[,"\r\n]/.test(encoded) ? `"${encoded.replace(/"/g, '""')}"` : encoded;
+}
+export function parseCSVRows(content: string): string[][] {
+  const parsed = Papa.parse<string[]>(content.replace(/^\uFEFF/, ''), { skipEmptyLines: 'greedy' });
+  if (parsed.errors.length) throw new Error(`Invalid CSV: ${parsed.errors[0].message}`);
+  return parsed.data;
+}
+export function parseCSVLine(line: string): string[] { return parseCSVRows(line)[0] ?? []; }
 
-  const stringValue = typeof value === 'object'
-    ? JSON.stringify(value)
-    : String(value);
-
-  // Escape quotes and wrap in quotes if contains comma, quote, or newline
-  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
-  }
-  return stringValue;
+export function decodeCSVRow(table: DataTable, headers: string[], values: string[]): Record<string, any> {
+  if (headers.length !== values.length) throw new Error(`${table}: expected ${headers.length} fields, received ${values.length}`);
+  const schema: Record<string, string> = CSV_SCHEMA[table];
+  const row: Record<string, any> = {};
+  headers.forEach((header, index) => {
+    if (!(header in schema)) throw new Error(`${table}: unknown column ${header}`);
+    const value = values[index];
+    if (value === '') { row[header] = null; return; }
+    switch (schema[header]) {
+      case 'number': {
+        const number = Number(value);
+        if (!Number.isFinite(number)) throw new Error(`${table}.${header}: invalid number "${value}"`);
+        row[header] = number; break;
+      }
+      case 'boolean':
+        if (!/^(true|false|1|0)$/i.test(value)) throw new Error(`${table}.${header}: invalid boolean`);
+        row[header] = /^(true|1)$/i.test(value); break;
+      case 'json': case 'array':
+        try { row[header] = JSON.parse(value); } catch { throw new Error(`${table}.${header}: invalid JSON`); }
+        if (schema[header] === 'array' && !Array.isArray(row[header])) throw new Error(`${table}.${header}: expected an array`);
+        break;
+      default: row[header] = value === '\\E' ? '' : value.startsWith('\\\\') ? value.slice(1) : value;
+    }
+  });
+  return row;
 }
 
-export function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
+export function parseCSVSections(text: string, filename: string): { table: DataTable; rows: Record<string, any>[] }[] {
+  const parsed = parseCSVRows(text);
+  const sections: { table: DataTable; rows: Record<string, any>[] }[] = [];
+  let table: DataTable | undefined;
+  let headers: string[] | undefined;
+  const filenameTable = filename.replace(/\.csv$/i, '').toLowerCase();
+  if (filenameTable in CSV_SCHEMA) table = filenameTable as DataTable;
+  for (const fields of parsed) {
+    const marker = fields.length === 1 ? fields[0].match(/^### TABLE: (\w+) ###$/) : null;
+    if (marker) {
+      if (!(marker[1] in CSV_SCHEMA)) throw new Error(`Unsupported table: ${marker[1]}`);
+      table = marker[1] as DataTable; headers = undefined; continue;
+    }
+    if (!table) throw new Error('Could not determine table. Use a RepTrack export or a table-named CSV.');
+    if (!headers) {
+      headers = fields.map(value => value.trim());
+      if (new Set(headers).size !== headers.length) throw new Error(`${table}: duplicate column headers`);
+      if (headers.some(header => !TABLE_COLUMNS[table].includes(header))) throw new Error(`${table}: unknown column in header`);
+      if (sections.some(section => section.table === table)) throw new Error(`Duplicate section: ${table}`);
+      sections.push({ table, rows: [] });
     } else {
-      current += char;
+      const section = sections[sections.length - 1];
+      if (section) section.rows.push(decodeCSVRow(table, headers, fields));
     }
   }
-  result.push(current.trim());
-
-  return result;
-}
-
-/** Parse a full CSV document, retaining newlines that appear inside quoted cells. */
-export function parseCSVRows(content: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let index = 0; index < content.length; index++) {
-    const char = content[index];
-    if (char === '"') {
-      if (inQuotes && content[index + 1] === '"') { current += '"'; index++; }
-      else inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) { row.push(current.trim()); current = ''; }
-    else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && content[index + 1] === '\n') index++;
-      row.push(current.trim());
-      if (row.some(cell => cell.length > 0)) rows.push(row);
-      row = []; current = '';
-    } else current += char;
-  }
-  row.push(current.trim());
-  if (row.some(cell => cell.length > 0)) rows.push(row);
-  return rows;
+  if (!sections.length) throw new Error('The CSV is empty.');
+  return sections;
 }
 
 export function useDataExport() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, table: '' });
@@ -343,90 +179,32 @@ export function useDataExport() {
     setLastExportSafely(null);
 
     try {
-      const csvFiles: { name: string; content: string }[] = [];
-
-      for (let i = 0; i < options.tables.length; i++) {
-        const table = options.tables[i];
-        setProgress({ current: i + 1, total: options.tables.length, table });
-
-        let data: Record<string, any>[] | null = null;
-        const error: any = null;
-
-        // Handle tables that don't have a direct user_id (they link via a parent row instead)
-        const linked = LINKED_TABLES[table];
-        if (linked) {
-          // Get all parent-table IDs for this user first
-          const parents = await fetchAllPaged<{ id: string }>(async (from, to) => {
-            const result = await (supabase as any)
-              .from(linked.parentTable)
-              .select('id')
-              .eq('user_id', user.id)
-              .range(from, to);
-            return { data: (result.data ?? null) as { id: string }[] | null, error: result.error };
+      const tables = dependencyOrder(options.tables);
+      setProgress({ current: 0, total: tables.length, table: '' });
+      const csvFiles: string[] = [];
+      for (const [index, table] of tables.entries()) {
+        setProgress({ current: index + 1, total: tables.length, table });
+        const schema = CSV_SCHEMA[table];
+        let data: Record<string, any>[] = [];
+        if ('user_id' in schema) {
+          data = await fetchAllPaged(async (from, to) => {
+            const result = await (supabase.from(table) as any).select('*').eq('user_id', user.id).order('id' in schema ? 'id' : 'user_id').range(from, to);
+            return result;
           });
-
-          if (parents.length > 0) {
-            const parentIds = parents.map(w => w.id);
-            const chunkSize = 100;
-            const allRows: Record<string, any>[] = [];
-
-            for (let c = 0; c < parentIds.length; c += chunkSize) {
-              const chunk = parentIds.slice(c, c + chunkSize);
-              const orderBy = TABLE_ORDER_BY[table];
-
-              const rowsForChunk = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-                let q = (supabase.from(table) as any).select('*').in(linked.fkColumn, chunk);
-                if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
-                const result = await q.range(from, to);
-                return { data: result.data ?? null, error: result.error };
-              });
-
-              allRows.push(...rowsForChunk);
-            }
-
-            data = allRows;
-          }
         } else {
-          // Standard query for tables with user_id
-          const orderBy = TABLE_ORDER_BY[table];
-          data = await fetchAllPaged<Record<string, any>>(async (from, to) => {
-            let q = (supabase.from(table) as any).select('*').eq('user_id', user.id);
-            if (orderBy) q = q.order(orderBy.column, { ascending: orderBy.ascending });
-            const result = await q.range(from, to);
-            return { data: result.data ?? null, error: result.error };
-          });
+          const link = LINKED_TABLES[table];
+          if (!link) throw new Error(`No ownership mapping for ${table}`);
+          const parents = await fetchAllPaged<{ id: string }>(async (from, to) => (supabase.from(link.parentTable) as any).select('id').eq('user_id', user.id).order('id').range(from, to));
+          for (let i = 0; i < parents.length; i += 100) {
+            const ids = parents.slice(i, i + 100).map(row => row.id);
+            data.push(...await fetchAllPaged<Record<string, any>>(async (from, to) => (supabase.from(table) as any).select('*').in(link.fkColumn, ids).order('id').range(from, to)));
+          }
         }
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const columns = TABLE_COLUMNS[table];
-
-          // Create CSV content
-          const headerRow = columns.join(',');
-          const dataRows = data.map(row =>
-            columns.map(col => escapeCSV(row[col as keyof typeof row])).join(',')
-          );
-
-          const csvContent = [headerRow, ...dataRows].join('\n');
-          csvFiles.push({ name: `${table}.csv`, content: csvContent });
-        }
+        const columns = TABLE_COLUMNS[table];
+        csvFiles.push(`### TABLE: ${table} ###\n${columns.join(',')}\n${data.map(row => columns.map(column => escapeCSV(row[column])).join(',')).join('\n')}`);
       }
-
-      // Prepare final export (single CSV or combined multi-table CSV)
-      if (csvFiles.length === 0) return null;
-
-      const exportContent =
-        csvFiles.length === 1
-          ? csvFiles[0].content
-          : csvFiles
-              .map(f => `### TABLE: ${f.name.replace('.csv', '')} ###\n${f.content}`)
-              .join('\n\n');
-
-      const exportFilename =
-        csvFiles.length === 1
-          ? csvFiles[0].name
-          : `fitness_data_export_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      const exportContent = csvFiles.join('\n\n');
+      const exportFilename = `fitness_data_export_${format(new Date(), 'yyyy-MM-dd')}.csv`;
 
       const mimeType = 'text/csv';
       const url = URL.createObjectURL(new Blob([exportContent], { type: mimeType }));
@@ -449,30 +227,7 @@ export function useDataExport() {
   };
 
   const exportAllData = async (): Promise<LastExportFile | null> => {
-    const allTables: DataTable[] = [
-      'workouts',
-      'exercises',
-      'daily_metrics',
-      'water_logs',
-      'meals',
-      'calorie_burns',
-      'habits',
-      'custom_routines',
-      'user_preferences',
-      'goal_history',
-      'adaptive_lifecycles',
-      'adaptive_session_logs',
-      'training_state',
-      'readiness_checkins',
-      'post_workout_checkins',
-      'mobility_assessments',
-      'physique_checkins',
-      'workout_pauses',
-      'energy_model_states',
-      'energy_targets',
-    ];
-
-    return await exportToCSV({ tables: allTables });
+    return exportToCSV({ tables: DATA_TABLES });
   };
 
   const importFromCSV = async (file: File): Promise<{
@@ -485,187 +240,66 @@ export function useDataExport() {
     setIsImporting(true);
     const imported: Record<string, number> = {};
     const errors: string[] = [];
-    // Old CSV id -> newly-inserted DB id, per table. Populated as each
-    // "parent" table (workouts, adaptive_lifecycles) is imported, so
-    // dependent tables (exercises/habits, adaptive_session_logs) can
-    // reattach to the right freshly-created row instead of a dangling old id.
     const idMaps: Partial<Record<DataTable, Record<string, string>>> = {};
-
     try {
-      const text = await file.text();
-      const sections = text.split(/### TABLE: (\w+) ###\n/).filter(Boolean);
-
-      // Handle single table CSV or combined export
-      const tablesToProcess: { table: DataTable; content: string }[] = [];
-
-      if (sections.length >= 2) {
-        // Combined export format
-        for (let i = 0; i < sections.length; i += 2) {
-          const tableName = sections[i].trim() as DataTable;
-          const content = sections[i + 1]?.trim();
-          if (tableName && content && TABLE_COLUMNS[tableName]) {
-            tablesToProcess.push({ table: tableName, content });
-          }
-        }
-      } else {
-        // Try to detect table from filename or first column
-        const filename = file.name.replace('.csv', '').toLowerCase();
-        if (TABLE_COLUMNS[filename as DataTable]) {
-          tablesToProcess.push({ table: filename as DataTable, content: text });
-        } else {
-          errors.push(`Could not determine table type from file "${file.name}". Use exported files or name file as table (e.g., workouts.csv)`);
-          return { success: false, imported, errors };
-        }
-      }
-
-      // Parent tables must be imported before whatever links to them, so the
-      // id map exists by the time a dependent table needs it - regardless of
-      // the order they happened to appear in the file.
-      const parentTablesNeeded = new Set(
-        tablesToProcess
-          .map(t => LINKED_TABLES[t.table]?.parentTable)
-          .filter((t): t is DataTable => !!t)
-      );
-      tablesToProcess.sort((a, b) => {
-        const aIsParent = parentTablesNeeded.has(a.table) ? 0 : 1;
-        const bIsParent = parentTablesNeeded.has(b.table) ? 0 : 1;
-        return aIsParent - bIsParent;
-      });
-
-      setProgress({ current: 0, total: tablesToProcess.length, table: '' });
-
-      for (let i = 0; i < tablesToProcess.length; i++) {
-        const { table, content } = tablesToProcess[i];
-        setProgress({ current: i + 1, total: tablesToProcess.length, table });
+      // Parse and validate the entire file before any database write.
+      const sections = parseCSVSections(await file.text(), file.name);
+      const order = dependencyOrder(sections.map(section => section.table));
+      // Seed only IDs readable as this account. Standalone child CSVs can attach safely.
+      for (const table of order) {
+        if (!('id' in CSV_SCHEMA[table])) continue;
         const linked = LINKED_TABLES[table];
-
-        try {
-          const csvRows = parseCSVRows(content);
-          if (csvRows.length < 2) continue;
-
-          const headers = csvRows[0];
-          const oldIds: (string | null)[] = [];
-          let skippedForMissingParent = 0;
-
-          const rows = csvRows.slice(1).map(values => {
-            const row: Record<string, any> = {};
-            let oldId: string | null = null;
-            let oldFkValue: string | null = null;
-
-            headers.forEach((header, idx) => {
-              let value: any = values[idx];
-
-              if (header === 'id') {
-                // Captured for remapping if other tables link to this row;
-                // the DB assigns a fresh id on insert either way.
-                oldId = value || null;
-                return;
-              }
-              if (linked && header === linked.fkColumn) {
-                // Captured, not dropped - remapped below once we know the
-                // new id it should point to. Dropping this outright (as a
-                // previous version of this importer did) silently orphaned
-                // every imported exercise/habit/session log with no parent
-                // row to attach to.
-                oldFkValue = value || null;
-                return;
-              }
-
-              // Parse special types
-              if (value === '') {
-                value = null;
-              } else if (BOOLEAN_FIELDS.has(header)) {
-                value = value === 'true' || value === '1';
-              } else if (NUMERIC_FIELDS.has(header)) {
-                value = value ? parseFloat(value) : null;
-              } else if (JSON_FIELDS.has(header) || (table === 'readiness_checkins' && header === 'joint_discomfort')) {
-                try { value = JSON.parse(value); } catch { throw new Error(`Invalid JSON in ${table}.${header}`); }
-              }
-
-              row[header] = value;
-            });
-
-            if (linked) {
-              const parentMap = idMaps[linked.parentTable];
-              const newFk = oldFkValue ? parentMap?.[oldFkValue] : undefined;
-              if (!newFk) {
-                // No matching parent row was imported in this same run (e.g.
-                // the export file didn't include it, or it failed above) -
-                // inserting would either violate the FK constraint or leave
-                // an orphaned row. Skip it and report instead of guessing.
-                // Deliberately NOT pushed to oldIds - it must stay index-
-                // aligned with `rows` after the filter() below drops this
-                // row, or later batching pairs the wrong old id with the
-                // wrong newly-inserted row.
-                skippedForMissingParent++;
-                return null;
-              }
-              row[linked.fkColumn] = newFk;
+        const existing = await fetchAllPaged<{ id: string }>(async (from, to) => {
+          let q = (supabase.from(table) as any).select('id');
+          if ('user_id' in CSV_SCHEMA[table]) q = q.eq('user_id', user.id);
+          // Linked-only tables are scoped by their existing RLS policies.
+          else if (!linked) throw new Error(`No ownership mapping for ${table}`);
+          return q.order('id').range(from, to);
+        });
+        idMaps[table] = Object.fromEntries(existing.map(row => [row.id, row.id]));
+      }
+      setProgress({ current: 0, total: sections.length, table: '' });
+      let current = 0;
+      for (const table of order) {
+        const section = sections.find(item => item.table === table);
+        if (!section) continue;
+        setProgress({ current: ++current, total: sections.length, table });
+        imported[table] = 0;
+        for (const [index, original] of section.rows.entries()) {
+          try {
+            const row = { ...original };
+            const oldId = row.id as string | undefined;
+            if (oldId && idMaps[table]?.[oldId] && !SINGLETONS.has(table)) continue;
+            delete row.id;
+            if ('user_id' in CSV_SCHEMA[table]) row.user_id = user.id;
+            else delete row.user_id;
+            for (const ref of REFERENCES[table] ?? []) {
+              const value = row[ref.column];
+              const isBurn = table === 'calorie_burns';
+              if (isBurn && (typeof value !== 'string' || !value.startsWith('workout:'))) continue;
+              if (value == null) continue;
+              const key = isBurn ? value.slice(8) : value;
+              const mapped = idMaps[ref.parent]?.[key];
+              if (!mapped) throw new Error(`Missing ${ref.parent} record for ${ref.column}`);
+              row[ref.column] = isBurn ? `workout:${mapped}` : mapped;
             }
-
-            // Add user_id to all rows
-            row.user_id = user.id;
-            oldIds.push(oldId);
-
-            return row;
-          }).filter((r): r is Record<string, any> => r !== null);
-
-          if (skippedForMissingParent > 0) {
-            errors.push(`${table}: skipped ${skippedForMissingParent} row(s) whose parent row wasn't found in this import`);
-          }
-
-          // Insert in batches - use type assertion to avoid complex inference
-          const batchSize = 100;
-          let insertedCount = 0;
-          const isParentTable = parentTablesNeeded.has(table);
-          const newIdMap: Record<string, string> = {};
-
-          for (let j = 0; j < rows.length; j += batchSize) {
-            const batch = rows.slice(j, j + batchSize);
-            // Deliberately NOT filtering out nulls here - this must stay
-            // index-aligned with `batch` and the `data` rows Postgres hands
-            // back, or a null earlier in the batch shifts every id pairing
-            // after it by one.
-            const batchOldIds = oldIds.slice(j, j + batchSize);
-
-            if (table === 'user_preferences' || table === 'training_state') {
-              const { error } = await (supabase.from(table) as any).upsert(batch, { onConflict: 'user_id' });
-              if (error) errors.push(`Error importing ${table}: ${error.message}`);
-              else insertedCount += batch.length;
-            } else if (isParentTable) {
-              // Need the freshly-generated ids back to remap dependent tables.
-              const { data, error } = await (supabase.from(table) as any).insert(batch).select('id');
-              if (error) {
-                errors.push(`Error importing ${table}: ${error.message}`);
-              } else {
-                insertedCount += batch.length;
-                (data ?? []).forEach((row: { id: string }, idx: number) => {
-                  const oldId = batchOldIds[idx];
-                  if (oldId) newIdMap[oldId] = row.id;
-                });
-              }
-            } else {
-              const { error } = await (supabase.from(table) as any).insert(batch);
-              if (error) {
-                errors.push(`Error importing ${table}: ${error.message}`);
-              } else {
-                insertedCount += batch.length;
-              }
+            if ('id' in CSV_SCHEMA[table]) row.id = crypto.randomUUID();
+            const result = SINGLETONS.has(table)
+              ? await (supabase.from(table) as any).upsert(Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'id')), { onConflict: 'user_id' })
+              : await (supabase.from(table) as any).insert(row);
+            if (result.error) throw result.error;
+            if (oldId && row.id) {
+              const map = idMaps[table] ?? {};
+              map[oldId] = row.id; idMaps[table] = map;
             }
+            imported[table]++;
+          } catch (error: any) {
+            errors.push(`${table} row ${index + 2}: ${error.message}`);
           }
-
-          if (isParentTable) idMaps[table] = newIdMap;
-          imported[table] = insertedCount;
-        } catch (err: any) {
-          errors.push(`Failed to process ${table}: ${err.message}`);
         }
       }
-
-      return {
-        success: errors.length === 0,
-        imported,
-        errors
-      };
+      await queryClient.invalidateQueries();
+      return { success: errors.length === 0, imported, errors };
     } finally {
       setIsImporting(false);
       setProgress({ current: 0, total: 0, table: '' });

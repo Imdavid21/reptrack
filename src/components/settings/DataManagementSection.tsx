@@ -18,7 +18,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { MuiCard } from '@/components/ui/MuiCard';
-import { useDataExport, DataTable } from '@/hooks/useDataExport';
+import { useDataExport, DataTable, TABLE_COLUMNS } from '@/hooks/useDataExport';
 import { toast } from '@/lib/toast';
 
 interface DataManagementSectionProps {
@@ -35,28 +35,7 @@ const settingsCardSx = {
   '& .MuiCardContent-root': { p: 1.5, '&:last-child': { pb: 1.5 } },
 };
 
-const TABLE_LABELS: Record<DataTable, string> = {
-  workouts: 'Workouts',
-  exercises: 'Exercises',
-  daily_metrics: 'Daily Metrics',
-  water_logs: 'Water Logs',
-  meals: 'Meals',
-  calorie_burns: 'Calorie Burns',
-  habits: 'Habits',
-  custom_routines: 'Custom Routines',
-  user_preferences: 'User Preferences',
-  goal_history: 'Goal History',
-  adaptive_lifecycles: 'Adaptive Mode Lifecycles',
-  adaptive_session_logs: 'Adaptive Mode Sessions',
-  training_state: 'Training State',
-  readiness_checkins: 'Readiness Checks',
-  post_workout_checkins: 'Post-workout Checks',
-  mobility_assessments: 'Mobility Assessments',
-  physique_checkins: 'Physique Checks',
-  energy_model_states: 'Energy Model States',
-  energy_targets: 'Energy Targets',
-  workout_pauses: 'Workout Pauses',
-};
+const TABLE_LABELS = Object.fromEntries(Object.keys(TABLE_COLUMNS).map(table => [table, table.split('_').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')])) as Record<DataTable, string>;
 
 export function DataManagementSection({ isExpanded, onToggle }: DataManagementSectionProps) {
   const {
@@ -72,13 +51,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
   } = useDataExport();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [selectedTables, setSelectedTables] = useState<DataTable[]>([
-    'workouts', 'exercises', 'daily_metrics', 'water_logs', 'meals',
-    'calorie_burns', 'habits', 'custom_routines', 'user_preferences',
-    'goal_history', 'adaptive_lifecycles', 'adaptive_session_logs',
-    'training_state', 'readiness_checkins', 'post_workout_checkins',
-    'mobility_assessments', 'physique_checkins',
-  ]);
+  const [selectedTables, setSelectedTables] = useState<DataTable[]>(Object.keys(TABLE_COLUMNS) as DataTable[]);
   const [importResult, setImportResult] = useState<{
     success: boolean;
     imported: Record<string, number>;
@@ -280,7 +253,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
             </Box>
             
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Import a previously exported CSV file. New records will be added (existing data won't be overwritten).
+              Import a RepTrack CSV. Existing record IDs are skipped; account settings are restored. Photo links are included, not image files.
             </Typography>
             
             <input
@@ -309,7 +282,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
                     <strong>Import complete!</strong>
                     <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.5 }}>
                       {Object.entries(importResult.imported).map(([table, count]) => (
-                        <li key={table}>{TABLE_LABELS[table as DataTable] || table}: {count} records</li>
+                        <li key={table}>{TABLE_LABELS[table as DataTable] || table}: {count} added or restored</li>
                       ))}
                     </Box>
                   </Alert>
@@ -326,7 +299,7 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
                         <strong>Successfully imported:</strong>
                         <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.5 }}>
                           {Object.entries(importResult.imported).map(([table, count]) => (
-                            <li key={table}>{TABLE_LABELS[table as DataTable] || table}: {count} records</li>
+                            <li key={table}>{TABLE_LABELS[table as DataTable] || table}: {count} added or restored</li>
                           ))}
                         </Box>
                       </>
