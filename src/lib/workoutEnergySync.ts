@@ -1,6 +1,8 @@
 import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
 import { localDateKey } from '@/lib/dateKey';
+import { saveWorkoutActivity, validWorkoutMinutes, MAX_WORKOUT_MINUTES } from './workoutActivity';
+export { validWorkoutMinutes } from './workoutActivity';
 
 const COMPOUND_CATEGORIES = ['primary', 'compound'];
 const ISOLATION_CATEGORIES = ['accessory', 'specialization', 'core'];
@@ -15,14 +17,6 @@ export interface SetCounts {
   plannedSets: number;
   compoundSets: number;
   isolationSets: number;
-}
-
-export const MAX_WORKOUT_MINUTES = 600;
-
-/** Returns a stored duration only when it is a realistic workout length. */
-export function validWorkoutMinutes(value: unknown): number {
-  const minutes = Number(value);
-  return Number.isFinite(minutes) && minutes > 0 && minutes <= MAX_WORKOUT_MINUTES ? minutes : 0;
 }
 
 /** Pure set-count summary used to re-estimate a workout's energy after history edits. */
@@ -135,20 +129,7 @@ export async function syncWorkoutEnergy(
         energy_model_version: ENERGY_MODEL_VERSION,
         calculation_inputs: energyInputs,
       };
-    // A workout owns one activity, even if its date is edited later.
-    const { data: existing, error: findError } = await supabase
-      .from('calorie_burns')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('source', 'workout')
-      .eq('activity_type', activityType)
-      .order('created_at')
-      .limit(1);
-    if (findError) throw findError;
-    const result = existing?.[0]
-      ? await supabase.from('calorie_burns').update(burn).eq('id', existing[0].id)
-      : await supabase.from('calorie_burns').insert(burn);
-    if (result.error) throw result.error;
+    await saveWorkoutActivity(supabase, burn);
   } else {
     const { error } = await supabase
       .from('calorie_burns')

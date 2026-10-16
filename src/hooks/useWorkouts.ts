@@ -7,6 +7,8 @@ import { localDateKey } from '@/lib/dateKey';
 import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
 import type { ExerciseType } from '@/lib/exerciseLibrary';
+import { saveWorkoutActivity, validWorkoutMinutes, MAX_WORKOUT_MINUTES } from '@/lib/workoutActivity';
+import { syncWorkoutEnergy } from '@/lib/workoutEnergySync';
 
 export interface ExerciseSet { setNumber: number; targetWeight: string; targetReps: string; actualWeight: string; actualReps: string; targetTime?: number; actualTime?: number; completed: boolean; setKind?: string; }
 export interface WorkoutExercise { id?: string; name: string; category: string; sets: ExerciseSet[]; sort_order: number; exerciseType?: ExerciseType; restSeconds?: number; rir?: string; mandatory?: boolean; progression?: string; }
@@ -54,6 +56,14 @@ export function useWorkouts() {
     }) => {
       if (!user) throw new Error('Not authenticated');
       const workoutId = workout.clientId || crypto.randomUUID();
+      // A late finish retry must not overwrite a workout already completed elsewhere.
+      const { data: completed, error: lookupError } = await supabase.from('workouts')
+        .select('*').eq('id', workoutId).eq('user_id', user.id).maybeSingle();
+      if (lookupError && navigator.onLine) throw lookupError;
+      if (completed?.completed_at) return completed;
+      if (workout.durationMinutes !== undefined && !validWorkoutMinutes(workout.durationMinutes)) {
+        throw new Error(`Workout duration must be between 1 and ${MAX_WORKOUT_MINUTES} minutes. Correct the duration and retry; your sets are kept.`);
+      }
       const workoutDate = localDateKey(workout.date ?? new Date());
 
       const weightWindowStart = new Date(`${workoutDate}T12:00:00`);
@@ -141,10 +151,11 @@ export function useWorkouts() {
           }
         }
 
-        if (burnCalories > 0) {
+        if (burnCalories > 0 && !adoptedExisting) {
           const burnPayload = { user_id: user.id, date: workoutDate, source: 'workout', activity_type: `workout:${workoutData.id}`, duration_minutes: burnDuration, calories: burnCalories, intensity_band: burnEstimate.intensity, intensity_source: 'workout_structure', met_estimate: burnEstimate.met, effective_weight_kg: weight.kg, confidence: burnEstimate.confidence, energy_model_version: ENERGY_MODEL_VERSION, calculation_inputs: workoutPayload.energy_inputs };
-          const { error: burnError } = await (supabase.from('calorie_burns') as any).upsert(burnPayload, { onConflict: 'user_id,date,source,activity_type' });
-          if (burnError) {
+          try {
+            await saveWorkoutActivity(supabase, burnPayload);
+          } catch (burnError) {
             console.error('[useWorkouts] burn upsert failed, queued for retry', burnError);
             await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'insert', payload: burnPayload }).catch(() => {});
           }
@@ -188,6 +199,9 @@ export function useWorkouts() {
     mutationFn: async (workout: Partial<Workout> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
       const patch: Record<string, any> = {};
+      if (workout.workout_duration_minutes !== undefined && !validWorkoutMinutes(workout.workout_duration_minutes)) {
+        throw new Error(`Workout duration must be between 1 and ${MAX_WORKOUT_MINUTES} minutes.`);
+      }
       if ((workout as any).is_skipped !== undefined) patch.is_skipped = (workout as any).is_skipped;
       if ((workout as any).notes !== undefined) patch.notes = (workout as any).notes;
       if (workout.date !== undefined) patch.date = workout.date;
@@ -198,24 +212,12 @@ export function useWorkouts() {
       const { data, error } = await supabase.from('workouts').update(patch).eq('id', workout.id).eq('user_id', user.id).select().single();
       if (error) throw error;
 
-      if (workout.workout_duration_minutes !== undefined || workout.date !== undefined) {
-        const { data: burn, error: burnLookupError } = await supabase.from('calorie_burns').select('id,duration_minutes,calories').eq('user_id', user.id).eq('source', 'workout').eq('activity_type', `workout:${workout.id}`).maybeSingle();
-        if (burnLookupError) console.error('[useWorkouts] linked burn lookup failed after workout update', burnLookupError);
-        if (burn) {
-          const burnPatch: Record<string, any> = {};
-          if (workout.date !== undefined) burnPatch.date = workout.date;
-          if (workout.workout_duration_minutes !== undefined) {
-            const oldDuration = Number(burn.duration_minutes) || 0;
-            const newDuration = Number(workout.workout_duration_minutes) || 0;
-            burnPatch.duration_minutes = newDuration;
-            if (oldDuration > 0 && newDuration > 0) burnPatch.calories = Math.round((Number(burn.calories) || 0) * (newDuration / oldDuration));
-          }
-          const { error: burnUpdateError } = await supabase.from('calorie_burns').update(burnPatch).eq('id', burn.id).eq('user_id', user.id);
-          if (burnUpdateError) {
-            console.error('[useWorkouts] linked burn update failed, queued for retry', burnUpdateError);
-            await enqueueOperation({ ownerUserId: user.id, table: 'calorie_burns', operation: 'update', payload: { id: burn.id, user_id: user.id, ...burnPatch } }).catch(() => {});
-          }
-        }
+      if (workout.workout_duration_minutes !== undefined) {
+        await syncWorkoutEnergy(supabase, { userId: user.id, workoutId: workout.id, initialWeightKg: preferences?.initial_weight_kg });
+      } else if (workout.date !== undefined) {
+        const { error: burnError } = await supabase.from('calorie_burns').update({ date: workout.date })
+          .eq('user_id', user.id).eq('source', 'workout').eq('activity_type', `workout:${workout.id}`);
+        if (burnError) throw burnError;
       }
       return data;
     },
