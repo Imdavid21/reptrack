@@ -78,7 +78,7 @@ export function escapeCSV(value: unknown): string {
   return /[,"\r\n]/.test(encoded) ? `"${encoded.replace(/"/g, '""')}"` : encoded;
 }
 export function parseCSVRows(content: string): string[][] {
-  const parsed = Papa.parse<string[]>(content.replace(/^\uFEFF/, ''), { skipEmptyLines: 'greedy' });
+  const parsed = Papa.parse<string[]>(content.replace(/^\uFEFF/, ''), { delimiter: ',', skipEmptyLines: 'greedy' });
   if (parsed.errors.length) throw new Error(`Invalid CSV: ${parsed.errors[0].message}`);
   return parsed.data;
 }
@@ -95,7 +95,7 @@ export function decodeCSVRow(table: DataTable, headers: string[], values: string
     switch (schema[header]) {
       case 'number': {
         const number = Number(value);
-        if (!Number.isFinite(number)) throw new Error(`${table}.${header}: invalid number "${value}"`);
+        if (!value.trim() || !Number.isFinite(number)) throw new Error(`${table}.${header}: invalid number "${value}"`);
         row[header] = number; break;
       }
       case 'boolean':
@@ -138,6 +138,14 @@ export function parseCSVSections(text: string, filename: string): { table: DataT
   }
   if (!sections.length) throw new Error('The CSV is empty.');
   return sections;
+}
+
+export async function importRecordId(userId: string, sourceId: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`csv:${userId}:${sourceId}`))).slice(0, 16);
+  bytes[6] = (bytes[6] & 15) | 80;
+  bytes[8] = (bytes[8] & 63) | 128;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
 
 export function useDataExport() {
@@ -270,6 +278,11 @@ export function useDataExport() {
             const row = { ...original };
             const oldId = row.id as string | undefined;
             if (oldId && idMaps[table]?.[oldId] && !SINGLETONS.has(table)) continue;
+            const destinationId = oldId ? await importRecordId(user.id, oldId) : crypto.randomUUID();
+            if (oldId && idMaps[table]?.[destinationId]) {
+              const map = idMaps[table] ?? {}; map[oldId] = destinationId; idMaps[table] = map;
+              continue;
+            }
             delete row.id;
             if ('user_id' in CSV_SCHEMA[table]) row.user_id = user.id;
             else delete row.user_id;
@@ -283,7 +296,7 @@ export function useDataExport() {
               if (!mapped) throw new Error(`Missing ${ref.parent} record for ${ref.column}`);
               row[ref.column] = isBurn ? `workout:${mapped}` : mapped;
             }
-            if ('id' in CSV_SCHEMA[table]) row.id = crypto.randomUUID();
+            if ('id' in CSV_SCHEMA[table]) row.id = destinationId;
             const result = SINGLETONS.has(table)
               ? await (supabase.from(table) as any).upsert(Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'id')), { onConflict: 'user_id' })
               : await (supabase.from(table) as any).insert(row);

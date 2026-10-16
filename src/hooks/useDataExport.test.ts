@@ -97,3 +97,24 @@ describe('TABLE_COLUMNS / NUMERIC_FIELDS / BOOLEAN_FIELDS consistency', () => {
     }
   });
 });
+
+describe('full CSV row decoding', () => {
+  it('keeps text weights as text and restores JSON plus array columns', async () => {
+    const { parseCSVSections } = await import('./useDataExport');
+    const csv = '### TABLE: exercises ###\nid,workout_id,name,actual_weight,actual_reps,prescription\ne1,w1,Bench (Set 1),BW,45s,"{""sets"":3}"\n### TABLE: gym_profiles ###\nid,name,plates_kg,is_default,bar_weight_kg\ng1,Home,"[20,10,5]",true,20';
+    const [exercises, gyms] = parseCSVSections(csv, 'export.csv');
+    expect(exercises.rows[0]).toMatchObject({ actual_weight: 'BW', actual_reps: '45s', prescription: { sets: 3 } });
+    expect(gyms.rows[0]).toMatchObject({ plates_kg: [20, 10, 5], is_default: true, bar_weight_kg: 20 });
+  });
+
+  it('includes set-level and settings tables in the export catalog', () => {
+    expect(TABLE_COLUMNS.exercise_sets).toContain('template_snapshot');
+    expect(TABLE_COLUMNS.advanced_settings).toContain('specialization_muscles');
+    expect(TABLE_COLUMNS.workouts).toContain('readiness_id');
+  });
+
+  it('gives the same source id the same destination id', async () => {
+    const { importRecordId } = await import('./useDataExport');
+    expect(await importRecordId('u', 'w1')).toBe(await importRecordId('u', 'w1'));
+  });
+});
