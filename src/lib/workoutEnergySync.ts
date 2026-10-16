@@ -17,6 +17,14 @@ export interface SetCounts {
   isolationSets: number;
 }
 
+export const MAX_WORKOUT_MINUTES = 600;
+
+/** Returns a stored duration only when it is a realistic workout length. */
+export function validWorkoutMinutes(value: unknown): number {
+  const minutes = Number(value);
+  return Number.isFinite(minutes) && minutes > 0 && minutes <= MAX_WORKOUT_MINUTES ? minutes : 0;
+}
+
 /** Pure set-count summary used to re-estimate a workout's energy after history edits. */
 export function summarizeSetCounts(rows: StoredExerciseRow[]): SetCounts {
   const normalized = rows.map(row => ({
@@ -75,7 +83,8 @@ export async function syncWorkoutEnergy(
   );
 
   const pausedSeconds = Number(workout.explicit_pause_seconds) || 0;
-  const durationMinutes = Number(workout.workout_duration_minutes) || 0;
+  const durationMinutes = validWorkoutMinutes(workout.workout_duration_minutes);
+  if (!durationMinutes) throw new Error(`Workout duration must be between 1 and ${MAX_WORKOUT_MINUTES} minutes.`);
   const estimate = estimateWorkoutEnergy({
     durationMinutes: durationMinutes + pausedSeconds / 60,
     pausedSeconds,
@@ -96,7 +105,7 @@ export async function syncWorkoutEnergy(
     ...counts,
   };
 
-  await supabase
+  const { error: workoutError } = await supabase
     .from('workouts')
     .update({
       energy_model_version: ENERGY_MODEL_VERSION,
@@ -105,13 +114,13 @@ export async function syncWorkoutEnergy(
       energy_inputs: energyInputs,
     })
     .eq('id', workoutId);
+  if (workoutError) throw workoutError;
 
   const calories = Math.round(estimate.netKcal);
   const activityType = `workout:${workoutId}`;
 
   if (calories > 0) {
-    await supabase.from('calorie_burns').upsert(
-      {
+    const burn = {
         user_id: userId,
         date: workout.date,
         source: 'workout',
@@ -125,16 +134,29 @@ export async function syncWorkoutEnergy(
         confidence: estimate.confidence,
         energy_model_version: ENERGY_MODEL_VERSION,
         calculation_inputs: energyInputs,
-      },
-      { onConflict: 'user_id,date,source,activity_type' },
-    );
+      };
+    // A workout owns one activity, even if its date is edited later.
+    const { data: existing, error: findError } = await supabase
+      .from('calorie_burns')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('source', 'workout')
+      .eq('activity_type', activityType)
+      .order('created_at')
+      .limit(1);
+    if (findError) throw findError;
+    const result = existing?.[0]
+      ? await supabase.from('calorie_burns').update(burn).eq('id', existing[0].id)
+      : await supabase.from('calorie_burns').insert(burn);
+    if (result.error) throw result.error;
   } else {
-    await supabase
+    const { error } = await supabase
       .from('calorie_burns')
       .delete()
       .eq('user_id', userId)
       .eq('source', 'workout')
       .eq('activity_type', activityType);
+    if (error) throw error;
   }
 
   return calories;
