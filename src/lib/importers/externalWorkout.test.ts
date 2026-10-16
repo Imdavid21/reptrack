@@ -33,3 +33,12 @@ describe('external workout import', () => {
     expect(parseExternalWorkoutCSV(csv)).toEqual([]);
   });
 });
+
+describe('external workout import fidelity', () => {
+  it('keeps two same-name workouts on one day as separate sessions', () => {
+    const csv = 'Date,Workout Name,Duration,Exercise Name,Weight,Reps\n2026-08-01 08:00:00,Push A,1:05:00,Bench Press,60,8\n2026-08-01 18:00:00,Push A,30m,Bench Press,62.5,6';
+    const sessions = parseExternalWorkoutCSV(csv);
+    expect(sessions).toHaveLength(2);
+    expect(sessions[0].durationMinutes).toBe(65);
+  });
+});
