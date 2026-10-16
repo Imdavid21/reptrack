@@ -8,7 +8,7 @@ import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
 import type { ExerciseType } from '@/lib/exerciseLibrary';
 
-export interface ExerciseSet { setNumber: number; targetWeight: string; targetReps: string; actualWeight: string; actualReps: string; targetTime?: number; actualTime?: number; completed: boolean; }
+export interface ExerciseSet { setNumber: number; targetWeight: string; targetReps: string; actualWeight: string; actualReps: string; targetTime?: number; actualTime?: number; completed: boolean; setKind?: string; }
 export interface WorkoutExercise { id?: string; name: string; category: string; sets: ExerciseSet[]; sort_order: number; exerciseType?: ExerciseType; restSeconds?: number; rir?: string; mandatory?: boolean; progression?: string; }
 export interface Habits { pullups: number; water_intake: number; sleep_hours: number; bodyweight?: number; notes?: string; }
 export interface Workout { id: string; user_id: string; date: string; day: string; day_name: string; week_number: number; created_at: string; started_at?: string; completed_at?: string; workout_duration_minutes?: number; estimated_net_kcal?: number | null; exercises?: WorkoutExercise[]; habits?: Habits; }
@@ -79,9 +79,9 @@ export function useWorkouts() {
         const completed = ex.sets.filter(set => set.completed);
         return completed.map((set, setIdx) => ({
           name: `${ex.name} (Set ${set.setNumber})`, category: ex.category, target_weight: set.targetWeight,
-          target_reps: ex.exerciseType === 'timed' ? String(set.targetTime || set.targetReps) : set.targetReps,
-          actual_weight: set.actualWeight, actual_reps: ex.exerciseType === 'timed' ? String(set.actualTime || set.actualReps) : set.actualReps,
-          completed: true, sort_order: exIdx * 100 + setIdx,
+          target_reps: ex.exerciseType === 'timed' ? set.targetTime ? `${set.targetTime}s` : set.targetReps : set.targetReps,
+          actual_weight: set.actualWeight, actual_reps: ex.exerciseType === 'timed' ? set.actualTime ? `${set.actualTime}s` : set.actualReps : set.actualReps,
+          set_kind: set.setKind || 'working', completed: true, sort_order: exIdx * 100 + setIdx,
         }));
       });
 

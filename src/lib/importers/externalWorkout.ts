@@ -1,3 +1,4 @@
+import Papa from 'papaparse';
 export type ExternalWorkoutSource = 'strong' | 'hevy' | 'unknown';
 
 export interface ExternalWorkoutSet {
@@ -17,31 +18,15 @@ export interface ExternalWorkoutSession {
   date: string;
   workoutName: string;
   durationMinutes: number | null;
+  startedAt?: string;
+  sessionKey: string;
   exercises: ExternalWorkoutExercise[];
 }
 
 function parseRows(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = '';
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (char === '"') {
-      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
-      else quoted = !quoted;
-    } else if (char === ',' && !quoted) {
-      row.push(cell.trim()); cell = '';
-    } else if ((char === '\n' || char === '\r') && !quoted) {
-      if (char === '\r' && text[i + 1] === '\n') i++;
-      row.push(cell.trim()); cell = '';
-      if (row.some(value => value.length)) rows.push(row);
-      row = [];
-    } else cell += char;
-  }
-  row.push(cell.trim());
-  if (row.some(value => value.length)) rows.push(row);
-  return rows;
+  const result = Papa.parse<string[]>(text.replace(/^\uFEFF/, ''), { delimiter: ',', skipEmptyLines: 'greedy' });
+  if (result.errors.length) throw new Error(result.errors[0].message);
+  return result.data;
 }
 
 const normalize = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -54,7 +39,11 @@ const number = (value: string) => {
 function dateKey(value: string) {
   const trimmed = value.trim();
   const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  if (iso) {
+    const key = `${iso[1]}-${iso[2]}-${iso[3]}`;
+    const value = new Date(`${key}T12:00:00Z`);
+    return Number.isFinite(value.getTime()) && value.toISOString().slice(0, 10) === key ? key : '';
+  }
   const slash = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
   if (slash) {
     const year = slash[3].length === 2 ? `20${slash[3]}` : slash[3];
@@ -70,6 +59,8 @@ function dateKey(value: string) {
 
 function durationMinutes(value: string, start: string, end: string) {
   if (value) {
+    const clock = value.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+    if (clock) return Math.max(1, Math.round(clock[3] ? Number(clock[1]) * 60 + Number(clock[2]) + Number(clock[3]) / 60 : Number(clock[1]) + Number(clock[2]) / 60));
     const hours = value.match(/(\d+(?:\.\d+)?)\s*h/i);
     const minutes = value.match(/(\d+(?:\.\d+)?)\s*m/i);
     if (hours || minutes) return Math.max(1, Math.round(number(hours?.[1] || '') * 60 + number(minutes?.[1] || '')));
@@ -95,6 +86,7 @@ export function parseExternalWorkoutCSV(text: string): ExternalWorkoutSession[] 
   if (rows.length < 2) return [];
   const headers = rows[0].map(normalize);
   const source = detectExternalWorkoutSource(rows[0]);
+  if (source === 'unknown') throw new Error('Choose a Strong or Hevy CSV export.');
   const records = rows.slice(1).map(values => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
   const sessions = new Map<string, ExternalWorkoutSession>();
 
@@ -107,14 +99,14 @@ export function parseExternalWorkoutCSV(text: string): ExternalWorkoutSession[] 
     const start = first(row, ['start_time','start']);
     const end = first(row, ['end_time','end']);
     const duration = durationMinutes(first(row, ['duration','duration_minutes','workout_duration']), start, end);
-    const key = `${date}|${workoutName}`;
-    const session = sessions.get(key) ?? { source, date, workoutName, durationMinutes: duration, exercises: [] };
+    const key = `${rawDate}|${workoutName}`;
+    const session = sessions.get(key) ?? { source, date, workoutName, durationMinutes: duration, sessionKey: key, startedAt: Number.isFinite(Date.parse(start || rawDate)) ? new Date(start || rawDate).toISOString() : undefined, exercises: [] };
     if (session.durationMinutes == null && duration != null) session.durationMinutes = duration;
     let exercise = session.exercises.find(item => item.name.toLowerCase() === exerciseName.toLowerCase());
     if (!exercise) { exercise = { name: exerciseName, sets: [] }; session.exercises.push(exercise); }
     const weight = number(first(row, ['weight','weight_kg','load','kg']));
     const reps = number(first(row, ['reps','repetitions']));
-    const durationSeconds = number(first(row, ['seconds','duration_seconds','set_duration_seconds']));
+    const durationSeconds = number(first(row, ['seconds','duration_seconds','set_duration_seconds','duration_s']));
     const setType = first(row, ['set_type','type']);
     if (reps > 0 || weight > 0 || durationSeconds > 0) exercise.sets.push({ weight, reps, durationSeconds: durationSeconds || undefined, setType: setType || undefined });
     sessions.set(key, session);
