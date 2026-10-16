@@ -1,6 +1,8 @@
 import { effectiveWeightAt, ENERGY_MODEL_VERSION, estimateWorkoutEnergy } from '@/lib/energyEngineV3';
 import { workoutIntensityOverride } from '@/lib/workoutCalories';
 import { localDateKey } from '@/lib/dateKey';
+import { saveWorkoutActivity, validWorkoutMinutes, MAX_WORKOUT_MINUTES } from './workoutActivity';
+export { validWorkoutMinutes } from './workoutActivity';
 
 const COMPOUND_CATEGORIES = ['primary', 'compound'];
 const ISOLATION_CATEGORIES = ['accessory', 'specialization', 'core'];
@@ -75,7 +77,8 @@ export async function syncWorkoutEnergy(
   );
 
   const pausedSeconds = Number(workout.explicit_pause_seconds) || 0;
-  const durationMinutes = Number(workout.workout_duration_minutes) || 0;
+  const durationMinutes = validWorkoutMinutes(workout.workout_duration_minutes);
+  if (!durationMinutes) throw new Error(`Workout duration must be between 1 and ${MAX_WORKOUT_MINUTES} minutes.`);
   const estimate = estimateWorkoutEnergy({
     durationMinutes: durationMinutes + pausedSeconds / 60,
     pausedSeconds,
@@ -96,7 +99,7 @@ export async function syncWorkoutEnergy(
     ...counts,
   };
 
-  await supabase
+  const { error: workoutError } = await supabase
     .from('workouts')
     .update({
       energy_model_version: ENERGY_MODEL_VERSION,
@@ -105,13 +108,13 @@ export async function syncWorkoutEnergy(
       energy_inputs: energyInputs,
     })
     .eq('id', workoutId);
+  if (workoutError) throw workoutError;
 
   const calories = Math.round(estimate.netKcal);
   const activityType = `workout:${workoutId}`;
 
   if (calories > 0) {
-    await supabase.from('calorie_burns').upsert(
-      {
+    const burn = {
         user_id: userId,
         date: workout.date,
         source: 'workout',
@@ -125,16 +128,16 @@ export async function syncWorkoutEnergy(
         confidence: estimate.confidence,
         energy_model_version: ENERGY_MODEL_VERSION,
         calculation_inputs: energyInputs,
-      },
-      { onConflict: 'user_id,date,source,activity_type' },
-    );
+      };
+    await saveWorkoutActivity(supabase, burn);
   } else {
-    await supabase
+    const { error } = await supabase
       .from('calorie_burns')
       .delete()
       .eq('user_id', userId)
       .eq('source', 'workout')
       .eq('activity_type', activityType);
+    if (error) throw error;
   }
 
   return calories;

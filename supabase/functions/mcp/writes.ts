@@ -270,13 +270,19 @@ async function persistWorkoutEnergy(db: Client, userId: string, workout: Args, r
     energy_inputs: inputs,
   }).eq("id", workout.id).eq("user_id", userId));
   if (estimate.netKcal > 0) {
-    await write("workout_burn", () => db.from("calorie_burns").upsert({
+    const existing = await write<any>("workout_burn_lookup", () => db.from("calorie_burns").select("id").eq("user_id", userId).eq("source", "workout").eq("activity_type", `workout:${workout.id}`).maybeSingle());
+    const burn = {
       user_id: userId, date: workout.date, source: "workout", activity_type: `workout:${workout.id}`,
       duration_minutes: workout.workout_duration_minutes || 0, calories: estimate.netKcal,
       intensity_band: estimate.intensity, intensity_source: "workout_structure", met_estimate: estimate.met,
       effective_weight_kg: weightKg, confidence: estimate.confidence, energy_model_version: ENERGY_MODEL_VERSION,
       calculation_inputs: inputs,
-    }, { onConflict: "user_id,date,source,activity_type" }));
+    };
+    await write("workout_burn", () => existing
+      ? db.from("calorie_burns").update(burn).eq("id", existing.id).eq("user_id", userId)
+      : db.from("calorie_burns").insert(burn));
+  } else {
+    await write("workout_burn_clear", () => db.from("calorie_burns").delete().eq("user_id", userId).eq("source", "workout").eq("activity_type", `workout:${workout.id}`));
   }
   return estimate;
 }
@@ -356,9 +362,6 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
     await write("workout_sets", () => db.from("exercises").insert(rows));
   } else {
     rows = (await write<any[]>("workout_sets_read", () => db.from("exercises").select("category").eq("workout_id", id))) || [];
-  }
-  if (patch.date && patch.date !== current.date) {
-    await write("stale_workout_burn_delete", () => db.from("calorie_burns").delete().eq("user_id", userId).eq("date", current.date).eq("activity_type", `workout:${id}`));
   }
   const estimate = await persistWorkoutEnergy(db, userId, { id, date, workout_duration_minutes: duration }, rows, prefs);
   return ok("workout_updated", { workout_id: id, date, duration_minutes: duration, sets_logged: rows.length, estimated_burn_kcal: estimate.netKcal });

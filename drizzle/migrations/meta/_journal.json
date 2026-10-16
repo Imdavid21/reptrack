@@ -15,6 +15,13 @@
       "when": 1790934157705,
       "tag": "0001_protect_workout_recovery_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792146487162,
+      "tag": "0002_prevent_duplicate_workout_activities",
+      "breakpoints": true
     }
   ]
 }

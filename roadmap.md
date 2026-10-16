@@ -8,3 +8,4 @@
 - [x] Recover unfinished workouts from the account across devices, with local fallback and conflict choice
 
 - [x] Verify CSV export/import end to end with the live testing account, including mappings and duplicate prevention
+- [x] Remove only the October 12 duplicate, audit activities, prevent repeat workout burns, validate duration, and verify dashboard consistency
