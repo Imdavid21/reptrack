@@ -9,3 +9,4 @@
 
 - [x] Verify CSV export/import end to end with the live testing account, including mappings and duplicate prevention
 - [x] Remove only the October 12 duplicate, audit activities, prevent repeat workout burns, validate duration, and verify dashboard consistency
+- [ ] Stop repeated account/device recovery prompts during ongoing workouts and test sign-in refreshes

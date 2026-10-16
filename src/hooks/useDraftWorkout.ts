@@ -63,6 +63,7 @@ function enqueue(userId: string, task: () => Promise<void>) {
 
 export function useDraftWorkout() {
   const { user, loading: authLoading } = useAuth();
+  const userId = user?.id;
   const [draft, setDraft] = useState<DraftWorkout | null>(null);
   const [cloudDraft, setCloudDraft] = useState<DraftWorkout | null>(null);
   const [conflict, setConflict] = useState<{ local: DraftWorkout; cloud: DraftWorkout } | null>(null);
@@ -75,10 +76,10 @@ export function useDraftWorkout() {
   const closedRef = useRef(false);
 
   const publish = useCallback((snapshot: DraftWorkout) => {
-    if (!user || !readyRef.current || blockedRef.current || closedRef.current || !navigator.onLine || !hasSets(snapshot)) return;
+    if (!userId || !readyRef.current || blockedRef.current || closedRef.current || !navigator.onLine || !hasSets(snapshot)) return;
     const saveId = snapshot.saveId;
     if (!saveId) return;
-    void enqueue(user.id, async () => {
+    void enqueue(userId, async () => {
       if (closedRef.current || blockedRef.current || currentRef.current?.saveId !== saveId) return;
       const { error } = await supabase.rpc('save_workout_recovery', {
         p_save_id: saveId, p_snapshot: snapshot as unknown as import('@/integrations/supabase/types').Json, p_saved_at: snapshot.lastSavedAt,
@@ -86,17 +87,19 @@ export function useDraftWorkout() {
       if (error) { console.warn('[workout-recovery] account save failed', error.message); setSyncStatus('device'); }
       else if (!closedRef.current && currentRef.current?.lastSavedAt === snapshot.lastSavedAt) setSyncStatus('synced');
     });
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { setLoaded(true); return; }
+    if (!userId) { setLoaded(true); return; }
     let cancelled = false;
     readyRef.current = false;
     closedRef.current = false;
+    blockedRef.current = false;
+    setConflict(null);
     setLoaded(false);
     setSyncStatus('checking');
-    const key = keyFor(user.id);
+    const key = keyFor(userId);
     let local: DraftWorkout | null = null;
     try {
       const raw = localStorage.getItem(key);
@@ -110,14 +113,14 @@ export function useDraftWorkout() {
     pendingSaveRef.current = local;
     setDraft(local);
     const load = async () => {
-      const { data, error } = await supabase.from('workout_recovery_snapshots').select('save_id,snapshot,status').eq('user_id', user.id).maybeSingle();
+      const { data, error } = await supabase.from('workout_recovery_snapshots').select('save_id,snapshot,status').eq('user_id', userId).maybeSingle();
       if (cancelled) return;
       if (error) { console.warn('[workout-recovery] account load failed', error.message); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
       const remote = data?.status === 'active' ? data.snapshot as unknown as DraftWorkout : null;
       const cloud = remote && fresh(remote) && remote.saveId === data?.save_id ? remote : null;
       // A completed workout must never be resurrected by a leftover recovery copy.
       if (cloud?.saveId && /^[0-9a-f-]{36}$/i.test(cloud.saveId)) {
-        const { data: finished, error: lookupError } = await supabase.from('workouts').select('id').eq('id', cloud.saveId).eq('user_id', user.id).limit(1).maybeSingle();
+        const { data: finished, error: lookupError } = await supabase.from('workouts').select('id').eq('id', cloud.saveId).eq('user_id', userId).limit(1).maybeSingle();
         if (cancelled) return;
         if (lookupError) { console.warn('[workout-recovery] finish lookup failed', lookupError.message); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
         if (finished) { void supabase.rpc('close_workout_recovery', { p_save_id: cloud.saveId }); readyRef.current = true; setSyncStatus('device'); setLoaded(true); return; }
@@ -142,13 +145,13 @@ export function useDraftWorkout() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [user?.id, authLoading, publish]);
+  }, [userId, authLoading, publish]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     const flush = () => {
       if (!pendingSaveRef.current) return;
-      try { localStorage.setItem(keyFor(user.id), JSON.stringify(pendingSaveRef.current)); }
+      try { localStorage.setItem(keyFor(userId), JSON.stringify(pendingSaveRef.current)); }
       catch (error) { console.error('[workout-recovery] device save failed', error); }
     };
     const visible = () => { if (document.visibilityState === 'hidden') flush(); else if (navigator.onLine && currentRef.current) publish(currentRef.current); };
@@ -160,53 +163,53 @@ export function useDraftWorkout() {
     window.addEventListener('beforeunload', beforeUnload);
     window.addEventListener('online', online);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); window.removeEventListener('pagehide', flush); window.removeEventListener('beforeunload', beforeUnload); window.removeEventListener('online', online); };
-  }, [user?.id, publish]);
+  }, [userId, publish]);
 
   const saveDraft = useCallback((data: Omit<DraftWorkout, 'lastSavedAt'>) => {
-    if (!user || closedRef.current) return;
+    if (!userId || closedRef.current) return;
     const snapshot: DraftWorkout = { ...data, saveId: data.saveId || currentRef.current?.saveId || crypto.randomUUID(), currentSetIndex: data.currentSetIndex ?? 0, version: 1, lastSavedAt: new Date().toISOString() };
     currentRef.current = snapshot;
     pendingSaveRef.current = snapshot;
     setDraft(snapshot);
     setSyncStatus('device');
-    try { localStorage.setItem(keyFor(user.id), JSON.stringify(snapshot)); }
+    try { localStorage.setItem(keyFor(userId), JSON.stringify(snapshot)); }
     catch (error) { console.error('[workout-recovery] device save failed', error); }
     publish(snapshot);
-  }, [user, publish]);
+  }, [userId, publish]);
 
   const chooseDraft = useCallback((source: 'device' | 'account') => {
-    if (!conflict || !user) return;
+    if (!conflict || !userId) return;
     const chosen = source === 'device' ? conflict.local : conflict.cloud;
     blockedRef.current = false;
     currentRef.current = chosen;
     pendingSaveRef.current = chosen;
-    localStorage.setItem(keyFor(user.id), JSON.stringify(chosen));
+    localStorage.setItem(keyFor(userId), JSON.stringify(chosen));
     setDraft(chosen);
     setCloudDraft(source === 'account' ? chosen : cloudDraft);
     setConflict(null);
     setSyncStatus(source === 'account' ? 'synced' : 'device');
     if (source === 'device') publish(chosen);
-  }, [conflict, user, publish, cloudDraft]);
+  }, [conflict, userId, publish, cloudDraft]);
 
   const clearDraft = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     const saveId = currentRef.current?.saveId;
     closedRef.current = true;
     blockedRef.current = false;
     if (saveId && navigator.onLine) {
       // Close after queued writes, so a delayed save cannot recreate the session.
-      const previous = queues.get(user.id);
+      const previous = queues.get(userId);
       if (previous) await previous.catch(() => {});
       const { error } = await supabase.rpc('close_workout_recovery', { p_save_id: saveId });
       if (error) console.warn('[workout-recovery] account close failed', error.message);
     }
-    localStorage.removeItem(keyFor(user.id));
+    localStorage.removeItem(keyFor(userId));
     setDraft(null);
     setCloudDraft(null);
     setConflict(null);
     pendingSaveRef.current = null;
     currentRef.current = null;
-  }, [user]);
+  }, [userId]);
 
   return { draft, cloudDraft, conflict, chooseDraft, syncStatus, resumable: isResumableDraft(draft), loaded, saveDraft, clearDraft, hasProgress: draft ? hasSets(draft) : false };
 }
