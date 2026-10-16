@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getQueuedItems, removeItem, updateItemRetries, getQueueCount, SyncQueueItem } from '@/lib/offlineSyncQueue';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { saveWorkoutActivity } from '@/lib/workoutActivity';
 
 type DynamicResult = {
   data: Array<Record<string, unknown>> | null;
@@ -109,6 +110,21 @@ export function useOfflineSync() {
     try {
       const table = dynamicSupabase.from(item.table);
       if (item.operation === 'insert') {
+        if (item.table === 'calorie_burns' && item.payload.source === 'workout' && typeof item.payload.activity_type === 'string' && item.payload.activity_type.startsWith('workout:')) {
+          const workoutId = item.payload.activity_type.slice(8);
+          const { data: workout, error: lookupError } = await supabase.from('workouts')
+            .select('id,date,workout_duration_minutes,estimated_net_kcal').eq('id', workoutId)
+            .eq('user_id', item.payload.user_id as string).maybeSingle();
+          if (lookupError) throw lookupError;
+          // An old queue entry cannot recreate a deleted workout or inflate a completed one.
+          if (!workout) return true;
+          await saveWorkoutActivity(supabase, {
+            ...item.payload, date: workout.date,
+            duration_minutes: workout.workout_duration_minutes,
+            calories: workout.estimated_net_kcal ?? item.payload.calories,
+          });
+          return true;
+        }
         if (await insertAlreadyLanded(item)) return true;
         const { error } = await table.insert(item.payload);
         if (error) throw error;

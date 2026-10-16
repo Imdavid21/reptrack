@@ -9,6 +9,7 @@ import { calculateBMR as sharedCalculateBMR } from '@/lib/metabolism';
 import { effectiveWeightAt } from '@/lib/energyEngineV3';
 import { timingFromWorkout, workoutNetKcal } from '@/lib/dayActivity';
 import { fetchAllRows } from '@/lib/supabasePaging';
+import { saveWorkoutActivity } from '@/lib/workoutActivity';
 
 interface CalorieBurn {
   id: string;
@@ -82,6 +83,11 @@ export function useCalorieBurn(date?: Date) {
     mutationFn: async (burn: Omit<CalorieBurn, 'id' | 'user_id' | 'date'> & { date?: string }) => {
       if (!user) throw new Error('No user');
       const { date: burnDate, ...rest } = burn;
+      if (burn.source === 'workout' && burn.activity_type?.startsWith('workout:')) {
+        const payload = { user_id: user.id, date: burnDate ?? dateStr, ...rest };
+        await saveWorkoutActivity(supabase, payload);
+        return payload;
+      }
       const { data, error } = await (supabase.from('calorie_burns') as any)
         .upsert({ user_id: user.id, date: burnDate ?? dateStr, ...rest }, { onConflict: 'user_id,date,source,activity_type' })
         .select().single();
