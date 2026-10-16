@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { isResumableDraft, draftDateKey, recoveryConflict, DraftWorkout } from './useDraftWorkout';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { isResumableDraft, draftDateKey, recoveryConflict, DraftWorkout, useDraftWorkout } from './useDraftWorkout';
+
+const mocks = vi.hoisted(() => ({
+  auth: { user: { id: 'recovery-test-account' }, loading: false },
+  from: vi.fn(),
+  rpc: vi.fn(),
+}));
+vi.mock('./useAuth', () => ({ useAuth: () => mocks.auth }));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: mocks.from, rpc: mocks.rpc } }));
 
 const base = (over: Partial<DraftWorkout> = {}): DraftWorkout => ({
   day: 'push_a',
@@ -49,5 +58,58 @@ describe('draftDateKey', () => {
   it('returns the local day of the draft', () => {
     const d = new Date(2026, 5, 6, 10, 0, 0);
     expect(draftDateKey(base({ date: d.toISOString() }))).toBe('2026-06-06');
+  });
+});
+
+describe('ongoing workout recovery', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    mocks.auth.user = { id: 'recovery-test-account' };
+    mocks.rpc.mockResolvedValue({ error: null });
+  });
+
+  function accountSnapshot(snapshot: DraftWorkout) {
+    const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.maybeSingle.mockResolvedValue({ data: { save_id: snapshot.saveId, snapshot, status: 'active' }, error: null });
+    mocks.from.mockReturnValue(query);
+  }
+
+  it('keeps active sets and saves silently when auth refreshes with a lagging account copy', async () => {
+    const original = base({ saveId: 'workout-active' });
+    localStorage.setItem('fittrack_draft_workout_recovery-test-account', JSON.stringify(original));
+    accountSnapshot(original);
+    const { result, rerender, unmount } = renderHook(() => useDraftWorkout());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    const save = result.current.saveDraft;
+    const progressed = { ...original, currentSetIndex: 1, exercises: [{ ...original.exercises[0], sets: [{ completed: true }, { completed: true }] }] } as DraftWorkout;
+    act(() => result.current.saveDraft(progressed));
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalled());
+    mocks.auth.user = { id: 'recovery-test-account' };
+    rerender();
+    expect(result.current.saveDraft).toBe(save);
+    expect(result.current.loaded).toBe(true);
+    expect(result.current.conflict).toBeNull();
+    expect(result.current.draft?.currentSetIndex).toBe(1);
+    expect(result.current.draft?.exercises[0].sets).toHaveLength(2);
+    expect(mocks.from).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it('still asks at recovery when device and account contain genuinely different sets', async () => {
+    const local = base({ saveId: 'workout-active' });
+    const cloud = { ...local, exercises: [{ ...local.exercises[0], sets: [{ completed: true }, { completed: true }] }] } as DraftWorkout;
+    localStorage.setItem('fittrack_draft_workout_recovery-test-account', JSON.stringify(local));
+    accountSnapshot(cloud);
+    const { result, unmount } = renderHook(() => useDraftWorkout());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.conflict?.local.exercises[0].sets).toHaveLength(1);
+    expect(result.current.conflict?.cloud.exercises[0].sets).toHaveLength(2);
+    act(() => result.current.chooseDraft('account'));
+    expect(result.current.conflict).toBeNull();
+    expect(result.current.draft?.exercises[0].sets).toHaveLength(2);
+    unmount();
   });
 });
