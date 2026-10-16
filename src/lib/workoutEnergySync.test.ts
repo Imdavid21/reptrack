@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeSetCounts } from './workoutEnergySync';
+import { summarizeSetCounts, validWorkoutMinutes } from './workoutEnergySync';
+
+describe('validWorkoutMinutes', () => {
+  it('keeps a 50 minute workout', () => expect(validWorkoutMinutes(50)).toBe(50));
+  it('rejects a 5,736 minute workout', () => expect(validWorkoutMinutes(5736)).toBe(0));
+});
 
 describe('summarizeSetCounts', () => {
   it('counts completed, planned, compound and isolation sets', () => {
