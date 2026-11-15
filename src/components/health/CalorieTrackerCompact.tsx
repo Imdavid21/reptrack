@@ -11,7 +11,7 @@ import { AnalysisProgress } from './AnalysisProgress';
 import { BmrBreakdownTile } from './BmrBreakdownTile';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  Utensils, Camera, Plus, Loader2, Check, X, 
+  Utensils, Camera, Plus, ImagePlus, Loader2, Check, X, 
   Coffee, Sun, Sunset, Cookie, Trash2, ChevronDown, ChevronUp, Pencil, Flame
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -862,9 +862,9 @@ export function CalorieTrackerCompact() {
         </Collapsible>
 
         <div className="mt-3 flex gap-2 border-t border-border pt-3">
-          <button onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }} aria-label="Choose a food photo from your library" title="Choose photo" className="flex h-11 w-11 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Plus className="h-4 w-4" /></button>
-          <button onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }} aria-label="Describe a meal" title="Describe meal" className="flex h-11 w-11 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Utensils className="h-4 w-4" /></button>
-          <button onClick={(e) => { e.stopPropagation(); handleCameraClick(); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Add food photo</button>
+          <button onClick={(e) => { e.stopPropagation(); handleCameraClick(); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Take Photo</button>
+          <button onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }} aria-label="Upload a food photo from your library" className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold transition-colors hover:bg-muted"><ImagePlus className="h-4 w-4" />Upload Photo</button>
+          <button onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }} aria-label="Describe a meal" title="Describe meal" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Utensils className="h-4 w-4" /></button>
         </div>
       </section>
 
