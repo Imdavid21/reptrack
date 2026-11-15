@@ -96,9 +96,6 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
     }
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
