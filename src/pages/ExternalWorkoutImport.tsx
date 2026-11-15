@@ -97,8 +97,8 @@ export default function ExternalWorkoutImport() {
     <div className="mx-auto max-w-[720px] pb-12">
       <header className="mb-5"><div className="type-eyebrow">Import</div><h1 className="type-page-title mt-1">Strong / Hevy</h1></header>
 
-      <input ref={inputRef} className="hidden" type="file" accept=".csv,text/csv" onChange={event => { const file = event.target.files?.[0]; if (file) void readFile(file); event.target.value = ''; }} />
-      <Button disabled={isImporting} onClick={() => inputRef.current?.click()} className="w-full min-h-28 rounded-[20px] border border-dashed border-border bg-card flex flex-col items-center justify-center gap-2"><FileUp className="h-5 w-5"/><span className="text-sm font-semibold">Choose CSV</span>{fileName && <span className="type-caption">{fileName}</span>}</Button>
+      <input ref={inputRef} id="external-csv-input" disabled={isImporting} className="sr-only" tabIndex={-1} type="file" accept=".csv,text/csv" onChange={event => { const file = event.target.files?.[0]; if (file) void readFile(file); event.target.value = ''; }} />
+      <label htmlFor="external-csv-input" role="button" aria-disabled={isImporting} className="cursor-pointer aria-disabled:pointer-events-none aria-disabled:opacity-50 w-full min-h-28 rounded-[20px] border border-dashed border-border bg-card flex flex-col items-center justify-center gap-2"><FileUp className="h-5 w-5"/><span className="text-sm font-semibold">Choose CSV</span>{fileName && <span className="type-caption">{fileName}</span>}</label>
 
       {!!sessions.length && <>
         <section className="mt-5 rounded-[20px] border border-border bg-card overflow-hidden">
