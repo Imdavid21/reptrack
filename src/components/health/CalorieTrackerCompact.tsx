@@ -227,6 +227,13 @@ export function CalorieTrackerCompact() {
     setAnalysisProgressText('');
   };
 
+  // Photo buttons are labels tied to the file inputs so phones open the picker natively.
+  const prepareImageMode = () => {
+    setSelectedMealType(getMealTypeByTime());
+    resetDialogState();
+    setImageMode(true);
+  };
+
   const handleCameraClick = () => {
     setSelectedMealType(getMealTypeByTime());
     resetDialogState();
@@ -530,20 +537,26 @@ export function CalorieTrackerCompact() {
       {/* File inputs - outside Dialog so always rendered */}
       <input
         ref={cameraInputRef}
+        id="meal-photo-camera"
         type="file"
         accept="image/*"
         capture="environment"
         multiple
         onChange={handleFileSelect}
-        className="hidden"
+        onClick={(e) => e.stopPropagation()}
+        className="sr-only"
+        tabIndex={-1}
       />
       <input
         ref={galleryInputRef}
+        id="meal-photo-library"
         type="file"
         accept="image/*"
         multiple
         onChange={handleFileSelect}
-        className="hidden"
+        onClick={(e) => e.stopPropagation()}
+        className="sr-only"
+        tabIndex={-1}
       />
 
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="w-full">
@@ -862,8 +875,8 @@ export function CalorieTrackerCompact() {
         </Collapsible>
 
         <div className="mt-3 flex gap-2 border-t border-border pt-3">
-          <button onClick={(e) => { e.stopPropagation(); handleCameraClick(); }} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Take Photo</button>
-          <button onClick={(e) => { e.stopPropagation(); handleGalleryClick(); }} aria-label="Upload a food photo from your library" className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold transition-colors hover:bg-muted"><ImagePlus className="h-4 w-4" />Upload Photo</button>
+          <label htmlFor="meal-photo-camera" role="button" onClick={(e) => { e.stopPropagation(); prepareImageMode(); }} className="cursor-pointer "flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Take Photo</label>
+          <label htmlFor="meal-photo-library" role="button" aria-label="Upload a food photo from your library" onClick={(e) => { e.stopPropagation(); prepareImageMode(); }} className="cursor-pointer flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold transition-colors hover:bg-muted"><ImagePlus className="h-4 w-4" />Upload Photo</label>
           <button onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }} aria-label="Describe a meal" title="Describe meal" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Utensils className="h-4 w-4" /></button>
         </div>
       </section>
