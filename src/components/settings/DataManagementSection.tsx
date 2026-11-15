@@ -96,9 +96,6 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
     }
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -261,15 +258,19 @@ export function DataManagementSection({ isExpanded, onToggle }: DataManagementSe
               ref={fileInputRef}
               accept=".csv"
               onChange={handleFileSelect}
-              style={{ display: 'none' }}
+              id="csv-import-input"
+              className="sr-only"
+              tabIndex={-1}
+              disabled={isLoading}
             />
             
             <Button
+              component="label"
+              htmlFor="csv-import-input"
               fullWidth
               variant="outlined"
               disabled={isLoading}
               startIcon={isImporting ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-              onClick={handleImportClick}
             >
               Select CSV File
             </Button>
