@@ -875,7 +875,7 @@ export function CalorieTrackerCompact() {
         </Collapsible>
 
         <div className="mt-3 flex gap-2 border-t border-border pt-3">
-          <label htmlFor="meal-photo-camera" role="button" onClick={(e) => { e.stopPropagation(); prepareImageMode(); }} className="cursor-pointer "flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Take Photo</label>
+          <label htmlFor="meal-photo-camera" role="button" onClick={(e) => { e.stopPropagation(); prepareImageMode(); }} className="cursor-pointer flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"><Camera className="h-4 w-4" />Take Photo</label>
           <label htmlFor="meal-photo-library" role="button" aria-label="Upload a food photo from your library" onClick={(e) => { e.stopPropagation(); prepareImageMode(); }} className="cursor-pointer flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold transition-colors hover:bg-muted"><ImagePlus className="h-4 w-4" />Upload Photo</label>
           <button onClick={(e) => { e.stopPropagation(); handleDescribeClick(); }} aria-label="Describe a meal" title="Describe meal" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border transition-colors hover:bg-muted"><Utensils className="h-4 w-4" /></button>
         </div>
