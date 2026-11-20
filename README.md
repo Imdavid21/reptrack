@@ -4,6 +4,7 @@
 > **MCP server:** 1.3.0  
 > **Platform:** React PWA + Capacitor native shell  
 > **Production:** https://reptrack.fitness  
+> **Source:** https://github.com/Imdavid21/reptrack  
 > **Last updated:** 24 August 2026
 
 RepTrack is a personal fitness operating system for training, nutrition, bodyweight, hydration, recovery, energy balance, progress analysis, and external ChatGPT coaching.
