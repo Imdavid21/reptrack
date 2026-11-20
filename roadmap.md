@@ -10,3 +10,5 @@
 - [x] Verify CSV export/import end to end with the live testing account, including mappings and duplicate prevention
 - [x] Remove only the October 12 duplicate, audit activities, prevent repeat workout burns, validate duration, and verify dashboard consistency
 - [x] Stop repeated account/device recovery prompts during ongoing workouts and test sign-in refreshes
+- [x] Prepare Vercel build, output, and SPA route fallback settings
+- [ ] Connect the GitHub repository to the user's Vercel account, set build-time backend values, add the deployed domain to the auth redirect allowlist, and verify a signed-in deployment (requires user account setup)

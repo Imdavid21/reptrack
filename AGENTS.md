@@ -7,3 +7,4 @@
 - Key workout recovery initialization and save callbacks to the account ID, not the changing auth user object; token refreshes must not interrupt active sets with a false backup conflict.
 - CSV portability uses one table-scoped schema and explicit reference ordering, excluding credentials, service logs and active session/recovery state; this preserves field types without reviving closed workouts.
 - Workout activity identity is the owner plus workout ID, not the calendar date; update the existing linked activity and validate duration at storage boundaries to prevent duplicate burns and stale-draft inflation.
+- Deploy the React/Vite frontend independently from Lovable Cloud, keeping auth, database, storage, and edge functions on the existing backend; Vercel builds must receive the public `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` at build time so client calls and auth keep targeting the same backend.
