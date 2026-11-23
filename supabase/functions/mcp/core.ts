@@ -9,7 +9,7 @@ export const APPROVED_TOOLS = [
   "get_advanced_snapshot", "get_progression_autopilot", "get_cut_control",
   "get_weak_point_radar", "get_weekly_coach_review", "get_goal_runway",
   "get_advanced_config", "list_coach_events", "get_physique_checkins",
-  "get_workout_context", "get_day_summary",
+  "get_workout_context", "get_day_summary", "get_energy_balance",
 ] as const;
 
 /** Writes cover logs, planned workouts and live coaching. Deletes are single-record and undoable via undo_last_write. */

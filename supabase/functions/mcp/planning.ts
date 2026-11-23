@@ -414,7 +414,7 @@ export async function getDaySummary(args: Args, db: Client, userId: string, time
   const seen = new Map<string, string>();
   const mealRows = (meals || []).map(m => { const k = `${String(m.food_name).toLowerCase().trim()}|${m.calories}`; const dupOf = seen.get(k) ?? null; if (!dupOf) seen.set(k, m.id); return { ...m, possible_duplicate_of: dupOf }; });
   const total = (k: string) => round((meals || []).reduce((s, m) => s + (Number(m[k]) || 0), 0), 1);
-  const macro = (k: string, target: unknown) => ({ eaten: total(k), target: target ?? null, remaining: target != null ? round(Number(target) - total(k), 1) : null });
+  const macro = (k: string, target: unknown) => ({ eaten: total(k), target: target ?? null, remaining: target != null ? round(Number(target) - total(k), 1) : null, percent_of_target: target ? Math.round(total(k) / Number(target) * 100) : null });
   const activities = (burns || []).filter(b => !String(b.activity_type ?? "").startsWith("workout:"));
   const actSeen = new Map<string, string>();
   const activityRows = activities.map(a => { const k = `${a.activity_type}|${a.distance_km}|${a.duration_minutes}`; const dupOf = actSeen.get(k) ?? null; if (!dupOf) actSeen.set(k, a.id); return { ...a, possible_duplicate_of: dupOf }; });
@@ -425,11 +425,66 @@ export async function getDaySummary(args: Args, db: Client, userId: string, time
     date,
     nutrition: { calories: macro("calories", p.daily_calorie_goal), protein_g: macro("protein", p.daily_protein_goal), carbs_g: macro("carbs", p.daily_carbs_goal), fat_g: macro("fat", p.daily_fat_goal), fiber_g: macro("fiber", p.daily_fiber_goal), sugar_g: macro("sugar", p.daily_sugar_goal), sodium_mg: macro("sodium", p.daily_sodium_goal), caffeine_mg: macro("caffeine", p.daily_caffeine_goal ?? 250) },
     meals: mealRows,
-    water: { total_ml: waterMl, target_ml: p.daily_water_goal != null ? Math.round(Number(p.daily_water_goal) * 1000) : null, entries: (water || []).map(w => ({ id: w.id, ml: Math.round(Number(w.amount) * 1000), at: w.timestamp })) },
+    water: { total_ml: waterMl, target_ml: p.daily_water_goal != null ? Math.round(Number(p.daily_water_goal) * 1000) : null, percent_of_target: p.daily_water_goal ? Math.round(waterMl / (Number(p.daily_water_goal) * 10)) : null, entries: (water || []).map(w => ({ id: w.id, ml: Math.round(Number(w.amount) * 1000), at: w.timestamp })) },
     activity: { entries: activityRows, total_kcal: activities.reduce((s, a) => s + (a.calories || 0), 0), total_steps: activities.reduce((s, a) => s + (a.steps || 0), 0) || null, workout_burn_kcal: (burns || []).filter(b => String(b.activity_type ?? "").startsWith("workout:")).reduce((s, b) => s + (b.calories || 0), 0) },
     workouts_done: workoutRows,
     workouts_planned: (planned || []).map(planOut),
     duplicates_flagged: mealRows.filter(m => m.possible_duplicate_of).length + activityRows.filter(a => a.possible_duplicate_of).length + workoutRows.filter(w => w.possible_duplicate_of).length,
   };
   return env(data, { calories_eaten: data.nutrition.calories.eaten, protein_g: data.nutrition.protein_g.eaten, water_ml: waterMl, workouts_done: workoutRows.length, workouts_planned: data.workouts_planned.length, duplicates_flagged: data.duplicates_flagged }, date);
+}
+
+/* ---------------------------- energy balance ---------------------------- */
+
+/** Per-day maintenance estimate from the app's stored energy model, with the inputs behind it and a completeness flag. */
+export async function getEnergyBalance(args: Args, db: Client, userId: string, timezone: string) {
+  const today = todayIn(timezone);
+  const end = isoDate(args.end_date, today), start = isoDate(args.start_date, addDays(end, -13));
+  if (start > end) throw new Error("INVALID_DATE_RANGE");
+  if (daysBetween(start, end) > 365) throw new Error("INVALID_DATE_RANGE");
+  const [states, meals, burns, metrics] = await Promise.all([
+    write<any[]>("eb_states", () => db.from("energy_model_states").select("*").eq("user_id", userId).gte("effective_date", start).lte("effective_date", end)),
+    write<any[]>("eb_meals", () => db.from("meals").select("date,calories,protein").eq("user_id", userId).gte("date", start).lte("date", end).limit(5000)),
+    write<any[]>("eb_burns", () => db.from("calorie_burns").select("date,source,activity_type,calories").eq("user_id", userId).gte("date", start).lte("date", end).limit(5000)),
+    write<any[]>("eb_metrics", () => db.from("daily_metrics").select("date,bodyweight").eq("user_id", userId).gte("date", start).lte("date", end)),
+  ]);
+  const days: Args[] = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    const s = (states || []).find(x => x.effective_date === d);
+    const dayMeals = (meals || []).filter(m => m.date === d);
+    const dayBurns = (burns || []).filter(b => b.date === d);
+    const weight = (metrics || []).find(m => m.date === d && m.bodyweight != null)?.bodyweight ?? null;
+    const intake = dayMeals.reduce((t, m) => t + (m.calories || 0), 0);
+    const workoutKcal = dayBurns.filter(b => String(b.activity_type ?? "").startsWith("workout:")).reduce((t, b) => t + (b.calories || 0), 0);
+    const cardioKcal = dayBurns.filter(b => !String(b.activity_type ?? "").startsWith("workout:")).reduce((t, b) => t + (b.calories || 0), 0);
+    const missing = [!s && "model_estimate", !dayMeals.length && "food_log", weight == null && "weigh_in"].filter(Boolean) as string[];
+    const tdee = s ? (s.calibrated_tdee ?? s.predicted_tdee) : null;
+    const completeness = !s ? "no_estimate" : !dayMeals.length ? "gaps" : (s.data_quality === "high" && missing.length <= 1 ? "complete" : s.data_quality === "low" ? "low" : "partial");
+    days.push({
+      date: d,
+      maintenance_kcal: tdee, likely_range_kcal: s ? [s.likely_low, s.likely_high] : null,
+      intake_kcal: dayMeals.length ? intake : null, net_balance_kcal: tdee != null && dayMeals.length ? intake - tdee : null,
+      inputs: s ? {
+        weight_used_kg: s.effective_weight_kg, weight_source: s.weight_source, weighed_in_today_kg: weight,
+        resting_energy_kcal: s.formula_ree, nonexercise_factor: s.nonexercise_factor, formula_baseline_kcal: s.formula_baseline,
+        calibration_adjustment_kcal: s.calibration_adjustment, personal_baseline_kcal: s.personal_baseline,
+        activity_used: { workout_kcal: workoutKcal, cardio_kcal: cardioKcal }, predicted_tdee_kcal: s.predicted_tdee, calibrated_tdee_kcal: s.calibrated_tdee,
+        weight_observations: s.inputs?.weightObservationCount ?? null, calibration_note: s.inputs?.calibrationReason ?? null,
+      } : { weighed_in_today_kg: weight, activity_used: { workout_kcal: workoutKcal, cardio_kcal: cardioKcal } },
+      confidence: s?.calibration_confidence ?? null, data_quality: s?.data_quality ?? null, completeness, missing,
+    });
+  }
+  const est = days.filter(d => d.maintenance_kcal != null);
+  return {
+    start_date: start, end_date: end, timezone, data: days,
+    summary: {
+      days: days.length, days_with_estimate: est.length, days_missing_food_log: days.filter(d => d.missing.includes("food_log")).length,
+      days_missing_weigh_in: days.filter(d => d.missing.includes("weigh_in")).length, days_with_gaps: days.filter(d => d.completeness !== "complete").length,
+      average_maintenance_kcal: est.length ? Math.round(est.reduce((t, d) => t + d.maintenance_kcal, 0) / est.length) : null,
+    },
+    metadata: {
+      formula: "resting energy (Mifflin-St Jeor from smoothed weight) x non-exercise factor = formula baseline; + calibration adjustment learned from weight trend vs logged intake = personal baseline; + workout and cardio burn = maintenance (TDEE). calibrated_tdee is preferred over predicted_tdee.",
+      completeness_values: { complete: "estimate, food log and good model data", partial: "estimate exists but some inputs are thin", gaps: "no food logged that day", low: "model data quality low", no_estimate: "app has not computed this day" },
+    },
+  };
 }
