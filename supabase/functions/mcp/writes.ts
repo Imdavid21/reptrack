@@ -14,7 +14,7 @@ type Args = Record<string, any>;
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 const ACTIVITY_KINDS = ["walking", "running", "cycling"] as const;
 
-async function write<T>(label: string, build: () => any): Promise<T> {
+export async function write<T>(label: string, build: () => any): Promise<T> {
   return await withRetry(label, async () => {
     const { data, error } = await build();
     if (error) {
@@ -28,7 +28,7 @@ async function write<T>(label: string, build: () => any): Promise<T> {
   });
 }
 
-function todayIn(timezone: string) {
+export function todayIn(timezone: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
 
@@ -90,7 +90,7 @@ function localClock(iso: string, timezone: string) {
   return `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}:${String(parts.second).padStart(2, "0")}`;
 }
 
-async function preferences(db: Client) {
+export async function preferences(db: Client) {
   try {
     const { data } = await db.from("user_preferences").select("*").limit(1);
     return (Array.isArray(data) ? data[0] : data) ?? {};
@@ -164,7 +164,7 @@ function macroPayload(args: Args) {
     ? estimateCaffeineMg(String(args.food_name ?? ""))
     : boundedNumber("caffeine", args.caffeine, 0, 2000);
   return {
-    calories: boundedNumber("calories", args.calories, 0, 10000, false),
+    calories: Math.round(boundedNumber("calories", args.calories, 0, 10000, false) as number),
     protein: boundedNumber("protein", args.protein, 0, 500),
     carbs: boundedNumber("carbs", args.carbs, 0, 1500),
     fat: boundedNumber("fat", args.fat, 0, 500),
@@ -287,7 +287,7 @@ async function persistWorkoutEnergy(db: Client, userId: string, workout: Args, r
   return estimate;
 }
 
-async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
+export async function logWorkout(args: Args, db: Client, userId: string, today: string, prefs: Args, timezone: string) {
   const date = assertWritableDate(args.date || today, today);
   const exercises: ExerciseInput[] = Array.isArray(args.exercises) ? args.exercises : [];
   if (!exercises.length) throw new Error("MISSING_EXERCISES");
@@ -369,49 +369,82 @@ async function updateWorkout(args: Args, db: Client, userId: string, today: stri
 
 /* ----------------------------- activities ----------------------------- */
 
-async function activityPayload(args: Args, db: Client, userId: string, date: string, prefs: Args) {
+function activityKind(value: unknown): ActivityKind {
   const alias: Record<string, string> = { walk: "walking", run: "running", cycle: "cycling", ride: "cycling", bike: "cycling" };
-  const rawKind = String(args.activity_type ?? "").toLowerCase().trim();
-  const kind = oneOf("activity_type", alias[rawKind] ?? rawKind, ACTIVITY_KINDS) as ActivityKind;
+  const raw = String(value ?? "").toLowerCase().trim();
+  return oneOf("activity_type", alias[raw] ?? raw, ACTIVITY_KINDS) as ActivityKind;
+}
 
-  const distance = boundedNumber("distance_km", args.distance_km, 0.1, 500);
-  const duration = boundedNumber("duration_minutes", args.duration_minutes, 1, 1440);
+/** Builds the stored row plus a plain explanation of how calories were derived. */
+async function activityPayload(input: { kind: ActivityKind; distance: number | null; duration: number | null; calories: number | null; steps: number | null }, db: Client, userId: string, date: string, prefs: Args) {
+  const { kind, distance, duration, steps } = input;
   if (distance === null && duration === null) throw new Error("MISSING_DISTANCE_OR_DURATION");
   const weightKg = await effectiveWeight(db, date, prefs);
   const estimate = estimateActivityEnergy(kind, weightKg, distance, duration);
-  const calories = boundedNumber("calories", args.calories, 0, 5000) ?? estimate.netKcal;
+  const calories = input.calories !== null ? Math.round(input.calories) : estimate.netKcal;
+  const calculation = {
+    calories_source: input.calories !== null ? "supplied" : "estimated",
+    duration_source: duration !== null ? "supplied" : "assumed_from_typical_pace",
+    pace_min_per_km: estimate.paceMinutesPerKm,
+    pace_source: distance === null ? "no_distance_typical_intensity" : estimate.paceSource,
+    met: estimate.met,
+    bodyweight_kg: weightKg,
+    duration_minutes_used: estimate.durationMinutes || duration,
+    formula: "(MET - 1) x 3.5 x kg / 200 x minutes (net of resting burn)",
+  };
   return {
-    kind, estimate, calories,
+    estimate, calculation,
     row: {
       user_id: userId, date, source: "manual", activity_type: kind,
-      duration_minutes: Math.round(estimate.durationMinutes) || duration || 0,
-      distance_km: distance, calories,
+      duration_minutes: duration !== null ? Math.round(duration) : Math.round(estimate.durationMinutes) || 0,
+      distance_km: distance, calories, steps,
       intensity_band: "pace_based", intensity_source: estimate.paceSource, met_estimate: estimate.met,
       effective_weight_kg: weightKg, confidence: estimate.confidence,
       energy_model_version: ENERGY_MODEL_VERSION,
-      calculation_inputs: { paceMinutesPerKm: estimate.paceMinutesPerKm, paceSource: estimate.paceSource, via: "mcp" },
+      calculation_inputs: { ...calculation, via: "mcp" },
     },
   };
 }
 
 async function logActivity(args: Args, db: Client, userId: string, today: string, prefs: Args) {
   const date = assertWritableDate(args.date || today, today);
-  const { row, estimate } = await activityPayload(args, db, userId, date, prefs);
+  const { row, calculation } = await activityPayload({
+    kind: activityKind(args.activity_type),
+    distance: boundedNumber("distance_km", args.distance_km, 0.1, 500),
+    duration: boundedNumber("duration_minutes", args.duration_minutes, 1, 1440),
+    calories: boundedNumber("calories", args.calories, 0, 5000),
+    steps: args.steps == null ? null : Math.round(boundedNumber("steps", args.steps, 0, 200000) as number),
+  }, db, userId, date, prefs);
   const saved = await write<any>("activity_upsert", () => db.from("calorie_burns").upsert(row, { onConflict: "user_id,date,source,activity_type" }).select().single());
-  return ok("activity_logged", saved, { met: estimate.met, pace_source: estimate.paceSource });
+  return ok("activity_logged", saved, { calculation });
 }
 
+/** Pass null for distance_km, duration_minutes, calories or steps to clear it. Omitted fields keep their stored value. */
 async function updateActivity(args: Args, db: Client, userId: string, today: string, prefs: Args) {
-  const date = assertWritableDate(args.date || today, today);
   const id = args.activity_id ? requireString("activity_id", args.activity_id, 40) : null;
-  const { row } = await activityPayload(args, db, userId, date, prefs);
+  let existing: Args | null = null;
   if (id) {
-    const saved = await write<any>("activity_update", () => db.from("calorie_burns").update(row).eq("id", id).eq("user_id", userId).select().maybeSingle());
-    if (!saved) throw new Error("ACTIVITY_NOT_FOUND");
-    return ok("activity_updated", saved);
+    existing = await write<any>("activity_lookup", () => db.from("calorie_burns").select("*").eq("id", id).eq("user_id", userId).maybeSingle());
+  } else {
+    const date = assertWritableDate(args.date || today, today);
+    const rows = await write<any[]>("activity_lookup", () => db.from("calorie_burns").select("*").eq("user_id", userId).eq("date", date).eq("source", "manual").eq("activity_type", activityKind(args.activity_type)).limit(1));
+    existing = rows?.[0] ?? null;
   }
-  const saved = await write<any>("activity_upsert", () => db.from("calorie_burns").upsert(row, { onConflict: "user_id,date,source,activity_type" }).select().single());
-  return ok("activity_updated", saved);
+  if (!existing) throw new Error("ACTIVITY_NOT_FOUND");
+  const pick = (key: string, min: number, max: number) => key in args ? boundedNumber(key, args[key], min, max) : (existing![key] ?? null);
+  const date = args.date !== undefined ? assertWritableDate(args.date, today) : existing.date;
+  const caloriesTouched = "calories" in args && args.calories !== null;
+  const { row, calculation } = await activityPayload({
+    kind: activityKind(args.activity_type ?? existing.activity_type),
+    distance: pick("distance_km", 0.1, 500),
+    duration: pick("duration_minutes", 1, 1440),
+    // Changing distance or duration re-estimates calories unless calories is given.
+    calories: caloriesTouched ? boundedNumber("calories", args.calories, 0, 5000) : null,
+    steps: "steps" in args ? (args.steps === null ? null : Math.round(boundedNumber("steps", args.steps, 0, 200000) as number)) : (existing.steps ?? null),
+  }, db, userId, date, prefs);
+  const saved = await write<any>("activity_update", () => db.from("calorie_burns").update(row).eq("id", existing!.id).eq("user_id", userId).select().maybeSingle());
+  if (!saved) throw new Error("ACTIVITY_NOT_FOUND");
+  return ok("activity_updated", saved, { calculation, previous: { distance_km: existing.distance_km, duration_minutes: existing.duration_minutes, calories: existing.calories, steps: existing.steps ?? null } });
 }
 
 /* -------------------------- physique check-ins -------------------------- */

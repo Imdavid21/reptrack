@@ -1,5 +1,5 @@
 export const MCP_MODE = "read_write" as const;
-export const MCP_VERSION = "1.4.0";
+export const MCP_VERSION = "2.0.0";
 
 export const APPROVED_TOOLS = [
   "get_fitness_profile", "get_bodyweight_history", "get_workouts",
@@ -9,15 +9,18 @@ export const APPROVED_TOOLS = [
   "get_advanced_snapshot", "get_progression_autopilot", "get_cut_control",
   "get_weak_point_radar", "get_weekly_coach_review", "get_goal_runway",
   "get_advanced_config", "list_coach_events", "get_physique_checkins",
+  "get_workout_context", "get_day_summary",
 ] as const;
 
-/** Writes are limited to logs and scoped live-workout coaching state. No historical deletes exist. */
+/** Writes cover logs, planned workouts and live coaching. Deletes are single-record and undoable via undo_last_write. */
 export const WRITE_TOOLS = [
   "log_meal", "update_meal", "log_water",
   "log_workout", "update_workout",
   "log_activity", "update_activity",
   "set_workout_trigger", "cancel_workout_trigger", "send_coach_note",
   "log_physique_checkin", "update_physique_checkin",
+  "create_planned_workout", "update_planned_workout", "delete_planned_workout", "complete_planned_workout",
+  "delete_meal", "delete_activity", "delete_workout", "undo_last_write",
 ] as const;
 
 export type ToolName = typeof APPROVED_TOOLS[number];
@@ -173,4 +176,28 @@ export function capPayload<T>(payload: T, maxBytes = 400_000): { payload: T; tru
     return { payload: truncatedPayload as unknown as T, truncated: true };
   }
   return { payload, truncated: true };
+}
+
+const HINTS: Array<[RegExp, string, string]> = [
+  [/^MISSING_(.+)/, "Required field is missing: $1.", "Add the $1 field and call again."],
+  [/^INVALID_(.+)/, "Value out of range or wrong format: $1.", "Check units (kg, km, ml, minutes) and the allowed range in the tool schema."],
+  [/_NOT_FOUND$/, "No record with that id belongs to this account.", "Read the record first (get_day_summary or get_workouts) to get a valid id."],
+  [/^DATE_IN_FUTURE$/, "Logs cannot be dated in the future.", "Use today or an earlier date (YYYY-MM-DD). Use create_planned_workout for future sessions."],
+  [/^PLAN_DATE_TOO_(OLD|FAR)$/, "Planned workout date is outside the allowed window.", "Plan between 7 days ago and 60 days ahead."],
+  [/^NO_FIELDS_TO_UPDATE$|^NOTHING_TO_UPDATE$/, "No fields to change were supplied.", "Pass at least one field to change."],
+  [/^NOTHING_TO_UNDO$/, "There is no assistant write left to undo.", "Nothing needs to be done."],
+  [/^UNDO_NOT_AVAILABLE$/, "The last write cannot be undone automatically.", "Correct it with the matching update tool instead."],
+  [/^ACTIVITY_IS_WORKOUT_BURN$/, "This calorie entry belongs to a workout.", "Use delete_workout or update_workout instead."],
+  [/^PLANNED_WORKOUT_ALREADY_COMPLETED$/, "This planned workout is already completed.", "Edit the logged session with update_workout."],
+  [/^PERMISSION_DENIED/, "This account is not allowed to change that record.", "Only records owned by the signed-in user can be changed."],
+  [/UNAVAILABLE|TIMEOUT/, "The database did not respond in time.", "Retry the same call with the same client_key; it will not create a duplicate."],
+];
+/** Turns an internal error code into {code, message, hint, retryable}. */
+export function typedError(raw: string) {
+  const code = (raw.split(":")[0] || "INTERNAL_ERROR").trim();
+  for (const [re, message, hint] of HINTS) {
+    const m = re.exec(code);
+    if (m) { const f = (m[1] || "").toLowerCase(); return { code, message: message.replace("$1", f), hint: hint.replace("$1", f), detail: raw.slice(code.length + 1).trim() || undefined, retryable: /UNAVAILABLE|TIMEOUT/.test(code) }; }
+  }
+  return { code, message: "The request could not be completed.", hint: "Check the inputs against the tool schema and try again.", detail: raw, retryable: false };
 }

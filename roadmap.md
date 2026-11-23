@@ -12,3 +12,5 @@
 - [x] Stop repeated account/device recovery prompts during ongoing workouts and test sign-in refreshes
 - [x] Prepare Vercel build, output, and SPA route fallback settings
 - [ ] Connect the GitHub repository to the user's Vercel account, set build-time backend values, add the deployed domain to the auth redirect allowlist, and verify a signed-in deployment (requires user account setup)
+- [x] MCP v2: workout context, planned workouts with Start in app, day summary, deletes + undo, idempotency, typed errors
+- [ ] Publish so the hosted assistant connection serves MCP v2 (waiting on user)

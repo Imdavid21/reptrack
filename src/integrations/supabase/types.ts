@@ -200,6 +200,7 @@ export type Database = {
           met_estimate: number | null
           source: string
           started_at: string | null
+          steps: number | null
           user_id: string
         }
         Insert: {
@@ -220,6 +221,7 @@ export type Database = {
           met_estimate?: number | null
           source: string
           started_at?: string | null
+          steps?: number | null
           user_id: string
         }
         Update: {
@@ -240,6 +242,7 @@ export type Database = {
           met_estimate?: number | null
           source?: string
           started_at?: string | null
+          steps?: number | null
           user_id?: string
         }
         Relationships: []
@@ -893,6 +896,48 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_write_log: {
+        Row: {
+          action: string
+          before_state: Json | null
+          client_key: string | null
+          created_at: string
+          id: string
+          record_id: string
+          record_table: string
+          result: Json | null
+          tool_name: string
+          undone_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          before_state?: Json | null
+          client_key?: string | null
+          created_at?: string
+          id?: string
+          record_id: string
+          record_table: string
+          result?: Json | null
+          tool_name: string
+          undone_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          before_state?: Json | null
+          client_key?: string | null
+          created_at?: string
+          id?: string
+          record_id?: string
+          record_table?: string
+          result?: Json | null
+          tool_name?: string
+          undone_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           ai_confidence: number | null
@@ -1061,6 +1106,54 @@ export type Database = {
           upper_arm_right_cm?: number | null
           user_id?: string
           waist_cm?: number | null
+        }
+        Relationships: []
+      }
+      planned_workouts: {
+        Row: {
+          client_key: string | null
+          created_at: string
+          date: string
+          duration_minutes: number | null
+          exercises: Json
+          id: string
+          notes: string | null
+          source: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          workout_id: string | null
+        }
+        Insert: {
+          client_key?: string | null
+          created_at?: string
+          date: string
+          duration_minutes?: number | null
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          source?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workout_id?: string | null
+        }
+        Update: {
+          client_key?: string | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workout_id?: string | null
         }
         Relationships: []
       }

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Dumbbell } from 'lucide-react';
 import { NextWorkoutCard } from '@/components/dashboard/NextWorkoutCard';
+import { PlannedWorkoutsCard } from '@/components/dashboard/PlannedWorkoutsCard';
 import { useLogDate } from '@/contexts/LogDateContext';
 import { useDraftWorkout, isResumableDraft, draftDateKey } from '@/hooks/useDraftWorkout';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ export function ResumeSessionCard() {
 
   if (!loaded) return null;
   const resumable = isResumableDraft(draft) && (!!draft && draftDateKey(draft) === dateStr || !!conflict);
-  if (!resumable || !draft) return <NextWorkoutCard />;
+  if (!resumable || !draft) return <div className="space-y-3"><PlannedWorkoutsCard /><NextWorkoutCard /></div>;
 
   return (
     <Button
