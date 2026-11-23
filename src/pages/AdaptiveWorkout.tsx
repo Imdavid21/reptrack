@@ -1,3 +1,4 @@
+import { PlannedWorkoutsCard } from '@/components/dashboard/PlannedWorkoutsCard';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -203,6 +204,7 @@ export default function AdaptiveWorkout() {
       {coachNote && <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.75, borderRadius: '12px', border: 1, borderColor: 'divider' }}><MessageSquare size={18} style={{ marginTop: 2, flexShrink: 0 }}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography variant="overline" color="text.secondary">Coach note</Typography><Typography variant="body2">{coachNote}</Typography></Box><Button size="small" onClick={dismissNote}>Dismiss</Button></Box>}
     </Box>}
     {stage === 'prepare' && <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="mb-4"><PlannedWorkoutsCard /></div>
       <Box component="section">
         <Box component="header" sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 2 }}>
           <Box sx={{ minWidth: 0 }}>

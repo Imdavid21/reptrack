@@ -48,7 +48,8 @@ export function PlannedWorkoutsCard() {
     saveDraft({ day: 'custom', dayName: plan.title, date: dateStr, weekNumber: 1, exercises, habits: { pullups: 0, water_intake: 0, sleep_hours: 0 }, currentExerciseIndex: 0, currentSetIndex: 0, step: 'exercises', resumePath: '/app/train', saveId, workoutStartTime: startedAt.toISOString(), elapsedSeconds: 0, pausedSeconds: 0, pauseIntervals: [] } as any);
     await (supabase.from('planned_workouts' as any) as any).update({ status: 'started', workout_id: saveId }).eq('id', plan.id).eq('user_id', user.id);
     haptic('medium');
-    navigate('/app/train');
+    // Full load so the Train screen restores the new draft even when already on it.
+    window.location.assign('/app/train');
   };
 
   return <div className="space-y-3">{plans.map(plan => {
